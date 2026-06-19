@@ -9,8 +9,8 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 8 (v7 → v8: made points and is_correct nullable for ungraded draft answers)
-/// TOTAL TABLES: 32
+/// SCHEMA VERSION: 9 (v8 → v9: added learner_details + student_records tables)
+/// TOTAL TABLES: 38
 ///
 /// This database was consolidated from 12 historical versions into a single
 /// clean v1 schema. All migrations are now handled via nuclear reset:
@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 8,
+            version: 9,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 7,
+        version: 8,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -713,6 +713,139 @@ class LocalDatabase {
         )
       ''');
 
+      // Learner details table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS learner_details (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL UNIQUE,
+          lrn TEXT,
+          age INTEGER,
+          sex TEXT,
+          track_strand TEXT,
+          curriculum TEXT,
+          birthdate TEXT,
+          birthplace TEXT,
+          home_address TEXT,
+          father_name TEXT,
+          mother_name TEXT,
+          guardian_name TEXT,
+          guardian_contact TEXT,
+          date_admitted TEXT,
+          admitted_to_grade TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Attendance records table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS attendance_records (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          class_id TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          month TEXT NOT NULL,
+          school_days INTEGER NOT NULL DEFAULT 0,
+          days_present INTEGER NOT NULL DEFAULT 0,
+          days_absent INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          UNIQUE(student_id, class_id, school_year, month)
+        )
+      ''');
+
+      // Core values records table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS core_values_records (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          class_id TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          grading_period_number INTEGER NOT NULL,
+          core_value TEXT NOT NULL,
+          behavior_statement TEXT NOT NULL,
+          marking TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Student school history table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS student_school_history (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          school_name TEXT NOT NULL,
+          school_id TEXT,
+          grade_level TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          section TEXT,
+          date_from TEXT,
+          date_to TEXT,
+          record_type TEXT NOT NULL DEFAULT 'previous',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Previous school subjects table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS previous_school_subjects (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          school_history_id TEXT NOT NULL,
+          subject_name TEXT NOT NULL,
+          subject_group TEXT,
+          q1_grade INTEGER,
+          q2_grade INTEGER,
+          q3_grade INTEGER,
+          q4_grade INTEGER,
+          final_grade INTEGER,
+          descriptor TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(school_history_id) REFERENCES student_school_history(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Previous school attendance table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS previous_school_attendance (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          school_history_id TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          month TEXT NOT NULL,
+          school_days INTEGER NOT NULL DEFAULT 0,
+          days_present INTEGER NOT NULL DEFAULT 0,
+          days_absent INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(school_history_id) REFERENCES student_school_history(id) ON DELETE CASCADE
+        )
+      ''');
+
       // Create indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_class_id ON class_participants(class_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_class_participants_user_id ON class_participants(user_id)');
@@ -756,6 +889,19 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_student_id ON period_grades(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_updated_at ON period_grades(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_deleted_at ON period_grades(deleted_at)');
+
+      // Student records indexes
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_learner_details_user_id ON learner_details(user_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_attendance_records_student_id ON attendance_records(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_attendance_records_class_id ON attendance_records(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_attendance_records_school_year ON attendance_records(school_year)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_core_values_records_student_id ON core_values_records(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_core_values_records_class_id ON core_values_records(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_student_school_history_student_id ON student_school_history(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_student_id ON previous_school_subjects(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_school_history_id ON previous_school_subjects(school_history_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_student_id ON previous_school_attendance(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_school_history_id ON previous_school_attendance(school_history_id)');
     });
   }
 
@@ -864,6 +1010,12 @@ class LocalDatabase {
       'melcs',
       'assessment_statistics_cache',
       'school_settings',
+      'previous_school_attendance',
+      'previous_school_subjects',
+      'student_school_history',
+      'core_values_records',
+      'attendance_records',
+      'learner_details',
     ];
 
     for (final table in tables) {

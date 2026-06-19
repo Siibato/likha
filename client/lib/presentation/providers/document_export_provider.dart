@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/logging/service_logger.dart';
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
+import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
 import 'package:likha/injection_container.dart';
 
 class DocumentExportState {
@@ -30,9 +31,15 @@ class DocumentExportState {
 class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
   final ExportClassGrades _exportClassGrades;
   final ExportSf9 _exportSf9;
+  final ExportSf10Pdf _exportSf10Pdf;
+  final ExportSf10Excel _exportSf10Excel;
 
-  DocumentExportNotifier(this._exportClassGrades, this._exportSf9)
-      : super(const DocumentExportState());
+  DocumentExportNotifier(
+    this._exportClassGrades,
+    this._exportSf9,
+    this._exportSf10Pdf,
+    this._exportSf10Excel,
+  ) : super(const DocumentExportState());
 
   Future<void> exportClassGrades({
     required String classId,
@@ -87,6 +94,60 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
     );
   }
 
+  Future<void> exportSf10Pdf({
+    required String classId,
+    required String studentId,
+    required String studentName,
+  }) async {
+    state = state.copyWith(isExporting: true, clearError: true);
+
+    final result = await _exportSf10Pdf(classId: classId, studentId: studentId);
+
+    result.fold(
+      (failure) {
+        ServiceLogger.instance.warn('SF10 PDF export failed: ${failure.message}');
+        state = state.copyWith(isExporting: false, error: failure.message);
+      },
+      (bytes) async {
+        final safeName = studentName.replaceAll(' ', '_');
+        await _saveBytes(
+          bytes: Uint8List.fromList(bytes),
+          fileName: 'SF10_$safeName',
+          ext: '.pdf',
+          mimeType: MimeType.pdf,
+        );
+        state = state.copyWith(isExporting: false);
+      },
+    );
+  }
+
+  Future<void> exportSf10Excel({
+    required String classId,
+    required String studentId,
+    required String studentName,
+  }) async {
+    state = state.copyWith(isExporting: true, clearError: true);
+
+    final result = await _exportSf10Excel(classId: classId, studentId: studentId);
+
+    result.fold(
+      (failure) {
+        ServiceLogger.instance.warn('SF10 Excel export failed: ${failure.message}');
+        state = state.copyWith(isExporting: false, error: failure.message);
+      },
+      (bytes) async {
+        final safeName = studentName.replaceAll(' ', '_');
+        await _saveBytes(
+          bytes: Uint8List.fromList(bytes),
+          fileName: 'SF10_$safeName',
+          ext: '.xlsx',
+          mimeType: MimeType.microsoftExcel,
+        );
+        state = state.copyWith(isExporting: false);
+      },
+    );
+  }
+
   Future<void> _saveBytes({
     required Uint8List bytes,
     required String fileName,
@@ -120,5 +181,7 @@ final documentExportProvider =
   return DocumentExportNotifier(
     sl<ExportClassGrades>(),
     sl<ExportSf9>(),
+    sl<ExportSf10Pdf>(),
+    sl<ExportSf10Excel>(),
   );
 });

@@ -56,4 +56,36 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  ResultFuture<List<int>> exportSf10Pdf({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final bytes = await _remoteDataSource.exportSf10Pdf(
+        classId: classId,
+        studentId: studentId,
+      );
+      return Right(bytes);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<List<int>> exportSf10Excel({
+    required String classId,
+    required String studentId,
+  }) async {
+    try {
+      final bytes = await _remoteDataSource.exportSf10Excel(
+        classId: classId,
+        studentId: studentId,
+      );
+      return Right(bytes);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

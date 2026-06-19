@@ -10,6 +10,7 @@ import 'package:likha/core/sync/handlers/class_sync_handler.dart';
 import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
 import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
 import 'package:likha/core/sync/handlers/setup_sync_handler.dart';
+import 'package:likha/core/sync/handlers/student_records_sync_handler.dart';
 import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -36,6 +37,12 @@ String? _entityTypeToTable(String entityType) {
     case 'tos_competency': return DbTables.tosCompetencies;
     case 'admin_user': return DbTables.users;
     case 'school_settings': return DbTables.schoolSettings;
+    case 'learner_details': return DbTables.learnerDetails;
+    case 'attendance_records': return DbTables.attendanceRecords;
+    case 'core_values_records': return DbTables.coreValuesRecords;
+    case 'school_history': return DbTables.studentSchoolHistory;
+    case 'previous_school_subjects': return DbTables.previousSchoolSubjects;
+    case 'previous_school_attendance': return DbTables.previousSchoolAttendance;
     default: return null;
   }
 }
@@ -54,6 +61,7 @@ class OutboundSyncHandler {
   final LearningMaterialSyncHandler? _learningMaterialHandler;
   final TosSyncHandler? _tosHandler;
   final SetupSyncHandler? _setupHandler;
+  final StudentRecordsSyncHandler? _studentRecordsHandler;
 
   OutboundSyncHandler(
     this._syncQueue,
@@ -69,6 +77,7 @@ class OutboundSyncHandler {
     LearningMaterialSyncHandler? learningMaterialHandler,
     TosSyncHandler? tosHandler,
     SetupSyncHandler? setupHandler,
+    StudentRecordsSyncHandler? studentRecordsHandler,
   })  : _assessmentHandler = assessmentHandler,
         _assignmentHandler = assignmentHandler,
         _authHandler = authHandler,
@@ -76,7 +85,8 @@ class OutboundSyncHandler {
         _gradingHandler = gradingHandler,
         _learningMaterialHandler = learningMaterialHandler,
         _tosHandler = tosHandler,
-        _setupHandler = setupHandler;
+        _setupHandler = setupHandler,
+        _studentRecordsHandler = studentRecordsHandler;
 
   Future<void> outboundSync() async {
     _log.log('outboundSync() - START');
@@ -294,6 +304,30 @@ class OutboundSyncHandler {
       }
     }
 
+    // Route student records operations to the dedicated handler.
+    final studentRecordsOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.learnerDetails ||
+            e.entityType == SyncEntityType.attendanceRecords ||
+            e.entityType == SyncEntityType.coreValuesRecords ||
+            e.entityType == SyncEntityType.schoolHistory ||
+            e.entityType == SyncEntityType.previousSchoolSubjects ||
+            e.entityType == SyncEntityType.previousSchoolAttendance)
+        .toList();
+    if (studentRecordsOps.isNotEmpty && _studentRecordsHandler != null) {
+      _log.log('Processing ${studentRecordsOps.length} student_records ops via handler');
+      for (final op in studentRecordsOps) {
+        final result = await _studentRecordsHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _syncQueue.incrementRetry(op.id);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
     final nonAssessmentOps = regularOps
         .where((e) =>
             e.entityType != SyncEntityType.assessment &&
@@ -308,7 +342,13 @@ class OutboundSyncHandler {
             e.entityType != SyncEntityType.materialFile &&
             e.entityType != SyncEntityType.tableOfSpecifications &&
             e.entityType != SyncEntityType.tosCompetency &&
-            e.entityType != SyncEntityType.schoolSettings)
+            e.entityType != SyncEntityType.schoolSettings &&
+            e.entityType != SyncEntityType.learnerDetails &&
+            e.entityType != SyncEntityType.attendanceRecords &&
+            e.entityType != SyncEntityType.coreValuesRecords &&
+            e.entityType != SyncEntityType.schoolHistory &&
+            e.entityType != SyncEntityType.previousSchoolSubjects &&
+            e.entityType != SyncEntityType.previousSchoolAttendance)
         .toList();
 
     _log.log('Found ${nonAssessmentOps.length} regular operations');

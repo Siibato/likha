@@ -9,6 +9,10 @@ import 'package:likha/presentation/widgets/desktop/teacher/class/class_overview_
 import 'package:likha/presentation/widgets/desktop/teacher/grade/grades_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/material/materials_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/grade/sf9_section.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/learner_details_section.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/attendance_section.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/core_values_section.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/sf10_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/class/student_data_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/tos/tos_section.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
@@ -125,6 +129,19 @@ class _TeacherClassDetailPageState
         // SF9 tab (only for advisory classes)
         ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
         break;
+      case 7:
+        // Learner Details tab
+        break;
+      case 8:
+        // Attendance tab
+        break;
+      case 9:
+        // Core Values tab
+        break;
+      case 10:
+        // SF10 tab
+        ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
+        break;
     }
   }
 
@@ -157,6 +174,26 @@ class _TeacherClassDetailPageState
         icon: Icons.grade_outlined,
         selectedIcon: Icons.grade_rounded,
         label: 'SF9',
+      ));
+      destinations.add(const DesktopNavDestination(
+        icon: Icons.person_outline_rounded,
+        selectedIcon: Icons.person_rounded,
+        label: 'Learner Details',
+      ));
+      destinations.add(const DesktopNavDestination(
+        icon: Icons.calendar_today_outlined,
+        selectedIcon: Icons.calendar_today_rounded,
+        label: 'Attendance',
+      ));
+      destinations.add(const DesktopNavDestination(
+        icon: Icons.favorite_outline,
+        selectedIcon: Icons.favorite_rounded,
+        label: 'Core Values',
+      ));
+      destinations.add(const DesktopNavDestination(
+        icon: Icons.school_outlined,
+        selectedIcon: Icons.school_rounded,
+        label: 'SF10',
       ));
     }
 
@@ -257,6 +294,18 @@ class _TeacherClassDetailPageState
                       // SF9 (only for advisory classes)
                       if (isAdvisory)
                         Sf9Section(classId: widget.classId),
+                      // Learner Details (advisory only)
+                      if (isAdvisory)
+                        LearnerDetailsSection(classId: widget.classId, students: detail.students),
+                      // Attendance (advisory only)
+                      if (isAdvisory)
+                        AttendanceSection(classId: widget.classId, students: detail.students, schoolYear: detail.schoolYear),
+                      // Core Values (advisory only)
+                      if (isAdvisory)
+                        CoreValuesSection(classId: widget.classId, students: detail.students, schoolYear: detail.schoolYear),
+                      // SF10 (advisory only)
+                      if (isAdvisory)
+                        Sf10Section(classId: widget.classId),
                     ],
                   ),
           ),

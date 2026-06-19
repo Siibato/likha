@@ -9,6 +9,7 @@ pub mod grading;
 pub mod health;
 pub mod learning_material;
 pub mod setup;
+pub mod student_records;
 pub mod sync;
 pub mod tasks;
 pub mod tos;

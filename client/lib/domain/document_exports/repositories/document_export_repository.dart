@@ -15,4 +15,14 @@ abstract class DocumentExportRepository {
     required String classId,
     required String studentId,
   });
+
+  ResultFuture<List<int>> exportSf10Pdf({
+    required String classId,
+    required String studentId,
+  });
+
+  ResultFuture<List<int>> exportSf10Excel({
+    required String classId,
+    required String studentId,
+  });
 }

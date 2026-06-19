@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -12,6 +13,8 @@ import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
+import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
+import 'package:likha/domain/student_records/entities/sf10_response.dart';
 import 'operations/grading.dart' as ops;
 
 class GradingRepositoryImpl implements GradingRepository {
@@ -19,16 +22,19 @@ class GradingRepositoryImpl implements GradingRepository {
   final GradingLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
   final DataEventBus _dataEventBus;
+  final StudentRecordsRepository? _studentRecordsRepository;
 
   GradingRepositoryImpl({
     required GradingRemoteDataSource remoteDataSource,
     required GradingLocalDataSource localDataSource,
     required SyncQueue syncQueue,
     required DataEventBus dataEventBus,
+    StudentRecordsRepository? studentRecordsRepository,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus;
+        _dataEventBus = dataEventBus,
+        _studentRecordsRepository = studentRecordsRepository;
 
   // ===== Config =====
 
@@ -298,14 +304,67 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultFuture<Sf9Response> getSf10({
     required String classId,
     required String studentId,
-  }) =>
-      ops.getSf10(
-        _localDataSource,
-        _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
-        studentId: studentId,
-      );
+  }) {
+    // Forward to StudentRecordsRepository when available (new SF10 aggregate)
+    if (_studentRecordsRepository != null) {
+      return _studentRecordsRepository
+          .getSf10(classId: classId, studentId: studentId)
+          .then((result) => result.fold(
+                (failure) => Left(failure),
+                (sf10) => Right(_sf10ToSf9(sf10)),
+              ));
+    }
+    return ops.getSf10(
+      _localDataSource,
+      _remoteDataSource,
+      _dataEventBus,
+      classId: classId,
+      studentId: studentId,
+    );
+  }
+
+  Sf9Response _sf10ToSf9(Sf10Response sf10) {
+    final currentRecord = sf10.scholasticRecords.isNotEmpty
+        ? sf10.scholasticRecords.last
+        : null;
+
+    final subjects = (currentRecord?.subjects ?? const [])
+        .map((s) => Sf9SubjectRow(
+              classTitle: s.classTitle,
+              subjectGroup: s.subjectGroup,
+              q1: s.periodGrades.isNotEmpty ? s.periodGrades[0] : null,
+              q2: s.periodGrades.length > 1 ? s.periodGrades[1] : null,
+              q3: s.periodGrades.length > 2 ? s.periodGrades[2] : null,
+              q4: s.periodGrades.length > 3 ? s.periodGrades[3] : null,
+              finalGrade: s.finalGrade,
+              descriptor: s.descriptor,
+            ))
+        .toList();
+
+    return Sf9Response(
+      studentId: sf10.studentId,
+      studentName: sf10.studentName,
+      gradeLevel: sf10.currentGradeLevel,
+      schoolYear: sf10.currentSchoolYear,
+      section: sf10.currentSection,
+      lrn: sf10.lrn,
+      age: sf10.age,
+      sex: sf10.sex,
+      trackStrand: sf10.trackStrand,
+      curriculum: sf10.curriculum,
+      subjects: subjects,
+      generalAverage: () {
+        final cr = currentRecord;
+        if (cr != null && cr.finalAverage != null) {
+          return Sf9QuarterlyAverages(
+            finalAverage: cr.finalAverage,
+            descriptor: cr.descriptor,
+          );
+        }
+        return null;
+      }(),
+    );
+  }
 
   // ===== Batch Operations =====
 

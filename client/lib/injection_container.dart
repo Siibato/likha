@@ -167,8 +167,27 @@ import 'package:likha/domain/setup/usecases/update_school_code.dart';
 import 'package:likha/domain/document_exports/repositories/document_export_repository.dart';
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
+import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
 import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
 import 'package:likha/data/repositories/document_exports/document_export_repository_impl.dart';
+import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
+import 'package:likha/data/repositories/student_records/student_records_repository_impl.dart';
+import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
+import 'package:likha/domain/student_records/usecases/get_learner_details.dart';
+import 'package:likha/domain/student_records/usecases/upsert_learner_details.dart';
+import 'package:likha/domain/student_records/usecases/get_attendance.dart';
+import 'package:likha/domain/student_records/usecases/upsert_attendance.dart';
+import 'package:likha/domain/student_records/usecases/get_core_values.dart';
+import 'package:likha/domain/student_records/usecases/upsert_core_values.dart';
+import 'package:likha/domain/student_records/usecases/get_sf10_v2.dart';
+import 'package:likha/domain/student_records/usecases/get_school_history.dart';
+import 'package:likha/domain/student_records/usecases/create_school_history.dart';
+import 'package:likha/domain/student_records/usecases/update_school_history.dart';
+import 'package:likha/domain/student_records/usecases/delete_school_history.dart';
+import 'package:likha/domain/student_records/usecases/get_previous_subjects.dart';
+import 'package:likha/domain/student_records/usecases/upsert_previous_subject.dart';
+import 'package:likha/domain/student_records/usecases/get_previous_attendance.dart';
+import 'package:likha/domain/student_records/usecases/upsert_previous_attendance.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -269,6 +288,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<DocumentExportRemoteDataSource>(
     () => DocumentExportRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<StudentRecordsRemoteDataSource>(
+    () => StudentRecordsRemoteDataSourceImpl(sl<DioClient>()),
   );
 
   // Local Data sources
@@ -407,6 +429,7 @@ Future<void> init() async {
       sl<LearningMaterialRemoteDataSource>(), // LearningMaterialRemoteDataSource
       sl<LearningMaterialLocalDataSource>(), // LearningMaterialLocalDataSource
       sl<SetupRemoteDataSource>(), // SetupRemoteDataSource
+      sl<StudentRecordsRemoteDataSource>(), // StudentRecordsRemoteDataSource
       sl<TosRemoteDataSource>(), // TosRemoteDataSource
       sl<TosLocalDataSource>(), // TosLocalDataSource
       sl<SyncLogger>(), // SyncLogger
@@ -506,6 +529,7 @@ Future<void> init() async {
       localDataSource: sl<GradingLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
       dataEventBus: sl<DataEventBus>(),
+      studentRecordsRepository: sl<StudentRecordsRepository>(),
     ),
   );
 
@@ -574,6 +598,9 @@ Future<void> init() async {
   sl.registerLazySingleton<DocumentExportRepository>(
     () => DocumentExportRepositoryImpl(sl<DocumentExportRemoteDataSource>()),
   );
+  sl.registerLazySingleton<StudentRecordsRepository>(
+    () => StudentRecordsRepositoryImpl(sl<StudentRecordsRemoteDataSource>()),
+  );
 
   // Setup use cases
   sl.registerLazySingleton(() => GetSchoolSettings(sl()));
@@ -595,4 +622,23 @@ Future<void> init() async {
   // Document Export use cases
   sl.registerLazySingleton(() => ExportClassGrades(sl()));
   sl.registerLazySingleton(() => ExportSf9(sl()));
+  sl.registerLazySingleton(() => ExportSf10Pdf(sl()));
+  sl.registerLazySingleton(() => ExportSf10Excel(sl()));
+
+  // Student Records use cases
+  sl.registerLazySingleton(() => GetLearnerDetails(sl()));
+  sl.registerLazySingleton(() => UpsertLearnerDetails(sl()));
+  sl.registerLazySingleton(() => GetAttendance(sl()));
+  sl.registerLazySingleton(() => UpsertAttendance(sl()));
+  sl.registerLazySingleton(() => GetCoreValues(sl()));
+  sl.registerLazySingleton(() => UpsertCoreValues(sl()));
+  sl.registerLazySingleton(() => GetSf10V2(sl()));
+  sl.registerLazySingleton(() => GetSchoolHistory(sl()));
+  sl.registerLazySingleton(() => CreateSchoolHistory(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolHistory(sl()));
+  sl.registerLazySingleton(() => DeleteSchoolHistory(sl()));
+  sl.registerLazySingleton(() => GetPreviousSubjects(sl()));
+  sl.registerLazySingleton(() => UpsertPreviousSubject(sl()));
+  sl.registerLazySingleton(() => GetPreviousAttendance(sl()));
+  sl.registerLazySingleton(() => UpsertPreviousAttendance(sl()));
 }

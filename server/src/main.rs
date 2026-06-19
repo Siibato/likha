@@ -21,6 +21,7 @@ use server::modules::tos::service::TosService;
 use server::modules::grading::service::GradeComputationService;
 use server::modules::setup::service::SetupService;
 use server::modules::document_export::service::DocumentExportService;
+use server::modules::student_records::service::StudentRecordsService;
 use server::modules::entitlement::EntitlementService;
 use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use server::utils::file_encryption::parse_key;
@@ -313,8 +314,16 @@ async fn main() {
         db.clone(),
     ));
 
+    let student_records_service = Arc::new(
+        StudentRecordsService::new(db.clone(), grade_computation_service.clone()),
+    );
+
     let document_export_service = Arc::new(
-        DocumentExportService::new(grade_computation_service.clone(), setup_service.clone()),
+        DocumentExportService::new(
+            grade_computation_service.clone(),
+            setup_service.clone(),
+            student_records_service.clone(),
+        ),
     );
 
     let app = create_app(
@@ -329,6 +338,7 @@ async fn main() {
         tos_service,
         setup_service,
         document_export_service,
+        student_records_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -360,6 +370,7 @@ fn create_app(
     tos_service: Arc<TosService>,
     setup_service: Arc<server::modules::setup::service::SetupService>,
     document_export_service: Arc<DocumentExportService>,
+    student_records_service: Arc<StudentRecordsService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -380,6 +391,7 @@ fn create_app(
         .merge(server::modules::tos::routes::routes(tos_service))
         .merge(server::modules::setup::routes::routes(setup_service))
         .merge(server::modules::document_export::routes::routes(document_export_service))
+        .merge(server::modules::student_records::routes::routes(student_records_service))
         .merge(server::modules::tasks::routes::routes(assignment_service, assessment_service))
         .merge(server::modules::sync::routes::routes(
             sync_push_service,

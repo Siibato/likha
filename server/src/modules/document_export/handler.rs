@@ -54,6 +54,34 @@ pub async fn export_sf9_pdf(
     }
 }
 
+pub async fn export_sf10_pdf(
+    State(service): State<std::sync::Arc<DocumentExportService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> Response {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    match service.export_sf10_pdf(class_id, student_id, auth_user.user_id).await {
+        Ok(bytes) => pdf_response(bytes),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn export_sf10_excel(
+    State(service): State<std::sync::Arc<DocumentExportService>>,
+    auth_user: AuthUser,
+    Path((class_id, student_id)): Path<(Uuid, Uuid)>,
+) -> Response {
+    if let Err(r) = require_teacher(&auth_user) {
+        return r;
+    }
+    match service.export_sf10_excel(class_id, student_id, auth_user.user_id).await {
+        Ok(bytes) => excel_response(bytes),
+        Err(e) => e.into_response(),
+    }
+}
+
 fn pdf_response(bytes: Vec<u8>) -> Response {
     (
         StatusCode::OK,

@@ -10,6 +10,7 @@ import 'package:likha/core/sync/handlers/class_sync_handler.dart';
 import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
 import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
 import 'package:likha/core/sync/handlers/setup_sync_handler.dart';
+import 'package:likha/core/sync/handlers/student_records_sync_handler.dart';
 import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/inbound_sync_handler.dart';
 import 'package:likha/core/sync/outbound_sync_handler.dart';
@@ -31,6 +32,7 @@ import 'package:likha/data/datasources/remote/classes/class_remote_datasource.da
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
@@ -55,6 +57,7 @@ class SyncManager {
   final LearningMaterialRemoteDataSource _learningMaterialRemoteDataSource;
   final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
   final SetupRemoteDataSource _setupRemoteDataSource;
+  final StudentRecordsRemoteDataSource _studentRecordsRemoteDataSource;
   final TosRemoteDataSource _tosRemoteDataSource;
   final TosLocalDataSource _tosLocalDataSource;
   final SyncLogger _log;
@@ -98,6 +101,7 @@ class SyncManager {
     this._learningMaterialRemoteDataSource,
     this._learningMaterialLocalDataSource,
     this._setupRemoteDataSource,
+    this._studentRecordsRemoteDataSource,
     this._tosRemoteDataSource,
     this._tosLocalDataSource,
     this._log,
@@ -159,6 +163,11 @@ class SyncManager {
         _setupRemoteDataSource,
         _localDatabase,
         _dataEventBus,
+      ),
+      studentRecordsHandler: StudentRecordsSyncHandler(
+        _studentRecordsRemoteDataSource,
+        _localDatabase,
+        _log,
       ),
     );
     _inboundHandler = InboundSyncHandler(

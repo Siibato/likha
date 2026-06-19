@@ -19,5 +19,13 @@ pub fn routes(service: Arc<DocumentExportService>) -> Router {
             "/classes/{class_id}/export/sf9/{student_id}",
             axum::routing::get(handler::export_sf9_pdf),
         )
+        .route(
+            "/classes/{class_id}/export/sf10/{student_id}/pdf",
+            axum::routing::get(handler::export_sf10_pdf),
+        )
+        .route(
+            "/classes/{class_id}/export/sf10/{student_id}/excel",
+            axum::routing::get(handler::export_sf10_excel),
+        )
         .with_state(service)
 }
