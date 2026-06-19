@@ -609,6 +609,21 @@ class ApiEndpoints {
             .toList(),
       );
 
+  // ===== Document Export =====
+  static String exportGradesPdf(String classId, {int? period}) {
+    final query = period != null ? '?period=$period' : '';
+    return '/api/v1/classes/$classId/export/grades-pdf$query';
+  }
+
+  static String exportGradesExcel(String classId, {int? period}) {
+    final query = period != null ? '?period=$period' : '';
+    return '/api/v1/classes/$classId/export/grades-excel$query';
+  }
+
+  static String exportSf9Pdf(String classId, String studentId) {
+    return '/api/v1/classes/$classId/export/sf9/$studentId';
+  }
+
   // ===== MELCS =====
   static ApiEndpoint<List<MelcEntryModel>> melcsSearch() =>
       ApiEndpoint(

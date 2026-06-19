@@ -7,9 +7,8 @@ import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/sf9_grade_table.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
-import 'package:likha/presentation/providers/school_settings_provider.dart';
+import 'package:likha/presentation/providers/document_export_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/grade/sf9_core_values_table.dart';
-import 'package:likha/services/pdf/sf9/sf9_pdf_generator.dart';
 
 class Sf9DetailPage extends ConsumerStatefulWidget {
   final String classId;
@@ -216,13 +215,11 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
   Future<void> _downloadSf9(Sf9Response displaySf9) async {
     setState(() => _isDownloading = true);
     try {
-      final schoolSettingsState = ref.read(schoolSettingsProvider);
-      final schoolSettings = schoolSettingsState.settings;
-      await ref.read(sf9PdfGeneratorProvider).generatePdf(
-            sf9: displaySf9,
-            schoolSettings: schoolSettings,
-            studentName: widget.studentName,
-          );
+      await ref.read(documentExportProvider.notifier).exportSf9(
+        classId: widget.classId,
+        studentId: widget.studentId,
+        studentName: widget.studentName,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

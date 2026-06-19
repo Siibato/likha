@@ -3,6 +3,7 @@ pub mod assessment;
 pub mod assignment;
 pub mod auth;
 pub mod class;
+pub mod document_export;
 pub mod entitlement;
 pub mod grading;
 pub mod health;

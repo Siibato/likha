@@ -76,7 +76,7 @@ pub struct GradingConfigResponse {
     pub qa_weight: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GradeItemResponse {
     pub id: String,
     pub class_id: String,

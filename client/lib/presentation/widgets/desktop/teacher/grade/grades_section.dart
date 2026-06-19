@@ -7,12 +7,10 @@ import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadshee
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
 import 'package:likha/presentation/pages/mobile/teacher/grade/grade_summary_page.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/class_grades_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
-import 'package:likha/presentation/providers/school_settings_provider.dart';
-import 'package:likha/services/grade_export_service.dart';
+import 'package:likha/presentation/providers/document_export_provider.dart';
 
 /// Grades section widget for TeacherClassDetailDesktop
 /// Displays grading setup and grade spreadsheet functionality
@@ -42,7 +40,6 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
         _loadGradeData();
-        ref.read(schoolSettingsProvider.notifier).loadSchoolSettings();
       });
     }
   }
@@ -58,7 +55,6 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
         _loadGradeData();
-        ref.read(schoolSettingsProvider.notifier).loadSchoolSettings();
       });
     }
   }
@@ -166,37 +162,10 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
 
   void _exportToExcel() async {
     try {
-      final classState = ref.read(classProvider);
-      final gradesState = ref.read(classGradesProvider);
-      final configState = ref.read(gradingConfigProvider);
-      final authState = ref.read(authProvider);
-      final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
-      var schoolState = ref.read(schoolSettingsProvider);
-      if (schoolState.settings == null) {
-        await schoolNotifier.loadSchoolSettings();
-        schoolState = ref.read(schoolSettingsProvider);
-      }
-      final grades = gradesState.grades;
-      if (grades == null) return;
-
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      final detail = classState.currentClassDetail;
-
-      await ref.read(gradeExportServiceProvider).exportToExcel(
+      await ref.read(documentExportProvider.notifier).exportClassGrades(
         classId: widget.classId,
-        className: detail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: grades.items,
-        scoresByItem: grades.scoresByItem,
-        config: config,
-        summary: grades.summary ?? const [],
-        schoolSettings: schoolState.settings,
-        teacherName: authState.user?.fullName,
-        gradeLevel: detail?.gradeLevel,
-        section: detail?.title,
-        subject: detail?.title,
+        period: _selectedQuarter,
+        isPdf: false,
       );
 
       if (mounted) {
@@ -214,61 +183,19 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   }
 
   void _exportToPdf() async {
-    ServiceLogger.instance.log('_exportToPdf: Starting PDF export for classId=${widget.classId}, quarter=$_selectedQuarter');
     try {
-      final classState = ref.read(classProvider);
-      final gradesState = ref.read(classGradesProvider);
-      final configState = ref.read(gradingConfigProvider);
-      final authState = ref.read(authProvider);
-      final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
-      var schoolState = ref.read(schoolSettingsProvider);
-      
-      ServiceLogger.instance.log('_exportToPdf: schoolState.settings=${schoolState.settings != null ? "LOADED" : "NULL"}');
-      if (schoolState.settings == null) {
-        ServiceLogger.instance.log('_exportToPdf: School settings null, reloading...');
-        await schoolNotifier.loadSchoolSettings();
-        schoolState = ref.read(schoolSettingsProvider);
-        ServiceLogger.instance.log('_exportToPdf: After reload - schoolState.settings=${schoolState.settings != null ? "LOADED" : "NULL"}');
-      }
-      
-      if (schoolState.settings != null) {
-        ServiceLogger.instance.log('_exportToPdf: School settings - name="${schoolState.settings!.schoolName}", region="${schoolState.settings!.schoolRegion}", division="${schoolState.settings!.schoolDivision}", code="${schoolState.settings!.schoolCode}", year="${schoolState.settings!.schoolYear}"');
-      } else {
-        ServiceLogger.instance.warn('_exportToPdf: School settings still null after reload attempt');
-      }
-      
-      final grades = gradesState.grades;
-      if (grades == null) return;
-
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      final detail = classState.currentClassDetail;
-
-      ServiceLogger.instance.log('_exportToPdf: Calling gradeExportServiceProvider.exportToPdf with ${students.length} students, schoolSettings=${schoolState.settings != null}');
-      await ref.read(gradeExportServiceProvider).exportToPdf(
+      await ref.read(documentExportProvider.notifier).exportClassGrades(
         classId: widget.classId,
-        quarter: _selectedQuarter,
-        className: detail?.title ?? 'Unknown Class',
-        students: students,
-        gradeItems: grades.items,
-        scoresByItem: grades.scoresByItem,
-        config: config,
-        summary: grades.summary ?? const [],
-        schoolSettings: schoolState.settings,
-        teacherName: authState.user?.fullName,
-        gradeLevel: detail?.gradeLevel,
-        section: detail?.title,
-        subject: detail?.title,
+        period: _selectedQuarter,
+        isPdf: true,
       );
 
-      ServiceLogger.instance.log('_exportToPdf: PDF export completed successfully');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('PDF exported successfully!')),
         );
       }
     } catch (e) {
-      ServiceLogger.instance.error('_exportToPdf: PDF export failed', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to export PDF: $e')),

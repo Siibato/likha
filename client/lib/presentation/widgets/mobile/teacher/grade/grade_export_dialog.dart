@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
-import 'package:likha/presentation/providers/class_provider.dart';
-import 'package:likha/presentation/providers/grading_provider.dart';
-import 'package:likha/presentation/providers/school_settings_provider.dart';
+import 'package:likha/presentation/providers/document_export_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
-import 'package:likha/services/grade_export_service.dart';
 
 void showGradeExportDialog(
   BuildContext context,
@@ -59,34 +55,10 @@ Future<void> _exportToExcel(
   required int quarter,
 }) async {
   try {
-    final configState = ref.read(gradingConfigProvider);
-    final itemsState = ref.read(gradeItemsProvider);
-    final scoresState = ref.read(gradeScoresProvider);
-    final gradesState = ref.read(periodGradesProvider);
-    final classState = ref.read(classProvider);
-    final authState = ref.read(authProvider);
-    final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
-    var schoolState = ref.read(schoolSettingsProvider);
-    if (schoolState.settings == null) {
-      await schoolNotifier.loadSchoolSettings();
-      schoolState = ref.read(schoolSettingsProvider);
-    }
-    final detail = classState.currentClassDetail;
-
-    await ref.read(gradeExportServiceProvider).exportToExcel(
+    await ref.read(documentExportProvider.notifier).exportClassGrades(
       classId: classId,
-      className: detail?.title ?? 'Unknown Class',
-      quarter: quarter,
-      students: detail?.students ?? [],
-      gradeItems: itemsState.items,
-      scoresByItem: scoresState.scoresByItem,
-      config: configState.configs.isNotEmpty ? configState.configs.first : null,
-      summary: gradesState.summary,
-      schoolSettings: schoolState.settings,
-      teacherName: authState.user?.fullName,
-      gradeLevel: detail?.gradeLevel,
-      section: detail?.title,
-      subject: detail?.title,
+      period: quarter,
+      isPdf: false,
     );
 
     if (context.mounted) {
@@ -110,34 +82,10 @@ Future<void> _exportToPdf(
   required int quarter,
 }) async {
   try {
-    final configState = ref.read(gradingConfigProvider);
-    final itemsState = ref.read(gradeItemsProvider);
-    final scoresState = ref.read(gradeScoresProvider);
-    final gradesState = ref.read(periodGradesProvider);
-    final classState = ref.read(classProvider);
-    final authState = ref.read(authProvider);
-    final schoolNotifier = ref.read(schoolSettingsProvider.notifier);
-    var schoolState = ref.read(schoolSettingsProvider);
-    if (schoolState.settings == null) {
-      await schoolNotifier.loadSchoolSettings();
-      schoolState = ref.read(schoolSettingsProvider);
-    }
-    final detail = classState.currentClassDetail;
-
-    await ref.read(gradeExportServiceProvider).exportToPdf(
+    await ref.read(documentExportProvider.notifier).exportClassGrades(
       classId: classId,
-      className: detail?.title ?? 'Unknown Class',
-      quarter: quarter,
-      students: detail?.students ?? [],
-      gradeItems: itemsState.items,
-      scoresByItem: scoresState.scoresByItem,
-      config: configState.configs.isNotEmpty ? configState.configs.first : null,
-      summary: gradesState.summary,
-      schoolSettings: schoolState.settings,
-      teacherName: authState.user?.fullName,
-      gradeLevel: detail?.gradeLevel,
-      section: detail?.title,
-      subject: detail?.title,
+      period: quarter,
+      isPdf: true,
     );
 
     if (context.mounted) {

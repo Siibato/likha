@@ -164,6 +164,11 @@ import 'package:likha/domain/setup/repositories/setup_repository.dart';
 import 'package:likha/domain/setup/usecases/get_school_settings.dart';
 import 'package:likha/domain/setup/usecases/update_school_settings.dart';
 import 'package:likha/domain/setup/usecases/update_school_code.dart';
+import 'package:likha/domain/document_exports/repositories/document_export_repository.dart';
+import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
+import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
+import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
+import 'package:likha/data/repositories/document_exports/document_export_repository_impl.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -261,6 +266,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<TosRemoteDataSource>(
     () => TosRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<DocumentExportRemoteDataSource>(
+    () => DocumentExportRemoteDataSourceImpl(sl<DioClient>()),
   );
 
   // Local Data sources
@@ -563,6 +571,9 @@ Future<void> init() async {
       dataEventBus: sl<DataEventBus>(),
     ),
   );
+  sl.registerLazySingleton<DocumentExportRepository>(
+    () => DocumentExportRepositoryImpl(sl<DocumentExportRemoteDataSource>()),
+  );
 
   // Setup use cases
   sl.registerLazySingleton(() => GetSchoolSettings(sl()));
@@ -580,4 +591,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteCompetency(sl()));
   sl.registerLazySingleton(() => BulkAddCompetencies(sl()));
   sl.registerLazySingleton(() => SearchMelcs(sl()));
+
+  // Document Export use cases
+  sl.registerLazySingleton(() => ExportClassGrades(sl()));
+  sl.registerLazySingleton(() => ExportSf9(sl()));
 }
