@@ -59,12 +59,17 @@ impl crate::modules::assessment::service::AssessmentService {
             HashMap::with_capacity(all_details.len());
         let mut student_question_choices: HashMap<(Uuid, Uuid), Vec<(Option<Uuid>, bool)>> =
             HashMap::with_capacity(all_details.len());
+        let mut student_question_points: HashMap<(Uuid, Uuid), f64> =
+            HashMap::with_capacity(all_details.len());
 
         for detail in &all_details {
             let key = (detail.student_id, detail.question_id);
             student_question_correct
                 .entry(key)
                 .or_insert(detail.answer_points > 0.0);
+            student_question_points
+                .entry(key)
+                .or_insert(detail.answer_points);
             if let Some(choice_id) = detail.choice_id {
                 student_question_choices
                     .entry(key)
@@ -76,12 +81,18 @@ impl crate::modules::assessment::service::AssessmentService {
         // Pre-aggregate correct/incorrect counts per question in O(details) instead of O(Q × S)
         let mut correct_counts: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
         let mut incorrect_counts: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        let mut question_points_sum: HashMap<Uuid, f64> = HashMap::with_capacity(questions.len());
+        let mut question_answered_count: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
         for ((_, question_id), is_correct) in &student_question_correct {
             if *is_correct {
                 *correct_counts.entry(*question_id).or_insert(0) += 1;
             } else {
                 *incorrect_counts.entry(*question_id).or_insert(0) += 1;
             }
+        }
+        for ((_, question_id), points) in &student_question_points {
+            *question_points_sum.entry(*question_id).or_insert(0.0) += points;
+            *question_answered_count.entry(*question_id).or_insert(0) += 1;
         }
 
         let mut question_stats = Vec::with_capacity(questions.len());
@@ -93,6 +104,15 @@ impl crate::modules::assessment::service::AssessmentService {
                 (correct_count as f64 / total_answered as f64) * 100.0
             } else { 0.0 };
 
+            let total_points = question_points_sum.get(&q.id).copied().unwrap_or(0.0);
+            let answered_count = question_answered_count.get(&q.id).copied().unwrap_or(0);
+            let average_points = if answered_count > 0 {
+                total_points / answered_count as f64
+            } else { 0.0 };
+            let average_percentage = if q.points > 0 && answered_count > 0 {
+                (average_points / q.points as f64) * 100.0
+            } else { 0.0 };
+
             question_stats.push(QuestionStatistics {
                 question_id: q.id,
                 question_text: q.question_text.clone(),
@@ -101,6 +121,8 @@ impl crate::modules::assessment::service::AssessmentService {
                 correct_count,
                 incorrect_count,
                 correct_percentage,
+                average_points,
+                average_percentage,
             });
         }
 
@@ -110,6 +132,7 @@ impl crate::modules::assessment::service::AssessmentService {
                 &submissions,
                 &student_question_correct,
                 &student_question_choices,
+                &student_question_points,
                 submission_count,
             ).await?
         } else {

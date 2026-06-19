@@ -42,6 +42,7 @@ class GeneralAveragesNotifier extends StateNotifier<GeneralAveragesState> {
   final GetGeneralAverages _getGeneralAverages;
   late StreamSubscription<String> _generalAveragesSub;
   String? _currentClassId;
+  bool _isLoading = false;
 
   GeneralAveragesNotifier(this._getGeneralAverages)
       : super(const GeneralAveragesState()) {
@@ -53,6 +54,8 @@ class GeneralAveragesNotifier extends StateNotifier<GeneralAveragesState> {
   }
 
   Future<void> loadStudents(String classId, {bool skipBackgroundRefresh = false}) async {
+    if (_isLoading && _currentClassId == classId) return;
+    _isLoading = true;
     _currentClassId = classId;
     state = state.copyWith(isLoading: state.students.isEmpty, clearError: true);
     final result = await _getGeneralAverages(classId);
@@ -67,6 +70,7 @@ class GeneralAveragesNotifier extends StateNotifier<GeneralAveragesState> {
       },
       (data) => state = state.copyWith(isLoading: false, students: data.students),
     );
+    _isLoading = false;
   }
 
   void reset() {

@@ -178,7 +178,7 @@ class GradeDataRow extends StatelessWidget {
             )
           : GradeComputedCell(
               text: stats.pct != null
-                  ? '${stats.pct!.toStringAsFixed(1)}%'
+                  ? '${stats.pct!.toStringAsFixed(2)}%'
                   : '--',
               width: dimensions.pctColW,
               height: dimensions.rowH,
@@ -261,6 +261,6 @@ class GradeDataRow extends StatelessWidget {
 
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toInt().toString();
-    return v.toStringAsFixed(1);
+    return v.toStringAsFixed(2);
   }
 }

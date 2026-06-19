@@ -119,6 +119,8 @@ class QuestionStatisticsModel extends QuestionStatistics {
     required super.correctCount,
     required super.incorrectCount,
     required super.correctPercentage,
+    super.averagePoints = 0.0,
+    super.averagePercentage = 0.0,
   });
 
   factory QuestionStatisticsModel.fromJson(Map<String, dynamic> json) {
@@ -130,6 +132,8 @@ class QuestionStatisticsModel extends QuestionStatistics {
       correctCount: json['correct_count'] as int,
       incorrectCount: json['incorrect_count'] as int,
       correctPercentage: (json['correct_percentage'] as num).toDouble(),
+      averagePoints: (json['average_points'] as num?)?.toDouble() ?? 0.0,
+      averagePercentage: (json['average_percentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -141,6 +145,8 @@ class QuestionStatisticsModel extends QuestionStatistics {
     'correct_count': correctCount,
     'incorrect_count': incorrectCount,
     'correct_percentage': correctPercentage,
+    'average_points': averagePoints,
+    'average_percentage': averagePercentage,
   };
 }
 

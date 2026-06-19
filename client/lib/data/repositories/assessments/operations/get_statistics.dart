@@ -25,37 +25,48 @@ ResultFuture<AssessmentStatistics> getStatistics(
   required String assessmentId,
 }) async {
   try {
-    try {
-      final local = await localDataSource.computeStatistics(assessmentId);
-      if (local != null) {
-        fireRemoteFetch(
-          dedupKey: 'assessments/statistics/$assessmentId/bg',
-          remote: () => remoteDataSource.getStatistics(assessmentId: assessmentId),
-          onSuccess: (fresh) async {
-            final current = await localDataSource.computeStatistics(assessmentId);
-            if (_statisticsHaveChanged(current, fresh)) {
-              await localDataSource.cacheStatistics(fresh);
-              dataEventBus.notifyStatisticsChanged(assessmentId);
-            }
-          },
-        );
-        return Right(local);
-      }
-
-      final fresh = await remoteFetch(
-        dedupKey: 'assessments/statistics/$assessmentId',
+    // 1. Check cache table first (server-computed stats)
+    final cached = await localDataSource.getCachedStatistics(assessmentId);
+    if (cached != null) {
+      // Background refresh from remote if data may have changed
+      fireRemoteFetch(
+        dedupKey: 'assessments/statistics/$assessmentId/bg',
         remote: () => remoteDataSource.getStatistics(assessmentId: assessmentId),
+        onSuccess: (fresh) async {
+          if (_statisticsHaveChanged(cached, fresh)) {
+            await localDataSource.cacheStatistics(fresh);
+            dataEventBus.notifyStatisticsChanged(assessmentId);
+          }
+        },
       );
-      await localDataSource.cacheStatistics(fresh);
-      return Right(fresh);
-    } on CacheException {
-      final fresh = await remoteFetch(
-        dedupKey: 'assessments/statistics/$assessmentId',
-        remote: () => remoteDataSource.getStatistics(assessmentId: assessmentId),
-      );
-      await localDataSource.cacheStatistics(fresh);
-      return Right(fresh);
+      return Right(cached);
     }
+
+    // 2. Compute locally from SQLite submissions/answers
+    final local = await localDataSource.computeStatistics(assessmentId);
+    if (local != null) {
+      // Do NOT cache locally-computed stats; only server data is authoritative.
+      // Background refresh from remote
+      fireRemoteFetch(
+        dedupKey: 'assessments/statistics/$assessmentId/bg',
+        remote: () => remoteDataSource.getStatistics(assessmentId: assessmentId),
+        onSuccess: (fresh) async {
+          if (_statisticsHaveChanged(local, fresh)) {
+            await localDataSource.cacheStatistics(fresh);
+            dataEventBus.notifyStatisticsChanged(assessmentId);
+          }
+        },
+      );
+      return Right(local);
+    }
+
+    // 3. Local data is incomplete — fetch from server synchronously
+    final fresh = await remoteFetch(
+      dedupKey: 'assessments/statistics/$assessmentId',
+      remote: () => remoteDataSource.getStatistics(assessmentId: assessmentId),
+    );
+    await localDataSource.cacheStatistics(fresh);
+    return Right(fresh);
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));
   } on NetworkException catch (e) {

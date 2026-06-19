@@ -68,6 +68,8 @@ class QuestionStatistics extends Equatable {
   final int correctCount;
   final int incorrectCount;
   final double correctPercentage;
+  final double averagePoints;
+  final double averagePercentage;
 
   const QuestionStatistics({
     required this.questionId,
@@ -77,10 +79,12 @@ class QuestionStatistics extends Equatable {
     required this.correctCount,
     required this.incorrectCount,
     required this.correctPercentage,
+    this.averagePoints = 0.0,
+    this.averagePercentage = 0.0,
   });
 
   @override
-  List<Object?> get props => [questionId, correctPercentage];
+  List<Object?> get props => [questionId, correctPercentage, averagePoints, averagePercentage];
 }
 
 class ItemAnalysis extends Equatable {

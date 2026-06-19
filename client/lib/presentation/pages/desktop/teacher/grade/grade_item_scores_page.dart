@@ -90,7 +90,7 @@ class _GradeItemScoresPageState
     if (value == value.truncateToDouble()) {
       return value.toInt().toString();
     }
-    return value.toStringAsFixed(1);
+    return value.toStringAsFixed(2);
   }
 
   Future<void> _saveAll() async {

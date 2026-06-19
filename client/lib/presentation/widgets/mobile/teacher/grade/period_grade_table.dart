@@ -86,7 +86,7 @@ class _PeriodGradeTableState extends State<PeriodGradeTable> {
   static String _fmtScore(double? score) {
     if (score == null) return '--';
     if (score == score.roundToDouble()) return score.toInt().toString();
-    return score.toStringAsFixed(1);
+    return score.toStringAsFixed(2);
   }
 
   @override

@@ -383,6 +383,8 @@ pub struct QuestionStatistics {
     pub correct_count: usize,
     pub incorrect_count: usize,
     pub correct_percentage: f64,
+    pub average_points: f64,
+    pub average_percentage: f64,
 }
 
 // ===== ITEM ANALYSIS SCHEMAS =====

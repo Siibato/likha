@@ -67,7 +67,7 @@ class _DesktopPeriodGradeTableState extends State<DesktopPeriodGradeTable> {
 
   static String _formatScore(dynamic value) {
     if (value == null) return '-';
-    if (value is num) return value.toStringAsFixed(1);
+    if (value is num) return value.toStringAsFixed(2);
     return value.toString();
   }
 
@@ -226,7 +226,7 @@ class _DesktopGradeStatsFooter extends StatelessWidget {
     final highest = grades.reduce((a, b) => a > b ? a : b);
     final lowest = grades.reduce((a, b) => a < b ? a : b);
     final passCount = grades.where((g) => g >= 75).length;
-    final passRate = (passCount / grades.length * 100).toStringAsFixed(1);
+    final passRate = (passCount / grades.length * 100).toStringAsFixed(2);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -238,7 +238,7 @@ class _DesktopGradeStatsFooter extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _statItem('Average', average.toStringAsFixed(1)),
+          _statItem('Average', average.toStringAsFixed(2)),
           _statItem('Highest', highest.toString()),
           _statItem('Lowest', lowest.toString()),
           _statItem('Pass Rate', '$passRate%'),

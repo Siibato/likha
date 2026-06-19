@@ -151,6 +151,15 @@ class QuestionAnalysisCard extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Avg: ${stats.averagePoints.toStringAsFixed(1)} pts (${stats.averagePercentage.toStringAsFixed(1)}%)',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.foregroundSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),

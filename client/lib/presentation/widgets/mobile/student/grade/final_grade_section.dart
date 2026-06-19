@@ -19,7 +19,7 @@ class FinalGradeSection extends StatelessWidget {
 
     final sum = withGrades.fold<int>(0, (acc, g) => acc + g.transmutedGrade!);
     final finalGrade =
-        double.parse((sum / withGrades.length).toStringAsFixed(1));
+        double.parse((sum / withGrades.length).toStringAsFixed(2));
     final finalGradeRounded = finalGrade.round();
     final descriptor = TransmutationUtil.getDescriptor(finalGradeRounded);
     final descriptorColor =

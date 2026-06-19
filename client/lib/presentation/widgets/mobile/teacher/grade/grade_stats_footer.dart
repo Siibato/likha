@@ -38,7 +38,7 @@ class GradeStatsFooter extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _statItem('Average', avg.toStringAsFixed(1)),
+          _statItem('Average', avg.toStringAsFixed(2)),
           _statItem('Highest', highest.toString()),
           _statItem('Lowest', lowest.toString()),
           _statItem('Pass Rate', '$passRate%'),

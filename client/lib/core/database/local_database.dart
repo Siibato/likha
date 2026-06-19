@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 7 (v6 → v7: added school_district column to school_settings)
+/// SCHEMA VERSION: 8 (v7 → v8: made points and is_correct nullable for ungraded draft answers)
 /// TOTAL TABLES: 32
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 7,
+            version: 8,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 6,
+        version: 7,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -360,7 +360,7 @@ class LocalDatabase {
           id TEXT PRIMARY KEY,
           submission_id TEXT NOT NULL,
           question_id TEXT NOT NULL,
-          points REAL NOT NULL DEFAULT 0,
+          points REAL,
           overridden_by TEXT,
           overridden_at TEXT,
           cached_at TEXT,
@@ -379,7 +379,7 @@ class LocalDatabase {
           answer_key_id TEXT,
           choice_id TEXT,
           answer_text TEXT,
-          is_correct INTEGER NOT NULL DEFAULT 0,
+          is_correct INTEGER,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_answer_id) REFERENCES submission_answers(id) ON DELETE CASCADE,
@@ -760,6 +760,61 @@ class LocalDatabase {
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    // Targeted migration: make points and is_correct nullable
+    // Web path: 7 → 8; Mobile path: 6 → 7
+    if ((oldVersion == 7 && newVersion == 8) || (oldVersion == 6 && newVersion == 7)) {
+      await db.transaction((txn) async {
+        // Migrate submission_answers: points REAL NOT NULL DEFAULT 0 → points REAL
+        await txn.execute('''
+          CREATE TABLE submission_answers_new (
+            id TEXT PRIMARY KEY,
+            submission_id TEXT NOT NULL,
+            question_id TEXT NOT NULL,
+            points REAL,
+            overridden_by TEXT,
+            overridden_at TEXT,
+            cached_at TEXT,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            FOREIGN KEY(submission_id) REFERENCES assessment_submissions(id) ON DELETE CASCADE,
+            FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE,
+            FOREIGN KEY(overridden_by) REFERENCES users(id) ON DELETE SET NULL
+          )
+        ''');
+        await txn.execute('''
+          INSERT INTO submission_answers_new
+          SELECT id, submission_id, question_id, points, overridden_by, overridden_at, cached_at, sync_status
+          FROM submission_answers
+        ''');
+        await txn.execute('DROP TABLE submission_answers');
+        await txn.execute('ALTER TABLE submission_answers_new RENAME TO submission_answers');
+
+        // Migrate submission_answer_items: is_correct INTEGER NOT NULL DEFAULT 0 → is_correct INTEGER
+        await txn.execute('''
+          CREATE TABLE submission_answer_items_new (
+            id TEXT PRIMARY KEY,
+            submission_answer_id TEXT NOT NULL,
+            answer_key_id TEXT,
+            choice_id TEXT,
+            answer_text TEXT,
+            is_correct INTEGER,
+            cached_at TEXT,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            FOREIGN KEY(submission_answer_id) REFERENCES submission_answers(id) ON DELETE CASCADE,
+            FOREIGN KEY(answer_key_id) REFERENCES answer_keys(id) ON DELETE SET NULL,
+            FOREIGN KEY(choice_id) REFERENCES question_choices(id) ON DELETE SET NULL
+          )
+        ''');
+        await txn.execute('''
+          INSERT INTO submission_answer_items_new
+          SELECT id, submission_answer_id, answer_key_id, choice_id, answer_text, is_correct, cached_at, sync_status
+          FROM submission_answer_items
+        ''');
+        await txn.execute('DROP TABLE submission_answer_items');
+        await txn.execute('ALTER TABLE submission_answer_items_new RENAME TO submission_answer_items');
+      });
+      return;
+    }
+
     // Nuclear reset: Drop all tables and recreate with current v1 schema
     // This ensures a clean state for any upgrade from old versions
     // Note: Users will lose local data but can resync from server

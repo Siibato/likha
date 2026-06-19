@@ -177,7 +177,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   String _fmt(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
   Map<String, Map<String, GradeScore>> _buildScoreLookup() {
     final lookup = <String, Map<String, GradeScore>>{};
