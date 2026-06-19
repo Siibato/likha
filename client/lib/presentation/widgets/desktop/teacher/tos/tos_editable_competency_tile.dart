@@ -11,14 +11,12 @@ class TosEditableCompetencyTile extends ConsumerWidget {
   final TosCompetency competency;
   final String timeUnit;
   final TosDetailController controller;
-  final String tosId;
 
   const TosEditableCompetencyTile({
     super.key,
     required this.competency,
     required this.timeUnit,
     required this.controller,
-    required this.tosId,
   });
 
   @override

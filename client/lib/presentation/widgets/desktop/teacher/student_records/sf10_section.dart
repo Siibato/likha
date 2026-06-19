@@ -220,7 +220,7 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
           ],
         ],
       ),
-      body: state.isLoading
+      body: state.isLoading && state.data == null
           ? const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
           : state.error != null
               ? Center(child: Text(state.error!, style: const TextStyle(color: AppColors.semanticError)))

@@ -15,6 +15,8 @@ class UpdateSchoolSettings {
     required String schoolYear,
     required String schoolCode,
     String? schoolDistrict,
+    String? schoolHeadName,
+    String? schoolHeadPosition,
   }) {
     return _repository.updateSchoolSettings(
       schoolName: schoolName,
@@ -23,6 +25,8 @@ class UpdateSchoolSettings {
       schoolYear: schoolYear,
       schoolCode: schoolCode,
       schoolDistrict: schoolDistrict,
+      schoolHeadName: schoolHeadName,
+      schoolHeadPosition: schoolHeadPosition,
     );
   }
 }

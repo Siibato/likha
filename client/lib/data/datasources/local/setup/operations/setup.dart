@@ -37,6 +37,8 @@ Future<void> updateSchoolSettingsLocally(
   required String schoolYear,
   required String schoolCode,
   String? schoolDistrict,
+  String? schoolHeadName,
+  String? schoolHeadPosition,
   SyncStatus syncStatus = SyncStatus.synced,
   Transaction? txn,
 }) async {
@@ -52,6 +54,8 @@ Future<void> updateSchoolSettingsLocally(
       SchoolSettingsCols.schoolYear: schoolYear,
       SchoolSettingsCols.schoolCode: schoolCode,
       SchoolSettingsCols.schoolDistrict: schoolDistrict,
+      SchoolSettingsCols.schoolHeadName: schoolHeadName,
+      SchoolSettingsCols.schoolHeadPosition: schoolHeadPosition,
       CommonCols.cachedAt: DateTime.now().toIso8601String(),
       CommonCols.syncStatus: syncStatus.dbValue,
     },

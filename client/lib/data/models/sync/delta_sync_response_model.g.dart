@@ -61,6 +61,24 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   schoolSettings: EntityDeltas.fromJson(
     json['school_settings'] as Map<String, dynamic>,
   ),
+  learnerDetails: EntityDeltas.fromJson(
+    json['learner_details'] as Map<String, dynamic>,
+  ),
+  attendanceRecords: EntityDeltas.fromJson(
+    json['attendance_records'] as Map<String, dynamic>,
+  ),
+  coreValuesRecords: EntityDeltas.fromJson(
+    json['core_values_records'] as Map<String, dynamic>,
+  ),
+  studentSchoolHistory: EntityDeltas.fromJson(
+    json['student_school_history'] as Map<String, dynamic>,
+  ),
+  previousSchoolSubjects: EntityDeltas.fromJson(
+    json['previous_school_subjects'] as Map<String, dynamic>,
+  ),
+  previousSchoolAttendance: EntityDeltas.fromJson(
+    json['previous_school_attendance'] as Map<String, dynamic>,
+  ),
 );
 
 Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
@@ -81,6 +99,12 @@ Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
       'tos_competencies': instance.tosCompetencies,
       'activity_logs': instance.activityLogs,
       'school_settings': instance.schoolSettings,
+      'learner_details': instance.learnerDetails,
+      'attendance_records': instance.attendanceRecords,
+      'core_values_records': instance.coreValuesRecords,
+      'student_school_history': instance.studentSchoolHistory,
+      'previous_school_subjects': instance.previousSchoolSubjects,
+      'previous_school_attendance': instance.previousSchoolAttendance,
     };
 
 DeltaSyncResponseModel _$DeltaSyncResponseModelFromJson(

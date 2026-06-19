@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_detail_page.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_student_list_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
@@ -38,28 +37,6 @@ class _Sf9SectionState extends ConsumerState<Sf9Section> {
     return DesktopPageScaffold(
       title: 'SF9 (Form 137)',
       subtitle: 'Student Academic Records',
-      actions: [
-        FilledButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => Sf9StudentListPage(classId: widget.classId),
-            ),
-          ).then((_) {
-            ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
-          }),
-          icon: const Icon(Icons.file_download_rounded, size: 18),
-          label: const Text('Generate SF9'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.foregroundDark,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-        ),
-      ],
       body: state.isLoading && state.students.isEmpty
           ? const Center(
               child: Padding(

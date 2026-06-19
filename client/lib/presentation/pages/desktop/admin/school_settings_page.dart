@@ -33,6 +33,8 @@ class _AdminSchoolSettingsPageState
   final _regionController = TextEditingController();
   final _divisionController = TextEditingController();
   final _districtController = TextEditingController();
+  final _schoolHeadNameController = TextEditingController();
+  final _schoolHeadPositionController = TextEditingController();
   final _schoolYearController = TextEditingController();
   final _schoolCodeController = TextEditingController();
   late String _originalSchoolCode;
@@ -55,6 +57,8 @@ class _AdminSchoolSettingsPageState
     _regionController.dispose();
     _divisionController.dispose();
     _districtController.dispose();
+    _schoolHeadNameController.dispose();
+    _schoolHeadPositionController.dispose();
     _schoolYearController.dispose();
     _schoolCodeController.dispose();
     super.dispose();
@@ -67,6 +71,8 @@ class _AdminSchoolSettingsPageState
     _regionController.text = settings.schoolRegion;
     _divisionController.text = settings.schoolDivision;
     _districtController.text = settings.schoolDistrict ?? '';
+    _schoolHeadNameController.text = settings.schoolHeadName ?? '';
+    _schoolHeadPositionController.text = settings.schoolHeadPosition ?? '';
     _schoolYearController.text = settings.schoolYear;
     _schoolCodeController.text = settings.schoolCode;
     _originalSchoolCode = settings.schoolCode;
@@ -208,6 +214,8 @@ class _AdminSchoolSettingsPageState
       schoolYear: _schoolYearController.text.trim(),
       schoolCode: _schoolCodeController.text.trim(),
       schoolDistrict: _districtController.text.trim().isEmpty ? null : _districtController.text.trim(),
+      schoolHeadName: _schoolHeadNameController.text.trim().isEmpty ? null : _schoolHeadNameController.text.trim(),
+      schoolHeadPosition: _schoolHeadPositionController.text.trim().isEmpty ? null : _schoolHeadPositionController.text.trim(),
     );
 
     if (ok) {
@@ -293,6 +301,8 @@ class _AdminSchoolSettingsPageState
                         regionController: _regionController,
                         divisionController: _divisionController,
                         districtController: _districtController,
+                        schoolHeadNameController: _schoolHeadNameController,
+                        schoolHeadPositionController: _schoolHeadPositionController,
                         schoolYearController: _schoolYearController,
                         schoolCodeController: _schoolCodeController,
                         enabled: !isSaving,

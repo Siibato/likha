@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/grading_period_utils.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9GradeTable extends StatelessWidget {
   final List<Sf9SubjectRow> subjects;
-  final Sf9QuarterlyAverages? generalAverage;
+  final Sf9PeriodAverages? generalAverage;
+  final String? gradingPeriodType;
 
   const Sf9GradeTable({
     super.key,
     required this.subjects,
     this.generalAverage,
+    this.gradingPeriodType,
   });
 
   @override
@@ -19,6 +22,9 @@ class Sf9GradeTable extends StatelessWidget {
     const fgWidth = 64.0;
     const descWidth = 80.0;
     const cellHeight = 40.0;
+
+    final periodCount = periodCountFromType(gradingPeriodType);
+    final prefix = periodLabelPrefix(gradingPeriodType);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -43,10 +49,7 @@ class Sf9GradeTable extends StatelessWidget {
               child: Row(
                 children: [
                   _cell('Learning Area', nameWidth, cellHeight, bold: true, align: Alignment.centerLeft),
-                  _cell('Q1', cellWidth, cellHeight, bold: true),
-                  _cell('Q2', cellWidth, cellHeight, bold: true),
-                  _cell('Q3', cellWidth, cellHeight, bold: true),
-                  _cell('Q4', cellWidth, cellHeight, bold: true),
+                  ...List.generate(periodCount, (i) => _cell('$prefix${i + 1}', cellWidth, cellHeight, bold: true)),
                   _cell('Final', fgWidth, cellHeight, bold: true),
                   _cell('Remarks', descWidth, cellHeight, bold: true),
                 ],
@@ -62,10 +65,11 @@ class Sf9GradeTable extends StatelessWidget {
                 child: Row(
                   children: [
                     _cell(s.classTitle, nameWidth, cellHeight, align: Alignment.centerLeft),
-                    _gradeCell(s.q1, cellWidth, cellHeight),
-                    _gradeCell(s.q2, cellWidth, cellHeight),
-                    _gradeCell(s.q3, cellWidth, cellHeight),
-                    _gradeCell(s.q4, cellWidth, cellHeight),
+                    ...List.generate(periodCount, (pi) => _gradeCell(
+                      s.periodGrades.length > pi ? s.periodGrades[pi] : null,
+                      cellWidth,
+                      cellHeight,
+                    )),
                     _gradeCell(s.finalGrade, fgWidth, cellHeight, bold: true),
                     _cell(_passFail(s.finalGrade), descWidth, cellHeight,
                         color: AppColors.foregroundSecondary, size: 10),
@@ -84,18 +88,25 @@ class Sf9GradeTable extends StatelessWidget {
                     bottomRight: Radius.circular(11),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    _cell('General Average', nameWidth, cellHeight,
-                        bold: true, align: Alignment.centerLeft),
-                    _gradeCell(generalAverage!.q1, cellWidth, cellHeight, bold: true),
-                    _gradeCell(generalAverage!.q2, cellWidth, cellHeight, bold: true),
-                    _gradeCell(generalAverage!.q3, cellWidth, cellHeight, bold: true),
-                    _gradeCell(generalAverage!.q4, cellWidth, cellHeight, bold: true),
-                    _gradeCell(generalAverage!.finalAverage, fgWidth, cellHeight, bold: true),
-                    _cell(_passFail(generalAverage!.finalAverage), descWidth, cellHeight,
-                        bold: true, size: 10),
-                  ],
+                child: Builder(
+                  builder: (context) {
+                    final ga = generalAverage!;
+                    return Row(
+                      children: [
+                        _cell('General Average', nameWidth, cellHeight,
+                            bold: true, align: Alignment.centerLeft),
+                        ...List.generate(periodCount, (pi) => _gradeCell(
+                          ga.periodGrades.length > pi ? ga.periodGrades[pi] : null,
+                          cellWidth,
+                          cellHeight,
+                          bold: true,
+                        )),
+                        _gradeCell(ga.finalAverage, fgWidth, cellHeight, bold: true),
+                        _cell(_passFail(ga.finalAverage), descWidth, cellHeight,
+                            bold: true, size: 10),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],

@@ -110,6 +110,36 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
       ? null
       : SyncPlanModel.fromJson(json['sync_plan'] as Map<String, dynamic>),
   schoolSettings: json['school_settings'] as Map<String, dynamic>?,
+  learnerDetails:
+      (json['learner_details'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  attendanceRecords:
+      (json['attendance_records'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  coreValuesRecords:
+      (json['core_values_records'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  studentSchoolHistory:
+      (json['student_school_history'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  previousSchoolSubjects:
+      (json['previous_school_subjects'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  previousSchoolAttendance:
+      (json['previous_school_attendance'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$FullSyncResponseModelToJson(
@@ -140,4 +170,10 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'enrolled_students': instance.enrolledStudents,
   'sync_plan': instance.syncPlan,
   'school_settings': instance.schoolSettings,
+  'learner_details': instance.learnerDetails,
+  'attendance_records': instance.attendanceRecords,
+  'core_values_records': instance.coreValuesRecords,
+  'student_school_history': instance.studentSchoolHistory,
+  'previous_school_subjects': instance.previousSchoolSubjects,
+  'previous_school_attendance': instance.previousSchoolAttendance,
 };

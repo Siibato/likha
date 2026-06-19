@@ -68,6 +68,20 @@ pub mod get_table_of_specifications_since;
 pub mod get_tos_competencies_since;
 pub mod get_school_settings_since;
 
+// Section F: Student Records sync queries
+pub mod get_learner_details_for_students;
+pub mod get_learner_details_since;
+pub mod get_attendance_for_classes;
+pub mod get_attendance_since;
+pub mod get_core_values_for_classes;
+pub mod get_core_values_since;
+pub mod get_school_history_for_students;
+pub mod get_school_history_since;
+pub mod get_previous_subjects_for_students;
+pub mod get_previous_subjects_since;
+pub mod get_previous_attendance_for_students;
+pub mod get_previous_attendance_since;
+
 /// Record entry in the manifest (id + updated_at + deleted flag)
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -143,3 +157,16 @@ pub use get_student_period_grades_since::get_student_period_grades_since;
 pub use get_table_of_specifications_since::get_table_of_specifications_since;
 pub use get_tos_competencies_since::get_tos_competencies_since;
 pub use get_school_settings_since::get_school_settings_since;
+
+pub use get_learner_details_for_students::get_learner_details_for_students;
+pub use get_learner_details_since::get_learner_details_since;
+pub use get_attendance_for_classes::get_attendance_for_classes;
+pub use get_attendance_since::get_attendance_since;
+pub use get_core_values_for_classes::get_core_values_for_classes;
+pub use get_core_values_since::get_core_values_since;
+pub use get_school_history_for_students::get_school_history_for_students;
+pub use get_school_history_since::get_school_history_since;
+pub use get_previous_subjects_for_students::get_previous_subjects_for_students;
+pub use get_previous_subjects_since::get_previous_subjects_since;
+pub use get_previous_attendance_for_students::get_previous_attendance_for_students;
+pub use get_previous_attendance_since::get_previous_attendance_since;

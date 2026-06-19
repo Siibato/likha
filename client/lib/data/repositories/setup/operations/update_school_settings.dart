@@ -16,6 +16,8 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
   required String schoolYear,
   required String schoolCode,
   String? schoolDistrict,
+  String? schoolHeadName,
+  String? schoolHeadPosition,
 }) async {
   try {
     final queueEntryId = const Uuid().v4();
@@ -29,6 +31,8 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
       schoolYear: schoolYear,
       schoolCode: schoolCode,
       schoolDistrict: schoolDistrict,
+      schoolHeadName: schoolHeadName,
+      schoolHeadPosition: schoolHeadPosition,
       cachedAt: now,
       syncStatus: SyncStatus.pending,
     );
@@ -42,6 +46,8 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
         schoolYear: schoolYear,
         schoolCode: schoolCode,
         schoolDistrict: schoolDistrict,
+        schoolHeadName: schoolHeadName,
+        schoolHeadPosition: schoolHeadPosition,
         syncStatus: SyncStatus.pending,
         txn: txn,
       );

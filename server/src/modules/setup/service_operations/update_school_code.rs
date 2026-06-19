@@ -17,7 +17,7 @@ pub async fn update_school_code(
         ));
     }
 
-    repo.update_settings(Some(trimmed.clone()), None, None, None, None, None)
+    repo.update_settings(Some(trimmed.clone()), None, None, None, None, None, None, None)
         .await?;
 
     // Log the school code change

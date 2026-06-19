@@ -86,6 +86,6 @@ class StudentRecordsRepositoryImpl implements StudentRecordsRepository {
       ops.upsertPreviousAttendance(_localDataSource, _syncQueue, classId: classId, studentId: studentId, data: data);
 
   @override
-  ResultFuture<Sf10Response> getSf10({required String classId, required String studentId}) =>
-      ops.getSf10(_gradingLocalDataSource, _remoteDataSource, _dataEventBus, classId: classId, studentId: studentId);
+  ResultFuture<Sf10Response> getSf10({required String classId, required String studentId, bool skipBackgroundRefresh = false}) =>
+      ops.getSf10(_gradingLocalDataSource, _remoteDataSource, _dataEventBus, classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh);
 }

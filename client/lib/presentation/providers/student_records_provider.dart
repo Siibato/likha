@@ -62,9 +62,10 @@ class LearnerDetailsNotifier extends StateNotifier<LearnerDetailsState> {
   }
 
   Future<void> load(String classId, String studentId) async {
+    final hasCached = state.details != null && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: true, clearError: true, clearDetails: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true);
     final result = await _get(GetLearnerDetailsParams(classId: classId, studentId: studentId));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(
@@ -140,9 +141,10 @@ class AttendanceNotifier extends StateNotifier<AttendanceState> {
   }
 
   Future<void> load(String classId, String studentId, {String? schoolYear}) async {
+    final hasCached = state.records.isNotEmpty && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true);
     final result = await _get(GetAttendanceParams(classId: classId, studentId: studentId, schoolYear: schoolYear));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(
@@ -219,9 +221,10 @@ class CoreValuesNotifier extends StateNotifier<CoreValuesState> {
   }
 
   Future<void> load(String classId, String studentId, {String? schoolYear}) async {
+    final hasCached = state.records.isNotEmpty && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true);
     final result = await _get(GetCoreValuesParams(classId: classId, studentId: studentId, schoolYear: schoolYear));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(
@@ -301,9 +304,10 @@ class Sf10Notifier extends StateNotifier<Sf10State> {
   }
 
   Future<void> load(String classId, String studentId) async {
+    final hasCached = state.data != null && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: true, clearError: true, clearData: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true);
     final result = await _get(GetSf10V2Params(classId: classId, studentId: studentId));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(

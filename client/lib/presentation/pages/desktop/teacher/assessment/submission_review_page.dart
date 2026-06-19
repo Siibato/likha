@@ -31,9 +31,7 @@ class _SubmissionReviewPageState
       submissionId: widget.submissionId,
       notifier: ref.read(teacherAssessmentProvider.notifier),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.init();
-    });
+    _controller.init();
   }
 
   @override

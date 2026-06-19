@@ -104,6 +104,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.createGradeItem(
         _localDataSource,
         _syncQueue,
+        _dataEventBus,
         classId: classId,
         data: data,
       );
@@ -116,6 +117,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.updateGradeItem(
         _localDataSource,
         _syncQueue,
+        _dataEventBus,
         id: id,
         data: data,
       );
@@ -125,6 +127,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.deleteGradeItem(
         _localDataSource,
         _syncQueue,
+        _dataEventBus,
         id: id,
       );
 
@@ -291,6 +294,7 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultFuture<Sf9Response> getSf9({
     required String classId,
     required String studentId,
+    bool skipBackgroundRefresh = false,
   }) =>
       ops.getSf9(
         _localDataSource,
@@ -298,17 +302,19 @@ class GradingRepositoryImpl implements GradingRepository {
         _dataEventBus,
         classId: classId,
         studentId: studentId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override
   ResultFuture<Sf9Response> getSf10({
     required String classId,
     required String studentId,
+    bool skipBackgroundRefresh = false,
   }) {
     // Forward to StudentRecordsRepository when available (new SF10 aggregate)
     if (_studentRecordsRepository != null) {
       return _studentRecordsRepository
-          .getSf10(classId: classId, studentId: studentId)
+          .getSf10(classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh)
           .then((result) => result.fold(
                 (failure) => Left(failure),
                 (sf10) => Right(_sf10ToSf9(sf10)),
@@ -320,6 +326,7 @@ class GradingRepositoryImpl implements GradingRepository {
       _dataEventBus,
       classId: classId,
       studentId: studentId,
+      skipBackgroundRefresh: skipBackgroundRefresh,
     );
   }
 
@@ -332,10 +339,7 @@ class GradingRepositoryImpl implements GradingRepository {
         .map((s) => Sf9SubjectRow(
               classTitle: s.classTitle,
               subjectGroup: s.subjectGroup,
-              q1: s.periodGrades.isNotEmpty ? s.periodGrades[0] : null,
-              q2: s.periodGrades.length > 1 ? s.periodGrades[1] : null,
-              q3: s.periodGrades.length > 2 ? s.periodGrades[2] : null,
-              q4: s.periodGrades.length > 3 ? s.periodGrades[3] : null,
+              periodGrades: s.periodGrades,
               finalGrade: s.finalGrade,
               descriptor: s.descriptor,
             ))
@@ -356,7 +360,7 @@ class GradingRepositoryImpl implements GradingRepository {
       generalAverage: () {
         final cr = currentRecord;
         if (cr != null && cr.finalAverage != null) {
-          return Sf9QuarterlyAverages(
+          return Sf9PeriodAverages(
             finalAverage: cr.finalAverage,
             descriptor: cr.descriptor,
           );

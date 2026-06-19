@@ -927,6 +927,8 @@ pub fn manual_school_settings(_ctx: &SeedContext) -> SchoolSettingsSpec {
         school_division: Some("Division of City Schools".into()),
         school_year: Some("2025-2026".into()),
         school_district: None,
+        school_head_name: Some("Dr. Juan Dela Cruz".into()),
+        school_head_position: Some("Principal II".into()),
         updated_at: _ctx.now(),
     }
 }

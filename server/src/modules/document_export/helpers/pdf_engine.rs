@@ -14,8 +14,11 @@ pub struct PdfEngine {
 
 impl PdfEngine {
     pub fn new(title: &str) -> Result<Self, Error> {
-        let (doc, page1, layer1) =
-            PdfDocument::new(title, Mm(297.0), Mm(210.0), "Layer 1");
+        Self::new_with_size(title, Mm(297.0), Mm(210.0))
+    }
+
+    pub fn new_with_size(title: &str, width: Mm, height: Mm) -> Result<Self, Error> {
+        let (doc, page1, layer1) = PdfDocument::new(title, width, height, "Layer 1");
         let font_regular = doc.add_builtin_font(BuiltinFont::Helvetica)?;
         let font_bold = doc.add_builtin_font(BuiltinFont::HelveticaBold)?;
         Ok(Self {

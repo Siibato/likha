@@ -13,6 +13,8 @@ abstract class SetupRemoteDataSource {
     required String schoolYear,
     required String schoolCode,
     String? schoolDistrict,
+    String? schoolHeadName,
+    String? schoolHeadPosition,
     String? idempotencyKey,
   });
   Future<void> updateSchoolCode({
@@ -38,6 +40,8 @@ class SetupRemoteDataSourceImpl implements SetupRemoteDataSource {
     required String schoolYear,
     required String schoolCode,
     String? schoolDistrict,
+    String? schoolHeadName,
+    String? schoolHeadPosition,
     String? idempotencyKey,
   }) =>
       ops_update.updateSchoolSettings(
@@ -48,6 +52,8 @@ class SetupRemoteDataSourceImpl implements SetupRemoteDataSource {
         schoolYear: schoolYear,
         schoolCode: schoolCode,
         schoolDistrict: schoolDistrict,
+        schoolHeadName: schoolHeadName,
+        schoolHeadPosition: schoolHeadPosition,
         idempotencyKey: idempotencyKey,
       );
 

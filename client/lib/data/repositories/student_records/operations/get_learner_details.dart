@@ -19,15 +19,17 @@ ResultFuture<LearnerDetails?> getLearnerDetails(
   try {
     try {
       final cached = await localDataSource.getCachedLearnerDetails(studentId);
-      if (cached == null) throw CacheException('No cached learner details');
 
       if (!skipBackgroundRefresh) {
         fireRemoteFetch(
           dedupKey: 'studentRecords/learnerDetails/$studentId/bg',
           remote: () => remoteDataSource.getLearnerDetails(classId: classId, studentId: studentId),
           onSuccess: (fresh) async {
-            await localDataSource.cacheLearnerDetails(fresh);
-            dataEventBus.notifyLearnerDetailsChanged(studentId);
+            try {
+              await localDataSource.cacheLearnerDetails(fresh);
+            } catch (_) {
+              // Cache write failure is non-fatal for background refresh
+            }
           },
         );
       }
@@ -38,7 +40,11 @@ ResultFuture<LearnerDetails?> getLearnerDetails(
           dedupKey: 'studentRecords/learnerDetails/$studentId',
           remote: () => remoteDataSource.getLearnerDetails(classId: classId, studentId: studentId),
         );
-        await localDataSource.cacheLearnerDetails(fresh);
+        try {
+          await localDataSource.cacheLearnerDetails(fresh);
+        } catch (_) {
+          // Cache write failure is non-fatal; user still gets the data
+        }
         return Right(fresh);
       } on ServerException catch (e) {
         if (e.statusCode == 404) return const Right(null);

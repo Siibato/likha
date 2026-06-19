@@ -166,6 +166,7 @@ class GradeScoreCell extends StatelessWidget {
   final Color bgColor;
   final bool isOverride;
   final bool empty;
+  final Color? color;
 
   const GradeScoreCell({
     super.key,
@@ -175,6 +176,7 @@ class GradeScoreCell extends StatelessWidget {
     required this.bgColor,
     this.isOverride = false,
     this.empty = false,
+    this.color,
   });
 
   @override
@@ -194,11 +196,12 @@ class GradeScoreCell extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
-          color: isOverride
-              ? AppColors.accentCharcoal
-              : (empty
-                  ? AppColors.foregroundTertiary
-                  : AppColors.foregroundPrimary),
+          color: color ??
+              (isOverride
+                  ? AppColors.accentCharcoal
+                  : (empty
+                      ? AppColors.foregroundTertiary
+                      : AppColors.foregroundPrimary)),
         ),
       ),
     );

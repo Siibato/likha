@@ -65,21 +65,19 @@ class _AssessmentStatisticsPageState
                 : SingleChildScrollView(
                     child: Column(
                       children: [
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                  child: _buildClassPerformanceCard(stats)),
-                              const SizedBox(width: 24),
-                              Expanded(
-                                child: ScoreDistributionChart(
-                                  scoreDistribution:
-                                      stats.classStatistics.scoreDistribution,
-                                ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                child: _buildClassPerformanceCard(stats)),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: ScoreDistributionChart(
+                                scoreDistribution:
+                                    stats.classStatistics.scoreDistribution,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
                         SizedBox(
@@ -105,7 +103,10 @@ class _AssessmentStatisticsPageState
                             ],
                           ),
                           const SizedBox(height: 24),
-                          _buildItemAnalysisCard(stats),
+                          SizedBox(
+                            width: double.infinity,
+                            child: _buildItemAnalysisCard(stats),
+                          ),
                         ],
                         const SizedBox(height: 32),
                       ],
@@ -233,7 +234,7 @@ class _AssessmentStatisticsPageState
                   ),
                   columnSpacing: 20,
                   columns: const [
-                    DataColumn(label: Text('Question')),
+                    DataColumn(label: Expanded(child: Text('Question'))),
                     DataColumn(label: Text('Correct'), numeric: true),
                     DataColumn(label: Text('Incorrect'), numeric: true),
                     DataColumn(label: Text('% Correct'), numeric: true),
@@ -341,30 +342,34 @@ class _AssessmentStatisticsPageState
   }
 
   Widget _buildItemAnalysisTable(List<ItemAnalysis> items) {
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: AppColors.borderLight),
-      child: DataTable(
-        headingRowColor: WidgetStateProperty.all(
-          AppColors.backgroundSecondary,
-        ),
-        headingTextStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AppColors.foregroundPrimary,
-        ),
-        dataTextStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-          color: AppColors.foregroundPrimary,
-        ),
-        columnSpacing: 24,
-        columns: const [
-          DataColumn(label: Text('Question')),
-          DataColumn(label: Text('Difficulty'), numeric: true),
-          DataColumn(label: Text('Discrimination'), numeric: true),
-          DataColumn(label: Text('Verdict')),
-          DataColumn(label: Text('Distractors')),
-        ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Theme(
+          data: Theme.of(context).copyWith(dividerColor: AppColors.borderLight),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(
+                AppColors.backgroundSecondary,
+              ),
+              headingTextStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.foregroundPrimary,
+              ),
+              dataTextStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.foregroundPrimary,
+              ),
+              columnSpacing: 24,
+              columns: const [
+                DataColumn(label: Expanded(child: Text('Question'))),
+                DataColumn(label: Text('Difficulty'), numeric: true),
+                DataColumn(label: Text('Discrimination'), numeric: true),
+                DataColumn(label: Text('Verdict')),
+                // DataColumn(label: Text('Distractors')),
+              ],
         rows: items.map((item) {
           return DataRow(
             cells: [
@@ -376,70 +381,99 @@ class _AssessmentStatisticsPageState
                 ),
               ),
                 DataCell(
-                  Text(
-                    '${item.difficultyIndex.toStringAsFixed(2)}\n${item.difficultyLabel}',
-                    style: const TextStyle(fontSize: 12, height: 1.3),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        item.difficultyIndex.toStringAsFixed(2),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      Text(
+                        item.difficultyLabel,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.foregroundTertiary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 DataCell(
-                  Text(
-                    '${item.discriminationIndex.toStringAsFixed(2)}\n${item.discriminationLabel}',
-                    style: const TextStyle(fontSize: 12, height: 1.3),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        item.discriminationIndex.toStringAsFixed(2),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      Text(
+                        item.discriminationLabel,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.foregroundTertiary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 DataCell(_buildVerdictBadge(item.verdict)),
-                DataCell(_buildDistractorCell(item.distractors)),
+                // DataCell(_buildDistractorCell(item.distractors)),
               ],
             );
           }).toList(),
         ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildDistractorCell(List<DistractorAnalysis>? distractors) {
-    if (distractors == null || distractors.isEmpty) {
-      return const Text(
-        '—',
-        style: TextStyle(color: AppColors.foregroundTertiary),
-      );
-    }
-
-    return Wrap(
-      spacing: 6,
-      runSpacing: 4,
-      children: distractors.map((d) {
-          final color = d.isCorrect
-              ? AppColors.semanticSuccess
-              : d.isEffective
-                  ? AppColors.foregroundTertiary
-                  : AppColors.semanticError;
-
-          return Tooltip(
-            message: d.isCorrect
-                ? 'Correct answer — ${d.totalPercentage.toStringAsFixed(0)}% chose this'
-                : d.isEffective
-                    ? 'Effective distractor — ${d.totalPercentage.toStringAsFixed(0)}% chose this (lower > upper)'
-                    : 'Ineffective distractor — ${d.totalPercentage.toStringAsFixed(0)}% chose this',
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: color.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                '${d.totalPercentage.toStringAsFixed(0)}%',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-    );
-  }
+  // Widget _buildDistractorCell(List<DistractorAnalysis>? distractors) {
+  //   if (distractors == null || distractors.isEmpty) {
+  //     return const Text(
+  //       '—',
+  //       style: TextStyle(color: AppColors.foregroundTertiary),
+  //     );
+  //   }
+  //
+  //   return Wrap(
+  //     spacing: 6,
+  //     runSpacing: 4,
+  //     children: distractors.map((d) {
+  //         final color = d.isCorrect
+  //             ? AppColors.semanticSuccess
+  //             : d.isEffective
+  //                 ? AppColors.foregroundTertiary
+  //                 : AppColors.semanticError;
+  //
+  //         return Tooltip(
+  //           message: d.isCorrect
+  //               ? 'Correct answer — ${d.totalPercentage.toStringAsFixed(0)}% chose this'
+  //               : d.isEffective
+  //                   ? 'Effective distractor — ${d.totalPercentage.toStringAsFixed(0)}% chose this (lower > upper)'
+  //                   : 'Ineffective distractor — ${d.totalPercentage.toStringAsFixed(0)}% chose this',
+  //           child: Container(
+  //             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+  //             decoration: BoxDecoration(
+  //               color: color.withValues(alpha: 0.08),
+  //               borderRadius: BorderRadius.circular(4),
+  //               border: Border.all(color: color.withValues(alpha: 0.2)),
+  //             ),
+  //             child: Text(
+  //               '${d.totalPercentage.toStringAsFixed(0)}%',
+  //               style: TextStyle(
+  //                 fontSize: 11,
+  //                 fontWeight: FontWeight.w600,
+  //                 color: color,
+  //               ),
+  //             ),
+  //           ),
+  //         );
+  //       }).toList(),
+  //   );
+  // }
 
   Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
     return Padding(

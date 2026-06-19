@@ -1,0 +1,185 @@
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/database/local_database.dart';
+import 'package:likha/data/models/grading/sf9_model.dart';
+
+String _getDescriptor(int grade) {
+  if (grade >= 90) return 'Outstanding';
+  if (grade >= 85) return 'Very Satisfactory';
+  if (grade >= 80) return 'Satisfactory';
+  if (grade >= 75) return 'Fairly Satisfactory';
+  return 'Did Not Meet Expectations';
+}
+
+int _periodCount(String gradingPeriodType) {
+  switch (gradingPeriodType) {
+    case 'semester':
+      return 2;
+    case 'trimester':
+      return 3;
+    default:
+      return 4;
+  }
+}
+
+Future<Sf9ResponseModel?> assembleSf9Local(
+  LocalDatabase localDatabase,
+  String classId,
+  String studentId,
+) async {
+  final db = await localDatabase.database;
+
+  // 1. Get the advisory class
+  final classRows = await db.query(
+    DbTables.classes,
+    where: '${CommonCols.id} = ?',
+    whereArgs: [classId],
+    limit: 1,
+  );
+  if (classRows.isEmpty) return null;
+
+  final classRow = classRows.first;
+  final isAdvisory = (classRow[ClassesCols.isAdvisory] as int?) == 1;
+  if (!isAdvisory) return null;
+
+  final schoolYear = classRow[ClassesCols.schoolYear] as String?;
+  final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
+  final section = classRow[ClassesCols.title] as String?;
+  final gradingPeriodType =
+      classRow[ClassesCols.gradingPeriodType] as String? ?? 'quarter';
+  final teacherName = classRow[ClassesCols.teacherFullName] as String?;
+  final numPeriods = _periodCount(gradingPeriodType);
+
+  // 2. Get student name from users table
+  final userRows = await db.query(
+    DbTables.users,
+    columns: [UsersCols.fullName],
+    where: '${CommonCols.id} = ?',
+    whereArgs: [studentId],
+    limit: 1,
+  );
+  if (userRows.isEmpty) return null;
+  final studentName = userRows.first[UsersCols.fullName] as String? ?? 'Unknown Student';
+
+  // 3. Get learner details
+  final learnerRows = await db.query(
+    DbTables.learnerDetails,
+    where: '${LearnerDetailsCols.userId} = ?',
+    whereArgs: [studentId],
+    limit: 1,
+  );
+  final learner = learnerRows.isNotEmpty ? learnerRows.first : null;
+
+  // 4. Get all class_participants for this student (not removed)
+  final participantRows = await db.query(
+    DbTables.classParticipants,
+    columns: [ClassParticipantsCols.classId],
+    where:
+        '${ClassParticipantsCols.userId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
+    whereArgs: [studentId],
+  );
+  if (participantRows.isEmpty) return null;
+
+  final enrolledClassIds = participantRows
+      .map((r) => r[ClassParticipantsCols.classId] as String?)
+      .where((id) => id != null && id.isNotEmpty)
+      .toList()
+      .cast<String>();
+
+  // 5. Filter class IDs by matching school_year
+  final classIdPlaceholders = enrolledClassIds.map((_) => '?').join(', ');
+  final classMatches = await db.rawQuery(
+    'SELECT ${CommonCols.id}, ${ClassesCols.title} FROM ${DbTables.classes} '
+    'WHERE ${CommonCols.id} IN ($classIdPlaceholders) '
+    'AND ${ClassesCols.schoolYear} = ? '
+    'AND ${CommonCols.deletedAt} IS NULL',
+    [...enrolledClassIds, schoolYear],
+  );
+
+  if (classMatches.isEmpty) return null;
+
+  // 6. For each enrolled class, get period_grades
+  final subjects = <Sf9SubjectRowModel>[];
+  final periodSums = List<List<int>>.generate(numPeriods, (_) => []);
+  final finalGrades = <int>[];
+
+  for (final classMatch in classMatches) {
+    final cid = classMatch[CommonCols.id] as String;
+    final ctitle = classMatch[ClassesCols.title] as String? ?? '';
+
+    final pgRows = await db.query(
+      DbTables.periodGrades,
+      where:
+          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
+      whereArgs: [cid, studentId],
+    );
+
+    final periodVals = List<int?>.filled(numPeriods, null);
+    for (final pg in pgRows) {
+      final periodNum = pg[PeriodGradesCols.gradingPeriodNumber] as int?;
+      final transmuted = pg[PeriodGradesCols.transmutedGrade] as int?;
+      if (periodNum != null && transmuted != null) {
+        final idx = periodNum - 1;
+        if (idx >= 0 && idx < numPeriods) {
+          periodVals[idx] = transmuted;
+          periodSums[idx].add(transmuted);
+        }
+      }
+    }
+
+    final transmuted = periodVals.whereType<int>().toList();
+    final int? finalGrade;
+    if (transmuted.isEmpty) {
+      finalGrade = null;
+    } else {
+      final avg = transmuted.reduce((a, b) => a + b) / transmuted.length;
+      finalGrade = avg.round();
+    }
+
+    if (finalGrade != null) {
+      finalGrades.add(finalGrade);
+    }
+
+    final descriptor = finalGrade != null ? _getDescriptor(finalGrade) : null;
+
+    subjects.add(Sf9SubjectRowModel(
+      classTitle: ctitle,
+      periodGrades: periodVals,
+      finalGrade: finalGrade,
+      descriptor: descriptor,
+    ));
+  }
+
+  // 7. Compute general average
+  int? computeAvg(List<int> grades) {
+    if (grades.isEmpty) return null;
+    final avg = grades.reduce((a, b) => a + b) / grades.length;
+    return avg.round();
+  }
+
+  final finalAverage = computeAvg(finalGrades);
+  final gaDescriptor =
+      finalAverage != null ? _getDescriptor(finalAverage) : null;
+
+  final generalAverage = Sf9PeriodAveragesModel(
+    periodGrades: periodSums.map((s) => computeAvg(s)).toList(),
+    finalAverage: finalAverage,
+    descriptor: gaDescriptor,
+  );
+
+  return Sf9ResponseModel(
+    studentId: studentId,
+    studentName: studentName,
+    gradeLevel: gradeLevel,
+    schoolYear: schoolYear,
+    section: section,
+    lrn: learner?[LearnerDetailsCols.lrn] as String?,
+    age: learner?[LearnerDetailsCols.age] as int?,
+    sex: learner?[LearnerDetailsCols.sex] as String?,
+    trackStrand: learner?[LearnerDetailsCols.trackStrand] as String?,
+    curriculum: learner?[LearnerDetailsCols.curriculum] as String?,
+    teacherName: teacherName,
+    gradingPeriodType: gradingPeriodType,
+    subjects: subjects,
+    generalAverage: generalAverage,
+  );
+}

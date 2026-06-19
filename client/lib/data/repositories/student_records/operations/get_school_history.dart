@@ -27,7 +27,6 @@ ResultFuture<List<SchoolHistory>> getSchoolHistory(
           remote: () => remoteDataSource.getSchoolHistory(classId: classId, studentId: studentId),
           onSuccess: (fresh) async {
             await localDataSource.cacheSchoolHistory(fresh);
-            dataEventBus.notifySchoolHistoryChanged(studentId);
           },
         );
       }

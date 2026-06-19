@@ -13,6 +13,8 @@ class SchoolSettingsModel extends SchoolSettings {
     required super.schoolYear,
     required super.schoolCode,
     super.schoolDistrict,
+    super.schoolHeadName,
+    super.schoolHeadPosition,
     this.cachedAt,
     this.syncStatus = SyncStatus.synced,
   });
@@ -26,6 +28,8 @@ class SchoolSettingsModel extends SchoolSettings {
       schoolYear: json['school_year'] as String? ?? '',
       schoolCode: json['school_code'] as String? ?? '',
       schoolDistrict: json['school_district'] as String?,
+      schoolHeadName: json['school_head_name'] as String?,
+      schoolHeadPosition: json['school_head_position'] as String?,
       syncStatus: SyncStatus.synced,
     );
   }
@@ -39,6 +43,8 @@ class SchoolSettingsModel extends SchoolSettings {
       schoolYear: map['school_year'] as String? ?? '',
       schoolCode: map['school_code'] as String? ?? '',
       schoolDistrict: map['school_district'] as String?,
+      schoolHeadName: map['school_head_name'] as String?,
+      schoolHeadPosition: map['school_head_position'] as String?,
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
@@ -58,6 +64,8 @@ class SchoolSettingsModel extends SchoolSettings {
       'school_year': schoolYear,
       'school_code': schoolCode,
       'school_district': schoolDistrict,
+      'school_head_name': schoolHeadName,
+      'school_head_position': schoolHeadPosition,
       'cached_at': cachedAt?.toIso8601String(),
       'sync_status': syncStatus.dbValue,
     };
@@ -72,6 +80,8 @@ class SchoolSettingsModel extends SchoolSettings {
       'school_year': schoolYear,
       'school_code': schoolCode,
       'school_district': schoolDistrict,
+      'school_head_name': schoolHeadName,
+      'school_head_position': schoolHeadPosition,
     };
   }
 
@@ -84,6 +94,10 @@ class SchoolSettingsModel extends SchoolSettings {
     String? schoolCode,
     String? schoolDistrict,
     bool clearSchoolDistrict = false,
+    String? schoolHeadName,
+    bool clearSchoolHeadName = false,
+    String? schoolHeadPosition,
+    bool clearSchoolHeadPosition = false,
     DateTime? cachedAt,
     SyncStatus? syncStatus,
   }) {
@@ -95,6 +109,8 @@ class SchoolSettingsModel extends SchoolSettings {
       schoolYear: schoolYear ?? this.schoolYear,
       schoolCode: schoolCode ?? this.schoolCode,
       schoolDistrict: clearSchoolDistrict ? null : (schoolDistrict ?? this.schoolDistrict),
+      schoolHeadName: clearSchoolHeadName ? null : (schoolHeadName ?? this.schoolHeadName),
+      schoolHeadPosition: clearSchoolHeadPosition ? null : (schoolHeadPosition ?? this.schoolHeadPosition),
       cachedAt: cachedAt ?? this.cachedAt,
       syncStatus: syncStatus ?? this.syncStatus,
     );

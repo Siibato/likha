@@ -15,15 +15,24 @@ Future<void> saveTos(
   final now = DateTime.now();
 
   Future<void> doWrite(DatabaseExecutor executor) async {
-    await executor.insert(
+    final map = {
+      ...tos.toMap(),
+      CommonCols.syncStatus: 'pending',
+      CommonCols.cachedAt: now.toIso8601String(),
+    };
+    final inserted = await executor.insert(
       DbTables.tableOfSpecifications,
-      {
-        ...tos.toMap(),
-        CommonCols.syncStatus: 'pending',
-        CommonCols.cachedAt: now.toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      map,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
+    if (inserted == 0) {
+      await executor.update(
+        DbTables.tableOfSpecifications,
+        map,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [tos.id],
+      );
+    }
   }
 
   if (txn != null) {

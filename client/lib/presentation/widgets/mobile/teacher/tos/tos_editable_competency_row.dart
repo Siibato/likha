@@ -12,7 +12,6 @@ class TosEditableCompetencyRow extends ConsumerWidget {
   final int totalDays;
   final String timeUnit;
   final TosDetailController controller;
-  final String tosId;
 
   const TosEditableCompetencyRow({
     super.key,
@@ -20,7 +19,6 @@ class TosEditableCompetencyRow extends ConsumerWidget {
     required this.totalDays,
     required this.timeUnit,
     required this.controller,
-    required this.tosId,
   });
 
   @override

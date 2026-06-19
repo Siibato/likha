@@ -213,7 +213,7 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
             Text(widget.state.error!, style: const TextStyle(fontSize: 13, color: AppColors.semanticError)),
           ],
           const SizedBox(height: 20),
-          if (widget.state.isLoading)
+          if (widget.state.isLoading && widget.state.records.isEmpty)
             const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
           else
             Table(

@@ -22,5 +22,5 @@ abstract class StudentRecordsRepository {
   ResultFuture<PreviousSubject> upsertPreviousSubject({required String classId, required String studentId, required Map<String, dynamic> data});
   ResultFuture<List<PreviousAttendance>> getPreviousAttendance({required String classId, required String studentId, String? schoolHistoryId});
   ResultFuture<PreviousAttendance> upsertPreviousAttendance({required String classId, required String studentId, required Map<String, dynamic> data});
-  ResultFuture<Sf10Response> getSf10({required String classId, required String studentId});
+  ResultFuture<Sf10Response> getSf10({required String classId, required String studentId, bool skipBackgroundRefresh = false});
 }

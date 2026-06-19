@@ -47,7 +47,7 @@ ResultFuture<MutationResult<List<TosCompetency>>> bulkAddCompetencies(
           operation: SyncOperation.create,
           payload: {
             'tos_id': tosId,
-            'competencies': competencies,
+            'competencies': models.map((m) => m.toPayload()).toList(),
           },
           status: SyncStatus.pending,
           retryCount: 0,

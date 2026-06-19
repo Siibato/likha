@@ -10,13 +10,11 @@ import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 class TosDetailActionChips extends ConsumerWidget {
   final TableOfSpecifications tos;
   final List<TosCompetency> competencies;
-  final String tosId;
 
   const TosDetailActionChips({
     super.key,
     required this.tos,
     required this.competencies,
-    required this.tosId,
   });
 
   @override
@@ -46,7 +44,7 @@ class TosDetailActionChips extends ConsumerWidget {
                 'This will permanently delete this Table of Specifications and all its competencies.',
             confirmLabel: 'Delete',
             onConfirm: () async {
-              await ref.read(tosProvider.notifier).deleteTos(tosId);
+              await ref.read(tosProvider.notifier).deleteTos(tos.id);
               if (context.mounted) Navigator.pop(context);
             },
           ),

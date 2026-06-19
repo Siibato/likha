@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -124,6 +126,39 @@ Future<void> _seedPeriodGrade(GradingLocalDataSource local, PeriodGradeModel pg)
   await local.savePeriodGrades([pg]);
 }
 
+Future<void> _seedStudent(String id, {String fullName = 'Student'}) async {
+  final db = await LocalDatabase().database;
+  await db.insert(DbTables.users, {
+    CommonCols.id: id,
+    UsersCols.username: id,
+    UsersCols.fullName: fullName,
+    UsersCols.role: 'student',
+    UsersCols.accountStatus: 'active',
+    CommonCols.createdAt: DateTime.now().toIso8601String(),
+    CommonCols.updatedAt: DateTime.now().toIso8601String(),
+  }, conflictAlgorithm: ConflictAlgorithm.replace);
+}
+
+Future<void> _seedParticipant(String classId, String userId) async {
+  final db = await LocalDatabase().database;
+  await db.insert(DbTables.classParticipants, {
+    CommonCols.id: 'cp-$classId-$userId',
+    ClassParticipantsCols.classId: classId,
+    ClassParticipantsCols.userId: userId,
+    ClassParticipantsCols.joinedAt: DateTime.now().toIso8601String(),
+    CommonCols.updatedAt: DateTime.now().toIso8601String(),
+  }, conflictAlgorithm: ConflictAlgorithm.replace);
+}
+
+Future<List<Map<String, dynamic>>> _getScoreRowsByItem(String gradeItemId) async {
+  final db = await LocalDatabase().database;
+  return db.query(
+    DbTables.gradeScores,
+    where: '${GradeScoresCols.gradeItemId} = ?',
+    whereArgs: [gradeItemId],
+  );
+}
+
 Future<List<Map<String, dynamic>>> _getSyncQueueRows() async {
   final db = await LocalDatabase().database;
   return db.query(DbTables.syncQueue);
@@ -191,14 +226,17 @@ void _assertSyncQueueEntry(
 void main() {
   late GradingLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
+  late DataEventBus dataEventBus;
 
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = GradingLocalDataSourceImpl(LocalDatabase(), syncQueue);
+    dataEventBus = DataEventBus();
   });
 
   tearDown(() async {
+    dataEventBus.dispose();
     await closeTestDatabase();
   });
 
@@ -245,10 +283,16 @@ void main() {
   });
 
   group('createGradeItem', () {
-    test('returns MutationResult<GradeItem> with pending and enqueues create op', () async {
+    test('returns MutationResult<GradeItem> with pending, enqueues create op, and inserts score=0 rows for enrolled students', () async {
+      await _seedStudent('student-a', fullName: 'Alice');
+      await _seedStudent('student-b', fullName: 'Bob');
+      await _seedParticipant('class-1', 'student-a');
+      await _seedParticipant('class-1', 'student-b');
+
       final result = await createGradeItem(
         local,
         syncQueue,
+        dataEventBus,
         classId: 'class-1',
         data: {
           'title': 'New Item',
@@ -270,6 +314,13 @@ void main() {
 
       final queue = await _getSyncQueueRows();
       _assertSyncQueueEntry(queue, count: 1, entityType: SyncEntityType.gradeItem, operation: SyncOperation.create);
+
+      final scoreRows = await _getScoreRowsByItem(entity.id);
+      expect(scoreRows.length, 2);
+      for (final scoreRow in scoreRows) {
+        expect(scoreRow[GradeScoresCols.score], 0.0);
+        expect(scoreRow[GradeScoresCols.isAutoPopulated], 1);
+      }
     });
   });
 
@@ -280,6 +331,7 @@ void main() {
       final result = await updateGradeItem(
         local,
         syncQueue,
+        dataEventBus,
         id: 'i1',
         data: {'title': 'New Title'},
       );
@@ -304,6 +356,7 @@ void main() {
       final result = await deleteGradeItem(
         local,
         syncQueue,
+        dataEventBus,
         id: 'i1',
       );
 

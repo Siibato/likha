@@ -79,6 +79,8 @@ class SchoolSettingsNotifier extends StateNotifier<SchoolSettingsState> {
     required String schoolYear,
     required String schoolCode,
     String? schoolDistrict,
+    String? schoolHeadName,
+    String? schoolHeadPosition,
   }) async {
     state = state.copyWith(isSaving: true, clearError: true);
     final result = await _updateSchoolSettings(
@@ -88,6 +90,8 @@ class SchoolSettingsNotifier extends StateNotifier<SchoolSettingsState> {
       schoolYear: schoolYear,
       schoolCode: schoolCode,
       schoolDistrict: schoolDistrict,
+      schoolHeadName: schoolHeadName,
+      schoolHeadPosition: schoolHeadPosition,
     );
     return result.fold(
       (failure) {

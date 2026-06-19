@@ -16,7 +16,7 @@ abstract class TosLocalDataSource {
   Future<List<TosModel>> getTosByClass(String classId);
   Future<TosModel?> getTosById(String tosId);
   Future<List<CompetencyModel>> getCompetenciesByTos(String tosId);
-  Future<CompetencyModel?> getCompetencyById(String competencyId);
+  Future<CompetencyModel?> getCompetencyById(String competencyId, {Transaction? txn});
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
@@ -72,8 +72,8 @@ class TosLocalDataSourceImpl implements TosLocalDataSource {
       ops.getCompetenciesByTos(localDatabase, tosId);
 
   @override
-  Future<CompetencyModel?> getCompetencyById(String competencyId) =>
-      ops.getCompetencyById(localDatabase, competencyId);
+  Future<CompetencyModel?> getCompetencyById(String competencyId, {Transaction? txn}) =>
+      ops.getCompetencyById(localDatabase, competencyId, txn: txn);
 
   @override
   Future<List<MelcEntryModel>> searchMelcs({

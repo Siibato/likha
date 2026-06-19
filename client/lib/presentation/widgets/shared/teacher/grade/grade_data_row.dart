@@ -212,6 +212,7 @@ class GradeDataRow extends StatelessWidget {
     final gs = studentScores[item.id];
     final cellKey = '${sid}_${item.id}';
     final isEditing = editingKey == cellKey;
+    final isAutoPopulatedZero = gs?.effectiveScore == 0 && gs?.isAutoPopulated == true;
 
     if (isEditing) {
       return GradeInlineEditCell(
@@ -233,6 +234,7 @@ class GradeDataRow extends StatelessWidget {
         bgColor: bgColor,
         isOverride: gs?.overrideScore != null,
         empty: gs?.effectiveScore == null,
+        color: isAutoPopulatedZero ? AppColors.foregroundTertiary : null,
       ),
     );
   }

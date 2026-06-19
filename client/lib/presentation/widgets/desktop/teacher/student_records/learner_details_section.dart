@@ -101,7 +101,7 @@ class _LearnerDetailsSectionState extends ConsumerState<LearnerDetailsSection> {
                     title: 'Select a student',
                     subtitle: 'Choose a student from the list to edit their learner details',
                   )
-                : state.isLoading
+                : state.isLoading && state.details == null
                     ? const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
                     : _LearnerDetailsForm(
                         classId: widget.classId,

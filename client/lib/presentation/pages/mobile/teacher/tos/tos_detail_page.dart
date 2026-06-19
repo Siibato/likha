@@ -75,7 +75,7 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                         : RefreshIndicator(
                             onRefresh: () => ref
                                 .read(tosProvider.notifier)
-                                .loadTosDetail(widget.tosId),
+                                .loadTosDetail(tos.id),
                             color: AppColors.accentCharcoal,
                             child: SingleChildScrollView(
                               physics: const AlwaysScrollableScrollPhysics(),
@@ -86,7 +86,6 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                   TosDetailActionChips(
                                     tos: tos,
                                     competencies: competencies,
-                                    tosId: widget.tosId,
                                   ),
                                   const SizedBox(height: 16),
                                   TosSettingsCard(
@@ -106,7 +105,6 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                                     tos: tos,
                                     competencies: competencies,
                                     controller: _controller,
-                                    tosId: widget.tosId,
                                   ),
                                   const SizedBox(height: 32),
                                 ],

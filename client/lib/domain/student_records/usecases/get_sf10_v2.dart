@@ -7,12 +7,17 @@ class GetSf10V2 {
   GetSf10V2(this._repository);
 
   ResultFuture<Sf10Response> call(GetSf10V2Params params) {
-    return _repository.getSf10(classId: params.classId, studentId: params.studentId);
+    return _repository.getSf10(
+      classId: params.classId,
+      studentId: params.studentId,
+      skipBackgroundRefresh: params.skipBackgroundRefresh,
+    );
   }
 }
 
 class GetSf10V2Params {
   final String classId;
   final String studentId;
-  GetSf10V2Params({required this.classId, required this.studentId});
+  final bool skipBackgroundRefresh;
+  GetSf10V2Params({required this.classId, required this.studentId, this.skipBackgroundRefresh = false});
 }

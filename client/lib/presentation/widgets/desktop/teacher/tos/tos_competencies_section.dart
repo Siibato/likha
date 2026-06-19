@@ -13,14 +13,12 @@ class TosCompetenciesSection extends StatelessWidget {
   final TableOfSpecifications tos;
   final List<TosCompetency> competencies;
   final TosDetailController controller;
-  final String tosId;
 
   const TosCompetenciesSection({
     super.key,
     required this.tos,
     required this.competencies,
     required this.controller,
-    required this.tosId,
   });
 
   @override
@@ -53,7 +51,6 @@ class TosCompetenciesSection extends StatelessWidget {
               competency: c,
               timeUnit: tos.timeUnit,
               controller: controller,
-              tosId: tosId,
             ),
           ),
         const SizedBox(height: 16),
@@ -62,12 +59,12 @@ class TosCompetenciesSection extends StatelessWidget {
           runSpacing: 8,
           children: [
             TosAddCompetencyButton(
-              tosId: tosId,
+              tosId: tos.id,
               timeUnit: tos.timeUnit,
               controller: controller,
             ),
             OutlinedButton.icon(
-              onPressed: () => MelcsSearchDialog.show(context, tosId),
+              onPressed: () => MelcsSearchDialog.show(context, tos.id),
               icon: const Icon(Icons.search, size: 18),
               label: const Text('Import from MELCs'),
               style: OutlinedButton.styleFrom(
@@ -76,7 +73,7 @@ class TosCompetenciesSection extends StatelessWidget {
               ),
             ),
             OutlinedButton.icon(
-              onPressed: () => BulkPasteSheet.show(context, tosId),
+              onPressed: () => BulkPasteSheet.show(context, tos.id),
               icon: const Icon(Icons.paste, size: 18),
               label: const Text('Bulk Paste'),
               style: OutlinedButton.styleFrom(

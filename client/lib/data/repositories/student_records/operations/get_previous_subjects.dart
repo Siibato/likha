@@ -28,9 +28,6 @@ ResultFuture<List<PreviousSubject>> getPreviousSubjects(
           remote: () => remoteDataSource.getPreviousSubjects(classId: classId, studentId: studentId, schoolHistoryId: schoolHistoryId),
           onSuccess: (fresh) async {
             await localDataSource.cachePreviousSubjects(fresh);
-            if (schoolHistoryId != null) {
-              dataEventBus.notifyPreviousSubjectsChanged(schoolHistoryId);
-            }
           },
         );
       }

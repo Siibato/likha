@@ -66,7 +66,6 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
               TosDetailActions(
                 tos: tos,
                 competencies: competencies,
-                tosId: widget.tosId,
               ),
           ],
           body: state.isLoading && tos == null
@@ -87,7 +86,6 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
                           tos: tos,
                           competencies: competencies,
                           controller: _controller,
-                          tosId: widget.tosId,
                         ),
                       ),
                       const SizedBox(width: 24),

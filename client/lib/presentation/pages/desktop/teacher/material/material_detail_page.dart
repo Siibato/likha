@@ -43,7 +43,9 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(learningMaterialProvider);
-    final material = state.currentMaterial;
+    final material =
+        state.currentMaterial?.id == widget.materialId ? state.currentMaterial : null;
+    final isInitialLoad = state.isLoading && material == null;
 
     return ProviderMessageListener<LearningMaterialState>(
       provider: learningMaterialProvider,
@@ -78,8 +80,17 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                           notifier:
                               ref.read(learningMaterialProvider.notifier),
                         ),
-                icon: const Icon(Icons.upload_file_rounded, size: 18),
-                label: const Text('Upload File'),
+                icon: state.isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.foregroundDark,
+                        ),
+                      )
+                    : const Icon(Icons.upload_file_rounded, size: 18),
+                label: Text(state.isLoading ? 'Uploading...' : 'Upload File'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.foregroundDark,
                   side: const BorderSide(color: AppColors.borderLight),
@@ -98,7 +109,7 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
               ),
             ],
           ],
-          body: state.isLoading && material == null
+          body: isInitialLoad
               ? const Center(
                   child: CircularProgressIndicator(
                     color: AppColors.foregroundPrimary,

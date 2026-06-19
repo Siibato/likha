@@ -28,9 +28,6 @@ ResultFuture<List<PreviousAttendance>> getPreviousAttendance(
           remote: () => remoteDataSource.getPreviousAttendance(classId: classId, studentId: studentId, schoolHistoryId: schoolHistoryId),
           onSuccess: (fresh) async {
             await localDataSource.cachePreviousAttendance(fresh);
-            if (schoolHistoryId != null) {
-              dataEventBus.notifyPreviousAttendanceChanged(schoolHistoryId);
-            }
           },
         );
       }

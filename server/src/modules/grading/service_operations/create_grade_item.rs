@@ -22,13 +22,25 @@ impl crate::modules::grading::service::GradeComputationService {
                 class_id,
                 request.title,
                 request.component,
-                request.grading_period_number,
+                Some(grading_period_number),
                 request.total_points,
                 source_type,
                 source_id,
                 order_index,
             )
             .await?;
+
+        let enrolled = self.repo.get_enrolled_student_ids(class_id).await?;
+        for (student_id, _name) in &enrolled {
+            self.repo.upsert_score(item.id, *student_id, Some(0.0), true).await?;
+        }
+        tracing::info!(
+            "Initialized {} score=0 rows for grade_item {} in class {}",
+            enrolled.len(),
+            item.id,
+            class_id
+        );
+
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_class_grades(class_id, grading_period_number).await;
         }

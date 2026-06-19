@@ -8,6 +8,8 @@ class SchoolSettings extends Equatable {
   final String schoolYear;
   final String schoolCode;
   final String? schoolDistrict;
+  final String? schoolHeadName;
+  final String? schoolHeadPosition;
 
   const SchoolSettings({
     required this.id,
@@ -17,6 +19,8 @@ class SchoolSettings extends Equatable {
     required this.schoolYear,
     required this.schoolCode,
     this.schoolDistrict,
+    this.schoolHeadName,
+    this.schoolHeadPosition,
   });
 
   @override
@@ -28,5 +32,7 @@ class SchoolSettings extends Equatable {
         schoolYear,
         schoolCode,
         schoolDistrict,
+        schoolHeadName,
+        schoolHeadPosition,
       ];
 }

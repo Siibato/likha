@@ -20,15 +20,17 @@ ResultFuture<List<CoreValuesRecord>> getCoreValues(
   try {
     try {
       final cached = await localDataSource.getCachedCoreValues(studentId, classId: classId, schoolYear: schoolYear);
-      if (cached.isEmpty) throw CacheException('No cached core values');
 
       if (!skipBackgroundRefresh) {
         fireRemoteFetch(
           dedupKey: 'studentRecords/coreValues/$studentId/$schoolYear/bg',
           remote: () => remoteDataSource.getCoreValues(classId: classId, studentId: studentId, schoolYear: schoolYear),
           onSuccess: (fresh) async {
-            await localDataSource.cacheCoreValues(fresh);
-            dataEventBus.notifyCoreValuesChanged(studentId);
+            try {
+              await localDataSource.cacheCoreValues(fresh);
+            } catch (_) {
+              // Cache write failure is non-fatal for background refresh
+            }
           },
         );
       }
@@ -38,7 +40,11 @@ ResultFuture<List<CoreValuesRecord>> getCoreValues(
         dedupKey: 'studentRecords/coreValues/$studentId/$schoolYear',
         remote: () => remoteDataSource.getCoreValues(classId: classId, studentId: studentId, schoolYear: schoolYear),
       );
-      await localDataSource.cacheCoreValues(fresh);
+      try {
+        await localDataSource.cacheCoreValues(fresh);
+      } catch (_) {
+        // Cache write failure is non-fatal; user still gets the data
+      }
       return Right(fresh);
     }
   } on ServerException catch (e) {

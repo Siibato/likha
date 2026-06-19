@@ -24,6 +24,8 @@ pub async fn get_school_settings_since(
             "school_division": r.school_division,
             "school_year": r.school_year,
             "school_district": r.school_district,
+            "school_head_name": r.school_head_name,
+            "school_head_position": r.school_head_position,
             "updated_at": r.updated_at.to_string(),
         })],
         None => vec![],

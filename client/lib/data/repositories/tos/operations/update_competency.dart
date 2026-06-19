@@ -4,6 +4,7 @@ import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
+import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:uuid/uuid.dart';
 
@@ -18,6 +19,7 @@ ResultFuture<MutationResult<TosCompetency>> updateCompetency(
     final now = DateTime.now();
 
     final db = await localDataSource.localDatabase.database;
+    CompetencyModel? updated;
     await db.transaction((txn) async {
       await localDataSource.updateCompetencyFields(competencyId, data, txn: txn);
       await syncQueue.enqueue(
@@ -36,11 +38,11 @@ ResultFuture<MutationResult<TosCompetency>> updateCompetency(
         ),
         txn: txn,
       );
+      updated = await localDataSource.getCompetencyById(competencyId, txn: txn);
     });
 
-    final updated = await localDataSource.getCompetencyById(competencyId);
     if (updated != null) {
-      return Right(MutationResult(entity: updated, status: SyncStatus.pending));
+      return Right(MutationResult(entity: updated!, status: SyncStatus.pending));
     }
 
     return const Left(CacheFailure('Competency not found after update'));

@@ -64,6 +64,7 @@ impl super::SyncPushService {
                     .and_then(|v| v.as_f64());
 
                 let request = CreateTosRequest {
+                    id: client_id.map(|u| u.to_string()),
                     title,
                     grading_period_number: period,
                     classification_mode,
@@ -219,6 +220,7 @@ impl super::SyncPushService {
                     .map(|v| v as i32);
 
                 let request = CreateCompetencyRequest {
+                    id: client_id.map(|u| u.to_string()),
                     competency_code,
                     competency_text,
                     time_units_taught,

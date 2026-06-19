@@ -156,7 +156,7 @@ impl TosRepository {
     pub async fn bulk_create_competencies(
         &self,
         tos_id: Uuid,
-        competencies: Vec<(Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
+        competencies: Vec<(Option<Uuid>, Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
     ) -> AppResult<Vec<tos_competencies::Model>> {
         ops::bulk_create_competencies(&self.db, tos_id, competencies).await
     }

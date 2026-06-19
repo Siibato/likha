@@ -200,6 +200,8 @@ pub struct Sf9Response {
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,
+    pub teacher_name: Option<String>,
+    pub grading_period_type: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
     pub general_average: Option<Sf9PeriodAverages>,
 }

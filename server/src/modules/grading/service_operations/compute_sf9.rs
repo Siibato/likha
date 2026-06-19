@@ -29,6 +29,9 @@ impl crate::modules::grading::service::GradeComputationService {
             return Err(AppError::BadRequest("Class is not an advisory class".to_string()));
         }
 
+        let teacher = self.class_repo.find_teacher_of_class(class_id).await?;
+        let teacher_name = teacher.map(|t| t.full_name);
+
         let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
         let student_name = enrolled_students
             .iter()
@@ -115,6 +118,8 @@ impl crate::modules::grading::service::GradeComputationService {
             sex: learner_details.as_ref().and_then(|d| d.sex.clone()),
             track_strand: learner_details.as_ref().and_then(|d| d.track_strand.clone()),
             curriculum: learner_details.as_ref().and_then(|d| d.curriculum.clone()),
+            teacher_name,
+            grading_period_type: Some(class.grading_period_type.clone()),
             subjects,
             general_average,
         };

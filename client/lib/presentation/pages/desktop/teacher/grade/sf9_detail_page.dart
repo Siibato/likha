@@ -57,6 +57,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             sex: sf9.sex,
             trackStrand: sf9.trackStrand,
             curriculum: sf9.curriculum,
+            gradingPeriodType: sf9.gradingPeriodType,
             subjects: sf9.subjects,
             generalAverage: sf9.generalAverage,
           )
@@ -99,7 +100,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
   }
 
   Widget _buildBody(Sf9DetailState state, Sf9Response? displaySf9) {
-    if (state.isLoading) {
+    if (state.isLoading && displaySf9 == null) {
       return const Center(
         child: CircularProgressIndicator(
           color: AppColors.foregroundPrimary,
@@ -205,6 +206,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
           Sf9GradeTable(
             subjects: displaySf9.subjects,
             generalAverage: displaySf9.generalAverage,
+            gradingPeriodType: displaySf9.gradingPeriodType,
           ),
           const SizedBox(height: 24),
           // Core values table

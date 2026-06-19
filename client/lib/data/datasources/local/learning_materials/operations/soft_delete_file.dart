@@ -9,8 +9,11 @@ Future<void> softDeleteFile(
   Transaction? txn,
 }) async {
   final executor = txn ?? await localDatabase.database;
-  await executor.delete(
+  await executor.update(
     DbTables.materialFiles,
+    {
+      CommonCols.deletedAt: DateTime.now().toIso8601String(),
+    },
     where: '${CommonCols.id} = ?',
     whereArgs: [fileId],
   );

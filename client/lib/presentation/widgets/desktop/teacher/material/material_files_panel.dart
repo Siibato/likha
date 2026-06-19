@@ -137,8 +137,17 @@ class MaterialFilesPanel extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: isLoading ? null : onUploadFile,
-              icon: const Icon(Icons.upload_file_rounded, size: 18),
-              label: const Text('Upload File'),
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.foregroundDark,
+                      ),
+                    )
+                  : const Icon(Icons.upload_file_rounded, size: 18),
+              label: Text(isLoading ? 'Uploading...' : 'Upload File'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.foregroundDark,
                 side: const BorderSide(color: AppColors.borderLight),

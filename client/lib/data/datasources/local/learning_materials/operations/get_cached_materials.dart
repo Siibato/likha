@@ -25,7 +25,7 @@ Future<List<LearningMaterialModel>> getCachedMaterials(
     for (final result in results) {
       final materialId = result['id'] as String;
       final countResult = await db.rawQuery(
-        'SELECT COUNT(*) as count FROM ${DbTables.materialFiles} WHERE material_id = ?',
+        'SELECT COUNT(*) as count FROM ${DbTables.materialFiles} WHERE material_id = ? AND deleted_at IS NULL',
         [materialId],
       );
       final actualCount = countResult.first['count'] as int? ?? 0;

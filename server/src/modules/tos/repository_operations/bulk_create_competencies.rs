@@ -8,13 +8,13 @@ use super::create_competency::create_competency;
 pub async fn bulk_create_competencies(
     db: &DatabaseConnection,
     tos_id: Uuid,
-    competencies: Vec<(Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
+    competencies: Vec<(Option<Uuid>, Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
 ) -> AppResult<Vec<tos_competencies::Model>> {
     let mut results = Vec::new();
-    for (code, text, units, order, easy, medium, hard, rem, und, app, ana, eva, cre) in competencies {
+    for (id, code, text, units, order, easy, medium, hard, rem, und, app, ana, eva, cre) in competencies {
         let comp = create_competency(
             db,
-            Uuid::new_v4(),
+            id.unwrap_or_else(Uuid::new_v4),
             tos_id,
             code.as_deref(),
             &text,

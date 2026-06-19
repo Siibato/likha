@@ -868,6 +868,43 @@ class SyncUpsertHelpers {
         if (record is! Map<String, dynamic>) continue;
 
         final id = record['id'] as String;
+        final gradeItemId = record['grade_item_id'] as String;
+        final studentId = record['student_id'] as String;
+
+        // Deduplicate optimistic auto-populated scores created locally
+        final optimistic = await db.query(
+          DbTables.gradeScores,
+          where:
+              '${GradeScoresCols.gradeItemId} = ? AND ${GradeScoresCols.studentId} = ? AND ${GradeScoresCols.isAutoPopulated} = 1 AND ${CommonCols.syncStatus} = ?',
+          whereArgs: [gradeItemId, studentId, SyncStatus.synced.dbValue],
+          limit: 1,
+        );
+
+        if (optimistic.isNotEmpty) {
+          await db.update(
+            DbTables.gradeScores,
+            {
+              CommonCols.id: id,
+              GradeScoresCols.score: record['score'] != null
+                  ? (record['score'] as num).toDouble()
+                  : null,
+              GradeScoresCols.isAutoPopulated:
+                  (record['is_auto_populated'] == true) ? 1 : 0,
+              GradeScoresCols.overrideScore: record['override_score'] != null
+                  ? (record['override_score'] as num).toDouble()
+                  : null,
+              CommonCols.createdAt: record['created_at'],
+              CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+              CommonCols.deletedAt: record['deleted_at'],
+              CommonCols.cachedAt: DateTime.now().toIso8601String(),
+              CommonCols.syncStatus: SyncStatus.synced.dbValue,
+            },
+            where: '${CommonCols.id} = ?',
+            whereArgs: [optimistic.first[CommonCols.id]],
+          );
+          successCount++;
+          continue;
+        }
 
         // Check if local has a pending override that should take precedence
         final existing = await db.query(
@@ -1158,6 +1195,9 @@ class SyncUpsertHelpers {
           SchoolSettingsCols.schoolDivision: record['school_division'],
           SchoolSettingsCols.schoolYear: record['school_year'],
           SchoolSettingsCols.schoolCode: record['school_code'],
+          SchoolSettingsCols.schoolDistrict: record['school_district'],
+          SchoolSettingsCols.schoolHeadName: record['school_head_name'],
+          SchoolSettingsCols.schoolHeadPosition: record['school_head_position'],
           CommonCols.updatedAt: record['updated_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
@@ -1189,6 +1229,268 @@ class SyncUpsertHelpers {
     _log.upsertSummary('school_settings', successCount);
     if (failedCount > 0) {
       _log.warn('Failed to upsert school_settings', failedCount);
+    }
+  }
+
+  // ─── Student Records Upsert Methods ──────────────────────────────────────
+
+  Future<void> upsertLearnerDetails(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.learnerDetails,
+          {
+            CommonCols.id: record['id'],
+            LearnerDetailsCols.userId: record['user_id'],
+            LearnerDetailsCols.lrn: record['lrn'],
+            LearnerDetailsCols.age: record['age'] != null ? (record['age'] as num).toInt() : null,
+            LearnerDetailsCols.sex: record['sex'],
+            LearnerDetailsCols.trackStrand: record['track_strand'],
+            LearnerDetailsCols.curriculum: record['curriculum'],
+            LearnerDetailsCols.birthdate: record['birthdate'],
+            LearnerDetailsCols.birthplace: record['birthplace'],
+            LearnerDetailsCols.homeAddress: record['home_address'],
+            LearnerDetailsCols.fatherName: record['father_name'],
+            LearnerDetailsCols.motherName: record['mother_name'],
+            LearnerDetailsCols.guardianName: record['guardian_name'],
+            LearnerDetailsCols.guardianContact: record['guardian_contact'],
+            LearnerDetailsCols.dateAdmitted: record['date_admitted'],
+            LearnerDetailsCols.admittedToGrade: record['admitted_to_grade'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert learner_details', e);
+      }
+    }
+
+    _log.upsertSummary('learner_details', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert learner_details', failedCount);
+    }
+  }
+
+  Future<void> upsertAttendanceRecords(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.attendanceRecords,
+          {
+            CommonCols.id: record['id'],
+            AttendanceRecordsCols.studentId: record['student_id'],
+            AttendanceRecordsCols.classId: record['class_id'],
+            AttendanceRecordsCols.schoolYear: record['school_year'],
+            AttendanceRecordsCols.month: record['month'],
+            AttendanceRecordsCols.schoolDays: record['school_days'] != null ? (record['school_days'] as num).toInt() : null,
+            AttendanceRecordsCols.daysPresent: record['days_present'] != null ? (record['days_present'] as num).toInt() : null,
+            AttendanceRecordsCols.daysAbsent: record['days_absent'] != null ? (record['days_absent'] as num).toInt() : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert attendance_records', e);
+      }
+    }
+
+    _log.upsertSummary('attendance_records', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert attendance_records', failedCount);
+    }
+  }
+
+  Future<void> upsertCoreValuesRecords(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.coreValuesRecords,
+          {
+            CommonCols.id: record['id'],
+            CoreValuesRecordsCols.studentId: record['student_id'],
+            CoreValuesRecordsCols.classId: record['class_id'],
+            CoreValuesRecordsCols.schoolYear: record['school_year'],
+            CoreValuesRecordsCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
+            CoreValuesRecordsCols.coreValue: record['core_value'],
+            CoreValuesRecordsCols.behaviorStatement: record['behavior_statement'],
+            CoreValuesRecordsCols.marking: record['marking'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert core_values_records', e);
+      }
+    }
+
+    _log.upsertSummary('core_values_records', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert core_values_records', failedCount);
+    }
+  }
+
+  Future<void> upsertStudentSchoolHistory(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.studentSchoolHistory,
+          {
+            CommonCols.id: record['id'],
+            StudentSchoolHistoryCols.studentId: record['student_id'],
+            StudentSchoolHistoryCols.schoolName: record['school_name'],
+            StudentSchoolHistoryCols.schoolId: record['school_id'],
+            StudentSchoolHistoryCols.gradeLevel: record['grade_level'],
+            StudentSchoolHistoryCols.schoolYear: record['school_year'],
+            StudentSchoolHistoryCols.section: record['section'],
+            StudentSchoolHistoryCols.dateFrom: record['date_from'],
+            StudentSchoolHistoryCols.dateTo: record['date_to'],
+            StudentSchoolHistoryCols.recordType: record['record_type'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert student_school_history', e);
+      }
+    }
+
+    _log.upsertSummary('student_school_history', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert student_school_history', failedCount);
+    }
+  }
+
+  Future<void> upsertPreviousSchoolSubjects(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.previousSchoolSubjects,
+          {
+            CommonCols.id: record['id'],
+            PreviousSchoolSubjectsCols.studentId: record['student_id'],
+            PreviousSchoolSubjectsCols.schoolHistoryId: record['school_history_id'],
+            PreviousSchoolSubjectsCols.subjectName: record['subject_name'],
+            PreviousSchoolSubjectsCols.subjectGroup: record['subject_group'],
+            PreviousSchoolSubjectsCols.q1Grade: record['q1_grade'] != null ? (record['q1_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.q2Grade: record['q2_grade'] != null ? (record['q2_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.q3Grade: record['q3_grade'] != null ? (record['q3_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.q4Grade: record['q4_grade'] != null ? (record['q4_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.finalGrade: record['final_grade'] != null ? (record['final_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.descriptor: record['descriptor'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert previous_school_subjects', e);
+      }
+    }
+
+    _log.upsertSummary('previous_school_subjects', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert previous_school_subjects', failedCount);
+    }
+  }
+
+  Future<void> upsertPreviousSchoolAttendance(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.previousSchoolAttendance,
+          {
+            CommonCols.id: record['id'],
+            PreviousSchoolAttendanceCols.studentId: record['student_id'],
+            PreviousSchoolAttendanceCols.schoolHistoryId: record['school_history_id'],
+            PreviousSchoolAttendanceCols.schoolYear: record['school_year'],
+            PreviousSchoolAttendanceCols.month: record['month'],
+            PreviousSchoolAttendanceCols.schoolDays: record['school_days'] != null ? (record['school_days'] as num).toInt() : null,
+            PreviousSchoolAttendanceCols.daysPresent: record['days_present'] != null ? (record['days_present'] as num).toInt() : null,
+            PreviousSchoolAttendanceCols.daysAbsent: record['days_absent'] != null ? (record['days_absent'] as num).toInt() : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert previous_school_attendance', e);
+      }
+    }
+
+    _log.upsertSummary('previous_school_attendance', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert previous_school_attendance', failedCount);
     }
   }
 
@@ -1625,6 +1927,115 @@ class SyncUpsertHelpers {
       await upsertSchoolSettings(db, updated);
 
       // Note: We don't soft-delete school_settings - it's a singleton
+    }
+
+    // Handle learner_details delta
+    final learnerDetailsDeltas = deltas['learner_details'];
+    if (learnerDetailsDeltas != null) {
+      final updated = learnerDetailsDeltas.updated;
+      updatedCounts['learner_details'] = updated.length;
+      await upsertLearnerDetails(db, updated);
+
+      final deleted = learnerDetailsDeltas.deleted;
+      deletedCounts['learner_details'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.learnerDetails,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle attendance_records delta
+    final attendanceRecordsDeltas = deltas['attendance_records'];
+    if (attendanceRecordsDeltas != null) {
+      final updated = attendanceRecordsDeltas.updated;
+      updatedCounts['attendance_records'] = updated.length;
+      await upsertAttendanceRecords(db, updated);
+
+      final deleted = attendanceRecordsDeltas.deleted;
+      deletedCounts['attendance_records'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.attendanceRecords,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle core_values_records delta
+    final coreValuesRecordsDeltas = deltas['core_values_records'];
+    if (coreValuesRecordsDeltas != null) {
+      final updated = coreValuesRecordsDeltas.updated;
+      updatedCounts['core_values_records'] = updated.length;
+      await upsertCoreValuesRecords(db, updated);
+
+      final deleted = coreValuesRecordsDeltas.deleted;
+      deletedCounts['core_values_records'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.coreValuesRecords,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle student_school_history delta
+    final studentSchoolHistoryDeltas = deltas['student_school_history'];
+    if (studentSchoolHistoryDeltas != null) {
+      final updated = studentSchoolHistoryDeltas.updated;
+      updatedCounts['student_school_history'] = updated.length;
+      await upsertStudentSchoolHistory(db, updated);
+
+      final deleted = studentSchoolHistoryDeltas.deleted;
+      deletedCounts['student_school_history'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.studentSchoolHistory,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle previous_school_subjects delta
+    final previousSchoolSubjectsDeltas = deltas['previous_school_subjects'];
+    if (previousSchoolSubjectsDeltas != null) {
+      final updated = previousSchoolSubjectsDeltas.updated;
+      updatedCounts['previous_school_subjects'] = updated.length;
+      await upsertPreviousSchoolSubjects(db, updated);
+
+      final deleted = previousSchoolSubjectsDeltas.deleted;
+      deletedCounts['previous_school_subjects'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.previousSchoolSubjects,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle previous_school_attendance delta
+    final previousSchoolAttendanceDeltas = deltas['previous_school_attendance'];
+    if (previousSchoolAttendanceDeltas != null) {
+      final updated = previousSchoolAttendanceDeltas.updated;
+      updatedCounts['previous_school_attendance'] = updated.length;
+      await upsertPreviousSchoolAttendance(db, updated);
+
+      final deleted = previousSchoolAttendanceDeltas.deleted;
+      deletedCounts['previous_school_attendance'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.previousSchoolAttendance,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
     }
 
     _log.deltaSync(updatedCounts: updatedCounts, deletedCounts: deletedCounts);

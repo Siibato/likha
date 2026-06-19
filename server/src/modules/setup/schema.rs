@@ -24,6 +24,8 @@ pub struct SchoolSettingsResponse {
     pub school_division: Option<String>,
     pub school_year: Option<String>,
     pub school_district: Option<String>,
+    pub school_head_name: Option<String>,
+    pub school_head_position: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -38,6 +40,8 @@ pub struct UpdateSchoolSettingsRequest {
     pub school_division: Option<String>,
     pub school_year: Option<String>,
     pub school_district: Option<String>,
+    pub school_head_name: Option<String>,
+    pub school_head_position: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

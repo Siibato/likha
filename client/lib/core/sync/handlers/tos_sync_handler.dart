@@ -56,19 +56,21 @@ class TosSyncHandler {
     if (model.id != localId) {
       _log.log('Reconciling tos ID $localId → ${model.id}');
       final db = await _localDatabase.database;
-      await db.update(
-        DbTables.tableOfSpecifications,
-        {CommonCols.id: model.id},
-        where: '${CommonCols.id} = ?',
-        whereArgs: [localId],
-      );
-      // Update any competencies referencing the old tos_id
-      await db.update(
-        DbTables.tosCompetencies,
-        {TosCompetenciesCols.tosId: model.id},
-        where: '${TosCompetenciesCols.tosId} = ?',
-        whereArgs: [localId],
-      );
+      await db.transaction((txn) async {
+        // Move competencies to new tos_id first to avoid cascade-delete
+        await txn.update(
+          DbTables.tosCompetencies,
+          {TosCompetenciesCols.tosId: model.id},
+          where: '${TosCompetenciesCols.tosId} = ?',
+          whereArgs: [localId],
+        );
+        // Delete old TOS row (safe now that children are moved)
+        await txn.delete(
+          DbTables.tableOfSpecifications,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [localId],
+        );
+      });
     }
 
     await _local.saveTos(model);
@@ -148,6 +150,24 @@ class TosSyncHandler {
     switch (entry.operation) {
       case SyncOperation.create:
         final tosId = payload['tos_id'] as String;
+        final bulkList = payload['competencies'] as List<dynamic>?;
+
+        if (bulkList != null && bulkList.isNotEmpty) {
+          final competenciesData = bulkList.cast<Map<String, dynamic>>();
+          final models = await _remote.bulkAddCompetencies(
+            tosId: tosId,
+            competencies: competenciesData,
+            idempotencyKey: entry.id,
+          );
+          for (var i = 0; i < models.length && i < competenciesData.length; i++) {
+            await _reconcileCompetencyForPayload(
+              competenciesData[i],
+              models[i],
+            );
+          }
+          return const SyncResult.success();
+        }
+
         final model = await _remote.addCompetency(
           tosId: tosId,
           data: payload,
@@ -180,5 +200,25 @@ class TosSyncHandler {
           'Unsupported tosCompetency operation: ${entry.operation}',
         );
     }
+  }
+
+  Future<void> _reconcileCompetencyForPayload(
+    Map<String, dynamic> payload,
+    CompetencyModel model,
+  ) async {
+    final localId = payload['id'] as String? ?? model.id;
+
+    if (model.id != localId) {
+      _log.log('Reconciling competency ID $localId → ${model.id}');
+      final db = await _localDatabase.database;
+      await db.update(
+        DbTables.tosCompetencies,
+        {CommonCols.id: model.id},
+        where: '${CommonCols.id} = ?',
+        whereArgs: [localId],
+      );
+    }
+
+    await _local.saveCompetency(model);
   }
 }

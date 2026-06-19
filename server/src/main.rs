@@ -191,6 +191,8 @@ async fn main() {
                     "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
                     "grade_scores", "period_grades", "activity_logs", "advisory_class_students",
                     "sync_manifest", "sync_processed_operations",
+                    "student_school_history", "previous_school_subjects", "previous_school_attendance",
+                    "attendance_records", "core_values_records", "learner_details",
                 ];
 
                 for table in tables {
@@ -420,7 +422,8 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
         Method::OPTIONS,
     ];
 
-    let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id];
+    let idempotency_key: HeaderName = "idempotency-key".parse().expect("valid header name");
+    let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id, idempotency_key];
 
     if config.allowed_origins.is_empty() {
         return CorsLayer::new()

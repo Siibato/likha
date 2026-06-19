@@ -10,6 +10,8 @@ Future<SchoolSettingsModel> updateSchoolSettings(
   required String schoolYear,
   required String schoolCode,
   String? schoolDistrict,
+  String? schoolHeadName,
+  String? schoolHeadPosition,
   String? idempotencyKey,
 }) async {
   try {
@@ -25,6 +27,8 @@ Future<SchoolSettingsModel> updateSchoolSettings(
         'school_year': schoolYear,
         'school_code': schoolCode,
         'school_district': schoolDistrict,
+        'school_head_name': schoolHeadName,
+        'school_head_position': schoolHeadPosition,
       },
       options: options,
     );

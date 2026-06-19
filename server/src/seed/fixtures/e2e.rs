@@ -107,6 +107,8 @@ pub fn e2e_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
         school_division: Some("Division of City Schools".into()),
         school_year: Some("2025-2026".into()),
         school_district: None,
+        school_head_name: None,
+        school_head_position: None,
         updated_at: ctx.now(),
     }
 }

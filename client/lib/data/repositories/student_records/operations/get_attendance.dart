@@ -20,15 +20,17 @@ ResultFuture<List<AttendanceRecord>> getAttendance(
   try {
     try {
       final cached = await localDataSource.getCachedAttendance(studentId, classId: classId, schoolYear: schoolYear);
-      if (cached.isEmpty) throw CacheException('No cached attendance');
 
       if (!skipBackgroundRefresh) {
         fireRemoteFetch(
           dedupKey: 'studentRecords/attendance/$studentId/$schoolYear/bg',
           remote: () => remoteDataSource.getAttendance(classId: classId, studentId: studentId, schoolYear: schoolYear),
           onSuccess: (fresh) async {
-            await localDataSource.cacheAttendance(fresh);
-            dataEventBus.notifyAttendanceChanged(studentId);
+            try {
+              await localDataSource.cacheAttendance(fresh);
+            } catch (_) {
+              // Cache write failure is non-fatal for background refresh
+            }
           },
         );
       }
@@ -38,7 +40,11 @@ ResultFuture<List<AttendanceRecord>> getAttendance(
         dedupKey: 'studentRecords/attendance/$studentId/$schoolYear',
         remote: () => remoteDataSource.getAttendance(classId: classId, studentId: studentId, schoolYear: schoolYear),
       );
-      await localDataSource.cacheAttendance(fresh);
+      try {
+        await localDataSource.cacheAttendance(fresh);
+      } catch (_) {
+        // Cache write failure is non-fatal; user still gets the data
+      }
       return Right(fresh);
     }
   } on ServerException catch (e) {

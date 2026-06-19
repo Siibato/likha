@@ -10,12 +10,21 @@ Future<void> saveItem(
   Transaction? txn,
 }) async {
   final executor = txn ?? await localDatabase.database;
-  await executor.insert(
+  final map = {
+    ...item.toMap(),
+    CommonCols.syncStatus: 'pending',
+  };
+  final inserted = await executor.insert(
     DbTables.gradeItems,
-    {
-      ...item.toMap(),
-      CommonCols.syncStatus: 'pending',
-    },
-    conflictAlgorithm: ConflictAlgorithm.replace,
+    map,
+    conflictAlgorithm: ConflictAlgorithm.ignore,
   );
+  if (inserted == 0) {
+    await executor.update(
+      DbTables.gradeItems,
+      map,
+      where: '${CommonCols.id} = ?',
+      whereArgs: [item.id],
+    );
+  }
 }

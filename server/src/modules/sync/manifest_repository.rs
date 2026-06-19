@@ -252,4 +252,54 @@ impl ManifestRepository {
     pub async fn get_grade_item_ids_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Uuid>> {
         ops::get_grade_item_ids_for_classes(&self.db, class_ids).await
     }
+
+    // ─── Section F: Student Records Sync Queries ─────────────────────────────
+
+    pub async fn get_learner_details_for_students(&self, student_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_learner_details_for_students(&self.db, student_ids, limit).await
+    }
+
+    pub async fn get_learner_details_since(&self, student_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_learner_details_since(&self.db, student_ids, since).await
+    }
+
+    pub async fn get_attendance_for_classes(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_attendance_for_classes(&self.db, class_ids, limit).await
+    }
+
+    pub async fn get_attendance_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_attendance_since(&self.db, class_ids, since).await
+    }
+
+    pub async fn get_core_values_for_classes(&self, class_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_core_values_for_classes(&self.db, class_ids, limit).await
+    }
+
+    pub async fn get_core_values_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_core_values_since(&self.db, class_ids, since).await
+    }
+
+    pub async fn get_school_history_for_students(&self, student_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_school_history_for_students(&self.db, student_ids, limit).await
+    }
+
+    pub async fn get_school_history_since(&self, student_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_school_history_since(&self.db, student_ids, since).await
+    }
+
+    pub async fn get_previous_subjects_for_students(&self, student_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_previous_subjects_for_students(&self.db, student_ids, limit).await
+    }
+
+    pub async fn get_previous_subjects_since(&self, student_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_previous_subjects_since(&self.db, student_ids, since).await
+    }
+
+    pub async fn get_previous_attendance_for_students(&self, student_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_previous_attendance_for_students(&self.db, student_ids, limit).await
+    }
+
+    pub async fn get_previous_attendance_since(&self, student_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_previous_attendance_since(&self.db, student_ids, since).await
+    }
 }

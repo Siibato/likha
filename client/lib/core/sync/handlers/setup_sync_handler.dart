@@ -65,6 +65,8 @@ class SetupSyncHandler {
         schoolYear: payload['school_year'] as String,
         schoolCode: payload['school_code'] as String,
         schoolDistrict: payload['school_district'] as String?,
+        schoolHeadName: payload['school_head_name'] as String?,
+        schoolHeadPosition: payload['school_head_position'] as String?,
         idempotencyKey: entry.id,
       );
 
@@ -79,6 +81,8 @@ class SetupSyncHandler {
           SchoolSettingsCols.schoolYear: model.schoolYear,
           SchoolSettingsCols.schoolCode: model.schoolCode,
           SchoolSettingsCols.schoolDistrict: model.schoolDistrict,
+          SchoolSettingsCols.schoolHeadName: model.schoolHeadName,
+          SchoolSettingsCols.schoolHeadPosition: model.schoolHeadPosition,
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         where: '${CommonCols.id} = ?',

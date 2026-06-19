@@ -107,11 +107,13 @@ abstract class GradingRepository {
   ResultFuture<Sf9Response> getSf9({
     required String classId,
     required String studentId,
+    bool skipBackgroundRefresh = false,
   });
 
   ResultFuture<Sf9Response> getSf10({
     required String classId,
     required String studentId,
+    bool skipBackgroundRefresh = false,
   });
 
   // Batch Operations

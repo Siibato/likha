@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 9 (v8 → v9: added learner_details + student_records tables)
+/// SCHEMA VERSION: 12 (v11 → v12: added deleted_at column to material_files)
 /// TOTAL TABLES: 38
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 9,
+            version: 12,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 8,
+        version: 11,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -489,6 +489,7 @@ class LocalDatabase {
           local_path TEXT NOT NULL DEFAULT '',
           uploaded_at TEXT NOT NULL,
           cached_at TEXT,
+          deleted_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(material_id) REFERENCES learning_materials(id) ON DELETE CASCADE
         )
@@ -708,6 +709,8 @@ class LocalDatabase {
           school_year TEXT NOT NULL DEFAULT '',
           school_code TEXT NOT NULL DEFAULT '',
           school_district TEXT,
+          school_head_name TEXT,
+          school_head_position TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced'
         )
@@ -906,6 +909,16 @@ class LocalDatabase {
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    // Targeted migration: add school_head_name and school_head_position to school_settings
+    // Web path: 9 → 10; Mobile path: 8 → 9
+    if ((oldVersion == 9 && newVersion == 10) || (oldVersion == 8 && newVersion == 9)) {
+      await db.transaction((txn) async {
+        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_name TEXT');
+        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_position TEXT');
+      });
+      return;
+    }
+
     // Targeted migration: make points and is_correct nullable
     // Web path: 7 → 8; Mobile path: 6 → 7
     if ((oldVersion == 7 && newVersion == 8) || (oldVersion == 6 && newVersion == 7)) {
@@ -957,6 +970,15 @@ class LocalDatabase {
         ''');
         await txn.execute('DROP TABLE submission_answer_items');
         await txn.execute('ALTER TABLE submission_answer_items_new RENAME TO submission_answer_items');
+      });
+      return;
+    }
+
+    // Targeted migration: add deleted_at column to material_files
+    // Web path: 11 → 12; Mobile path: 10 → 11
+    if ((oldVersion == 11 && newVersion == 12) || (oldVersion == 10 && newVersion == 11)) {
+      await db.transaction((txn) async {
+        await txn.execute('ALTER TABLE material_files ADD COLUMN deleted_at TEXT');
       });
       return;
     }

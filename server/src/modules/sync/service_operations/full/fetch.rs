@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use crate::utils::AppResult;
 use crate::modules::sync::helpers::enrich_questions;
 use crate::modules::sync::sync_scope::SyncScope;
@@ -169,6 +170,8 @@ impl super::SyncFullService {
                         school_division: row.school_division,
                         school_year: row.school_year,
                         school_district: row.school_district,
+                        school_head_name: row.school_head_name,
+                        school_head_position: row.school_head_position,
                     }),
                     Err(e) => {
                         tracing::warn!("Failed to fetch school settings for sync: {}", e);
@@ -206,6 +209,12 @@ impl super::SyncFullService {
                     total_classes,
                 }),
                 school_settings,
+                learner_details: vec![],
+                attendance_records: vec![],
+                core_values_records: vec![],
+                student_school_history: vec![],
+                previous_school_subjects: vec![],
+                previous_school_attendance: vec![],
             });
         }
 
@@ -250,6 +259,12 @@ impl super::SyncFullService {
                 activity_logs: vec![],
                 sync_plan: None,
                 school_settings: None,
+                learner_details: vec![],
+                attendance_records: vec![],
+                core_values_records: vec![],
+                student_school_history: vec![],
+                previous_school_subjects: vec![],
+                previous_school_attendance: vec![],
             });
         }
 
@@ -539,6 +554,79 @@ impl super::SyncFullService {
         // Skip redundant re-fetching in batch requests.
         tracing::debug!("BATCH REQUEST: skipping redundant activity_logs (already in base response)");
 
+        // Fetch student records if scoped
+        let mut learner_details: Vec<Value> = Vec::new();
+        let mut attendance_records: Vec<Value> = Vec::new();
+        let mut core_values_records: Vec<Value> = Vec::new();
+        let mut student_school_history: Vec<Value> = Vec::new();
+        let mut previous_school_subjects: Vec<Value> = Vec::new();
+        let mut previous_school_attendance: Vec<Value> = Vec::new();
+
+        if scope.include_student_records {
+            tracing::debug!("Fetching student records for batch");
+
+            // Derive student_ids from class_participants for the batch's classes
+            let participants = ::entity::class_participants::Entity::find()
+                .filter(::entity::class_participants::Column::ClassId.is_in(batch_class_ids.clone()))
+                .filter(::entity::class_participants::Column::RemovedAt.is_null())
+                .all(&self.db)
+                .await
+                .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+            let student_ids: Vec<Uuid> = participants
+                .iter()
+                .map(|p| p.user_id)
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect();
+
+            learner_details = self
+                .manifest_repo
+                .get_learner_details_for_students(student_ids.clone(), 10000)
+                .await?
+                .records;
+
+            attendance_records = self
+                .manifest_repo
+                .get_attendance_for_classes(batch_class_ids.clone(), 10000)
+                .await?
+                .records;
+
+            core_values_records = self
+                .manifest_repo
+                .get_core_values_for_classes(batch_class_ids.clone(), 10000)
+                .await?
+                .records;
+
+            student_school_history = self
+                .manifest_repo
+                .get_school_history_for_students(student_ids.clone(), 10000)
+                .await?
+                .records;
+
+            previous_school_subjects = self
+                .manifest_repo
+                .get_previous_subjects_for_students(student_ids.clone(), 10000)
+                .await?
+                .records;
+
+            previous_school_attendance = self
+                .manifest_repo
+                .get_previous_attendance_for_students(student_ids, 10000)
+                .await?
+                .records;
+
+            tracing::debug!(
+                "Fetched student records: learner_details={}, attendance={}, core_values={}, school_history={}, prev_subjects={}, prev_attendance={}",
+                learner_details.len(),
+                attendance_records.len(),
+                core_values_records.len(),
+                student_school_history.len(),
+                previous_school_subjects.len(),
+                previous_school_attendance.len()
+            );
+        }
+
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
         let server_time = now.to_rfc3339();
@@ -587,6 +675,12 @@ impl super::SyncFullService {
             activity_logs: vec![],
             sync_plan: None,
             school_settings: None,
+            learner_details,
+            attendance_records,
+            core_values_records,
+            student_school_history,
+            previous_school_subjects,
+            previous_school_attendance,
         })
     }
 

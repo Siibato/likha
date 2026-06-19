@@ -15,15 +15,24 @@ Future<void> saveCompetency(
   final now = DateTime.now();
 
   Future<void> doWrite(DatabaseExecutor executor) async {
-    await executor.insert(
+    final map = {
+      ...competency.toMap(),
+      CommonCols.syncStatus: 'pending',
+      CommonCols.cachedAt: now.toIso8601String(),
+    };
+    final inserted = await executor.insert(
       DbTables.tosCompetencies,
-      {
-        ...competency.toMap(),
-        CommonCols.syncStatus: 'pending',
-        CommonCols.cachedAt: now.toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      map,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
+    if (inserted == 0) {
+      await executor.update(
+        DbTables.tosCompetencies,
+        map,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [competency.id],
+      );
+    }
   }
 
   if (txn != null) {

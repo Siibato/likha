@@ -71,9 +71,9 @@ Future<void> cacheMaterialFiles(
     } else {
       final freshIds = files.map((f) => f.id).toList();
       final placeholders = freshIds.map((_) => '?').join(', ');
-      await db.rawDelete(
-        'DELETE FROM material_files WHERE material_id = ? AND id NOT IN ($placeholders)',
-        [materialId, ...freshIds],
+      await db.rawUpdate(
+        'UPDATE material_files SET deleted_at = ? WHERE material_id = ? AND id NOT IN ($placeholders) AND deleted_at IS NULL',
+        [DateTime.now().toIso8601String(), materialId, ...freshIds],
       );
     }
 

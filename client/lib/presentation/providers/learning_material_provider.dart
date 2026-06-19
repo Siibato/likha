@@ -120,11 +120,19 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
   }
 
   Future<void> loadMaterialDetail(String materialId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    final isDifferentMaterial = state.currentMaterial?.id != materialId;
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearCurrent: isDifferentMaterial,
+    );
     final result = await _getMaterialDetail(materialId);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (detail) => state = state.copyWith(isLoading: false, currentMaterial: detail),
+      (detail) {
+        _currentClassId = detail.classId;
+        state = state.copyWith(isLoading: false, currentMaterial: detail);
+      },
     );
   }
 
@@ -134,7 +142,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     String? description,
     String? contentText,
   }) async {
-    state = state.copyWith(clearError: true, clearSuccess: true);
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     final result = await _createMaterial(
       classId: classId,
       title: title,
@@ -143,9 +151,11 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     );
     result.fold(
       (failure) => state = state.copyWith(
+        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (mutationResult) => state = state.copyWith(
+        isLoading: false,
         materials: [...state.materials, mutationResult.entity],
         successMessage: 'Material created successfully',
       ),
@@ -242,6 +252,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     Uint8List? fileBytes,
   }) async {
     state = state.copyWith(
+      isLoading: true,
       clearError: true,
       clearSuccess: true,
       clearUploadProgress: true,
@@ -262,6 +273,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
 
     result.fold(
       (failure) => state = state.copyWith(
+        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
         clearUploadProgress: true,
       ),
@@ -283,6 +295,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
               )
             : null;
         state = state.copyWith(
+          isLoading: false,
           successMessage: 'File uploaded successfully',
           clearUploadProgress: true,
           currentMaterial: updatedMaterial,

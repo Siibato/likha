@@ -13,6 +13,8 @@ pub async fn insert_settings(db: &DatabaseConnection, default_code: String) -> A
         school_division: Set(None),
         school_year: Set(None),
         school_district: Set(None),
+        school_head_name: Set(None),
+        school_head_position: Set(None),
         updated_at: Set(Utc::now().naive_utc()),
     };
     model

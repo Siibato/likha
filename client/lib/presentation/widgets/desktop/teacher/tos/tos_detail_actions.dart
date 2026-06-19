@@ -9,13 +9,11 @@ import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 class TosDetailActions extends ConsumerWidget {
   final TableOfSpecifications tos;
   final List<TosCompetency> competencies;
-  final String tosId;
 
   const TosDetailActions({
     super.key,
     required this.tos,
     required this.competencies,
-    required this.tosId,
   });
 
   @override
@@ -30,7 +28,7 @@ class TosDetailActions extends ConsumerWidget {
               builder: (_) => EditTosPage(tos: tos),
             ),
           ).then((_) {
-            ref.read(tosProvider.notifier).loadTosDetail(tosId);
+            ref.read(tosProvider.notifier).loadTosDetail(tos.id);
           }),
           icon: const Icon(Icons.edit_outlined, size: 18),
           label: const Text('Edit'),
@@ -44,7 +42,7 @@ class TosDetailActions extends ConsumerWidget {
                 'This will permanently delete this Table of Specifications and all its competencies.',
             confirmLabel: 'Delete',
             onConfirm: () async {
-              await ref.read(tosProvider.notifier).deleteTos(tosId);
+              await ref.read(tosProvider.notifier).deleteTos(tos.id);
               if (context.mounted) Navigator.pop(context);
             },
           ),

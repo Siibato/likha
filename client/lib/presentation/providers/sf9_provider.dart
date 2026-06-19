@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/logging/sf9_logger.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/domain/grading/usecases/get_general_averages.dart';
@@ -141,25 +142,38 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   }
 
   Future<void> loadSf9(String classId, String studentId, {bool skipBackgroundRefresh = false}) async {
+    final log = Sf9Logger.instance;
+    final hasCached = state.currentSf9 != null && _currentClassId == classId && _currentStudentId == studentId;
+    log.log('loadSf9: classId=$classId studentId=$studentId hasCached=$hasCached skipBackgroundRefresh=$skipBackgroundRefresh');
     _currentClassId = classId;
     _currentStudentId = studentId;
-    state = state.copyWith(isLoading: true, clearError: true, clearSf9: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true);
     final result = await _getSf9(GetSf9Params(classId: classId, studentId: studentId));
     // Ignore stale results if user navigated to a different student
-    if (_currentClassId != classId || _currentStudentId != studentId) return;
+    if (_currentClassId != classId || _currentStudentId != studentId) {
+      log.log('loadSf9: ignoring stale result (user navigated away)');
+      return;
+    }
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: AppErrorMapper.fromFailure(failure) ?? failure.message,
-      ),
-      (sf9) => state = state.copyWith(isLoading: false, currentSf9: sf9),
+      (failure) {
+        log.warn('loadSf9: result is Left (failure) => ${failure.message}');
+        state = state.copyWith(
+          isLoading: false,
+          error: AppErrorMapper.fromFailure(failure) ?? failure.message,
+        );
+      },
+      (sf9) {
+        log.log('loadSf9: result is Right (success) => studentName=${sf9.studentName} subjects=${sf9.subjects.length}');
+        state = state.copyWith(isLoading: false, currentSf9: sf9);
+      },
     );
   }
 
   Future<void> loadSf10(String classId, String studentId, {bool skipBackgroundRefresh = false}) async {
+    final hasCached = state.currentSf9 != null && _currentClassId == classId && _currentStudentId == studentId;
     _currentClassId = classId;
     _currentStudentId = studentId;
-    state = state.copyWith(isLoading: true, clearError: true, clearSf9: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true);
     final result = await _getSf10(GetSf10Params(classId: classId, studentId: studentId));
     // Ignore stale results if user navigated to a different student
     if (_currentClassId != classId || _currentStudentId != studentId) return;

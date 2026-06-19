@@ -167,7 +167,7 @@ class _CoreValuesGrid extends StatelessWidget {
             Text(state.error!, style: const TextStyle(fontSize: 13, color: AppColors.semanticError)),
           ],
           const SizedBox(height: 20),
-          if (state.isLoading)
+          if (state.isLoading && state.records.isEmpty)
             const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
           else
             Table(

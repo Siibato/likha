@@ -12,6 +12,8 @@ pub struct Model {
     pub school_division: Option<String>,
     pub school_year: Option<String>,
     pub school_district: Option<String>,
+    pub school_head_name: Option<String>,
+    pub school_head_position: Option<String>,
     pub updated_at: chrono::NaiveDateTime,
 }
 

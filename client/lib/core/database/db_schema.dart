@@ -365,6 +365,8 @@ abstract final class SchoolSettingsCols {
   static const String schoolYear = 'school_year';
   static const String schoolCode = 'school_code';
   static const String schoolDistrict = 'school_district';
+  static const String schoolHeadName = 'school_head_name';
+  static const String schoolHeadPosition = 'school_head_position';
 }
 
 // ─── Student Records columns ──────────────────────────────────────────────────

@@ -371,6 +371,13 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
           await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);
           await _upsertHelpers.upsertActivityLogs(txn, activityLogs);
+
+          await _upsertHelpers.upsertLearnerDetails(txn, batchResponse.learnerDetails);
+          await _upsertHelpers.upsertAttendanceRecords(txn, batchResponse.attendanceRecords);
+          await _upsertHelpers.upsertCoreValuesRecords(txn, batchResponse.coreValuesRecords);
+          await _upsertHelpers.upsertStudentSchoolHistory(txn, batchResponse.studentSchoolHistory);
+          await _upsertHelpers.upsertPreviousSchoolSubjects(txn, batchResponse.previousSchoolSubjects);
+          await _upsertHelpers.upsertPreviousSchoolAttendance(txn, batchResponse.previousSchoolAttendance);
         });
       }
     } else if (!needsEntityBatches) {

@@ -15,6 +15,8 @@ abstract class SetupLocalDataSource {
     required String schoolYear,
     required String schoolCode,
     String? schoolDistrict,
+    String? schoolHeadName,
+    String? schoolHeadPosition,
     SyncStatus syncStatus,
     Transaction? txn,
   });
@@ -43,6 +45,8 @@ class SetupLocalDataSourceImpl implements SetupLocalDataSource {
     required String schoolYear,
     required String schoolCode,
     String? schoolDistrict,
+    String? schoolHeadName,
+    String? schoolHeadPosition,
     SyncStatus syncStatus = SyncStatus.synced,
     Transaction? txn,
   }) =>
@@ -54,6 +58,8 @@ class SetupLocalDataSourceImpl implements SetupLocalDataSource {
         schoolYear: schoolYear,
         schoolCode: schoolCode,
         schoolDistrict: schoolDistrict,
+        schoolHeadName: schoolHeadName,
+        schoolHeadPosition: schoolHeadPosition,
         syncStatus: syncStatus,
         txn: txn,
       );

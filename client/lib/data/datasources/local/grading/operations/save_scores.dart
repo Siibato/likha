@@ -6,9 +6,10 @@ import 'package:likha/data/models/grading/grade_score_model.dart';
 
 Future<void> saveScores(
   LocalDatabase localDatabase,
-  List<GradeScoreModel> scores,
-) async {
-  final db = await localDatabase.database;
+  List<GradeScoreModel> scores, {
+  Transaction? txn,
+}) async {
+  final db = txn ?? await localDatabase.database;
   final batch = db.batch();
   for (final score in scores) {
     batch.insert(
