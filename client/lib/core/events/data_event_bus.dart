@@ -54,6 +54,18 @@ class DataEventBus {
       StreamController<String>.broadcast();
   final StreamController<String> _sf10 =
       StreamController<String>.broadcast();
+  final StreamController<String> _learnerDetails =
+      StreamController<String>.broadcast();
+  final StreamController<String> _attendanceRecords =
+      StreamController<String>.broadcast();
+  final StreamController<String> _coreValuesRecords =
+      StreamController<String>.broadcast();
+  final StreamController<String> _schoolHistory =
+      StreamController<String>.broadcast();
+  final StreamController<String> _previousSubjects =
+      StreamController<String>.broadcast();
+  final StreamController<String> _previousAttendance =
+      StreamController<String>.broadcast();
   final StreamController<String> _participants =
       StreamController<String>.broadcast();
   final StreamController<String> _studentSubmissions =
@@ -85,6 +97,12 @@ class DataEventBus {
   Stream<String>  get onMyGradeDetailChanged  => _myGradeDetail.stream;
   Stream<String>  get onSf9Changed            => _sf9.stream;
   Stream<String>  get onSf10Changed           => _sf10.stream;
+  Stream<String>  get onLearnerDetailsChanged  => _learnerDetails.stream;
+  Stream<String>  get onAttendanceChanged      => _attendanceRecords.stream;
+  Stream<String>  get onCoreValuesChanged       => _coreValuesRecords.stream;
+  Stream<String>  get onSchoolHistoryChanged    => _schoolHistory.stream;
+  Stream<String>  get onPreviousSubjectsChanged => _previousSubjects.stream;
+  Stream<String>  get onPreviousAttendanceChanged => _previousAttendance.stream;
   Stream<String>  get onParticipantsChanged   => _participants.stream;
   Stream<String>  get onStudentSubmissionsChanged => _studentSubmissions.stream;
   Stream<String>  get onStudentAssignmentSubmissionsChanged => _studentAssignmentSubmissions.stream;
@@ -118,6 +136,12 @@ class DataEventBus {
   void notifyMyGradeDetailChanged(String classId)   => _myGradeDetail.add(classId);
   void notifySf9Changed(String classId)             => _sf9.add(classId);
   void notifySf10Changed(String classId)            => _sf10.add(classId);
+  void notifyLearnerDetailsChanged(String studentId) => _learnerDetails.add(studentId);
+  void notifyAttendanceChanged(String studentId)     => _attendanceRecords.add(studentId);
+  void notifyCoreValuesChanged(String studentId)     => _coreValuesRecords.add(studentId);
+  void notifySchoolHistoryChanged(String studentId)  => _schoolHistory.add(studentId);
+  void notifyPreviousSubjectsChanged(String historyId) => _previousSubjects.add(historyId);
+  void notifyPreviousAttendanceChanged(String historyId) => _previousAttendance.add(historyId);
   void notifyParticipantsChanged(String classId)  => _participants.add(classId);
   void notifyStudentSubmissionsChanged(String assessmentId) => _studentSubmissions.add(assessmentId);
   void notifyStudentAssignmentSubmissionsChanged(String assignmentId) => _studentAssignmentSubmissions.add(assignmentId);
@@ -146,6 +170,12 @@ class DataEventBus {
     _myGradeDetail.close();
     _sf9.close();
     _sf10.close();
+    _learnerDetails.close();
+    _attendanceRecords.close();
+    _coreValuesRecords.close();
+    _schoolHistory.close();
+    _previousSubjects.close();
+    _previousAttendance.close();
     _participants.close();
     _studentSubmissions.close();
     _studentAssignmentSubmissions.close();

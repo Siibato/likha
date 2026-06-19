@@ -171,6 +171,7 @@ import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
 import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
 import 'package:likha/data/repositories/document_exports/document_export_repository_impl.dart';
 import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
 import 'package:likha/data/repositories/student_records/student_records_repository_impl.dart';
 import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
 import 'package:likha/domain/student_records/usecases/get_learner_details.dart';
@@ -320,6 +321,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<TosLocalDataSource>(
     () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+  sl.registerLazySingleton<StudentRecordsLocalDataSource>(
+    () => StudentRecordsLocalDataSourceImpl(sl<LocalDatabase>()),
   );
 
   // Validation services
@@ -599,7 +603,13 @@ Future<void> init() async {
     () => DocumentExportRepositoryImpl(sl<DocumentExportRemoteDataSource>()),
   );
   sl.registerLazySingleton<StudentRecordsRepository>(
-    () => StudentRecordsRepositoryImpl(sl<StudentRecordsRemoteDataSource>()),
+    () => StudentRecordsRepositoryImpl(
+      sl<StudentRecordsRemoteDataSource>(),
+      sl<StudentRecordsLocalDataSource>(),
+      sl<GradingLocalDataSource>(),
+      sl<SyncQueue>(),
+      sl<DataEventBus>(),
+    ),
   );
 
   // Setup use cases

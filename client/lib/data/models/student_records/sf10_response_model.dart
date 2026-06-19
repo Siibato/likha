@@ -52,6 +52,28 @@ class Sf10ResponseModel extends Sf10Response {
           const [],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'student_id': studentId,
+    'student_name': studentName,
+    'lrn': lrn,
+    'birthdate': birthdate,
+    'birthplace': birthplace,
+    'home_address': homeAddress,
+    'sex': sex,
+    'age': age,
+    'father_name': fatherName,
+    'mother_name': motherName,
+    'guardian_name': guardianName,
+    'guardian_contact': guardianContact,
+    'track_strand': trackStrand,
+    'curriculum': curriculum,
+    'current_school_year': currentSchoolYear,
+    'current_grade_level': currentGradeLevel,
+    'current_section': currentSection,
+    'school_history': schoolHistory.map((e) => (e as Sf10SchoolHistoryModel).toJson()).toList(),
+    'scholastic_records': scholasticRecords.map((e) => (e as Sf10YearRecordModel).toJson()).toList(),
+  };
 }
 
 class Sf10SchoolHistoryModel extends Sf10SchoolHistory {
@@ -90,6 +112,20 @@ class Sf10SchoolHistoryModel extends Sf10SchoolHistory {
           const [],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'school_name': schoolName,
+    'school_id': schoolId,
+    'grade_level': gradeLevel,
+    'school_year': schoolYear,
+    'section': section,
+    'date_from': dateFrom,
+    'date_to': dateTo,
+    'record_type': recordType,
+    'subjects': subjects.map((e) => (e as Sf10PreviousSubjectModel).toJson()).toList(),
+    'attendance': attendance.map((e) => (e as Sf10AttendanceMonthModel).toJson()).toList(),
+  };
 }
 
 class Sf10YearRecordModel extends Sf10YearRecord {
@@ -122,6 +158,17 @@ class Sf10YearRecordModel extends Sf10YearRecord {
           const [],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'school_year': schoolYear,
+    'grade_level': gradeLevel,
+    'section': section,
+    'school_name': schoolName,
+    'subjects': subjects.map((e) => (e as Sf10SubjectRowModel).toJson()).toList(),
+    'final_average': finalAverage,
+    'descriptor': descriptor,
+    'attendance': attendance.map((e) => (e as Sf10AttendanceMonthModel).toJson()).toList(),
+  };
 }
 
 class Sf10SubjectRowModel extends Sf10SubjectRow {
@@ -145,6 +192,14 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
       descriptor: json['descriptor'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'class_title': classTitle,
+    'subject_group': subjectGroup,
+    'period_grades': periodGrades,
+    'final_grade': finalGrade,
+    'descriptor': descriptor,
+  };
 }
 
 class Sf10PreviousSubjectModel extends Sf10PreviousSubject {
@@ -171,6 +226,17 @@ class Sf10PreviousSubjectModel extends Sf10PreviousSubject {
       descriptor: json['descriptor'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'subject_name': subjectName,
+    'subject_group': subjectGroup,
+    'q1_grade': q1Grade,
+    'q2_grade': q2Grade,
+    'q3_grade': q3Grade,
+    'q4_grade': q4Grade,
+    'final_grade': finalGrade,
+    'descriptor': descriptor,
+  };
 }
 
 class Sf10AttendanceMonthModel extends Sf10AttendanceMonth {
@@ -189,4 +255,11 @@ class Sf10AttendanceMonthModel extends Sf10AttendanceMonth {
       daysAbsent: json['days_absent'] as int,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'month': month,
+    'school_days': schoolDays,
+    'days_present': daysPresent,
+    'days_absent': daysAbsent,
+  };
 }

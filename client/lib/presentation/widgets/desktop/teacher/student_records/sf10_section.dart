@@ -7,7 +7,9 @@ import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_tabl
 import 'package:likha/presentation/providers/student_records_provider.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 import 'package:likha/presentation/providers/document_export_provider.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/sf10_school_history_edit_page.dart';
 import 'package:likha/domain/student_records/entities/sf10_response.dart';
+import 'package:likha/domain/student_records/entities/school_history.dart';
 
 class Sf10Section extends ConsumerStatefulWidget {
   final String classId;
@@ -224,15 +226,17 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
               ? Center(child: Text(state.error!, style: const TextStyle(color: AppColors.semanticError)))
               : state.data == null
                   ? const Center(child: Text('No data available'))
-                  : _Sf10Content(data: state.data!),
+                  : _Sf10Content(data: state.data!, classId: widget.classId, studentId: widget.studentId),
     );
   }
 }
 
 class _Sf10Content extends StatelessWidget {
   final Sf10Response data;
+  final String classId;
+  final String studentId;
 
-  const _Sf10Content({required this.data});
+  const _Sf10Content({required this.data, required this.classId, required this.studentId});
 
   @override
   Widget build(BuildContext context) {
@@ -268,9 +272,58 @@ class _Sf10Content extends StatelessWidget {
               const SizedBox(height: 24),
               // School history
               if (data.schoolHistory.isNotEmpty) ...[
-                Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                Row(
+                  children: [
+                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Sf10SchoolHistoryEditPage(
+                            classId: classId,
+                            studentId: studentId,
+                            studentName: data.studentName,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Add Previous School'),
+                      style: TextButton.styleFrom(foregroundColor: AppColors.foregroundPrimary),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
-                ...data.schoolHistory.map((h) => _historyCard(h)),
+                ...data.schoolHistory.map((h) => _tappableHistoryCard(context, h)),
+              ] else ...[
+                Row(
+                  children: [
+                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Sf10SchoolHistoryEditPage(
+                            classId: classId,
+                            studentId: studentId,
+                            studentName: data.studentName,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Add Previous School'),
+                      style: TextButton.styleFrom(foregroundColor: AppColors.foregroundPrimary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.borderLight)),
+                  child: const Text('No previous school records. Click "Add Previous School" to add one.', style: TextStyle(fontSize: 13, color: AppColors.foregroundTertiary)),
+                ),
               ],
             ],
           ),
@@ -384,6 +437,34 @@ class _Sf10Content extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _tappableHistoryCard(BuildContext context, Sf10SchoolHistory h) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Sf10SchoolHistoryEditPage(
+            classId: classId,
+            studentId: studentId,
+            studentName: data.studentName,
+            schoolHistory: SchoolHistory(
+              id: h.id,
+              studentId: studentId,
+              schoolName: h.schoolName,
+              schoolId: h.schoolId,
+              gradeLevel: h.gradeLevel,
+              schoolYear: h.schoolYear,
+              section: h.section,
+              dateFrom: h.dateFrom,
+              dateTo: h.dateTo,
+              recordType: h.recordType,
+            ),
+          ),
+        ),
+      ),
+      child: _historyCard(h),
     );
   }
 

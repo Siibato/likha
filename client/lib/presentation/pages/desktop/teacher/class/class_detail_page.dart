@@ -46,6 +46,15 @@ class _TeacherClassDetailPageState
     'TOS',
   ];
 
+  static const _advisorySectionTitles = [
+    'Students',
+    'Learner Details',
+    'Attendance',
+    'Core Values',
+    'SF9',
+    'SF10',
+  ];
+
   static const _baseDestinations = [
     DesktopNavDestination(
       icon: Icons.people_outline_rounded,
@@ -74,6 +83,39 @@ class _TeacherClassDetailPageState
     ),
   ];
 
+  static const _advisoryDestinations = [
+    DesktopNavDestination(
+      icon: Icons.people_outline_rounded,
+      selectedIcon: Icons.people_rounded,
+      label: 'Students',
+    ),
+    DesktopNavDestination(
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
+      label: 'Learner Details',
+    ),
+    DesktopNavDestination(
+      icon: Icons.calendar_today_outlined,
+      selectedIcon: Icons.calendar_today_rounded,
+      label: 'Attendance',
+    ),
+    DesktopNavDestination(
+      icon: Icons.favorite_outline,
+      selectedIcon: Icons.favorite_rounded,
+      label: 'Core Values',
+    ),
+    DesktopNavDestination(
+      icon: Icons.grade_outlined,
+      selectedIcon: Icons.grade_rounded,
+      label: 'SF9',
+    ),
+    DesktopNavDestination(
+      icon: Icons.school_outlined,
+      selectedIcon: Icons.school_rounded,
+      label: 'SF10',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -96,52 +138,59 @@ class _TeacherClassDetailPageState
     }
   }
 
-  void _onSectionChanged(int index) {
+  void _onSectionChanged(int index, {bool isAdvisory = false}) {
     setState(() => _selectedIndex = index);
 
     if (_loadedTabs.contains(index)) return;
     _loadedTabs.add(index);
 
-    switch (index) {
-      case 1:
-        ref
-            .read(teacherAssessmentProvider.notifier)
-            .loadAssessments(widget.classId);
-        break;
-      case 2:
-        ref
-            .read(assignmentProvider.notifier)
-            .loadAssignments(widget.classId);
-        break;
-      case 3:
-        ref
-            .read(learningMaterialProvider.notifier)
-            .loadMaterials(widget.classId);
-        break;
-      case 4:
-        ref.read(tosProvider.notifier).loadTosList(widget.classId);
-        break;
-      case 5:
-        // Grades tab (always present)
-        // No additional loading needed - grades are loaded when needed
-        break;
-      case 6:
-        // SF9 tab (only for advisory classes)
-        ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
-        break;
-      case 7:
-        // Learner Details tab
-        break;
-      case 8:
-        // Attendance tab
-        break;
-      case 9:
-        // Core Values tab
-        break;
-      case 10:
-        // SF10 tab
-        ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
-        break;
+    if (isAdvisory) {
+      switch (index) {
+        case 0:
+          // Students tab
+          break;
+        case 1:
+          // Learner Details tab
+          break;
+        case 2:
+          // Attendance tab
+          break;
+        case 3:
+          // Core Values tab
+          break;
+        case 4:
+          // SF9 tab
+          ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
+          break;
+        case 5:
+          // SF10 tab
+          ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
+          break;
+      }
+    } else {
+      switch (index) {
+        case 1:
+          ref
+              .read(teacherAssessmentProvider.notifier)
+              .loadAssessments(widget.classId);
+          break;
+        case 2:
+          ref
+              .read(assignmentProvider.notifier)
+              .loadAssignments(widget.classId);
+          break;
+        case 3:
+          ref
+              .read(learningMaterialProvider.notifier)
+              .loadMaterials(widget.classId);
+          break;
+        case 4:
+          ref.read(tosProvider.notifier).loadTosList(widget.classId);
+          break;
+        case 5:
+          // Grades tab
+          break;
+      }
     }
   }
 
@@ -159,43 +208,13 @@ class _TeacherClassDetailPageState
     final isAdvisory = classEntity?.isAdvisory == true;
 
     // Build dynamic destinations list
-    final destinations = [..._baseDestinations];
-
-    // Always add Grades tab
-    destinations.add(const DesktopNavDestination(
-      icon: Icons.grading_outlined,
-      selectedIcon: Icons.grading_rounded,
-      label: 'Grades',
-    ));
-
-    // Add SF9 tab for advisory classes
-    if (isAdvisory) {
-      destinations.add(const DesktopNavDestination(
-        icon: Icons.grade_outlined,
-        selectedIcon: Icons.grade_rounded,
-        label: 'SF9',
-      ));
-      destinations.add(const DesktopNavDestination(
-        icon: Icons.person_outline_rounded,
-        selectedIcon: Icons.person_rounded,
-        label: 'Learner Details',
-      ));
-      destinations.add(const DesktopNavDestination(
-        icon: Icons.calendar_today_outlined,
-        selectedIcon: Icons.calendar_today_rounded,
-        label: 'Attendance',
-      ));
-      destinations.add(const DesktopNavDestination(
-        icon: Icons.favorite_outline,
-        selectedIcon: Icons.favorite_rounded,
-        label: 'Core Values',
-      ));
-      destinations.add(const DesktopNavDestination(
-        icon: Icons.school_outlined,
-        selectedIcon: Icons.school_rounded,
-        label: 'SF10',
-      ));
-    }
+    final destinations = isAdvisory
+        ? [..._advisoryDestinations]
+        : [..._baseDestinations, const DesktopNavDestination(
+            icon: Icons.grading_outlined,
+            selectedIcon: Icons.grading_rounded,
+            label: 'Grades',
+          )];
 
     // Clamp selected index to valid range in case isAdvisory flips while on SF9 tab
     final maxIndex = destinations.length - 1;
@@ -209,7 +228,7 @@ class _TeacherClassDetailPageState
           DesktopNavigationRail(
             selectedIndex: selectedIndex,
             destinations: destinations,
-            onDestinationSelected: _onSectionChanged,
+            onDestinationSelected: (index) => _onSectionChanged(index, isAdvisory: isAdvisory),
             header: Padding(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               child: Row(
@@ -254,59 +273,68 @@ class _TeacherClassDetailPageState
                   )
                 : IndexedStack(
                     index: selectedIndex,
-                    children: [
-                      // Students (with overview panel above)
-                      DesktopPageScaffold(
-                        title: _baseSectionTitles[0],
-                        body: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClassOverviewPanel(
-                              detail: detail,
-                              classEntity: classEntity,
+                    children: isAdvisory
+                        ? [
+                            // Students (with overview panel above)
+                            DesktopPageScaffold(
+                              title: _advisorySectionTitles[0],
+                              body: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClassOverviewPanel(
+                                    detail: detail,
+                                    classEntity: classEntity,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  StudentDataTable(
+                                    students: detail.students,
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 24),
-                            StudentDataTable(
-                              students: detail.students,
+                            // Learner Details
+                            LearnerDetailsSection(classId: widget.classId, students: detail.students),
+                            // Attendance
+                            AttendanceSection(classId: widget.classId, students: detail.students, schoolYear: detail.schoolYear),
+                            // Core Values
+                            CoreValuesSection(classId: widget.classId, students: detail.students, schoolYear: detail.schoolYear),
+                            // SF9
+                            Sf9Section(classId: widget.classId),
+                            // SF10
+                            Sf10Section(classId: widget.classId),
+                          ]
+                        : [
+                            // Students (with overview panel above)
+                            DesktopPageScaffold(
+                              title: _baseSectionTitles[0],
+                              body: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClassOverviewPanel(
+                                    detail: detail,
+                                    classEntity: classEntity,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  StudentDataTable(
+                                    students: detail.students,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Assessments
+                            AssessmentsSection(classId: widget.classId),
+                            // Assignments
+                            AssignmentsSection(classId: widget.classId),
+                            // Materials
+                            MaterialsSection(classId: widget.classId),
+                            // TOS
+                            TosSection(classId: widget.classId),
+                            // Grades
+                            GradesSection(
+                              classId: widget.classId,
+                              isActive: selectedIndex == 5,
                             ),
                           ],
-                        ),
-                      ),
-
-                      // Assessments
-                      AssessmentsSection(classId: widget.classId),
-
-                      // Assignments
-                      AssignmentsSection(classId: widget.classId),
-
-                      // Materials
-                      MaterialsSection(classId: widget.classId),
-
-                      // TOS
-                      TosSection(classId: widget.classId),
-
-                      // Grades (always present)
-                      GradesSection(
-                        classId: widget.classId,
-                        isActive: selectedIndex == 5,
-                      ),
-
-                      // SF9 (only for advisory classes)
-                      if (isAdvisory)
-                        Sf9Section(classId: widget.classId),
-                      // Learner Details (advisory only)
-                      if (isAdvisory)
-                        LearnerDetailsSection(classId: widget.classId, students: detail.students),
-                      // Attendance (advisory only)
-                      if (isAdvisory)
-                        AttendanceSection(classId: widget.classId, students: detail.students, schoolYear: detail.schoolYear),
-                      // Core Values (advisory only)
-                      if (isAdvisory)
-                        CoreValuesSection(classId: widget.classId, students: detail.students, schoolYear: detail.schoolYear),
-                      // SF10 (advisory only)
-                      if (isAdvisory)
-                        Sf10Section(classId: widget.classId),
-                    ],
                   ),
           ),
         ],
