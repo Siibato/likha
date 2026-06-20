@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/tos/usecases/add_competency.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/usecases/create_tos.dart';
@@ -106,7 +108,7 @@ void main() {
         when(() => _mockCreateTos.call(
               classId: any(named: 'classId'),
               data: any(named: 'data'),
-            )).thenAnswer((_) async => Right(tTos));
+            )).thenAnswer((_) async => Right(MutationResult(entity: tTos, status: SyncStatus.pending)));
 
         final notifier = TosNotifier();
         final states = <TosState>[];
@@ -147,7 +149,7 @@ void main() {
         when(() => _mockGetTosList.call(any()))
             .thenAnswer((_) async => Right([tTos]));
         when(() => _mockDeleteTos.call(any()))
-            .thenAnswer((_) async => const Right(null));
+            .thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
         final notifier = TosNotifier();
         notifier.state = notifier.state.copyWith(tosList: [tTos]);

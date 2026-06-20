@@ -6,6 +6,8 @@ use ::entity::{
     class_participants, users,
     grade_record, grade_items, grade_scores, period_grades,
     table_of_specifications, tos_competencies,
+    learner_details, attendance_records, core_values_records,
+    student_school_history, previous_school_subjects, previous_school_attendance,
 };
 use crate::utils::{AppError, AppResult};
 use super::{ManifestEntry, PaginatedRecords};
@@ -160,7 +162,7 @@ pub fn grade_score_to_json(r: grade_scores::Model) -> Value {
     })
 }
 
-pub fn quarterly_grade_to_json(r: period_grades::Model) -> Value {
+pub fn period_grade_to_json(r: period_grades::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
@@ -173,6 +175,110 @@ pub fn quarterly_grade_to_json(r: period_grades::Model) -> Value {
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
         "deleted_at": r.deleted_at.map(|d| d.to_string()),
+    })
+}
+
+pub fn learner_details_to_json(r: learner_details::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "user_id": r.user_id.to_string(),
+        "lrn": r.lrn,
+        "age": r.age,
+        "sex": r.sex,
+        "track_strand": r.track_strand,
+        "curriculum": r.curriculum,
+        "birthdate": r.birthdate.map(|d| d.to_string()),
+        "birthplace": r.birthplace,
+        "home_address": r.home_address,
+        "father_name": r.father_name,
+        "mother_name": r.mother_name,
+        "guardian_name": r.guardian_name,
+        "guardian_contact": r.guardian_contact,
+        "date_admitted": r.date_admitted.map(|d| d.to_string()),
+        "admitted_to_grade": r.admitted_to_grade,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
+    })
+}
+
+pub fn attendance_record_to_json(r: attendance_records::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "student_id": r.student_id.to_string(),
+        "class_id": r.class_id.to_string(),
+        "school_year": r.school_year,
+        "month": r.month,
+        "school_days": r.school_days,
+        "days_present": r.days_present,
+        "days_absent": r.days_absent,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+    })
+}
+
+pub fn core_values_record_to_json(r: core_values_records::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "student_id": r.student_id.to_string(),
+        "class_id": r.class_id.to_string(),
+        "school_year": r.school_year,
+        "grading_period_number": r.grading_period_number,
+        "core_value": r.core_value,
+        "behavior_statement": r.behavior_statement,
+        "marking": r.marking,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+    })
+}
+
+pub fn school_history_to_json(r: student_school_history::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "student_id": r.student_id.to_string(),
+        "school_name": r.school_name,
+        "school_id": r.school_id,
+        "grade_level": r.grade_level,
+        "school_year": r.school_year,
+        "section": r.section,
+        "date_from": r.date_from.map(|d| d.to_string()),
+        "date_to": r.date_to.map(|d| d.to_string()),
+        "record_type": r.record_type,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+    })
+}
+
+pub fn previous_school_subject_to_json(r: previous_school_subjects::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "student_id": r.student_id.to_string(),
+        "school_history_id": r.school_history_id.to_string(),
+        "subject_name": r.subject_name,
+        "subject_group": r.subject_group,
+        "q1_grade": r.q1_grade,
+        "q2_grade": r.q2_grade,
+        "q3_grade": r.q3_grade,
+        "q4_grade": r.q4_grade,
+        "final_grade": r.final_grade,
+        "descriptor": r.descriptor,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+    })
+}
+
+pub fn previous_school_attendance_to_json(r: previous_school_attendance::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "student_id": r.student_id.to_string(),
+        "school_history_id": r.school_history_id.to_string(),
+        "school_year": r.school_year,
+        "month": r.month,
+        "school_days": r.school_days,
+        "days_present": r.days_present,
+        "days_absent": r.days_absent,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
     })
 }
 

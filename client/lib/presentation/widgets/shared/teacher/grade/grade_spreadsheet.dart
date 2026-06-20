@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
@@ -27,7 +28,7 @@ class GradeSpreadsheet extends StatefulWidget {
   final GradeConfig? config;
 
   /// Per-student quarterly grade summary rows from the server.
-  /// Each map contains at minimum: 'student_id' and 'quarterly_grade'.
+  /// Each map contains at minimum: 'student_id' and 'transmuted_grade'.
   final List<Map<String, dynamic>>? summary;
 
   /// When true, score cells render as pulsing skeletons and are non-tappable.
@@ -69,7 +70,6 @@ class GradeSpreadsheet extends StatefulWidget {
 }
 
 class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
-  // Score inline editing
   String? _editingKey;
   String? _editingStudentId;
   String? _editingItemId;
@@ -77,10 +77,15 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   final _scoreCtrl = TextEditingController();
   final _scoreFocus = FocusNode();
 
-  // QG inline editing
   String? _editingQgStudentId;
-  final _qgCtrl = TextEditingController();
-  final _qgFocus = FocusNode();
+  final _tgCtrl = TextEditingController();
+  final _tgFocus = FocusNode();
+
+  final _horizontalScrollCtrl = ScrollController();
+
+  final _verticalScrollCtrl = ScrollController();
+
+  bool _isPanning = false;
 
   GradeSpreadsheetDimensions get _d => widget.dimensions;
 
@@ -90,8 +95,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     _scoreFocus.addListener(() {
       if (!_scoreFocus.hasFocus && _editingKey != null) _commitScore();
     });
-    _qgFocus.addListener(() {
-      if (!_qgFocus.hasFocus && _editingQgStudentId != null) _commitQg();
+    _tgFocus.addListener(() {
+      if (!_tgFocus.hasFocus && _editingQgStudentId != null) _commitQg();
     });
   }
 
@@ -99,8 +104,10 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   void dispose() {
     _scoreCtrl.dispose();
     _scoreFocus.dispose();
-    _qgCtrl.dispose();
-    _qgFocus.dispose();
+    _tgCtrl.dispose();
+    _tgFocus.dispose();
+    _horizontalScrollCtrl.dispose();
+    _verticalScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -148,15 +155,15 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     if (_editingQgStudentId != null) _commitQg();
     setState(() {
       _editingQgStudentId = studentId;
-      _qgCtrl.text = current?.toString() ?? '';
-      _qgCtrl.selection =
-          TextSelection.fromPosition(TextPosition(offset: _qgCtrl.text.length));
+      _tgCtrl.text = current?.toString() ?? '';
+      _tgCtrl.selection =
+          TextSelection.fromPosition(TextPosition(offset: _tgCtrl.text.length));
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _qgFocus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tgFocus.requestFocus());
   }
 
   void _commitQg() {
-    final grade = int.tryParse(_qgCtrl.text.trim());
+    final grade = int.tryParse(_tgCtrl.text.trim());
     if (grade != null && _editingQgStudentId != null) {
       widget.onQgChanged(_editingQgStudentId!, grade);
     }
@@ -170,7 +177,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   String _fmt(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
   Map<String, Map<String, GradeScore>> _buildScoreLookup() {
     final lookup = <String, Map<String, GradeScore>>{};
@@ -182,23 +189,22 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     return lookup;
   }
 
-  Map<String, int?> _buildQgLookup() {
+  Map<String, int?> _buildTransmutedGradeLookup() {
     final lookup = <String, int?>{};
     for (final row in (widget.summary ?? [])) {
       final sid = row['student_id'] as String?;
-      final qg = row['quarterly_grade'];
+      final tg = row['transmuted_grade'];
       if (sid != null) {
-        lookup[sid] = qg == null
+        lookup[sid] = tg == null
             ? null
-            : (qg is double
-                ? qg.round()
-                : (qg is int ? qg : int.tryParse(qg.toString())));
+            : (tg is double
+                ? tg.round()
+                : (tg is int ? tg : int.tryParse(tg.toString())));
       }
     }
     return lookup;
   }
 
-  // Section width = N score columns + Total + HS + % + WS
   double _secW(int n) =>
       n * _d.scoreColW + _d.sumColW * 2 + _d.pctColW * 2;
 
@@ -207,13 +213,13 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
   @override
   Widget build(BuildContext context) {
     final scoreLookup = _buildScoreLookup();
-    final qgLookup = _buildQgLookup();
+    final tgLookup = _buildTransmutedGradeLookup();
 
-    final wwItems = widget.allItems.where((i) => i.component == 'ww').toList()
+    final wwItems = widget.allItems.where((i) => i.component == 'ww' || i.component == 'written_work').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final ptItems = widget.allItems.where((i) => i.component == 'pt').toList()
+    final ptItems = widget.allItems.where((i) => i.component == 'pt' || i.component == 'performance_task').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final qaItems = widget.allItems.where((i) => i.component == 'qa').toList()
+    final qaItems = widget.allItems.where((i) => i.component == 'qa' || i.component == 'period_assessment').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     final wwW = widget.config?.wwWeight ?? 40.0;
@@ -226,11 +232,15 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     final summaryW = _d.initGradeW + _d.qgColW + _d.remarksW;
     final scrollW = wwSecW + ptSecW + qaSecW + summaryW;
 
-    return SingleChildScrollView(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Frozen name column ─────────────────────────────────────────────
+    final isDesktopOrWeb = defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        kIsWeb;
+
+    Widget spreadsheet = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Frozen name column ─────────────────────────────────────────────
           SizedBox(
             width: _d.nameColW,
             child: Column(
@@ -298,6 +308,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
           // ── Scrollable columns ─────────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
+              controller: _horizontalScrollCtrl,
               scrollDirection: Axis.horizontal,
               child: SizedBox(
                 width: scrollW,
@@ -395,7 +406,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                         ptItems: ptItems,
                         qaItems: qaItems,
                         scoreLookup: scoreLookup,
-                        qgLookup: qgLookup,
+                        tgLookup: tgLookup,
                         wwWeight: wwW,
                         ptWeight: ptW,
                         qaWeight: qaW,
@@ -405,8 +416,8 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                         editingQgStudentId: _editingQgStudentId,
                         scoreCtrl: _scoreCtrl,
                         scoreFocus: _scoreFocus,
-                        qgCtrl: _qgCtrl,
-                        qgFocus: _qgFocus,
+                        tgCtrl: _tgCtrl,
+                        tgFocus: _tgFocus,
                         onStartScore: _startScore,
                         onCommitScore: _commitScore,
                         onClearScore: _clearScore,
@@ -423,7 +434,77 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
             ),
           ),
         ],
-      ),
+      );
+
+    if (isDesktopOrWeb) {
+      spreadsheet = GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanStart: (_) {
+          if (_editingKey != null || _editingQgStudentId != null) return;
+          setState(() => _isPanning = true);
+        },
+        onPanUpdate: (details) {
+          if (_editingKey != null || _editingQgStudentId != null) return;
+          if (_horizontalScrollCtrl.hasClients) {
+            final newOffset = (_horizontalScrollCtrl.offset - details.delta.dx).clamp(
+              _horizontalScrollCtrl.position.minScrollExtent,
+              _horizontalScrollCtrl.position.maxScrollExtent,
+            );
+            _horizontalScrollCtrl.jumpTo(newOffset);
+          }
+          if (_verticalScrollCtrl.hasClients) {
+            final newOffset = (_verticalScrollCtrl.offset - details.delta.dy).clamp(
+              _verticalScrollCtrl.position.minScrollExtent,
+              _verticalScrollCtrl.position.maxScrollExtent,
+            );
+            _verticalScrollCtrl.jumpTo(newOffset);
+          }
+        },
+        onPanEnd: (_) {
+          if (_isPanning) setState(() => _isPanning = false);
+        },
+        onPanCancel: () {
+          if (_isPanning) setState(() => _isPanning = false);
+        },
+        child: spreadsheet,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportW = constraints.maxWidth - _d.nameColW - 1;
+        return Column(
+          children: [
+            Expanded(
+              child: RawScrollbar(
+                controller: _verticalScrollCtrl,
+                thumbVisibility: true,
+                thickness: 12,
+                radius: const Radius.circular(6),
+                thumbColor: Colors.grey.withValues(alpha: 0.45),
+                trackColor: Colors.transparent,
+                child: SingleChildScrollView(
+                  controller: _verticalScrollCtrl,
+                  child: spreadsheet,
+                ),
+              ),
+            ),
+            if (scrollW > viewportW)
+              Row(
+                children: [
+                  SizedBox(width: _d.nameColW + 1),
+                  Expanded(
+                    child: _HorizontalScrollbar(
+                      controller: _horizontalScrollCtrl,
+                      contentWidth: scrollW,
+                      viewportWidth: viewportW,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -481,5 +562,124 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
         bold: true,
       ),
     ];
+  }
+}
+
+/// A simple custom horizontal scrollbar track + thumb that's always visible.
+class _HorizontalScrollbar extends StatefulWidget {
+  final ScrollController controller;
+  final double contentWidth;
+  final double viewportWidth;
+
+  const _HorizontalScrollbar({
+    required this.controller,
+    required this.contentWidth,
+    required this.viewportWidth,
+  });
+
+  @override
+  State<_HorizontalScrollbar> createState() => _HorizontalScrollbarState();
+}
+
+class _HorizontalScrollbarState extends State<_HorizontalScrollbar> {
+  double _thumbLeft = 0;
+  double _thumbWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateThumb());
+  }
+
+  @override
+  void didUpdateWidget(covariant _HorizontalScrollbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewportWidth != widget.viewportWidth ||
+        oldWidget.contentWidth != widget.contentWidth) {
+      _updateThumb();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() => _updateThumb();
+
+  void _updateThumb() {
+    if (!mounted) return;
+    final maxScroll = widget.controller.position.maxScrollExtent;
+    final current = widget.controller.offset;
+    final ratio = maxScroll > 0 ? current / maxScroll : 0;
+    final thumbW = (widget.viewportWidth / widget.contentWidth).clamp(0.05, 1.0) * widget.viewportWidth;
+    final maxThumbLeft = widget.viewportWidth - thumbW;
+    final left = ratio * maxThumbLeft;
+    setState(() {
+      _thumbLeft = left;
+      _thumbWidth = thumbW;
+    });
+  }
+
+  void _onTrackTap(double localDx) {
+    final thumbCenter = _thumbLeft + _thumbWidth / 2;
+    final maxScroll = widget.controller.position.maxScrollExtent;
+    if (localDx > thumbCenter) {
+      widget.controller.jumpTo((widget.controller.offset + widget.viewportWidth * 0.8).clamp(0.0, maxScroll));
+    } else {
+      widget.controller.jumpTo((widget.controller.offset - widget.viewportWidth * 0.8).clamp(0.0, maxScroll));
+    }
+  }
+
+  void _onThumbDrag(double delta) {
+    final maxScroll = widget.controller.position.maxScrollExtent;
+    final maxThumbLeft = widget.viewportWidth - _thumbWidth;
+    final scrollDelta = maxScroll > 0 && maxThumbLeft > 0
+        ? delta * maxScroll / maxThumbLeft
+        : 0.0;
+    widget.controller.jumpTo((widget.controller.offset + scrollDelta).clamp(0.0, maxScroll));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapUp: (details) => _onTrackTap(details.localPosition.dx),
+      child: Container(
+        height: 12,
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            // Subtle track line
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+                  ),
+                ),
+              ),
+            ),
+            // Thumb
+            Positioned(
+              left: _thumbLeft,
+              top: 2,
+              bottom: 2,
+              child: GestureDetector(
+                onHorizontalDragUpdate: (details) => _onThumbDrag(details.delta.dx),
+                child: Container(
+                  width: _thumbWidth,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

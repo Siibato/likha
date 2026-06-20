@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -40,11 +42,18 @@ void main() {
       when(() => mockRepository.createSubmission(
         assignmentId: any(named: 'assignmentId'),
         textContent: any(named: 'textContent'),
-      )).thenAnswer((_) async => Right(tSubmission));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tSubmission, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 
-      expect(result, Right(tSubmission));
+      expect(result.isRight(), true);
+      result.fold(
+        (failure) => fail('should not be left'),
+        (mutationResult) {
+          expect(mutationResult.entity, tSubmission);
+          expect(mutationResult.status, SyncStatus.pending);
+        },
+      );
       verify(() => mockRepository.createSubmission(
         assignmentId: tAssignmentId,
         textContent: 'Draft submission text',
@@ -59,7 +68,7 @@ void main() {
       when(() => mockRepository.createSubmission(
         assignmentId: any(named: 'assignmentId'),
         textContent: any(named: 'textContent'),
-      )).thenAnswer((_) async => Right(tSubmission));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tSubmission, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 

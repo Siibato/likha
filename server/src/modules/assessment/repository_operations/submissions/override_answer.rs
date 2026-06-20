@@ -10,6 +10,7 @@ pub async fn override_answer(
     answer_id: Uuid,
     _is_correct: bool,
     points: f64,
+    teacher_id: Uuid,
 ) -> AppResult<submission_answers::Model> {
     let mut answer: submission_answers::ActiveModel =
         submission_answers::Entity::find_by_id(answer_id)
@@ -20,7 +21,7 @@ pub async fn override_answer(
             .into();
 
     answer.points = Set(points);
-    answer.overridden_by = Set(None);
+    answer.overridden_by = Set(Some(teacher_id));
     answer.overridden_at = Set(Some(Utc::now().naive_utc()));
 
     answer

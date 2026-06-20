@@ -1,31 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
-
-InputDecoration assessmentInputDecoration(String label) {
-  return InputDecoration(
-    labelText: label,
-    labelStyle:
-        const TextStyle(fontSize: 14, color: AppColors.foregroundTertiary),
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.borderLight),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.borderLight),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide:
-          const BorderSide(color: AppColors.accentCharcoal, width: 1.5),
-    ),
-    contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-  );
-}
+import 'package:likha/domain/assessments/entities/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_decorators.dart';
 
 class QuestionChoicesEditor extends StatefulWidget {
   final List<ChoiceDraft> initial;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/io.dart';
 import 'package:likha/core/config/app_config.dart';
 import 'package:likha/core/config/api_config.dart';
@@ -29,8 +30,14 @@ class DioClient {
       ..options.baseUrl = ApiConstants.baseUrl
       ..options.connectTimeout = ApiConstants.connectTimeout
       ..options.receiveTimeout = ApiConstants.receiveTimeout
-      ..options.responseType = ResponseType.json
-      ..httpClientAdapter = _buildHttpClientAdapter(AppConfig.isDev)
+      ..options.responseType = ResponseType.json;
+
+    final adapter = _buildHttpClientAdapter(AppConfig.isDev);
+    if (adapter != null) {
+      _dio.httpClientAdapter = adapter;
+    }
+
+    _dio
       ..interceptors.add(ServerReachabilityInterceptor(_serverReachabilityService))
       ..interceptors.add(LogInterceptor(
         request: true,
@@ -48,7 +55,9 @@ class DioClient {
   /// the local Raspberry Pi without installing the school CA on the device.
   /// In production, the OS performs normal certificate validation — the school
   /// CA must be installed on the device once via the setup instructions.
-  HttpClientAdapter _buildHttpClientAdapter(bool devMode) {
+  /// Returns null on web so Dio uses the browser's default fetch/XHR adapter.
+  HttpClientAdapter? _buildHttpClientAdapter(bool devMode) {
+    if (kIsWeb) return null;
     if (!devMode) return IOHttpClientAdapter();
     return IOHttpClientAdapter(
       createHttpClient: () => HttpClient()
@@ -75,11 +84,13 @@ class DioClient {
 
   /// Typed POST request that validates the server's ApiResponse<T> envelope.
   /// Throws [ServerException] if success is false.
-  Future<T> postTyped<T>(ApiEndpoint<T> endpoint, {dynamic data}) async {
+  Future<T> postTyped<T>(ApiEndpoint<T> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.post(
         endpoint.path,
         data: data,
+        queryParameters: queryParameters,
+        options: headers != null ? Options(headers: headers) : null,
       );
       return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
     } on DioException catch (e) {
@@ -89,11 +100,13 @@ class DioClient {
 
   /// Typed PUT request that validates the server's ApiResponse<T> envelope.
   /// Throws [ServerException] if success is false.
-  Future<T> putTyped<T>(ApiEndpoint<T> endpoint, {dynamic data}) async {
+  Future<T> putTyped<T>(ApiEndpoint<T> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.put(
         endpoint.path,
         data: data,
+        queryParameters: queryParameters,
+        options: headers != null ? Options(headers: headers) : null,
       );
       return ApiResponse.fromJson(response.data, endpoint.fromJson).unwrap();
     } on DioException catch (e) {
@@ -104,9 +117,13 @@ class DioClient {
   /// Typed DELETE request that validates the server's ApiResponse envelope.
   /// For void responses, we check the success flag but don't deserialize data.
   /// Throws [ServerException] if success is false.
-  Future<void> deleteTyped(ApiEndpoint<void> endpoint) async {
+  Future<void> deleteTyped(ApiEndpoint<void> endpoint, {Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await _dio.delete(endpoint.path);
+      final response = await _dio.delete(
+        endpoint.path,
+        queryParameters: queryParameters,
+        options: headers != null ? Options(headers: headers) : null,
+      );
       // Deserialize the envelope but ignore the data (it's void)
       final apiResponse = ApiResponse.fromJson(response.data, (_) {});
       if (!apiResponse.success) {
@@ -120,9 +137,14 @@ class DioClient {
   /// Void POST request — validates server's ApiResponse envelope but ignores data.
   /// Use when the server returns a success/error envelope but no meaningful body.
   /// Mirrors deleteTyped — does NOT call unwrap() to avoid "Response data is null".
-  Future<void> postVoid(ApiEndpoint<void> endpoint, {dynamic data}) async {
+  Future<void> postVoid(ApiEndpoint<void> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await _dio.post(endpoint.path, data: data);
+      final response = await _dio.post(
+        endpoint.path,
+        data: data,
+        queryParameters: queryParameters,
+        options: headers != null ? Options(headers: headers) : null,
+      );
       final apiResponse = ApiResponse.fromJson(response.data, (_) {});
       if (!apiResponse.success) {
         throw ServerException(apiResponse.error ?? 'Request failed');
@@ -135,9 +157,14 @@ class DioClient {
   /// Void PUT request — validates server's ApiResponse envelope but ignores data.
   /// Use when the server returns a success/error envelope but no meaningful body.
   /// Mirrors deleteTyped — does NOT call unwrap() to avoid "Response data is null".
-  Future<void> putVoid(ApiEndpoint<void> endpoint, {dynamic data}) async {
+  Future<void> putVoid(ApiEndpoint<void> endpoint, {dynamic data, Map<String, dynamic>? headers, Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await _dio.put(endpoint.path, data: data);
+      final response = await _dio.put(
+        endpoint.path,
+        data: data,
+        queryParameters: queryParameters,
+        options: headers != null ? Options(headers: headers) : null,
+      );
       final apiResponse = ApiResponse.fromJson(response.data, (_) {});
       if (!apiResponse.success) {
         throw ServerException(apiResponse.error ?? 'Request failed');

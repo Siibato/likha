@@ -19,10 +19,12 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
   // Adaptive polling constants
   static const Duration _unreachableInterval = Duration(seconds: 10);
   static const Duration _backoffInterval = Duration(seconds: 60);
+  static const Duration _minCheckInterval = Duration(seconds: 3);
   static const int _backoffThreshold = 60; // consecutive failures before backoff
 
   late StreamController<bool> _reachabilityStream;
   Timer? _nextCheck;
+  DateTime? _lastCheckAt;
   bool _isServerReachable = false;
   int _consecutiveFailures = 0;
   bool _isDisposed = false;
@@ -55,7 +57,14 @@ class ServerReachabilityServiceImpl implements ServerReachabilityService {
   @override
   Future<bool> checkNow() async {
     if (_checkInFlight) return _isServerReachable;
+
+    if (_lastCheckAt != null &&
+        DateTime.now().difference(_lastCheckAt!) < _minCheckInterval) {
+      return _isServerReachable;
+    }
+
     _checkInFlight = true;
+    _lastCheckAt = DateTime.now();
 
     _nextCheck?.cancel();
     _nextCheck = null;

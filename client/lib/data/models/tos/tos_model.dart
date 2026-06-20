@@ -1,5 +1,6 @@
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 class TosModel extends TableOfSpecifications {
   const TosModel({
@@ -21,6 +22,8 @@ class TosModel extends TableOfSpecifications {
     super.creatingPercentage = 16.67,
     required super.createdAt,
     required super.updatedAt,
+    super.cachedAt,
+    super.syncStatus = SyncStatus.synced,
   });
 
   factory TosModel.fromJson(Map<String, dynamic> json) {
@@ -43,6 +46,7 @@ class TosModel extends TableOfSpecifications {
       creatingPercentage: (json['creating_percentage'] as num?)?.toDouble() ?? 16.67,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      syncStatus: SyncStatus.synced,
     );
   }
 
@@ -66,6 +70,13 @@ class TosModel extends TableOfSpecifications {
       creatingPercentage: (map[TosCols.creatingPercentage] as num?)?.toDouble() ?? 16.67,
       createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
       updatedAt: DateTime.parse(map[CommonCols.updatedAt] as String),
+      cachedAt: map[CommonCols.cachedAt] != null
+          ? DateTime.parse(map[CommonCols.cachedAt] as String)
+          : null,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map[CommonCols.syncStatus] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -88,11 +99,32 @@ class TosModel extends TableOfSpecifications {
     TosCols.creatingPercentage: creatingPercentage,
     CommonCols.createdAt: createdAt.toIso8601String(),
     CommonCols.updatedAt: updatedAt.toIso8601String(),
-    CommonCols.cachedAt: DateTime.now().toIso8601String(),
-    CommonCols.needsSync: 0,
+    CommonCols.cachedAt: cachedAt?.toIso8601String(),
+    CommonCols.syncStatus: syncStatus.dbValue,
   };
 
   Map<String, dynamic> toJson() => {
+    'id': id,
+    'class_id': classId,
+    'grading_period_number': gradingPeriodNumber,
+    'title': title,
+    'classification_mode': classificationMode,
+    'total_items': totalItems,
+    'time_unit': timeUnit,
+    'easy_percentage': easyPercentage,
+    'medium_percentage': mediumPercentage,
+    'hard_percentage': hardPercentage,
+    'remembering_percentage': rememberingPercentage,
+    'understanding_percentage': understandingPercentage,
+    'applying_percentage': applyingPercentage,
+    'analyzing_percentage': analyzingPercentage,
+    'evaluating_percentage': evaluatingPercentage,
+    'creating_percentage': creatingPercentage,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
+
+  Map<String, dynamic> toPayload() => {
     'id': id,
     'class_id': classId,
     'grading_period_number': gradingPeriodNumber,
@@ -198,10 +230,30 @@ class CompetencyModel extends TosCompetency {
     CommonCols.createdAt: createdAt.toIso8601String(),
     CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
-    CommonCols.needsSync: 0,
+    CommonCols.syncStatus: 'synced',
   };
 
   Map<String, dynamic> toJson() => {
+    'id': id,
+    'tos_id': tosId,
+    'competency_code': competencyCode,
+    'competency_text': competencyText,
+    'time_units_taught': timeUnitsTaught,
+    'order_index': orderIndex,
+    'easy_count': easyCount,
+    'medium_count': mediumCount,
+    'hard_count': hardCount,
+    'remembering_count': rememberingCount,
+    'understanding_count': understandingCount,
+    'applying_count': applyingCount,
+    'analyzing_count': analyzingCount,
+    'evaluating_count': evaluatingCount,
+    'creating_count': creatingCount,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
+
+  Map<String, dynamic> toPayload() => {
     'id': id,
     'tos_id': tosId,
     'competency_code': competencyCode,

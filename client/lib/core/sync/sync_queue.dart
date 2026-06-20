@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -25,7 +26,14 @@ enum SyncEntityType {
   gradeItem('grade_item'),
   gradeScore('grade_score'),
   tableOfSpecifications('table_of_specifications'),
-  tosCompetency('tos_competency');
+  tosCompetency('tos_competency'),
+  schoolSettings('school_settings'),
+  learnerDetails('learner_details'),
+  attendanceRecords('attendance_records'),
+  coreValuesRecords('core_values_records'),
+  schoolHistory('school_history'),
+  previousSchoolSubjects('previous_school_subjects'),
+  previousSchoolAttendance('previous_school_attendance');
 
   const SyncEntityType(this.serverValue);
   final String serverValue;
@@ -43,6 +51,7 @@ enum SyncOperation {
   publish('publish'),
   unpublish('unpublish'),
   upload('upload'),
+  start('start'),
   saveAnswers('save_answers'),
   releaseResults('release_results'),
   overrideAnswer('override_answer'),
@@ -52,6 +61,7 @@ enum SyncOperation {
   setOverride('set_override'),
   clearOverride('clear_override'),
   gradeEssay('grade_essay'),
+  reorder('reorder'),
   setup('setup');
 
   const SyncOperation(this.serverValue);
@@ -63,8 +73,9 @@ enum SyncOperation {
 
 enum SyncStatus {
   pending,
-  failed,
-  succeeded;
+  syncing,
+  synced,
+  failed;
 
   /// DB-stored value — matches Dart .name.
   String get dbValue => name;
@@ -169,12 +180,30 @@ abstract class SyncQueue {
   Future<SyncQueueEntry?> getById(String id);
   Future<int> getPendingCount();
   Future<void> updatePendingSubmissionIds(String oldId, String newId);
+
+  /// Emits every time a new entry is successfully written to the queue.
+  Stream<SyncQueueEntry> get onEntryAdded;
 }
 
 class SyncQueueImpl implements SyncQueue {
   final LocalDatabase _localDatabase;
+  final _onEntryAddedController = StreamController<SyncQueueEntry>.broadcast();
 
   SyncQueueImpl(this._localDatabase);
+
+  /// Returns the minimum backoff duration before an entry with [retryCount]
+  /// may be retried. Uses exponential backoff capped at 32s.
+  Duration _backoffForRetry(int retryCount) {
+    if (retryCount <= 0) return Duration.zero;
+    if (retryCount == 1) return const Duration(seconds: 2);
+    if (retryCount == 2) return const Duration(seconds: 4);
+    if (retryCount == 3) return const Duration(seconds: 8);
+    if (retryCount == 4) return const Duration(seconds: 16);
+    return const Duration(seconds: 32); // capped
+  }
+
+  @override
+  Stream<SyncQueueEntry> get onEntryAdded => _onEntryAddedController.stream;
 
   @override
   Future<void> enqueue(SyncQueueEntry entry, {Transaction? txn}) async {
@@ -198,6 +227,7 @@ class SyncQueueImpl implements SyncQueue {
     }
 
     CoreLogger.instance.log('enqueue: Entry added to queue successfully');
+    _onEntryAddedController.add(entry);
   }
 
   @override
@@ -205,19 +235,24 @@ class SyncQueueImpl implements SyncQueue {
     final db = await _localDatabase.database;
     final results = await db.query(
       DbTables.syncQueue,
-      where: '${SyncQueueCols.status} = ? AND ${SyncQueueCols.retryCount} < ${SyncQueueCols.maxRetries}',
+      where: '${SyncQueueCols.status} = ? AND ${SyncQueueCols.retryCount} < 5',
       whereArgs: [SyncStatus.pending.dbValue],
       orderBy: '${CommonCols.createdAt} ASC',
     );
-    return results.map(SyncQueueEntry.fromMap).toList();
+    final entries = results.map(SyncQueueEntry.fromMap).toList();
+    final now = DateTime.now();
+    return entries.where((e) {
+      if (e.lastAttemptedAt == null) return true;
+      final backoff = _backoffForRetry(e.retryCount);
+      return now.difference(e.lastAttemptedAt!) >= backoff;
+    }).toList();
   }
 
   @override
   Future<void> markSucceeded(String id) async {
     final db = await _localDatabase.database;
-    await db.update(
+    await db.delete(
       DbTables.syncQueue,
-      {SyncQueueCols.status: 'succeeded'},
       where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );
@@ -301,6 +336,10 @@ class SyncQueueImpl implements SyncQueue {
            AND json_extract(${SyncQueueCols.payload}, '\$.submission_id') = ?''',
       [newId, oldId],
     );
+  }
+
+  void dispose() {
+    _onEntryAddedController.close();
   }
 
   Future<void> deleteEntry(String id) async {

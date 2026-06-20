@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 class MaterialFile extends Equatable {
   final String id;
@@ -8,7 +9,7 @@ class MaterialFile extends Equatable {
   final DateTime uploadedAt;
   final String? localPath;
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const MaterialFile({
     required this.id,
@@ -18,7 +19,7 @@ class MaterialFile extends Equatable {
     required this.uploadedAt,
     this.localPath,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   bool get isCached => localPath != null && localPath!.isNotEmpty;
@@ -32,6 +33,6 @@ class MaterialFile extends Equatable {
         uploadedAt,
         localPath,
         cachedAt,
-        needsSync,
+        syncStatus,
       ];
 }

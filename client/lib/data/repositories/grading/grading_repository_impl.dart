@@ -1,16 +1,11 @@
 import 'package:dartz/dartz.dart';
-import 'package:uuid/uuid.dart';
-import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/logging/repo_logger.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
-import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
-import 'package:likha/data/models/grading/grade_config_model.dart';
-import 'package:likha/data/models/grading/grade_item_model.dart';
-import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
+import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
@@ -18,251 +13,71 @@ import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
+import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
+import 'package:likha/domain/student_records/entities/sf10_response.dart';
+import 'operations/grading.dart' as ops;
 
 class GradingRepositoryImpl implements GradingRepository {
   final GradingRemoteDataSource _remoteDataSource;
   final GradingLocalDataSource _localDataSource;
-  final ServerReachabilityService _serverReachabilityService;
   final SyncQueue _syncQueue;
+  final DataEventBus _dataEventBus;
+  final StudentRecordsRepository? _studentRecordsRepository;
 
   GradingRepositoryImpl({
     required GradingRemoteDataSource remoteDataSource,
     required GradingLocalDataSource localDataSource,
-    required ServerReachabilityService serverReachabilityService,
     required SyncQueue syncQueue,
+    required DataEventBus dataEventBus,
+    StudentRecordsRepository? studentRecordsRepository,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _serverReachabilityService = serverReachabilityService,
-        _syncQueue = syncQueue;
-
-  // ===== Helpers =====
-
-  GradeConfig _configToEntity(GradeConfigModel m) => GradeConfig(
-        id: m.id,
-        classId: m.classId,
-        gradingPeriodNumber: m.gradingPeriodNumber,
-        wwWeight: m.wwWeight,
-        ptWeight: m.ptWeight,
-        qaWeight: m.qaWeight,
-      );
-
-  GradeItem _itemToEntity(GradeItemModel m) => GradeItem(
-        id: m.id,
-        classId: m.classId,
-        title: m.title,
-        component: m.component,
-        gradingPeriodNumber: m.gradingPeriodNumber,
-        totalPoints: m.totalPoints,
-        sourceType: m.sourceType,
-        sourceId: m.sourceId,
-        orderIndex: m.orderIndex,
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt,
-      );
-
-  GradeScore _scoreToEntity(GradeScoreModel m) => GradeScore(
-        id: m.id,
-        gradeItemId: m.gradeItemId,
-        studentId: m.studentId,
-        score: m.score,
-        isAutoPopulated: m.isAutoPopulated,
-        overrideScore: m.overrideScore,
-      );
-
-  PeriodGrade _periodToEntity(PeriodGradeModel m) => PeriodGrade(
-        id: m.id,
-        classId: m.classId,
-        studentId: m.studentId,
-        gradingPeriodNumber: m.gradingPeriodNumber,
-        initialGrade: m.initialGrade,
-        transmutedGrade: m.transmutedGrade,
-        isLocked: m.isLocked,
-        computedAt: m.computedAt,
-      );
-
-  /// DepEd weight presets — mirrors class_grading_setup_page.dart
-  static const _weightPresets = {
-    'language': (ww: 30.0, pt: 50.0, qa: 20.0),
-    'ap_esp': (ww: 30.0, pt: 50.0, qa: 20.0),
-    'math_sci': (ww: 40.0, pt: 40.0, qa: 20.0),
-    'mapeh_tle': (ww: 20.0, pt: 60.0, qa: 20.0),
-    'shs_core': (ww: 25.0, pt: 50.0, qa: 25.0),
-    'shs_academic': (ww: 25.0, pt: 45.0, qa: 30.0),
-    'shs_tvl': (ww: 25.0, pt: 45.0, qa: 30.0),
-    'shs_immersion': (ww: 35.0, pt: 40.0, qa: 25.0),
-  };
+        _syncQueue = syncQueue,
+        _dataEventBus = dataEventBus,
+        _studentRecordsRepository = studentRecordsRepository;
 
   // ===== Config =====
 
   @override
   ResultFuture<List<GradeConfig>> getGradingConfig({
     required String classId,
-  }) async {
-    try {
-      // Fetch from server when online so the UI always reflects server state.
-      if (_serverReachabilityService.isServerReachable) {
-        try {
-          final models = await _remoteDataSource.getGradingConfig(classId: classId);
-          if (models.isNotEmpty) {
-            try { await _localDataSource.saveConfigs(models); } catch (_) {}
-            return Right(models.map(_configToEntity).toList());
-          }
-          // Server returned empty — config may be pending sync; fall through to cache.
-        } catch (_) {
-          // Server fetch failed — fall through to cache.
-        }
-      }
-
-      final cached = await _localDataSource.getConfigByClass(classId);
-      if (cached.isNotEmpty) {
-        return Right(cached.map(_configToEntity).toList());
-      }
-
-      // Cache empty AND server wasn't tried (isServerReachable was false).
-      // This happens during cold open: the health-check ping hasn't resolved yet
-      // so isServerReachable is still false even though the server is online.
-      // Make one fallback attempt so we don't permanently show "not configured".
-      if (!_serverReachabilityService.isServerReachable) {
-        try {
-          final models = await _remoteDataSource.getGradingConfig(classId: classId);
-          if (models.isNotEmpty) {
-            try { await _localDataSource.saveConfigs(models); } catch (_) {}
-            return Right(models.map(_configToEntity).toList());
-          }
-        } catch (_) {
-          // Genuinely offline — return empty list.
-        }
-      }
-
-      return const Right([]);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.getGradingConfig(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        classId: classId,
+      );
 
   @override
-  ResultVoid setupGrading({
+  ResultFuture<MutationResult<List<GradeConfig>>> setupGrading({
     required String classId,
     required String gradeLevel,
     required String subjectGroup,
     required String schoolYear,
     int? semester,
-  }) async {
-    try {
-      // Save locally first (optimistic) — mirror server behaviour: Q1-Q4
-      final weights = _weightPresets[subjectGroup];
-      if (weights != null) {
-        final now = DateTime.now().toIso8601String();
-        final configs = [
-          for (int q = 1; q <= 4; q++)
-            GradeConfigModel(
-              id: const Uuid().v4(),
-              classId: classId,
-              gradingPeriodNumber: q,
-              wwWeight: weights.ww,
-              ptWeight: weights.pt,
-              qaWeight: weights.qa,
-              createdAt: now,
-              updatedAt: now,
-            ),
-        ];
-        await _localDataSource.saveConfigs(configs);
-      }
-
-      // If online, attempt direct remote call first.
-      // Only fall back to sync queue when the direct call fails so we avoid
-      // sending a duplicate "setup" operation that would hit the server's
-      // UNIQUE(class_id, quarter) constraint and be permanently marked failed.
-      bool remoteSucceeded = false;
-      if (_serverReachabilityService.isServerReachable) {
-        try {
-          await _remoteDataSource.setupGrading(
-            classId: classId,
-            data: {
-              'grade_level': gradeLevel,
-              'subject_group': subjectGroup,
-              'school_year': schoolYear,
-              if (semester != null) 'semester': semester,
-            },
-          );
-          remoteSucceeded = true;
-          // Next getGradingConfig call will fetch server-assigned IDs
-          // automatically (server-first pattern).
-        } catch (_) {
-          // Direct call failed — sync queue will handle it below
-        }
-      }
-
-      if (!remoteSucceeded) {
-        await _syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.gradeConfig,
-          operation: SyncOperation.setup,
-          payload: {
-            'class_id': classId,
-            'grade_level': gradeLevel,
-            'subject_group': subjectGroup,
-            'school_year': schoolYear,
-            if (semester != null) 'semester': semester,
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 3,
-          createdAt: DateTime.now(),
-        ));
-      }
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.setupGrading(
+        _localDataSource,
+        _syncQueue,
+        classId: classId,
+        gradeLevel: gradeLevel,
+        subjectGroup: subjectGroup,
+        schoolYear: schoolYear,
+        semester: semester,
+      );
 
   @override
-  ResultVoid updateGradingConfig({
+  ResultFuture<MutationResult<void>> updateGradingConfig({
     required String classId,
     required List<Map<String, dynamic>> configs,
-  }) async {
-    try {
-      // Save locally (optimistic)
-      final now = DateTime.now().toIso8601String();
-      final models = configs.map((c) => GradeConfigModel(
-        id: c['id'] as String? ?? const Uuid().v4(),
+  }) =>
+      ops.updateGradingConfig(
+        _localDataSource,
+        _syncQueue,
         classId: classId,
-        gradingPeriodNumber: (c['grading_period_number'] as num?)?.toInt() ?? (c['quarter'] as num).toInt(),
-        wwWeight: (c['ww_weight'] as num).toDouble(),
-        ptWeight: (c['pt_weight'] as num).toDouble(),
-        qaWeight: (c['qa_weight'] as num).toDouble(),
-        createdAt: now,
-        updatedAt: now,
-      )).toList();
-      await _localDataSource.saveConfigs(models);
-
-      // Enqueue each config update
-      for (final config in configs) {
-        await _syncQueue.enqueue(SyncQueueEntry(
-          id: const Uuid().v4(),
-          entityType: SyncEntityType.gradeConfig,
-          operation: SyncOperation.update,
-          payload: {
-            'class_id': classId,
-            'quarter': config['quarter'],
-            'ww_weight': config['ww_weight'],
-            'pt_weight': config['pt_weight'],
-            'qa_weight': config['qa_weight'],
-          },
-          status: SyncStatus.pending,
-          retryCount: 0,
-          maxRetries: 3,
-          createdAt: DateTime.now(),
-        ));
-      }
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+        configs: configs,
+      );
 
   // ===== Grade Items =====
 
@@ -271,337 +86,102 @@ class GradingRepositoryImpl implements GradingRepository {
     required String classId,
     required int gradingPeriodNumber,
     String? component,
-  }) async {
-    RepoLogger.instance.log('getGradeItems() - classId: $classId, quarter: $gradingPeriodNumber, component: $component');
-    try {
-      
-      if (_serverReachabilityService.isServerReachable) {
-        RepoLogger.instance.log('getGradeItems() - fetching from remote datasource');
-        try {
-          final models = await _remoteDataSource.getGradeItems(
-            classId: classId,
-            gradingPeriodNumber: gradingPeriodNumber,
-            component: component,
-          );
-          await _localDataSource.saveItems(models);
-          final entities = models.map(_itemToEntity).toList();
-          return Right(entities);
-        } catch (e) {
-          RepoLogger.instance.error('getGradeItems() - Error during remote fetch', e);
-          rethrow;
-        }
-      }
-      
-      RepoLogger.instance.log('getGradeItems() - server not reachable, using cache');
-      final cached = await _localDataSource.getItemsByClassQuarter(
-        classId,
-        gradingPeriodNumber,
+  }) =>
+      ops.getGradeItems(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
         component: component,
       );
-      final entities = cached.map(_itemToEntity).toList();
-      return Right(entities);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } catch (e) {
-      RepoLogger.instance.error('getGradeItems() - Exception, trying cache fallback', e);
-      try {
-        final cached = await _localDataSource.getItemsByClassQuarter(
-          classId,
-          gradingPeriodNumber,
-          component: component,
-        );
-        final entities = cached.map(_itemToEntity).toList();
-        return Right(entities);
-      } catch (_) {
-        return Left(CacheFailure(e.toString()));
-      }
-    }
-  }
 
   @override
-  ResultFuture<GradeItem> createGradeItem({
+  ResultFuture<MutationResult<GradeItem>> createGradeItem({
     required String classId,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      final now = DateTime.now();
-      final id = const Uuid().v4();
-
-      final model = GradeItemModel(
-        id: id,
+  }) =>
+      ops.createGradeItem(
+        _localDataSource,
+        _syncQueue,
+        _dataEventBus,
         classId: classId,
-        title: data['title'] as String,
-        component: data['component'] as String,
-        gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num?)?.toInt() ?? 1,
-        totalPoints: (data['total_points'] as num).toDouble(),
-        sourceType: (data['source_type'] as String?) ?? 'manual',
-        sourceId: data['source_id'] as String?,
-        orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
-        createdAt: now,
-        updatedAt: now,
+        data: data,
       );
 
-      // Save locally
-      await _localDataSource.saveItem(model);
-
-      // Enqueue for sync
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeItem,
-        operation: SyncOperation.create,
-        payload: {
-          'id': id,
-          'class_id': classId,
-          ...data,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-
-      return Right(_itemToEntity(model));
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
-
   @override
-  ResultVoid updateGradeItem({
+  ResultFuture<MutationResult<void>> updateGradeItem({
     required String id,
     required Map<String, dynamic> data,
-  }) async {
-    try {
-      // Update locally via raw update
-      await _localDataSource.updateItemFields(id, data);
-
-      // Enqueue for sync
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeItem,
-        operation: SyncOperation.update,
-        payload: {
-          'id': id,
-          ...data,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.updateGradeItem(
+        _localDataSource,
+        _syncQueue,
+        _dataEventBus,
+        id: id,
+        data: data,
+      );
 
   @override
-  ResultVoid deleteGradeItem({required String id}) async {
-    try {
-      // Soft-delete locally
-      await _localDataSource.softDeleteItem(id);
-
-      // Enqueue for sync
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeItem,
-        operation: SyncOperation.delete,
-        payload: {'id': id},
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  ResultFuture<MutationResult<void>> deleteGradeItem({required String id}) =>
+      ops.deleteGradeItem(
+        _localDataSource,
+        _syncQueue,
+        _dataEventBus,
+        id: id,
+      );
 
   @override
-  ResultFuture<GradeItem?> findGradeItemBySourceId(String sourceId) async {
-    try {
-      final model = await _localDataSource.getItemBySourceId(sourceId);
-      return Right(model != null ? _itemToEntity(model) : null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  ResultFuture<GradeItem?> findGradeItemBySourceId(String sourceId) =>
+      ops.findGradeItemBySourceId(
+        _localDataSource,
+        sourceId: sourceId,
+      );
 
   // ===== Scores =====
 
   @override
   ResultFuture<List<GradeScore>> getScoresByItem({
     required String gradeItemId,
-  }) async {
-    RepoLogger.instance.log('getScoresByItem() - gradeItemId=$gradeItemId');
-    try {
-      RepoLogger.instance.log('getScoresByItem() - Checking local cache first...');
-      final cached = await _localDataSource.getScoresByItem(gradeItemId);
-      
-      // If cache has data, return it immediately (offline-first)
-      if (cached.isNotEmpty) {
-        final entities = cached.map(_scoreToEntity).toList();
-        RepoLogger.instance.log('getScoresByItem() - Returning ${entities.length} scores from cache (cache-first)');
-        
-        // Background sync if server is reachable, but don't wait for it
-        if (_serverReachabilityService.isServerReachable) {
-          RepoLogger.instance.log('getScoresByItem() - Background sync: fetching from remote to update cache...');
-          _backgroundSyncScores(gradeItemId, cached.length);
-        }
-        
-        return Right(entities);
-      }
-      
-      // Cache is empty, try remote
-      if (_serverReachabilityService.isServerReachable) {
-        RepoLogger.instance.log('getScoresByItem() - Cache empty, fetching from remote server...');
-        final models = await _remoteDataSource.getScoresByItem(
-          gradeItemId: gradeItemId,
-        );
-        
-        await _localDataSource.saveScores(models);
-        
-        final entities = models.map(_scoreToEntity).toList();
-        return Right(entities);
-      } else {
-        RepoLogger.instance.log('getScoresByItem() - Cache empty and server not reachable');
-        final entities = cached.map(_scoreToEntity).toList();
-        return Right(entities);
-      }
-    } on ServerFailure catch (e) {
-      RepoLogger.instance.error('getScoresByItem() - Server failure', e);
-      return Left(e);
-    } on Failure catch (e) {
-      RepoLogger.instance.error('getScoresByItem() - General failure', e);
-      return Left(e);
-    } catch (e) {
-      RepoLogger.instance.error('getScoresByItem() - Unexpected exception', e);
-      try {
-        final cached = await _localDataSource.getScoresByItem(gradeItemId);
-        return Right(cached.map(_scoreToEntity).toList());
-      } catch (_) {
-        return Left(CacheFailure(e.toString()));
-      }
-    }
-  }
-
-  /// Background sync to update cache without blocking UI
-  Future<void> _backgroundSyncScores(String gradeItemId, int currentCacheCount) async {
-    try {
-      final models = await _remoteDataSource.getScoresByItem(gradeItemId: gradeItemId);
-      RepoLogger.instance.log('_backgroundSyncScores() - Background sync got ${models.length} scores');
-      
-      // Only update cache if remote has more data than current cache
-      if (models.length > currentCacheCount) {
-        RepoLogger.instance.log('_backgroundSyncScores() - Updating cache with ${models.length} remote scores');
-        await _localDataSource.saveScores(models);
-      } else {
-        RepoLogger.instance.log('_backgroundSyncScores() - Remote has same or fewer scores, keeping cache data');
-      }
-    } catch (e) {
-      RepoLogger.instance.error('_backgroundSyncScores() - Background sync failed', e);
-    }
-  }
+  }) =>
+      ops.getScoresByItem(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        gradeItemId: gradeItemId,
+      );
 
   @override
-  ResultVoid saveScores({
+  ResultFuture<MutationResult<void>> saveScores({
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
-  }) async {
-    RepoLogger.instance.log('saveScores() - gradeItemId=$gradeItemId, scoresCount=${scores.length}');
-    try {
-      // Basic validation of grade item ID format
-      if (gradeItemId.isEmpty) {
-        RepoLogger.instance.warn('saveScores() - Empty grade item ID, skipping sync enqueue');
-        return const Right(null);
-      }
-
-      final now = DateTime.now().toIso8601String();
-
-      // Save each score locally (optimistic)
-      final models = scores.map((s) {
-        final scoreId = s['id'] as String? ?? const Uuid().v4();
-        final studentId = s['student_id'] as String;
-        final scoreValue = (s['score'] as num).toDouble();
-        final isAutoPopulated = s['is_auto_populated'] == true || s['is_auto_populated'] == 1;
-        
-        return GradeScoreModel(
-          id: scoreId,
-          gradeItemId: gradeItemId,
-          studentId: studentId,
-          score: scoreValue,
-          isAutoPopulated: isAutoPopulated,
-          overrideScore: null,
-          createdAt: now,
-          updatedAt: now,
-        );
-      }).toList();
-      
-      // upsertScoresByItem enqueues the sync operation transactionally — no second enqueue needed.
-      await _localDataSource.upsertScoresByItem(gradeItemId, models);
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.saveScores(
+        _localDataSource,
+        _syncQueue,
+        gradeItemId: gradeItemId,
+        scores: scores,
+      );
 
   @override
-  ResultVoid setScoreOverride({
+  ResultFuture<MutationResult<void>> setScoreOverride({
     required String scoreId,
     required double overrideScore,
-  }) async {
-    try {
-      // Update locally
-      await _localDataSource.updateScoreOverride(scoreId, overrideScore);
-
-      // Enqueue for sync
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeScore,
-        operation: SyncOperation.setOverride,
-        payload: {
-          'score_id': scoreId,
-          'override_score': overrideScore,
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.setScoreOverride(
+        _localDataSource,
+        _syncQueue,
+        scoreId: scoreId,
+        overrideScore: overrideScore,
+      );
 
   @override
-  ResultVoid clearScoreOverride({required String scoreId}) async {
-    try {
-      // Clear locally
-      await _localDataSource.updateScoreOverride(scoreId, null);
-
-      // Enqueue for sync
-      await _syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeScore,
-        operation: SyncOperation.clearOverride,
-        payload: {'score_id': scoreId},
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: DateTime.now(),
-      ));
-
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
+  ResultFuture<MutationResult<void>> clearScoreOverride({required String scoreId}) =>
+      ops.clearScoreOverride(
+        _localDataSource,
+        _syncQueue,
+        scoreId: scoreId,
+      );
 
   // ===== Computed Grades =====
 
@@ -609,175 +189,104 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultFuture<List<PeriodGrade>> getPeriodGrades({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      if (_serverReachabilityService.isServerReachable) {
-        final models = await _remoteDataSource.getPeriodGrades(
-          classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
-        );
-        await _localDataSource.savePeriodGrades(models);
-        return Right(models.map(_periodToEntity).toList());
-      }
-      final cached = await _localDataSource.getPeriodGradesByClass(
-        classId,
-        gradingPeriodNumber,
+  }) =>
+      ops.getPeriodGrades(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        classId: classId,
+        gradingPeriodNumber: gradingPeriodNumber,
       );
-      return Right(cached.map(_periodToEntity).toList());
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      try {
-        final cached = await _localDataSource.getPeriodGradesByClass(
-          classId,
-          gradingPeriodNumber,
-        );
-        return Right(cached.map(_periodToEntity).toList());
-      } catch (_) {
-        return Left(CacheFailure(e.toString()));
-      }
-    }
-  }
 
   @override
   ResultVoid computeGrades({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      await _remoteDataSource.computeGrades(
+  }) =>
+      ops.computeGrades(
+        _remoteDataSource,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
-      return const Right(null);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
 
   @override
-  ResultVoid updateTransmutedGrade({
+  ResultFuture<MutationResult<void>> updateTransmutedGrade({
     required String classId,
     required String studentId,
     required int gradingPeriodNumber,
     required int transmutedGrade,
-  }) async {
-    try {
-      await _localDataSource.updateTransmutedGrade(
-        classId,
-        studentId,
-        gradingPeriodNumber,
-        transmutedGrade,
+  }) =>
+      ops.updateTransmutedGrade(
+        _localDataSource,
+        _syncQueue,
+        classId: classId,
+        studentId: studentId,
+        gradingPeriodNumber: gradingPeriodNumber,
+        transmutedGrade: transmutedGrade,
       );
-      return const Right(null);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
-  }
 
   @override
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      final summary = await _remoteDataSource.getGradeSummary(
+  }) =>
+      ops.getGradeSummary(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
-      return Right(summary);
-    } on ServerFailure catch (e) {
-      // Propagate server errors (e.g. 400 "Grading config not set up") so the
-      // UI can show a "syncing to server" banner instead of blank grades.
-      return Left(e);
-    } on Failure {
-      return const Right([]);
-    } catch (_) {
-      return const Right([]);
-    }
-  }
 
   @override
   ResultFuture<List<Map<String, dynamic>>> getFinalGrades({
     required String classId,
-  }) async {
-    try {
-      final grades = await _remoteDataSource.getFinalGrades(classId: classId);
-      return Right(grades);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.getFinalGrades(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        classId: classId,
+      );
 
   // ===== Student =====
 
   @override
   ResultFuture<List<PeriodGrade>> getMyGrades({
     required String classId,
-  }) async {
-    try {
-      if (_serverReachabilityService.isServerReachable) {
-        final models = await _remoteDataSource.getMyGrades(classId: classId);
-        await _localDataSource.savePeriodGrades(models);
-        return Right(models.map(_periodToEntity).toList());
-      }
-      return const Right([]);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
+  }) =>
+      ops.getMyGrades(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
+        classId: classId,
+      );
 
   @override
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      final detail = await _remoteDataSource.getMyGradeDetail(
+  }) =>
+      ops.getMyGradeDetail(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
-      return Right(detail);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
 
   // ===== General Average =====
 
   @override
   ResultFuture<GeneralAverageResponse> getGeneralAverages({
     required String classId,
-  }) async {
-    try {
-      final model = await _remoteDataSource.getGeneralAverages(
+  }) =>
+      ops.getGeneralAverages(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
       );
-      return Right(model);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
 
   // ===== SF9/SF10 =====
 
@@ -785,85 +294,111 @@ class GradingRepositoryImpl implements GradingRepository {
   ResultFuture<Sf9Response> getSf9({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      final model = await _remoteDataSource.getSf9(
+    bool skipBackgroundRefresh = false,
+  }) =>
+      ops.getSf9(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         studentId: studentId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
-      return Right(model);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
 
   @override
   ResultFuture<Sf9Response> getSf10({
     required String classId,
     required String studentId,
-  }) async {
-    try {
-      final model = await _remoteDataSource.getSf10(
-        classId: classId,
-        studentId: studentId,
-      );
-      return Right(model);
-    } on ServerFailure catch (e) {
-      return Left(e);
-    } on Failure catch (e) {
-      return Left(e);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    bool skipBackgroundRefresh = false,
+  }) {
+    // Forward to StudentRecordsRepository when available (new SF10 aggregate)
+    if (_studentRecordsRepository != null) {
+      return _studentRecordsRepository
+          .getSf10(classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh)
+          .then((result) => result.fold(
+                (failure) => Left(failure),
+                (sf10) => Right(_sf10ToSf9(sf10)),
+              ));
     }
+    return ops.getSf10(
+      _localDataSource,
+      _remoteDataSource,
+      _dataEventBus,
+      classId: classId,
+      studentId: studentId,
+      skipBackgroundRefresh: skipBackgroundRefresh,
+    );
   }
+
+  Sf9Response _sf10ToSf9(Sf10Response sf10) {
+    final currentRecord = sf10.scholasticRecords.isNotEmpty
+        ? sf10.scholasticRecords.last
+        : null;
+
+    final subjects = (currentRecord?.subjects ?? const [])
+        .map((s) => Sf9SubjectRow(
+              classTitle: s.classTitle,
+              subjectGroup: s.subjectGroup,
+              periodGrades: s.periodGrades,
+              finalGrade: s.finalGrade,
+              descriptor: s.descriptor,
+            ))
+        .toList();
+
+    return Sf9Response(
+      studentId: sf10.studentId,
+      studentName: sf10.studentName,
+      gradeLevel: sf10.currentGradeLevel,
+      schoolYear: sf10.currentSchoolYear,
+      section: sf10.currentSection,
+      lrn: sf10.lrn,
+      age: sf10.age,
+      sex: sf10.sex,
+      trackStrand: sf10.trackStrand,
+      curriculum: sf10.curriculum,
+      subjects: subjects,
+      generalAverage: () {
+        final cr = currentRecord;
+        if (cr != null && cr.finalAverage != null) {
+          return Sf9PeriodAverages(
+            finalAverage: cr.finalAverage,
+            descriptor: cr.descriptor,
+          );
+        }
+        return null;
+      }(),
+    );
+  }
+
+  // ===== Batch Operations =====
 
   @override
   ResultFuture<Map<String, dynamic>> getGradeDataBatch({
     required String classId,
     required int gradingPeriodNumber,
-  }) async {
-    try {
-      // For now, implement batch loading by combining individual calls
-      // This can be optimized later with a proper batch endpoint
-      final gradeItemsResult = await getGradeItems(
+  }) =>
+      ops.getGradeDataBatch(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
       );
-      
-      final gradeSummaryResult = await getGradeSummary(
+
+  // ===== Unified Read =====
+
+  @override
+  ResultFuture<ClassGrades> getClassGrades({
+    required String classId,
+    required int gradingPeriodNumber,
+    bool skipBackgroundRefresh = false,
+  }) =>
+      ops.getClassGrades(
+        _localDataSource,
+        _remoteDataSource,
+        _dataEventBus,
         classId: classId,
         gradingPeriodNumber: gradingPeriodNumber,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
-      
-      return gradeItemsResult.fold(
-        (failure) => Left(failure),
-        (gradeItems) => gradeSummaryResult.fold(
-          (failure) => Left(failure),
-          (gradeSummary) => Right({
-            'grade_items': gradeItems.map((item) => GradeItemModel(
-              id: item.id,
-              classId: item.classId,
-              title: item.title,
-              component: item.component,
-              gradingPeriodNumber: item.gradingPeriodNumber,
-              totalPoints: item.totalPoints,
-              sourceType: item.sourceType,
-              sourceId: item.sourceId,
-              orderIndex: item.orderIndex,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt,
-            ).toJson()).toList(),
-            'grade_summary': gradeSummary,
-            'quarter': gradingPeriodNumber,
-          }),
-        ),
-      );
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
 }

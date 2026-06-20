@@ -16,13 +16,16 @@ pub struct ShortCodeResponse {
     pub code: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchoolSettingsResponse {
     pub school_code: String,
     pub school_name: Option<String>,
     pub school_region: Option<String>,
     pub school_division: Option<String>,
     pub school_year: Option<String>,
+    pub school_district: Option<String>,
+    pub school_head_name: Option<String>,
+    pub school_head_position: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,6 +39,9 @@ pub struct UpdateSchoolSettingsRequest {
     pub school_region: Option<String>,
     pub school_division: Option<String>,
     pub school_year: Option<String>,
+    pub school_district: Option<String>,
+    pub school_head_name: Option<String>,
+    pub school_head_position: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/events/data_event_bus.dart';
@@ -101,7 +102,49 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   String? _currentClassId;
   String? _currentAssessmentId;
   String? _currentSubmissionId;
+
+  Assessment _withUpdatedAssessment(
+    Assessment a, {
+    bool? isPublished,
+    bool? resultsReleased,
+    String? title,
+    String? description,
+    int? timeLimitMinutes,
+    DateTime? openAt,
+    DateTime? closeAt,
+    bool? showResultsImmediately,
+    int? gradingPeriodNumber,
+    String? component,
+  }) {
+    return Assessment(
+      id: a.id,
+      classId: a.classId,
+      title: title ?? a.title,
+      description: description ?? a.description,
+      timeLimitMinutes: timeLimitMinutes ?? a.timeLimitMinutes,
+      openAt: openAt ?? a.openAt,
+      closeAt: closeAt ?? a.closeAt,
+      showResultsImmediately: showResultsImmediately ?? a.showResultsImmediately,
+      resultsReleased: resultsReleased ?? a.resultsReleased,
+      isPublished: isPublished ?? a.isPublished,
+      orderIndex: a.orderIndex,
+      totalPoints: a.totalPoints,
+      questionCount: a.questionCount,
+      submissionCount: a.submissionCount,
+      isSubmitted: a.isSubmitted,
+      tosId: a.tosId,
+      gradingPeriodNumber: gradingPeriodNumber ?? a.gradingPeriodNumber,
+      component: component ?? a.component,
+      createdAt: a.createdAt,
+      updatedAt: DateTime.now(),
+      cachedAt: a.cachedAt,
+      syncStatus: SyncStatus.pending,
+    );
+  }
+
   late StreamSubscription<String?> _refreshSub;
+  late StreamSubscription<String> _statisticsSub;
+  late StreamSubscription<String> _submissionDetailSub;
 
   TeacherAssessmentNotifier(
     this._createAssessment,
@@ -128,11 +171,30 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         loadAssessments(_currentClassId!, skipBackgroundRefresh: true);
       }
     });
+    _statisticsSub = sl<DataEventBus>().onStatisticsChanged.listen((assessmentId) {
+      if (_currentAssessmentId != null && _currentAssessmentId == assessmentId) {
+        loadStatistics(assessmentId);
+      }
+    });
+    _submissionDetailSub = sl<DataEventBus>().onSubmissionDetailChanged.listen((submissionId) {
+      if (_currentSubmissionId != null && _currentSubmissionId == submissionId) {
+        loadSubmissionDetail(submissionId, skipBackgroundRefresh: true);
+      }
+    });
   }
 
   Future<void> loadAssessments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
-    _currentClassId = classId;
-    state = state.copyWith(isLoading: true, error: null);
+    if (_currentClassId != classId) {
+      _currentClassId = classId;
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        assessments: [],
+        currentAssessment: null,
+      );
+    } else {
+      state = state.copyWith(isLoading: state.assessments.isEmpty, error: null);
+    }
     final result = await _getAssessments(classId, publishedOnly: publishedOnly, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
@@ -144,23 +206,28 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     switch (c) {
       case 'written_work': return 'ww';
       case 'performance_task': return 'pt';
-      case 'quarterly_assessment': return 'qa';
+      case 'period_assessment': return 'qa';
       default: return c;
     }
   }
 
   Future<Assessment?> createAssessment(CreateAssessmentParams params) async {
-    final completer = Completer<Assessment?>();
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousAssessments = state.assessments;
+    final previousCurrentAssessment = state.currentAssessment;
+    state = state.copyWith(error: null, successMessage: null);
     final result = await _createAssessment(params);
-    result.fold(
+    return result.fold<Assessment?>(
       (failure) {
-        state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
-        completer.complete(null);
-      },
-      (assessment) {
         state = state.copyWith(
-          isLoading: false,
+          error: AppErrorMapper.fromFailure(failure),
+          assessments: previousAssessments,
+          currentAssessment: previousCurrentAssessment,
+        );
+        return null;
+      },
+      (mutationResult) {
+        final assessment = mutationResult.entity;
+        state = state.copyWith(
           assessments: [assessment, ...state.assessments],
           currentAssessment: assessment,
           successMessage: 'Assessment created',
@@ -180,10 +247,9 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
             },
           );
         }
-        completer.complete(assessment);
+        return assessment;
       },
     );
-    return completer.future;
   }
 
   Future<void> loadAssessmentDetail(String assessmentId) async {
@@ -203,43 +269,49 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> publishAssessment(String assessmentId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousAssessments = state.assessments;
+    final previousCurrentAssessment = state.currentAssessment;
+
+    final existing = state.currentAssessment?.id == assessmentId
+        ? state.currentAssessment
+        : state.assessments.where((a) => a.id == assessmentId).firstOrNull;
+    if (existing != null) {
+      final optimistic = _withUpdatedAssessment(existing, isPublished: true);
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        currentAssessment: optimistic,
+        assessments: state.assessments
+            .map((a) => a.id == assessmentId ? optimistic : a)
+            .toList(),
+      );
+    } else {
+      state = state.copyWith(error: null, successMessage: null);
+    }
+
     final result = await _publishAssessment(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (assessment) {
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        assessments: previousAssessments,
+        currentAssessment: previousCurrentAssessment,
+      ),
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         final updatedList = assessment.classId.isEmpty
-            ? state.assessments.map((a) {
-                if (a.id == assessmentId) {
-                  return Assessment(
-                    id: a.id,
-                    classId: a.classId,
-                    title: a.title,
-                    description: a.description,
-                    timeLimitMinutes: a.timeLimitMinutes,
-                    openAt: a.openAt,
-                    closeAt: a.closeAt,
-                    showResultsImmediately: a.showResultsImmediately,
-                    resultsReleased: a.resultsReleased,
-                    isPublished: true,
-                    orderIndex: a.orderIndex,
-                    totalPoints: a.totalPoints,
-                    questionCount: a.questionCount,
-                    submissionCount: a.submissionCount,
-                    gradingPeriodNumber: a.gradingPeriodNumber,
-                    component: a.component,
-                    createdAt: a.createdAt,
-                    updatedAt: DateTime.now(),
-                    needsSync: true,
-                    cachedAt: DateTime.now(),
-                  );
-                }
-                return a;
-              }).toList()
+            ? state.assessments
+                .map((a) => a.id == assessmentId
+                    ? _withUpdatedAssessment(a, isPublished: true)
+                    : a)
+                .toList()
             : state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
+        final current = assessment.classId.isEmpty
+            ? (state.currentAssessment?.id == assessmentId && state.currentAssessment != null
+                ? _withUpdatedAssessment(state.currentAssessment!, isPublished: true)
+                : assessment)
+            : assessment;
         state = state.copyWith(
-          isLoading: false,
-          currentAssessment: assessment,
+          currentAssessment: current,
           assessments: updatedList,
           successMessage: 'Assessment published',
         );
@@ -248,43 +320,49 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> unpublishAssessment(String assessmentId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousAssessments = state.assessments;
+    final previousCurrentAssessment = state.currentAssessment;
+
+    final existing = state.currentAssessment?.id == assessmentId
+        ? state.currentAssessment
+        : state.assessments.where((a) => a.id == assessmentId).firstOrNull;
+    if (existing != null) {
+      final optimistic = _withUpdatedAssessment(existing, isPublished: false);
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        currentAssessment: optimistic,
+        assessments: state.assessments
+            .map((a) => a.id == assessmentId ? optimistic : a)
+            .toList(),
+      );
+    } else {
+      state = state.copyWith(error: null, successMessage: null);
+    }
+
     final result = await _unpublishAssessment(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (assessment) {
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        assessments: previousAssessments,
+        currentAssessment: previousCurrentAssessment,
+      ),
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         final updatedList = assessment.classId.isEmpty
-            ? state.assessments.map((a) {
-                if (a.id == assessmentId) {
-                  return Assessment(
-                    id: a.id,
-                    classId: a.classId,
-                    title: a.title,
-                    description: a.description,
-                    timeLimitMinutes: a.timeLimitMinutes,
-                    openAt: a.openAt,
-                    closeAt: a.closeAt,
-                    showResultsImmediately: a.showResultsImmediately,
-                    resultsReleased: a.resultsReleased,
-                    isPublished: false,
-                    orderIndex: a.orderIndex,
-                    totalPoints: a.totalPoints,
-                    questionCount: a.questionCount,
-                    submissionCount: a.submissionCount,
-                    gradingPeriodNumber: a.gradingPeriodNumber,
-                    component: a.component,
-                    createdAt: a.createdAt,
-                    updatedAt: DateTime.now(),
-                    needsSync: true,
-                    cachedAt: DateTime.now(),
-                  );
-                }
-                return a;
-              }).toList()
+            ? state.assessments
+                .map((a) => a.id == assessmentId
+                    ? _withUpdatedAssessment(a, isPublished: false)
+                    : a)
+                .toList()
             : state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
+        final current = assessment.classId.isEmpty
+            ? (state.currentAssessment?.id == assessmentId && state.currentAssessment != null
+                ? _withUpdatedAssessment(state.currentAssessment!, isPublished: false)
+                : assessment)
+            : assessment;
         state = state.copyWith(
-          isLoading: false,
-          currentAssessment: assessment,
+          currentAssessment: current,
           assessments: updatedList,
           successMessage: 'Assessment moved to draft',
         );
@@ -293,16 +371,24 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> deleteAssessment(String assessmentId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousAssessments = state.assessments;
+    final previousCurrentAssessment = state.currentAssessment;
+    state = state.copyWith(
+      error: null,
+      successMessage: null,
+      assessments: state.assessments.where((a) => a.id != assessmentId).toList(),
+      currentAssessment: null,
+    );
     final result = await _deleteAssessment(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        assessments: previousAssessments,
+        currentAssessment: previousCurrentAssessment,
+      ),
       (_) {
         state = state.copyWith(
-          isLoading: false,
-          assessments: state.assessments.where((a) => a.id != assessmentId).toList(),
           successMessage: 'Assessment deleted',
-          currentAssessment: null,
         );
         // Delete linked grade item if one exists
         sl<GradingRepository>().findGradeItemBySourceId(assessmentId).then((res) {
@@ -321,10 +407,14 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     required List<String> assessmentIds,
     required List<Assessment> orderedAssessments,
   }) async {
+    final previousAssessments = state.assessments;
     state = state.copyWith(assessments: orderedAssessments);
     final result = await _reorderAllAssessments(classId: classId, assessmentIds: assessmentIds);
     result.fold(
-      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        assessments: previousAssessments,
+      ),
       (_) {},
     );
   }
@@ -334,39 +424,118 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     required List<String> questionIds,
     required List<Question> orderedQuestions,
   }) async {
+    final previousQuestions = state.questions;
     state = state.copyWith(questions: orderedQuestions);
     final result = await _reorderAllQuestions(assessmentId: assessmentId, questionIds: questionIds);
     result.fold(
-      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        questions: previousQuestions,
+      ),
       (_) {},
     );
   }
 
   Future<void> addQuestions(AddQuestionsParams params) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousQuestions = state.questions;
+    final previousCurrentAssessment = state.currentAssessment;
+    state = state.copyWith(error: null, successMessage: null);
     final result = await _addQuestions(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (questions) => state = state.copyWith(
-        isLoading: false,
-        questions: [...state.questions, ...questions],
-        successMessage: 'Questions added',
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        questions: previousQuestions,
+        currentAssessment: previousCurrentAssessment,
       ),
+      (mutationResult) {
+        final questions = mutationResult.entity;
+        final newCount = (state.currentAssessment?.questionCount ?? 0) + questions.length;
+        final newPoints = (state.currentAssessment?.totalPoints ?? 0) +
+            questions.fold<int>(0, (sum, q) => sum + q.points);
+        final updatedAssessment = state.currentAssessment != null
+            ? Assessment(
+                id: state.currentAssessment!.id,
+                classId: state.currentAssessment!.classId,
+                title: state.currentAssessment!.title,
+                description: state.currentAssessment!.description,
+                timeLimitMinutes: state.currentAssessment!.timeLimitMinutes,
+                openAt: state.currentAssessment!.openAt,
+                closeAt: state.currentAssessment!.closeAt,
+                showResultsImmediately: state.currentAssessment!.showResultsImmediately,
+                resultsReleased: state.currentAssessment!.resultsReleased,
+                isPublished: state.currentAssessment!.isPublished,
+                orderIndex: state.currentAssessment!.orderIndex,
+                totalPoints: newPoints,
+                questionCount: newCount,
+                submissionCount: state.currentAssessment!.submissionCount,
+                isSubmitted: state.currentAssessment!.isSubmitted,
+                tosId: state.currentAssessment!.tosId,
+                gradingPeriodNumber: state.currentAssessment!.gradingPeriodNumber,
+                component: state.currentAssessment!.component,
+                createdAt: state.currentAssessment!.createdAt,
+                updatedAt: state.currentAssessment!.updatedAt,
+                cachedAt: state.currentAssessment!.cachedAt,
+                syncStatus: state.currentAssessment!.syncStatus,
+              )
+            : null;
+        state = state.copyWith(
+          questions: [...state.questions, ...questions],
+          currentAssessment: updatedAssessment,
+          successMessage: 'Questions added',
+        );
+      },
     );
   }
 
   Future<void> updateAssessment(UpdateAssessmentParams params) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousAssessments = state.assessments;
+    final previousCurrentAssessment = state.currentAssessment;
+
+    Assessment? optimistic;
+    final existing = state.currentAssessment?.id == params.assessmentId
+        ? state.currentAssessment
+        : state.assessments.where((a) => a.id == params.assessmentId).firstOrNull;
+    if (existing != null) {
+      optimistic = _withUpdatedAssessment(
+        existing,
+        title: params.title,
+        description: params.description,
+        timeLimitMinutes: params.timeLimitMinutes,
+        openAt: params.openAt != null ? DateTime.tryParse(params.openAt!) : null,
+        closeAt: params.closeAt != null ? DateTime.tryParse(params.closeAt!) : null,
+        showResultsImmediately: params.showResultsImmediately,
+        gradingPeriodNumber: params.gradingPeriodNumber,
+        component: params.component,
+      );
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        currentAssessment: optimistic,
+        assessments: state.assessments
+            .map((a) => a.id == params.assessmentId ? optimistic! : a)
+            .toList(),
+      );
+    } else {
+      state = state.copyWith(error: null, successMessage: null);
+    }
+
     final result = await _updateAssessment(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (assessment) {
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        assessments: previousAssessments,
+        currentAssessment: previousCurrentAssessment,
+      ),
+      (mutationResult) {
+        final assessment = mutationResult.entity;
         state = state.copyWith(
-          isLoading: false,
           currentAssessment: assessment,
+          assessments: state.assessments
+              .map((a) => a.id == params.assessmentId ? assessment : a)
+              .toList(),
           successMessage: 'Assessment updated',
         );
-        // Sync title/total_points to linked grade item if one exists
+        // Sync title to linked grade item if one exists
         sl<GradingRepository>().findGradeItemBySourceId(params.assessmentId).then((res) {
           res.fold((_) {}, (item) {
             if (item != null) {
@@ -383,39 +552,199 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   }
 
   Future<void> updateQuestion(UpdateQuestionParams params) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousQuestions = state.questions;
+    final previousCurrentAssessment = state.currentAssessment;
+
+    final existingQ = state.questions.where((q) => q.id == params.questionId).firstOrNull;
+    if (existingQ != null) {
+      final oldPoints = existingQ.points;
+      final newPoints = params.data['points'] as int? ?? oldPoints;
+      final optimisticQ = Question(
+        id: existingQ.id,
+        assessmentId: existingQ.assessmentId,
+        questionType: params.data['question_type'] as String? ?? existingQ.questionType,
+        questionText: params.data['question_text'] as String? ?? existingQ.questionText,
+        points: newPoints,
+        orderIndex: params.data['order_index'] as int? ?? existingQ.orderIndex,
+        isMultiSelect: params.data['is_multi_select'] as bool? ?? existingQ.isMultiSelect,
+        tosCompetencyId: existingQ.tosCompetencyId,
+        cognitiveLevel: existingQ.cognitiveLevel,
+        difficulty: existingQ.difficulty,
+        choices: existingQ.choices,
+        correctAnswers: existingQ.correctAnswers,
+        enumerationItems: existingQ.enumerationItems,
+        createdAt: existingQ.createdAt,
+        updatedAt: DateTime.now(),
+        cachedAt: existingQ.cachedAt,
+        syncStatus: SyncStatus.pending,
+      );
+      Assessment? updatedAssessment;
+      if (state.currentAssessment != null && newPoints != oldPoints) {
+        final pointsDelta = newPoints - oldPoints;
+        updatedAssessment = Assessment(
+          id: state.currentAssessment!.id,
+          classId: state.currentAssessment!.classId,
+          title: state.currentAssessment!.title,
+          description: state.currentAssessment!.description,
+          timeLimitMinutes: state.currentAssessment!.timeLimitMinutes,
+          openAt: state.currentAssessment!.openAt,
+          closeAt: state.currentAssessment!.closeAt,
+          showResultsImmediately: state.currentAssessment!.showResultsImmediately,
+          resultsReleased: state.currentAssessment!.resultsReleased,
+          isPublished: state.currentAssessment!.isPublished,
+          orderIndex: state.currentAssessment!.orderIndex,
+          totalPoints: state.currentAssessment!.totalPoints + pointsDelta,
+          questionCount: state.currentAssessment!.questionCount,
+          submissionCount: state.currentAssessment!.submissionCount,
+          isSubmitted: state.currentAssessment!.isSubmitted,
+          tosId: state.currentAssessment!.tosId,
+          gradingPeriodNumber: state.currentAssessment!.gradingPeriodNumber,
+          component: state.currentAssessment!.component,
+          createdAt: state.currentAssessment!.createdAt,
+          updatedAt: state.currentAssessment!.updatedAt,
+          cachedAt: state.currentAssessment!.cachedAt,
+          syncStatus: state.currentAssessment!.syncStatus,
+        );
+      }
+      if (updatedAssessment != null) {
+        state = state.copyWith(
+          error: null,
+          successMessage: null,
+          questions: state.questions.map((q) => q.id == params.questionId ? optimisticQ : q).toList(),
+          currentAssessment: updatedAssessment,
+        );
+      } else {
+        state = state.copyWith(
+          error: null,
+          successMessage: null,
+          questions: state.questions.map((q) => q.id == params.questionId ? optimisticQ : q).toList(),
+        );
+      }
+    } else {
+      state = state.copyWith(error: null, successMessage: null);
+    }
+
     final result = await _updateQuestion(params);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (question) => state = state.copyWith(
-        isLoading: false,
-        successMessage: 'Question updated',
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        questions: previousQuestions,
+        currentAssessment: previousCurrentAssessment,
       ),
+      (mutationResult) {
+        final question = mutationResult.entity;
+        state = state.copyWith(
+          questions: state.questions.map((q) => q.id == question.id ? question : q).toList(),
+          successMessage: 'Question updated',
+        );
+      },
     );
   }
 
   Future<void> deleteQuestion(String questionId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousQuestions = state.questions;
+    final previousCurrentAssessment = state.currentAssessment;
+
+    final deletedQ = state.questions.where((q) => q.id == questionId).firstOrNull;
+    Assessment? updatedAssessment;
+    if (deletedQ != null && state.currentAssessment != null) {
+      updatedAssessment = Assessment(
+        id: state.currentAssessment!.id,
+        classId: state.currentAssessment!.classId,
+        title: state.currentAssessment!.title,
+        description: state.currentAssessment!.description,
+        timeLimitMinutes: state.currentAssessment!.timeLimitMinutes,
+        openAt: state.currentAssessment!.openAt,
+        closeAt: state.currentAssessment!.closeAt,
+        showResultsImmediately: state.currentAssessment!.showResultsImmediately,
+        resultsReleased: state.currentAssessment!.resultsReleased,
+        isPublished: state.currentAssessment!.isPublished,
+        orderIndex: state.currentAssessment!.orderIndex,
+        totalPoints: state.currentAssessment!.totalPoints - deletedQ.points,
+        questionCount: state.currentAssessment!.questionCount - 1,
+        submissionCount: state.currentAssessment!.submissionCount,
+        isSubmitted: state.currentAssessment!.isSubmitted,
+        tosId: state.currentAssessment!.tosId,
+        gradingPeriodNumber: state.currentAssessment!.gradingPeriodNumber,
+        component: state.currentAssessment!.component,
+        createdAt: state.currentAssessment!.createdAt,
+        updatedAt: state.currentAssessment!.updatedAt,
+        cachedAt: state.currentAssessment!.cachedAt,
+        syncStatus: state.currentAssessment!.syncStatus,
+      );
+    }
+    if (updatedAssessment != null) {
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        questions: state.questions.where((q) => q.id != questionId).toList(),
+        currentAssessment: updatedAssessment,
+      );
+    } else {
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        questions: state.questions.where((q) => q.id != questionId).toList(),
+      );
+    }
+
     final result = await _deleteQuestion(questionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        questions: previousQuestions,
+        currentAssessment: previousCurrentAssessment,
+      ),
       (_) => state = state.copyWith(
-        isLoading: false,
         successMessage: 'Question deleted',
       ),
     );
   }
 
   Future<void> releaseResults(String assessmentId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousAssessments = state.assessments;
+    final previousCurrentAssessment = state.currentAssessment;
+
+    final existing = state.currentAssessment?.id == assessmentId
+        ? state.currentAssessment
+        : state.assessments.where((a) => a.id == assessmentId).firstOrNull;
+    if (existing != null) {
+      final optimistic = _withUpdatedAssessment(existing, resultsReleased: true);
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        currentAssessment: optimistic,
+        assessments: state.assessments
+            .map((a) => a.id == assessmentId ? optimistic : a)
+            .toList(),
+      );
+    } else {
+      state = state.copyWith(error: null, successMessage: null);
+    }
+
     final result = await _releaseResults(assessmentId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (assessment) {
-        final updatedList = state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        assessments: previousAssessments,
+        currentAssessment: previousCurrentAssessment,
+      ),
+      (mutationResult) {
+        final assessment = mutationResult.entity;
+        final updatedList = assessment.classId.isEmpty
+            ? state.assessments
+                .map((a) => a.id == assessmentId
+                    ? _withUpdatedAssessment(a, resultsReleased: true)
+                    : a)
+                .toList()
+            : state.assessments.map((a) => a.id == assessmentId ? assessment : a).toList();
+        final current = assessment.classId.isEmpty
+            ? (state.currentAssessment?.id == assessmentId && state.currentAssessment != null
+                ? _withUpdatedAssessment(state.currentAssessment!, resultsReleased: true)
+                : assessment)
+            : assessment;
         state = state.copyWith(
-          isLoading: false,
-          currentAssessment: assessment,
+          currentAssessment: current,
           assessments: updatedList,
           successMessage: 'Results released',
         );
@@ -442,7 +771,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
-  Future<void> loadSubmissionDetail(String submissionId) async {
+  Future<void> loadSubmissionDetail(String submissionId, {bool skipBackgroundRefresh = false}) async {
     RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: START $submissionId');
     if (_currentSubmissionId != submissionId) {
       _currentSubmissionId = submissionId;
@@ -454,13 +783,24 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     } else {
       state = state.copyWith(isLoading: true, error: null);
     }
-    final result = await _getSubmissionDetail(submissionId);
+    final result = await _getSubmissionDetail(submissionId, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) {
         RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: FAILURE $submissionId - ${failure.message}');
         state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
       (detail) {
+        if (detail == null) {
+          if (skipBackgroundRefresh) {
+            // Retry from event bus after fetch failed — cache still empty
+            RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: FETCH FAILED $submissionId');
+            state = state.copyWith(isLoading: false, error: 'Failed to load submission. Check your connection and try again.');
+          } else {
+            // Cache miss — background fetch in progress, keep spinner
+            RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: CACHE MISS $submissionId - background fetch started');
+          }
+          return;
+        }
         RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: SUCCESS $submissionId - answers=${detail.answers.length}');
         state = state.copyWith(isLoading: false, currentSubmission: detail);
       },
@@ -469,7 +809,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
 
   Future<void> overrideAnswer(OverrideAnswerParams params) async {
     final previousSubmission = state.currentSubmission;
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
 
     if (previousSubmission != null) {
       final updatedAnswers = previousSubmission.answers.map((answer) {
@@ -516,14 +856,12 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     result.fold(
       (failure) {
         state = state.copyWith(
-          isLoading: false,
           error: AppErrorMapper.fromFailure(failure),
           currentSubmission: previousSubmission,
         );
       },
       (_) {
         state = state.copyWith(
-          isLoading: false,
           successMessage: 'Grade overridden',
         );
       },
@@ -532,7 +870,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
 
   Future<void> gradeEssayAnswer(GradeEssayParams params) async {
     final previousSubmission = state.currentSubmission;
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    state = state.copyWith(error: null, successMessage: null);
 
     if (previousSubmission != null) {
       final updatedAnswers = previousSubmission.answers.map((answer) {
@@ -578,14 +916,12 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     result.fold(
       (failure) {
         state = state.copyWith(
-          isLoading: false,
           error: AppErrorMapper.fromFailure(failure),
           currentSubmission: previousSubmission,
         );
       },
       (_) {
         state = state.copyWith(
-          isLoading: false,
           successMessage: 'Essay graded',
         );
       },
@@ -601,6 +937,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
+  String? get currentError => state.error;
+
   void clearMessages() {
     state = state.copyWith(error: null, successMessage: null);
   }
@@ -608,6 +946,8 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
   @override
   void dispose() {
     _refreshSub.cancel();
+    _statisticsSub.cancel();
+    _submissionDetailSub.cancel();
     _currentAssessmentId = null;
     _currentSubmissionId = null;
     super.dispose();

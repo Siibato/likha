@@ -57,7 +57,7 @@ impl TosRepository {
         &self,
         class_id: Uuid,
         grading_period_number: i32,
-    ) -> AppResult<Option<table_of_specifications::Model>> {
+    ) -> AppResult<Vec<table_of_specifications::Model>> {
         ops::find_tos_by_class_and_period(&self.db, class_id, grading_period_number).await
     }
 
@@ -156,7 +156,7 @@ impl TosRepository {
     pub async fn bulk_create_competencies(
         &self,
         tos_id: Uuid,
-        competencies: Vec<(Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
+        competencies: Vec<(Option<Uuid>, Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
     ) -> AppResult<Vec<tos_competencies::Model>> {
         ops::bulk_create_competencies(&self.db, tos_id, competencies).await
     }

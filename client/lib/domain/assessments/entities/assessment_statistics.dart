@@ -28,20 +28,26 @@ class AssessmentStatistics extends Equatable {
 class ClassStatistics extends Equatable {
   final double mean;
   final double median;
+  final double stdDev;
   final double highest;
   final double lowest;
+  final double passRate;
+  final double failRate;
   final List<ScoreBucket> scoreDistribution;
 
   const ClassStatistics({
     required this.mean,
     required this.median,
+    required this.stdDev,
     required this.highest,
     required this.lowest,
+    required this.passRate,
+    required this.failRate,
     required this.scoreDistribution,
   });
 
   @override
-  List<Object?> get props => [mean, median, highest, lowest];
+  List<Object?> get props => [mean, median, stdDev, highest, lowest, passRate, failRate];
 }
 
 class ScoreBucket extends Equatable {
@@ -62,6 +68,8 @@ class QuestionStatistics extends Equatable {
   final int correctCount;
   final int incorrectCount;
   final double correctPercentage;
+  final double averagePoints;
+  final double averagePercentage;
 
   const QuestionStatistics({
     required this.questionId,
@@ -71,10 +79,12 @@ class QuestionStatistics extends Equatable {
     required this.correctCount,
     required this.incorrectCount,
     required this.correctPercentage,
+    this.averagePoints = 0.0,
+    this.averagePercentage = 0.0,
   });
 
   @override
-  List<Object?> get props => [questionId, correctPercentage];
+  List<Object?> get props => [questionId, correctPercentage, averagePoints, averagePercentage];
 }
 
 class ItemAnalysis extends Equatable {
@@ -138,6 +148,7 @@ class TestSummary extends Equatable {
   final int totalItemsAnalyzed;
   final int upperGroupSize;
   final int lowerGroupSize;
+  final double? kr20;
 
   const TestSummary({
     required this.meanDifficulty,
@@ -148,8 +159,9 @@ class TestSummary extends Equatable {
     required this.totalItemsAnalyzed,
     required this.upperGroupSize,
     required this.lowerGroupSize,
+    this.kr20,
   });
 
   @override
-  List<Object?> get props => [totalItemsAnalyzed, meanDifficulty];
+  List<Object?> get props => [totalItemsAnalyzed, meanDifficulty, kr20];
 }

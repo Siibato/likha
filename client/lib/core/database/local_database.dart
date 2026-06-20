@@ -2,13 +2,15 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_common/sqflite.dart' hide openDatabase, databaseFactory;
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/database/open_database.dart';
 import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 2 (v1 → v2: removed per-field AES encryption, migrated to SQLCipher db-level encryption)
-/// TOTAL TABLES: 32
+/// SCHEMA VERSION: 12 (v11 → v12: added deleted_at column to material_files)
+/// TOTAL TABLES: 37
 ///
 /// This database was consolidated from 12 historical versions into a single
 /// clean v1 schema. All migrations are now handled via nuclear reset:
@@ -20,12 +22,13 @@ import 'package:likha/core/logging/core_logger.dart';
 /// - Classes: classes, class_participants
 /// - Assessments: assessments, assessment_questions, answer_keys,
 ///   answer_key_acceptable_answers, question_choices, assessment_submissions,
-///   submission_answers, submission_answer_items, assessment_statistics_cache
+///   submission_answers, submission_answer_items
 /// - Assignments: assignments, assignment_submissions, submission_files
 /// - Materials: learning_materials, material_files
 /// - Grading: grade_record, grade_items, grade_scores, period_grades
 /// - TOS: table_of_specifications, tos_competencies, melcs
 /// - Sync: sync_queue, sync_metadata, student_results_cache, validation_metadata
+/// - Setup: school_settings
 ///
 /// INDEXES: 40+ indexes for query performance on foreign keys and common filters
 class LocalDatabase {
@@ -53,6 +56,7 @@ class LocalDatabase {
   static const _passwordStorageKey = 'db_cipher_key';
 
   Future<String> _getOrCreateDbPassword() async {
+    if (kIsWeb) return '';
     const storage = FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
     );
@@ -73,31 +77,75 @@ class LocalDatabase {
   }
 
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
+    final dbPath = await databaseFactory.getDatabasesPath();
     final dbFilePath = '$dbPath/likha.db';
 
-    return openDatabase(
-      dbFilePath,
-      password: kIsWeb ? null : _dbPassword,
-      version: 2,
-      onCreate: _createTables,
-      onUpgrade: _upgradeDatabase,
-      onDowngrade: _downgradeDatabase,
-      onOpen: (db) async {
+    Future<Database> doOpen() async {
+      if (kIsWeb) {
+        return databaseFactory.openDatabase(
+          dbFilePath,
+          options: OpenDatabaseOptions(
+            version: 12,
+            onCreate: _createTables,
+            onUpgrade: _upgradeDatabase,
+            onDowngrade: _downgradeDatabase,
+            onOpen: (db) async {
+              try {
+                await db.execute('PRAGMA foreign_keys = ON');
+                await db.execute('PRAGMA synchronous = NORMAL');
+                await db.execute('PRAGMA cache_size = 10000');
+                await db.execute('PRAGMA temp_store = MEMORY');
+              } catch (e) {
+                CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
+              }
+            },
+            singleInstance: true,
+          ),
+        );
+      }
+      return openDatabase(
+        dbFilePath,
+        password: _dbPassword,
+        version: 11,
+        onCreate: _createTables,
+        onUpgrade: _upgradeDatabase,
+        onDowngrade: _downgradeDatabase,
+        onOpen: (db) async {
+          try {
+            await db.execute('PRAGMA foreign_keys = ON');
+            await db.execute('PRAGMA synchronous = NORMAL');
+            await db.execute('PRAGMA cache_size = 10000');
+            await db.execute('PRAGMA temp_store = MEMORY');
+          } catch (e) {
+            CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
+          }
+          // MigrationRunner disabled - all migrations consolidated into _createTables
+          // Future migrations will be handled via onUpgrade with version increments
+        },
+        singleInstance: true,
+      );
+    }
+
+    try {
+      return await doOpen();
+    } on DatabaseException catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('open_failed') ||
+          msg.contains('notadatabase') ||
+          msg.contains('is not a database')) {
+        CoreLogger.instance.warn(
+          'Database open failed (likely key mismatch or corruption). '
+          'Deleting $dbFilePath and recreating.',
+        );
         try {
-          await db.execute('PRAGMA foreign_keys = ON');
-          await db.execute('PRAGMA synchronous = NORMAL');
-          await db.execute('PRAGMA cache_size = 10000');
-          await db.execute('PRAGMA temp_store = MEMORY');
-        } catch (e) {
-          CoreLogger.instance.warn('Failed to set database PRAGMA settings: $e');
+          await databaseFactory.deleteDatabase(dbFilePath);
+        } catch (_) {
+          // ignore cleanup errors
         }
-        // MigrationRunner disabled - all migrations consolidated into _createTables
-        // Future migrations will be handled via onUpgrade with version increments
-      },
-      // Configure database for better performance
-      singleInstance: true,
-    );
+        return doOpen();
+      }
+      rethrow;
+    }
   }
 
   Future<void> _createTables(Database db, int version) async {
@@ -115,7 +163,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0
+          sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
 
@@ -152,7 +200,7 @@ class LocalDatabase {
           details TEXT,
           created_at TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
       ''');
@@ -176,7 +224,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0
+          sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
 
@@ -190,7 +238,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           removed_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
@@ -220,7 +268,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -242,7 +290,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
         )
       ''');
@@ -254,7 +302,7 @@ class LocalDatabase {
           question_id TEXT NOT NULL,
           item_type TEXT NOT NULL DEFAULT 'correct_answer',
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE
         )
       ''');
@@ -266,7 +314,7 @@ class LocalDatabase {
           answer_key_id TEXT NOT NULL,
           answer_text TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(answer_key_id) REFERENCES answer_keys(id) ON DELETE CASCADE
         )
       ''');
@@ -280,7 +328,7 @@ class LocalDatabase {
           is_correct INTEGER NOT NULL DEFAULT 0,
           order_index INTEGER NOT NULL DEFAULT 0,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE
         )
       ''');
@@ -299,7 +347,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(assessment_id, user_id)
@@ -312,11 +360,11 @@ class LocalDatabase {
           id TEXT PRIMARY KEY,
           submission_id TEXT NOT NULL,
           question_id TEXT NOT NULL,
-          points REAL NOT NULL DEFAULT 0,
+          points REAL,
           overridden_by TEXT,
           overridden_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_id) REFERENCES assessment_submissions(id) ON DELETE CASCADE,
           FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE,
           FOREIGN KEY(overridden_by) REFERENCES users(id) ON DELETE SET NULL
@@ -331,9 +379,9 @@ class LocalDatabase {
           answer_key_id TEXT,
           choice_id TEXT,
           answer_text TEXT,
-          is_correct INTEGER NOT NULL DEFAULT 0,
+          is_correct INTEGER,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_answer_id) REFERENCES submission_answers(id) ON DELETE CASCADE,
           FOREIGN KEY(answer_key_id) REFERENCES answer_keys(id) ON DELETE SET NULL,
           FOREIGN KEY(choice_id) REFERENCES question_choices(id) ON DELETE SET NULL
@@ -366,7 +414,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -388,7 +436,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY(graded_by) REFERENCES users(id) ON DELETE SET NULL,
@@ -407,7 +455,7 @@ class LocalDatabase {
           local_path TEXT NOT NULL DEFAULT '',
           uploaded_at TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(submission_id) REFERENCES assignment_submissions(id) ON DELETE CASCADE
         )
       ''');
@@ -425,7 +473,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -441,7 +489,8 @@ class LocalDatabase {
           local_path TEXT NOT NULL DEFAULT '',
           uploaded_at TEXT NOT NULL,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          deleted_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(material_id) REFERENCES learning_materials(id) ON DELETE CASCADE
         )
       ''');
@@ -493,7 +542,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           UNIQUE(class_id, grading_period_number)
         )
@@ -515,7 +564,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
         )
       ''');
@@ -533,7 +582,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(grade_item_id) REFERENCES grade_items(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(grade_item_id, student_id)
@@ -555,7 +604,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           UNIQUE(class_id, student_id, grading_period_number)
@@ -585,8 +634,7 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          UNIQUE(class_id, grading_period_number)
+          sync_status TEXT NOT NULL DEFAULT 'synced'
         )
       ''');
 
@@ -612,8 +660,8 @@ class LocalDatabase {
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
-          needs_sync INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id)
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY (tos_id) REFERENCES table_of_specifications(id) ON DELETE CASCADE
         )
       ''');
 
@@ -630,15 +678,6 @@ class LocalDatabase {
         )
       ''');
 
-      // Assessment statistics cache table
-      await txn.execute('''
-        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-          assessment_id TEXT PRIMARY KEY,
-          statistics_json TEXT NOT NULL,
-          cached_at TEXT NOT NULL
-        )
-      ''');
-
       // Validation metadata table
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS validation_metadata (
@@ -648,6 +687,156 @@ class LocalDatabase {
           etag TEXT,
           validated_at TEXT NOT NULL,
           database_id TEXT
+        )
+      ''');
+
+      // School settings table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS school_settings (
+          id TEXT PRIMARY KEY,
+          school_name TEXT NOT NULL DEFAULT '',
+          school_region TEXT NOT NULL DEFAULT '',
+          school_division TEXT NOT NULL DEFAULT '',
+          school_year TEXT NOT NULL DEFAULT '',
+          school_code TEXT NOT NULL DEFAULT '',
+          school_district TEXT,
+          school_head_name TEXT,
+          school_head_position TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced'
+        )
+      ''');
+
+      // Learner details table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS learner_details (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL UNIQUE,
+          lrn TEXT,
+          age INTEGER,
+          sex TEXT,
+          track_strand TEXT,
+          curriculum TEXT,
+          birthdate TEXT,
+          birthplace TEXT,
+          home_address TEXT,
+          father_name TEXT,
+          mother_name TEXT,
+          guardian_name TEXT,
+          guardian_contact TEXT,
+          date_admitted TEXT,
+          admitted_to_grade TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Attendance records table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS attendance_records (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          class_id TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          month TEXT NOT NULL,
+          school_days INTEGER NOT NULL DEFAULT 0,
+          days_present INTEGER NOT NULL DEFAULT 0,
+          days_absent INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          UNIQUE(student_id, class_id, school_year, month)
+        )
+      ''');
+
+      // Core values records table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS core_values_records (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          class_id TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          grading_period_number INTEGER NOT NULL,
+          core_value TEXT NOT NULL,
+          behavior_statement TEXT NOT NULL,
+          marking TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Student school history table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS student_school_history (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          school_name TEXT NOT NULL,
+          school_id TEXT,
+          grade_level TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          section TEXT,
+          date_from TEXT,
+          date_to TEXT,
+          record_type TEXT NOT NULL DEFAULT 'previous',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Previous school subjects table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS previous_school_subjects (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          school_history_id TEXT NOT NULL,
+          subject_name TEXT NOT NULL,
+          subject_group TEXT,
+          q1_grade INTEGER,
+          q2_grade INTEGER,
+          q3_grade INTEGER,
+          q4_grade INTEGER,
+          final_grade INTEGER,
+          descriptor TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(school_history_id) REFERENCES student_school_history(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Previous school attendance table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS previous_school_attendance (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          school_history_id TEXT NOT NULL,
+          school_year TEXT NOT NULL,
+          month TEXT NOT NULL,
+          school_days INTEGER NOT NULL DEFAULT 0,
+          days_present INTEGER NOT NULL DEFAULT 0,
+          days_absent INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY(school_history_id) REFERENCES student_school_history(id) ON DELETE CASCADE
         )
       ''');
 
@@ -694,10 +883,97 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_student_id ON period_grades(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_updated_at ON period_grades(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_deleted_at ON period_grades(deleted_at)');
+
+      // Student records indexes
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_learner_details_user_id ON learner_details(user_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_attendance_records_student_id ON attendance_records(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_attendance_records_class_id ON attendance_records(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_attendance_records_school_year ON attendance_records(school_year)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_core_values_records_student_id ON core_values_records(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_core_values_records_class_id ON core_values_records(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_student_school_history_student_id ON student_school_history(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_student_id ON previous_school_subjects(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_school_history_id ON previous_school_subjects(school_history_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_student_id ON previous_school_attendance(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_school_history_id ON previous_school_attendance(school_history_id)');
     });
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    // Targeted migration: add school_head_name and school_head_position to school_settings
+    // Web path: 9 → 10; Mobile path: 8 → 9
+    if ((oldVersion == 9 && newVersion == 10) || (oldVersion == 8 && newVersion == 9)) {
+      await db.transaction((txn) async {
+        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_name TEXT');
+        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_position TEXT');
+      });
+      return;
+    }
+
+    // Targeted migration: make points and is_correct nullable
+    // Web path: 7 → 8; Mobile path: 6 → 7
+    if ((oldVersion == 7 && newVersion == 8) || (oldVersion == 6 && newVersion == 7)) {
+      await db.transaction((txn) async {
+        // Migrate submission_answers: points REAL NOT NULL DEFAULT 0 → points REAL
+        await txn.execute('''
+          CREATE TABLE submission_answers_new (
+            id TEXT PRIMARY KEY,
+            submission_id TEXT NOT NULL,
+            question_id TEXT NOT NULL,
+            points REAL,
+            overridden_by TEXT,
+            overridden_at TEXT,
+            cached_at TEXT,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            FOREIGN KEY(submission_id) REFERENCES assessment_submissions(id) ON DELETE CASCADE,
+            FOREIGN KEY(question_id) REFERENCES assessment_questions(id) ON DELETE CASCADE,
+            FOREIGN KEY(overridden_by) REFERENCES users(id) ON DELETE SET NULL
+          )
+        ''');
+        await txn.execute('''
+          INSERT INTO submission_answers_new
+          SELECT id, submission_id, question_id, points, overridden_by, overridden_at, cached_at, sync_status
+          FROM submission_answers
+        ''');
+        await txn.execute('DROP TABLE submission_answers');
+        await txn.execute('ALTER TABLE submission_answers_new RENAME TO submission_answers');
+
+        // Migrate submission_answer_items: is_correct INTEGER NOT NULL DEFAULT 0 → is_correct INTEGER
+        await txn.execute('''
+          CREATE TABLE submission_answer_items_new (
+            id TEXT PRIMARY KEY,
+            submission_answer_id TEXT NOT NULL,
+            answer_key_id TEXT,
+            choice_id TEXT,
+            answer_text TEXT,
+            is_correct INTEGER,
+            cached_at TEXT,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            FOREIGN KEY(submission_answer_id) REFERENCES submission_answers(id) ON DELETE CASCADE,
+            FOREIGN KEY(answer_key_id) REFERENCES answer_keys(id) ON DELETE SET NULL,
+            FOREIGN KEY(choice_id) REFERENCES question_choices(id) ON DELETE SET NULL
+          )
+        ''');
+        await txn.execute('''
+          INSERT INTO submission_answer_items_new
+          SELECT id, submission_answer_id, answer_key_id, choice_id, answer_text, is_correct, cached_at, sync_status
+          FROM submission_answer_items
+        ''');
+        await txn.execute('DROP TABLE submission_answer_items');
+        await txn.execute('ALTER TABLE submission_answer_items_new RENAME TO submission_answer_items');
+      });
+      return;
+    }
+
+    // Targeted migration: add deleted_at column to material_files
+    // Web path: 11 → 12; Mobile path: 10 → 11
+    if ((oldVersion == 11 && newVersion == 12) || (oldVersion == 10 && newVersion == 11)) {
+      await db.transaction((txn) async {
+        await txn.execute('ALTER TABLE material_files ADD COLUMN deleted_at TEXT');
+      });
+      return;
+    }
+
     // Nuclear reset: Drop all tables and recreate with current v1 schema
     // This ensures a clean state for any upgrade from old versions
     // Note: Users will lose local data but can resync from server
@@ -745,7 +1021,13 @@ class LocalDatabase {
       'tos_competencies',
       'table_of_specifications',
       'melcs',
-      'assessment_statistics_cache',
+      'school_settings',
+      'previous_school_attendance',
+      'previous_school_subjects',
+      'student_school_history',
+      'core_values_records',
+      'attendance_records',
+      'learner_details',
     ];
 
     for (final table in tables) {
@@ -755,6 +1037,36 @@ class LocalDatabase {
         // Table might not exist
       }
     }
+  }
+
+  /// Returns the persisted `last_sync_at` timestamp, or `null` if no sync has
+  /// completed yet. This is the single source of truth for reading the sync
+  /// token from `sync_metadata`.
+  Future<String?> getLastSyncAt() async {
+    final db = await database;
+    final rows = await db.query(
+      DbTables.syncMetadata,
+      columns: [SyncMetadataCols.value],
+      where: '${SyncMetadataCols.key} = ?',
+      whereArgs: [DbValues.metaLastSyncAt],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first[SyncMetadataCols.value] as String?;
+  }
+
+  /// Persists the `last_sync_at` timestamp. This is the single source of truth
+  /// for writing the sync token to `sync_metadata`.
+  Future<void> setLastSyncAt(String value) async {
+    final db = await database;
+    await db.insert(
+      DbTables.syncMetadata,
+      {
+        SyncMetadataCols.key: DbValues.metaLastSyncAt,
+        SyncMetadataCols.value: value,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> close() async {

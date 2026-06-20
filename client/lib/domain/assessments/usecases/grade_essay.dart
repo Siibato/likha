@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -7,7 +8,7 @@ class GradeEssay {
 
   GradeEssay(this._repository);
 
-  ResultFuture<SubmissionAnswer> call(GradeEssayParams params) {
+  ResultFuture<MutationResult<SubmissionAnswer>> call(GradeEssayParams params) {
     return _repository.gradeEssayAnswer(
       answerId: params.answerId,
       points: params.points,

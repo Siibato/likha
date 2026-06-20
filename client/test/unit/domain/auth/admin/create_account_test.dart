@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -34,17 +36,19 @@ void main() {
       role: 'student',
     );
 
+    final tMutationResult = MutationResult(entity: tUser, status: SyncStatus.pending);
+
     test('should return created User when account creation succeeds', () async {
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Right(tUser));
+      )).thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tUser));
-      expect(result.getOrElse(() => throw Exception()).isPendingActivation, true);
+      expect(result, Right(tMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.isPendingActivation, true);
       verify(() => mockRepository.createAccount(
         username: 'newuser',
         fullName: 'New User',
@@ -69,15 +73,17 @@ void main() {
         role: 'teacher',
       );
 
+      final teacherMutationResult = MutationResult(entity: teacherUser, status: SyncStatus.pending);
+
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
         fullName: any(named: 'fullName'),
         role: any(named: 'role'),
-      )).thenAnswer((_) async => Right(teacherUser));
+      )).thenAnswer((_) async => Right(teacherMutationResult));
 
       final result = await useCase(teacherParams);
 
-      expect(result.getOrElse(() => throw Exception()).role, 'teacher');
+      expect(result.getOrElse(() => throw Exception()).entity.role, 'teacher');
     });
 
     test('should return ValidationFailure when username already exists', () async {

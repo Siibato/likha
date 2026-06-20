@@ -58,7 +58,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
     if (_formPrefilled) return;
 
     final submission = ref.read(assignmentProvider).currentSubmission;
-    if (submission == null) return;
+    if (submission == null || submission.id != widget.submissionId) return;
 
     _scoreController.text = submission.score?.toString() ?? '';
     _feedbackController.text = submission.feedback ?? '';
@@ -198,7 +198,9 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assignmentProvider);
-    final submission = state.currentSubmission;
+    final submission = state.currentSubmission?.id == widget.submissionId
+        ? state.currentSubmission
+        : null;
 
     // Prefill form if submission is already graded
     if (submission != null) {
@@ -210,12 +212,6 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
           prev?.successMessage != next.successMessage) {
         context.showSuccessSnackBar(next.successMessage!, durationMs: 3000);
         ref.read(assignmentProvider.notifier).clearMessages();
-        if (next.successMessage == 'Submission graded' ||
-            next.successMessage == 'Submission returned for revision') {
-          ref
-              .read(assignmentProvider.notifier)
-              .loadSubmissionDetail(widget.submissionId);
-        }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));

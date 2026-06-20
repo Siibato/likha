@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/sf9_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
 
 /// SF9 section widget for TeacherClassDetailDesktop
 /// Displays SF9 (Form 137) records for advisory classes
-class Sf9Section extends ConsumerWidget {
+class Sf9Section extends ConsumerStatefulWidget {
   final String classId;
 
   const Sf9Section({
@@ -18,38 +18,25 @@ class Sf9Section extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(sf9Provider);
+  ConsumerState<Sf9Section> createState() => _Sf9SectionState();
+}
+
+class _Sf9SectionState extends ConsumerState<Sf9Section> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(generalAveragesProvider);
 
     return DesktopPageScaffold(
       title: 'SF9 (Form 137)',
       subtitle: 'Student Academic Records',
-      actions: [
-        FilledButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => Sf9DetailDesktop(
-              classId: classId,
-              studentId: '', // Will be updated when student is selected
-              studentName: '', // Will be updated when student is selected
-            ),
-            ),
-          ).then((_) {
-            ref.read(sf9Provider.notifier).loadStudents(classId);
-          }),
-          icon: const Icon(Icons.file_download_rounded, size: 18),
-          label: const Text('Generate SF9'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.foregroundDark,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-        ),
-      ],
       body: state.isLoading && state.students.isEmpty
           ? const Center(
               child: Padding(
@@ -60,6 +47,11 @@ class Sf9Section extends ConsumerWidget {
                 ),
               ),
             )
+          : state.error != null
+              ? EmptyState.generic(
+                  title: 'Error loading students',
+                  subtitle: state.error ?? 'An unknown error occurred',
+                )
           : state.students.isEmpty
               ? const EmptyState.generic(
                   title: 'No students enrolled',
@@ -67,6 +59,7 @@ class Sf9Section extends ConsumerWidget {
                 )
               : BaseDataTable(
                   items: state.students,
+                  columnFlexes: const [3, 1, 1, 1],
                   columns: const [
                     DataColumn(
                         label: Text('Student Name', style: dataTableHeaderStyle)),
@@ -78,71 +71,69 @@ class Sf9Section extends ConsumerWidget {
                         label: Text('Status', style: dataTableHeaderStyle)),
                   ],
                   rowBuilder: (context, student, index) {
-                    return IntrinsicHeight(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
+                    return Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            student.studentName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foregroundDark,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            student.generalAverage?.toString() ?? 'N/A',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.foregroundSecondary,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            student.subjectCount.toString(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.foregroundSecondary,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: student.generalAverage != null
+                                  ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
+                                  : AppColors.foregroundTertiary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
-                              student.studentName,
-                              style: const TextStyle(
-                                fontSize: 14,
+                              student.generalAverage != null ? 'Complete' : 'Pending',
+                              style: TextStyle(
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.foregroundDark,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              student.generalAverage?.toString() ?? 'N/A',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.foregroundSecondary,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              student.subjectCount.toString(),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.foregroundSecondary,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
                                 color: student.generalAverage != null
-                                    ? AppColors.semanticSuccessAlt.withValues(alpha: 0.12)
-                                    : AppColors.foregroundTertiary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                student.generalAverage != null ? 'Complete' : 'Pending',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: student.generalAverage != null
-                                      ? AppColors.semanticSuccessAlt
-                                      : AppColors.foregroundTertiary,
-                                ),
+                                    ? AppColors.semanticSuccessAlt
+                                    : AppColors.foregroundTertiary,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     );
                   },
                   onTap: (student) => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => Sf9DetailDesktop(
-                        classId: classId,
+                      builder: (_) => Sf9DetailPage(
+                        classId: widget.classId,
                         studentId: student.studentId,
                         studentName: student.studentName,
                       ),

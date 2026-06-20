@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/descriptor_badge.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_table_cells.dart';
@@ -92,13 +93,15 @@ class FinalGradeTable extends ConsumerWidget {
                         .round()
                     : null;
 
-                final gaMatch = gaStudents.cast<dynamic>().firstWhere(
+                final gaMatch = gaStudents
+                    .cast<StudentGeneralAverage?>()
+                    .firstWhere(
                       (s) =>
-                          s.studentId == studentId ||
-                          s.studentName == studentName,
+                          s?.studentId == studentId ||
+                          s?.studentName == studentName,
                       orElse: () => null,
                     );
-                final ga = gaMatch?.generalAverage as int?;
+                final ga = gaMatch?.generalAverage;
 
                 return Container(
                   decoration: BoxDecoration(

@@ -4,6 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/usecases/get_grade_items.dart';
 import 'package:likha/domain/grading/usecases/create_grade_item.dart';
 import 'package:likha/domain/grading/usecases/delete_grade_item.dart';
@@ -109,7 +112,7 @@ void main() {
         );
 
         when(() => mockCreate(classId: any(named: 'classId'), data: any(named: 'data')))
-            .thenAnswer((_) async => Right(tItem));
+            .thenAnswer((_) async => Right(MutationResult(entity: tItem, status: SyncStatus.pending)));
         when(() => mockGet(any())).thenAnswer((_) async => Right([tItem]));
 
         await notifier.createItem('c-1', {
@@ -153,7 +156,7 @@ void main() {
         when(() => mockGet(any())).thenAnswer((_) async => Right([tItem]));
         await notifier.loadItems('c-1');
 
-        when(() => mockDelete(any())).thenAnswer((_) async => const Right(null));
+        when(() => mockDelete(any())).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
         when(() => mockGet(any())).thenAnswer((_) async => const Right([]));
 
         await notifier.deleteItem(tItem.id);
@@ -214,7 +217,7 @@ void main() {
           getConfig: mockGet,
         );
 
-        when(() => mockSetup(any())).thenAnswer((_) async => const Right(null));
+        when(() => mockSetup(any())).thenAnswer((_) async => const Right(MutationResult(entity: <GradeConfig>[], status: SyncStatus.pending)));
         when(() => mockGet(any())).thenAnswer((_) async => Right([tConfig]));
 
         await notifier.setupGrading(SetupGradingParams(

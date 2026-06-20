@@ -23,20 +23,20 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(sf9Provider.notifier).loadStudents(widget.classId);
+      ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(sf9Provider);
+    final state = ref.watch(generalAveragesProvider);
 
     return MobilePageScaffold(
       title: 'Student Records (SF9)',
       scrollable: false,
       isLoading: state.isLoading && state.students.isEmpty,
       error: state.error,
-      onRetry: () => ref.read(sf9Provider.notifier).loadStudents(widget.classId),
+      onRetry: () => ref.read(generalAveragesProvider.notifier).loadStudents(widget.classId),
       header: const ClassSectionHeader(
         title: 'Student Records (SF9)',
         showBackButton: true,

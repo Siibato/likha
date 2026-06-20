@@ -17,7 +17,7 @@ impl super::SyncPushService {
                 let client_id = self.parse_uuid_field(&op.payload, "id").ok();
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
                 let title = extract_field!(self, op, parse_str_field, "title");
-                let quarter = extract_field!(self, op, parse_i32_field, "grading_period_number");
+                let period = extract_field!(self, op, parse_i32_field, "grading_period_number");
                 let classification_mode =
                     extract_field!(self, op, parse_str_field, "classification_mode");
                 let total_items = extract_field!(self, op, parse_i32_field, "total_items");
@@ -64,8 +64,9 @@ impl super::SyncPushService {
                     .and_then(|v| v.as_f64());
 
                 let request = CreateTosRequest {
+                    id: client_id.map(|u| u.to_string()),
                     title,
-                    grading_period_number: quarter,
+                    grading_period_number: period,
                     classification_mode,
                     total_items,
                     time_unit,
@@ -219,6 +220,7 @@ impl super::SyncPushService {
                     .map(|v| v as i32);
 
                 let request = CreateCompetencyRequest {
+                    id: client_id.map(|u| u.to_string()),
                     competency_code,
                     competency_text,
                     time_units_taught,

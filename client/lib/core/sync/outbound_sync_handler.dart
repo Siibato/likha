@@ -1,11 +1,51 @@
 import 'dart:io';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/logging/sync_logger.dart';
+import 'package:likha/core/sync/handlers/assessment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/assignment_sync_handler.dart';
+import 'package:likha/core/sync/handlers/auth_sync_handler.dart';
+import 'package:likha/core/sync/handlers/class_sync_handler.dart';
+import 'package:likha/core/sync/handlers/grading_sync_handler.dart';
+import 'package:likha/core/sync/handlers/learning_material_sync_handler.dart';
+import 'package:likha/core/sync/handlers/setup_sync_handler.dart';
+import 'package:likha/core/sync/handlers/student_records_sync_handler.dart';
+import 'package:likha/core/sync/handlers/tos_sync_handler.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_state.dart';
-import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
+
+/// Maps a [SyncEntityType.serverValue] string to its local DB table name.
+/// Returns null for entity types that do not have a standalone table row to update.
+String? _entityTypeToTable(String entityType) {
+  switch (entityType) {
+    case 'assignment': return DbTables.assignments;
+    case 'class': return DbTables.classes;
+    case 'assessment': return DbTables.assessments;
+    case 'question': return DbTables.assessmentQuestions;
+    case 'assignment_submission': return DbTables.assignmentSubmissions;
+    case 'assessment_submission': return DbTables.assessmentSubmissions;
+    case 'submission_file': return DbTables.submissionFiles;
+    case 'material_file': return DbTables.materialFiles;
+    case 'learning_material': return DbTables.learningMaterials;
+    case 'grade_item': return DbTables.gradeItems;
+    case 'grade_score': return DbTables.gradeScores;
+    case 'grade_config': return DbTables.gradeRecord;
+    case 'table_of_specifications': return DbTables.tableOfSpecifications;
+    case 'tos_competency': return DbTables.tosCompetencies;
+    case 'admin_user': return DbTables.users;
+    case 'school_settings': return DbTables.schoolSettings;
+    case 'learner_details': return DbTables.learnerDetails;
+    case 'attendance_records': return DbTables.attendanceRecords;
+    case 'core_values_records': return DbTables.coreValuesRecords;
+    case 'school_history': return DbTables.studentSchoolHistory;
+    case 'previous_school_subjects': return DbTables.previousSchoolSubjects;
+    case 'previous_school_attendance': return DbTables.previousSchoolAttendance;
+    default: return null;
+  }
+}
 
 class OutboundSyncHandler {
   final SyncQueue _syncQueue;
@@ -13,14 +53,49 @@ class OutboundSyncHandler {
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
   final SyncStateUpdater _updateState;
+  final AssessmentSyncHandler? _assessmentHandler;
+  final AssignmentSyncHandler? _assignmentHandler;
+  final AuthSyncHandler? _authHandler;
+  final ClassSyncHandler? _classHandler;
+  final GradingSyncHandler? _gradingHandler;
+  final LearningMaterialSyncHandler? _learningMaterialHandler;
+  final TosSyncHandler? _tosHandler;
+  final SetupSyncHandler? _setupHandler;
+  final StudentRecordsSyncHandler? _studentRecordsHandler;
 
   OutboundSyncHandler(
     this._syncQueue,
     this._syncRemoteDataSource,
     this._localDatabase,
     this._log,
-    this._updateState,
-  );
+    this._updateState, {
+    AssessmentSyncHandler? assessmentHandler,
+    AssignmentSyncHandler? assignmentHandler,
+    AuthSyncHandler? authHandler,
+    ClassSyncHandler? classHandler,
+    GradingSyncHandler? gradingHandler,
+    LearningMaterialSyncHandler? learningMaterialHandler,
+    TosSyncHandler? tosHandler,
+    SetupSyncHandler? setupHandler,
+    StudentRecordsSyncHandler? studentRecordsHandler,
+  })  : _assessmentHandler = assessmentHandler,
+        _assignmentHandler = assignmentHandler,
+        _authHandler = authHandler,
+        _classHandler = classHandler,
+        _gradingHandler = gradingHandler,
+        _learningMaterialHandler = learningMaterialHandler,
+        _tosHandler = tosHandler,
+        _setupHandler = setupHandler,
+        _studentRecordsHandler = studentRecordsHandler;
+
+  Future<void> _handleRetry(SyncQueueEntry op) async {
+    await _syncQueue.incrementRetry(op.id);
+    final updated = await _syncQueue.getById(op.id);
+    if (updated != null && updated.retryCount >= updated.maxRetries) {
+      _log.log('Retry exhausted for ${op.entityType.dbValue}.${op.operation.dbValue} (${op.id}), marking failed');
+      await _syncQueue.markFailed(op.id, 'Max retries exceeded');
+    }
+  }
 
   Future<void> outboundSync() async {
     _log.log('outboundSync() - START');
@@ -85,10 +160,210 @@ class OutboundSyncHandler {
         .where((e) => e.operation != SyncOperation.upload)
         .toList();
 
-    _log.log('Found ${regularOps.length} regular operations');
-    
+    // Route assessment operations to the dedicated handler.
+    final assessmentOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.assessment)
+        .toList();
+    if (assessmentOps.isNotEmpty && _assessmentHandler != null) {
+      _log.log('Processing ${assessmentOps.length} assessment ops via handler');
+      for (final op in assessmentOps) {
+        final result = await _assessmentHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route grading operations to the dedicated handler.
+    final gradingOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.gradeConfig ||
+            e.entityType == SyncEntityType.gradeItem ||
+            e.entityType == SyncEntityType.gradeScore)
+        .toList();
+    if (gradingOps.isNotEmpty && _gradingHandler != null) {
+      _log.log('Processing ${gradingOps.length} grading ops via handler');
+      for (final op in gradingOps) {
+        final result = await _gradingHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route learning material operations to the dedicated handler.
+    final learningMaterialOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.learningMaterial ||
+            e.entityType == SyncEntityType.materialFile)
+        .toList();
+    if (learningMaterialOps.isNotEmpty && _learningMaterialHandler != null) {
+      _log.log('Processing ${learningMaterialOps.length} learning material ops via handler');
+      for (final op in learningMaterialOps) {
+        final result = await _learningMaterialHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route TOS operations to the dedicated handler.
+    final tosOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.tableOfSpecifications ||
+            e.entityType == SyncEntityType.tosCompetency)
+        .toList();
+    if (tosOps.isNotEmpty && _tosHandler != null) {
+      _log.log('Processing ${tosOps.length} TOS ops via handler');
+      for (final op in tosOps) {
+        final result = await _tosHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route class operations to the dedicated handler.
+    final classOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.classEntity)
+        .toList();
+    if (classOps.isNotEmpty && _classHandler != null) {
+      _log.log('Processing ${classOps.length} class ops via handler');
+      for (final op in classOps) {
+        final result = await _classHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route auth operations to the dedicated handler.
+    final authOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.adminUser)
+        .toList();
+    if (authOps.isNotEmpty && _authHandler != null) {
+      _log.log('Processing ${authOps.length} auth ops via handler');
+      for (final op in authOps) {
+        final result = await _authHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route assignment operations to the dedicated handler.
+    final assignmentOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.assignment ||
+            e.entityType == SyncEntityType.assignmentSubmission)
+        .toList();
+    if (assignmentOps.isNotEmpty && _assignmentHandler != null) {
+      _log.log('Processing ${assignmentOps.length} assignment ops via handler');
+      for (final op in assignmentOps) {
+        final result = await _assignmentHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route setup operations to the dedicated handler.
+    final setupOps = regularOps
+        .where((e) => e.entityType == SyncEntityType.schoolSettings)
+        .toList();
+    if (setupOps.isNotEmpty && _setupHandler != null) {
+      _log.log('Processing ${setupOps.length} setup ops via handler');
+      for (final op in setupOps) {
+        final result = await _setupHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    // Route student records operations to the dedicated handler.
+    final studentRecordsOps = regularOps
+        .where((e) =>
+            e.entityType == SyncEntityType.learnerDetails ||
+            e.entityType == SyncEntityType.attendanceRecords ||
+            e.entityType == SyncEntityType.coreValuesRecords ||
+            e.entityType == SyncEntityType.schoolHistory ||
+            e.entityType == SyncEntityType.previousSchoolSubjects ||
+            e.entityType == SyncEntityType.previousSchoolAttendance)
+        .toList();
+    if (studentRecordsOps.isNotEmpty && _studentRecordsHandler != null) {
+      _log.log('Processing ${studentRecordsOps.length} student_records ops via handler');
+      for (final op in studentRecordsOps) {
+        final result = await _studentRecordsHandler.handle(op);
+        if (result.success) {
+          await _syncQueue.markSucceeded(op.id);
+        } else if (result.shouldRetry) {
+          await _handleRetry(op);
+        } else {
+          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        }
+      }
+    }
+
+    final nonAssessmentOps = regularOps
+        .where((e) =>
+            e.entityType != SyncEntityType.assessment &&
+            e.entityType != SyncEntityType.assignment &&
+            e.entityType != SyncEntityType.assignmentSubmission &&
+            e.entityType != SyncEntityType.classEntity &&
+            e.entityType != SyncEntityType.adminUser &&
+            e.entityType != SyncEntityType.gradeConfig &&
+            e.entityType != SyncEntityType.gradeItem &&
+            e.entityType != SyncEntityType.gradeScore &&
+            e.entityType != SyncEntityType.learningMaterial &&
+            e.entityType != SyncEntityType.materialFile &&
+            e.entityType != SyncEntityType.tableOfSpecifications &&
+            e.entityType != SyncEntityType.tosCompetency &&
+            e.entityType != SyncEntityType.schoolSettings &&
+            e.entityType != SyncEntityType.learnerDetails &&
+            e.entityType != SyncEntityType.attendanceRecords &&
+            e.entityType != SyncEntityType.coreValuesRecords &&
+            e.entityType != SyncEntityType.schoolHistory &&
+            e.entityType != SyncEntityType.previousSchoolSubjects &&
+            e.entityType != SyncEntityType.previousSchoolAttendance)
+        .toList();
+
+    _log.log('Found ${nonAssessmentOps.length} regular operations');
+
     final opsByType = <String, int>{};
-    for (final op in regularOps) {
+    for (final op in nonAssessmentOps) {
       opsByType[op.entityType.serverValue] = (opsByType[op.entityType.serverValue] ?? 0) + 1;
       if (op.entityType == SyncEntityType.gradeScore) {
         _log.log('Grade score operation: ${op.operation} (${op.id})');
@@ -99,7 +374,7 @@ class OutboundSyncHandler {
 
     _log.pushStarting(
       uploadOpsCount: nonMaterialFileUploads.length + materialFileUploads.length,
-      regularOpsCount: regularOps.length,
+      regularOpsCount: nonAssessmentOps.length,
       operationsByType: opsByType,
     );
 
@@ -111,8 +386,8 @@ class OutboundSyncHandler {
     }
 
     // Step 2: Run all regular operations in one batch
-    if (regularOps.isNotEmpty) {
-      await syncRegularBatch(regularOps, pushStartTime);
+    if (nonAssessmentOps.isNotEmpty) {
+      await syncRegularBatch(nonAssessmentOps, pushStartTime);
     }
 
     // Step 3: Run material file uploads AFTER regular ops (material now exists on server)
@@ -197,7 +472,7 @@ class OutboundSyncHandler {
           await db.update(
             DbTables.submissionFiles,
             {SubmissionFilesCols.submissionId: serverId},
-            where: '${SubmissionFilesCols.submissionId} = ? AND ${CommonCols.needsSync} = 1',
+            where: "${SubmissionFilesCols.submissionId} = ? AND ${CommonCols.syncStatus} = '${SyncStatus.pending.dbValue}'",
             whereArgs: [localId],
           );
 
@@ -226,11 +501,17 @@ class OutboundSyncHandler {
       };
     }).toList();
 
-    final response = await _syncRemoteDataSource.pushOperations(
-      operations: operations,
-    );
-
-    await processPushResults(response, pushStartTime);
+    try {
+      final response = await _syncRemoteDataSource.pushOperations(
+        operations: operations,
+      );
+      await processPushResults(response, pushStartTime);
+    } on NetworkException catch (_) {
+      for (final op in regularOps) {
+        await _handleRetry(op);
+      }
+      rethrow;
+    }
   }
 
   /// Process push results and update local state
@@ -293,8 +574,27 @@ class OutboundSyncHandler {
                 where: '${GradeScoresCols.gradeItemId} = ?',
                 whereArgs: [payloadId],
               );
+            } else if (entityType == SyncEntityType.assignment.serverValue) {
+              await db.update(
+                DbTables.assignments,
+                {CommonCols.id: serverId},
+                where: '${CommonCols.id} = ?',
+                whereArgs: [payloadId],
+              );
             }
           }
+        }
+
+        // Update entity row sync_status → synced
+        final entityId = serverId ?? entry?.payload['id'] as String?;
+        final table = _entityTypeToTable(entityType);
+        if (table != null && entityId != null) {
+          await db.update(
+            table,
+            {CommonCols.syncStatus: SyncStatus.synced.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [entityId],
+          );
         }
 
         // Mark as succeeded and remove from queue
@@ -302,8 +602,19 @@ class OutboundSyncHandler {
       } else {
         failedByType[entityType] = (failedByType[entityType] ?? 0) + 1;
 
-        // Mark as failed
+        // Mark as failed and write sync_status → failed on entity row
         final error = result.error ?? 'Unknown error';
+        final failEntry = await _syncQueue.getById(opId);
+        final failEntityId = failEntry?.payload['id'] as String?;
+        final failTable = _entityTypeToTable(entityType);
+        if (failTable != null && failEntityId != null) {
+          await db.update(
+            failTable,
+            {CommonCols.syncStatus: SyncStatus.failed.dbValue},
+            where: '${CommonCols.id} = ?',
+            whereArgs: [failEntityId],
+          );
+        }
         await _syncQueue.markFailed(opId, error);
       }
     }
@@ -319,7 +630,7 @@ class OutboundSyncHandler {
   }
 
   /// Handles a single file upload operation by calling the multipart endpoint directly.
-  /// References pattern in: mobile/lib/data/datasources/remote/assignment_remote_datasource.dart
+  /// References pattern in: mobile/lib/data/datasources/remote/assignments/assignment_remote_datasource.dart
   /// For material files, looks up correct (reconciled) material_id from DB instead of using payload.
   Future<void> handleFileUpload(SyncQueueEntry op) async {
     try {
@@ -329,6 +640,8 @@ class OutboundSyncHandler {
       final fileId       = payload['file_id']       as String?;
       final submissionId = payload['submission_id'] as String?;
       var materialId     = payload['material_id']   as String?;
+
+      _log.log('handleFileUpload: op_id=${op.id.substring(0, 8)} file=$fileName file_id=${fileId?.substring(0, 8) ?? "none"}');
 
       // For material file uploads, look up the correct (reconciled) material_id from DB
       if (materialId != null && fileId != null) {
@@ -341,9 +654,14 @@ class OutboundSyncHandler {
             whereArgs: [fileId],
           );
           if (rows.isNotEmpty) {
-            materialId = rows.first[MaterialFilesCols.materialId] as String?;
+            final reconciledMaterialId = rows.first[MaterialFilesCols.materialId] as String?;
+            if (reconciledMaterialId != materialId) {
+              _log.log('handleFileUpload: reconciled material_id ${materialId.substring(0, 8)} → ${reconciledMaterialId?.substring(0, 8)}');
+              materialId = reconciledMaterialId;
+            }
           }
-        } catch (_) {
+        } catch (e) {
+          _log.error('handleFileUpload: failed to look up reconciled material_id - $e');
           // If DB lookup fails, fall back to payload value
         }
       }
@@ -378,25 +696,60 @@ class OutboundSyncHandler {
           }
         }
       } else if (materialId != null) {
-        await _syncRemoteDataSource.uploadMaterialFile(
+        _log.log('handleFileUpload: uploading material file material_id=${materialId.substring(0, 8)}');
+        final response = await _syncRemoteDataSource.uploadMaterialFile(
           materialId: materialId,
           localPath: localPath,
           fileName: fileName,
+          idempotencyKey: op.id,
         );
+
+        // Reconcile server file ID and clear local path
+        if (fileId != null) {
+          try {
+            final db = await _localDatabase.database;
+            final updates = <String, dynamic>{
+              MaterialFilesCols.localPath: '',
+              CommonCols.syncStatus: SyncStatus.synced.dbValue,
+            };
+            final serverId = response?['id'] as String?;
+            if (serverId != null && serverId != fileId) {
+              _log.log('handleFileUpload: reconciling file_id ${fileId.substring(0, 8)} → ${serverId.substring(0, 8)}');
+              updates[CommonCols.id] = serverId;
+            }
+            await db.update(
+              DbTables.materialFiles,
+              updates,
+              where: '${CommonCols.id} = ?',
+              whereArgs: [fileId],
+            );
+            _log.log('handleFileUpload: DB updated: syncStatus=synced, localPath cleared');
+          } catch (e) {
+            _log.error('handleFileUpload: failed to reconcile material file - $e');
+          }
+        }
       }
 
       // Clean up staged file after successful upload
       try {
         final stagedFile = File(localPath);
         if (await stagedFile.exists()) {
+          _log.log('handleFileUpload: deleting staged file $localPath');
           await stagedFile.delete();
         }
-      } catch (_) {
+      } catch (e) {
+        _log.warn('handleFileUpload: failed to delete staged file - $e');
         // Log but don't fail sync if cleanup fails
       }
 
+      _log.log('handleFileUpload: marking queue entry ${op.id.substring(0, 8)} as succeeded');
       await _syncQueue.markSucceeded(op.id);
+    } on NetworkException catch (e) {
+      _log.error('handleFileUpload: network error, incrementing retry - ${e.message}');
+      await _handleRetry(op);
+      rethrow;
     } catch (e) {
+      _log.error('handleFileUpload: failed, marking as failed - $e');
       await _syncQueue.markFailed(op.id, e.toString());
     }
   }

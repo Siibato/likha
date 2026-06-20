@@ -15,6 +15,11 @@ pub async fn upsert_score(
     let now = Utc::now().naive_utc();
     let id = Uuid::new_v4();
 
+    tracing::debug!(
+        "upsert_score: grade_item_id={} student_id={} score={:?} is_auto_populated={}",
+        grade_item_id, student_id, score, is_auto_populated
+    );
+
     let grade_item_exists = grade_items::Entity::find_by_id(grade_item_id)
         .one(db)
         .await
@@ -22,6 +27,7 @@ pub async fn upsert_score(
         .is_some();
 
     if !grade_item_exists {
+        tracing::warn!("upsert_score: Grade item {} does not exist", grade_item_id);
         return Err(AppError::BadRequest(format!("Grade item {} does not exist", grade_item_id)));
     }
 
@@ -32,6 +38,7 @@ pub async fn upsert_score(
         .is_some();
 
     if !student_exists {
+        tracing::warn!("upsert_score: Student {} does not exist", student_id);
         return Err(AppError::BadRequest(format!("Student {} does not exist", student_id)));
     }
 
@@ -63,6 +70,8 @@ pub async fn upsert_score(
     db.execute(stmt)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Failed to upsert score: {}", e)))?;
+
+    tracing::debug!("upsert_score: SQL executed successfully for grade_item_id={} student_id={}", grade_item_id, student_id);
 
     grade_scores::Entity::find()
         .filter(grade_scores::Column::GradeItemId.eq(grade_item_id))

@@ -75,7 +75,7 @@ class AssignmentGradeSettings extends StatelessWidget {
               child: Text('Performance Task'),
             ),
             DropdownMenuItem(
-              value: 'quarterly_assessment',
+              value: 'period_assessment',
               child: Text('Quarterly Assessment'),
             ),
           ],

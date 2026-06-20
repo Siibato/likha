@@ -2,11 +2,11 @@ import 'package:likha/core/logging/validation_logger.dart';
 import 'package:likha/data/validation/services/data_validator.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 
 class ValidationService {
   final DataValidator _validator;

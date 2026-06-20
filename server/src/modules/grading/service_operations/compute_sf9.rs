@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::cache::CacheKey;
-use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9QuarterlyAverages};
+use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9PeriodAverages};
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
 
@@ -29,38 +29,44 @@ impl crate::modules::grading::service::GradeComputationService {
             return Err(AppError::BadRequest("Class is not an advisory class".to_string()));
         }
 
-        let enrolled_student_ids = self.repo.get_enrolled_student_ids(class_id).await?;
-        if !enrolled_student_ids.contains(&student_id) {
-            return Err(AppError::NotFound("Student not enrolled in this advisory class".to_string()));
-        }
+        let teacher = self.class_repo.find_teacher_of_class(class_id).await?;
+        let teacher_name = teacher.map(|t| t.full_name);
 
-        let student_name = self.get_student_name(student_id).await?;
+        let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
+        let student_name = enrolled_students
+            .iter()
+            .find(|(id, _)| *id == student_id)
+            .map(|(_, name)| name.clone())
+            .ok_or_else(|| AppError::NotFound("Student not enrolled in this advisory class".to_string()))?;
         let enrolled_classes = self.repo.get_student_enrolled_classes(
             student_id,
             class.school_year.as_deref(),
         ).await?;
 
+        let learner_details = self.repo.get_learner_details(student_id).await?;
+
         let mut subjects = Vec::new();
-        let mut q_sums: [Vec<i32>; 4] = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
+        let num_periods = crate::modules::grading::helpers::period_count::period_count(&class.grading_period_type);
+        let mut period_sums: Vec<Vec<i32>> = (0..num_periods).map(|_| Vec::new()).collect();
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
-            let quarterly = self.repo.get_period_grades_for_student_class(
+            let period_grades_raw = self.repo.get_period_grades_for_student_class(
                 student_id, ec.class_id,
             ).await?;
 
-            let mut q = [None, None, None, None];
-            for qg in &quarterly {
-                let idx = (qg.grading_period_number - 1) as usize;
-                if idx < 4 {
-                    if let Some(t) = qg.transmuted_grade {
-                        q[idx] = Some(t);
-                        q_sums[idx].push(t);
+            let mut period_vals: Vec<Option<i32>> = vec![None; num_periods];
+            for pg in &period_grades_raw {
+                let idx = (pg.grading_period_number - 1) as usize;
+                if idx < num_periods {
+                    if let Some(t) = pg.transmuted_grade {
+                        period_vals[idx] = Some(t);
+                        period_sums[idx].push(t);
                     }
                 }
             }
 
-            let transmuted: Vec<i32> = q.iter().filter_map(|&v| v).collect();
+            let transmuted: Vec<i32> = period_vals.iter().filter_map(|&v| v).collect();
             let final_grade = if transmuted.is_empty() {
                 None
             } else {
@@ -77,10 +83,7 @@ impl crate::modules::grading::service::GradeComputationService {
             subjects.push(Sf9SubjectRow {
                 class_title: ec.title.clone(),
                 subject_group: None,
-                q1: q[0],
-                q2: q[1],
-                q3: q[2],
-                q4: q[3],
+                period_grades: period_vals,
                 final_grade,
                 descriptor,
             });
@@ -98,11 +101,8 @@ impl crate::modules::grading::service::GradeComputationService {
         let final_average = compute_avg(&final_grades);
         let ga_descriptor = final_average.map(|fa| deped_weights::get_descriptor(fa).to_string());
 
-        let general_average = Some(Sf9QuarterlyAverages {
-            q1: compute_avg(&q_sums[0]),
-            q2: compute_avg(&q_sums[1]),
-            q3: compute_avg(&q_sums[2]),
-            q4: compute_avg(&q_sums[3]),
+        let general_average = Some(Sf9PeriodAverages {
+            period_grades: (0..num_periods).map(|i| compute_avg(&period_sums[i])).collect(),
             final_average,
             descriptor: ga_descriptor,
         });
@@ -113,26 +113,23 @@ impl crate::modules::grading::service::GradeComputationService {
             grade_level: class.grade_level.clone(),
             school_year: class.school_year.clone(),
             section: Some(class.title.clone()),
+            lrn: learner_details.as_ref().and_then(|d| d.lrn.clone()),
+            age: learner_details.as_ref().and_then(|d| d.age),
+            sex: learner_details.as_ref().and_then(|d| d.sex.clone()),
+            track_strand: learner_details.as_ref().and_then(|d| d.track_strand.clone()),
+            curriculum: learner_details.as_ref().and_then(|d| d.curriculum.clone()),
+            teacher_name,
+            grading_period_type: Some(class.grading_period_type.clone()),
             subjects,
             general_average,
         };
         if let Some(ref cache) = self.cache {
-            let key = CacheKey::SF9(class_id, student_id).as_str();
-            cache.set(&key, &result, cache.ttl.detail_seconds).await;
+            if !result.student_name.eq_ignore_ascii_case("Unknown Student") {
+                let key = CacheKey::SF9(class_id, student_id).as_str();
+                cache.set(&key, &result, cache.ttl.detail_seconds).await;
+            }
         }
         Ok(result)
     }
 
-    pub(crate) async fn get_student_name(&self, student_id: Uuid) -> AppResult<String> {
-        use sea_orm::EntityTrait;
-        use ::entity::users;
-        let user = users::Entity::find_by_id(student_id)
-            .one(&self.db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-
-        Ok(user
-            .map(|u| u.full_name)
-            .unwrap_or_else(|| "Unknown Student".to_string()))
-    }
 }

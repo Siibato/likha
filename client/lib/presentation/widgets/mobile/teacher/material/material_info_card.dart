@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/info_chip.dart';
@@ -11,7 +12,7 @@ class MaterialInfoCard extends StatelessWidget {
   final String? description;
   final int fileCount;
   final DateTime updatedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const MaterialInfoCard({
     super.key,
@@ -19,7 +20,7 @@ class MaterialInfoCard extends StatelessWidget {
     this.description,
     required this.fileCount,
     required this.updatedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   String _formatDate(DateTime dt) {
@@ -74,7 +75,7 @@ class MaterialInfoCard extends StatelessWidget {
               ),
             ],
           ),
-          if (needsSync) ...[
+          if (syncStatus != SyncStatus.synced) ...[
             const SizedBox(height: 12),
             const StatusBadge(
               label: 'Pending sync',

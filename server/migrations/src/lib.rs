@@ -34,6 +34,12 @@ mod m20260606_000001_add_class_participants_composite_index;
 mod m20260606_000002_add_performance_indexes;
 mod m20260606_000003_add_assessment_stats_indexes;
 mod m20260606_000004_add_batch_query_indexes;
+mod m20260618_000001_drop_tos_unique;
+mod m20260618_000002_add_district_to_school_settings;
+mod m20260618_000003_create_learner_details;
+mod m20260618_000004_rename_quarterly_assessment_component;
+mod m20260619_000001_add_school_head_to_settings;
+mod m20260620_000001_create_student_records_tables;
 
 pub struct Migrator;
 
@@ -75,6 +81,12 @@ impl MigratorTrait for Migrator {
             Box::new(m20260606_000002_add_performance_indexes::Migration),
             Box::new(m20260606_000003_add_assessment_stats_indexes::Migration),
             Box::new(m20260606_000004_add_batch_query_indexes::Migration),
+            Box::new(m20260618_000001_drop_tos_unique::Migration),
+            Box::new(m20260618_000002_add_district_to_school_settings::Migration),
+            Box::new(m20260618_000003_create_learner_details::Migration),
+            Box::new(m20260618_000004_rename_quarterly_assessment_component::Migration),
+            Box::new(m20260619_000001_add_school_head_to_settings::Migration),
+            Box::new(m20260620_000001_create_student_records_tables::Migration),
         ]
     }
 }

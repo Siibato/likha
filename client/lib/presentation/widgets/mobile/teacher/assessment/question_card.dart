@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/labels.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_answer_preview.dart';
 
 // Backward-compatible re-exports so existing importers need no changes.
 export 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft_card.dart';
 export 'package:likha/presentation/widgets/mobile/teacher/assessment/question_answer_preview.dart';
+export 'package:likha/presentation/controllers/teacher/assessment/question_form_controller.dart'
+    show ChoiceEntry, EnumerationItemEntry;
 export 'package:likha/presentation/widgets/mobile/teacher/assessment/question_editor_body.dart'
-    show ChoiceEntry, EnumerationItemEntry, EditorStyleVariant;
+    show EditorStyleVariant;
 
 /// Read-only card for a published [Question].
 class QuestionCard extends StatelessWidget {

@@ -8,6 +8,8 @@ class ClassDetail extends Equatable {
   final String teacherId;
   final bool isArchived;
   final bool isAdvisory;
+  final String? gradeLevel;
+  final String? schoolYear;
   final List<Participant> students;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -19,6 +21,8 @@ class ClassDetail extends Equatable {
     required this.teacherId,
     required this.isArchived,
     this.isAdvisory = false,
+    this.gradeLevel,
+    this.schoolYear,
     required this.students,
     required this.createdAt,
     required this.updatedAt,
@@ -32,6 +36,8 @@ class ClassDetail extends Equatable {
     teacherId,
     isArchived,
     isAdvisory,
+    gradeLevel,
+    schoolYear,
     students,
     createdAt,
     updatedAt,

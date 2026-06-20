@@ -39,7 +39,7 @@ class GradingSettingsCard extends StatelessWidget {
         return 'Written Work';
       case 'performance_task':
         return 'Performance Task';
-      case 'quarterly_assessment':
+      case 'period_assessment':
         return 'Quarterly Assessment';
       default:
         return c;
@@ -157,7 +157,7 @@ class GradingSettingsCard extends StatelessWidget {
                     value: 'performance_task',
                     child: Text('Performance Task')),
                 DropdownMenuItem(
-                    value: 'quarterly_assessment',
+                    value: 'period_assessment',
                     child: Text('Quarterly Assessment')),
               ],
               onChanged: onComponentChanged,

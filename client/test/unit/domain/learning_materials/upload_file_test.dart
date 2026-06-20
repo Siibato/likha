@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 import 'package:likha/domain/learning_materials/usecases/upload_file.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
@@ -34,8 +36,9 @@ void main() {
         materialId: any(named: 'materialId'),
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
+        fileBytes: any(named: 'fileBytes'),
         onSendProgress: any(named: 'onSendProgress'),
-      )).thenAnswer((_) async => Right(tFile));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tFile, status: SyncStatus.pending)));
 
       final result = await useCase(
         materialId: tMaterialId,
@@ -43,12 +46,13 @@ void main() {
         fileName: tFileName,
       );
 
-      expect(result, Right(tFile));
-      expect(result.getOrElse(() => throw Exception()).fileName, tFileName);
+      expect(result.isRight(), isTrue);
+      expect(result.getOrElse(() => throw Exception()).entity.fileName, tFileName);
       verify(() => mockRepository.uploadFile(
         materialId: tMaterialId,
         filePath: tFilePath,
         fileName: tFileName,
+        fileBytes: null,
         onSendProgress: null,
       )).called(1);
     });
@@ -58,6 +62,7 @@ void main() {
         materialId: any(named: 'materialId'),
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
+        fileBytes: any(named: 'fileBytes'),
         onSendProgress: any(named: 'onSendProgress'),
       )).thenAnswer((_) async => const Left(ServerFailure('Material not found')));
 
@@ -79,6 +84,7 @@ void main() {
         materialId: any(named: 'materialId'),
         filePath: any(named: 'filePath'),
         fileName: any(named: 'fileName'),
+        fileBytes: any(named: 'fileBytes'),
         onSendProgress: any(named: 'onSendProgress'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 

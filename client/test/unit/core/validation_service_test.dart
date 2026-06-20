@@ -6,11 +6,11 @@ import 'package:likha/data/validation/services/validation_service.dart';
 import 'package:likha/data/validation/models/validation_result.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 
 class MockDataValidator extends Mock implements DataValidator {}
 class MockClassLocalDataSource extends Mock implements ClassLocalDataSource {}
@@ -69,14 +69,14 @@ void main() {
   });
 
   group('ValidationService.validateAndSync', () {
-    test('clears class cache when classes data is outdated', () async {
+    test('does not clear class cache when classes data is outdated', () async {
       when(() => mockValidator.validate('classes'))
           .thenAnswer((_) async => makeResult(entityType: 'classes', isOutdated: true));
       when(() => mockClassLocal.clearAllCache()).thenAnswer((_) async {});
 
       await service.validateAndSync('classes');
 
-      verify(() => mockClassLocal.clearAllCache()).called(1);
+      verifyNever(() => mockClassLocal.clearAllCache());
     });
 
     test('does not clear cache when classes data is fresh', () async {
@@ -88,14 +88,14 @@ void main() {
       verifyNever(() => mockClassLocal.clearAllCache());
     });
 
-    test('clears assessment cache when assessments data is outdated', () async {
+    test('does not clear assessment cache when assessments data is outdated', () async {
       when(() => mockValidator.validate('assessments'))
           .thenAnswer((_) async => makeResult(entityType: 'assessments', isOutdated: true));
       when(() => mockAssessmentLocal.clearAllCache()).thenAnswer((_) async {});
 
       await service.validateAndSync('assessments');
 
-      verify(() => mockAssessmentLocal.clearAllCache()).called(1);
+      verifyNever(() => mockAssessmentLocal.clearAllCache());
     });
 
     test('does not clear assessment cache when data is fresh', () async {
@@ -107,24 +107,24 @@ void main() {
       verifyNever(() => mockAssessmentLocal.clearAllCache());
     });
 
-    test('clears assignment cache when assignments data is outdated', () async {
+    test('does not clear assignment cache when assignments data is outdated', () async {
       when(() => mockValidator.validate('assignments'))
           .thenAnswer((_) async => makeResult(entityType: 'assignments', isOutdated: true));
       when(() => mockAssignmentLocal.clearAllCache()).thenAnswer((_) async {});
 
       await service.validateAndSync('assignments');
 
-      verify(() => mockAssignmentLocal.clearAllCache()).called(1);
+      verifyNever(() => mockAssignmentLocal.clearAllCache());
     });
 
-    test('clears material cache when learning_materials data is outdated', () async {
+    test('does not clear material cache when learning_materials data is outdated', () async {
       when(() => mockValidator.validate('learning_materials'))
           .thenAnswer((_) async => makeResult(entityType: 'learning_materials', isOutdated: true));
       when(() => mockMaterialLocal.clearAllCache()).thenAnswer((_) async {});
 
       await service.validateAndSync('learning_materials');
 
-      verify(() => mockMaterialLocal.clearAllCache()).called(1);
+      verifyNever(() => mockMaterialLocal.clearAllCache());
     });
 
     test('does not throw when validator throws', () async {
@@ -137,11 +137,9 @@ void main() {
       );
     });
 
-    test('does not throw when cache clear throws', () async {
+    test('does not throw when validator throws', () async {
       when(() => mockValidator.validate('classes'))
-          .thenAnswer((_) async => makeResult(entityType: 'classes', isOutdated: true));
-      when(() => mockClassLocal.clearAllCache())
-          .thenThrow(Exception('Cache error'));
+          .thenThrow(Exception('Validator error'));
 
       expect(
         () => service.validateAndSync('classes'),

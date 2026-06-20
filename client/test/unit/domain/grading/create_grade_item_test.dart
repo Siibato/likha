@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/usecases/create_grade_item.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
@@ -42,12 +44,12 @@ void main() {
       when(() => mockRepository.createGradeItem(
         classId: any(named: 'classId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Right(tCreatedItem));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tCreatedItem, status: SyncStatus.pending)));
 
       final result = await useCase(classId: tClassId, data: tData);
 
-      expect(result, Right(tCreatedItem));
-      expect(result.getOrElse(() => throw Exception()).title, 'New Quiz');
+      expect(result.isRight(), isTrue);
+      expect(result.getOrElse(() => throw Exception()).entity.title, 'New Quiz');
       verify(() => mockRepository.createGradeItem(
         classId: tClassId,
         data: tData,

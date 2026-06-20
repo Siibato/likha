@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 
@@ -6,7 +7,7 @@ class ReorderAllAssignments {
 
   const ReorderAllAssignments(this._repository);
 
-  ResultVoid call({
+  ResultFuture<MutationResult<void>> call({
     required String classId,
     required List<String> assignmentIds,
   }) {

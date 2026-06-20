@@ -282,8 +282,8 @@ impl AssessmentRepository {
         ops::update_answer_grade(&self.db, answer_id, is_auto_correct, points_awarded).await
     }
 
-    pub async fn override_answer(&self, answer_id: Uuid, is_correct: bool, points: f64) -> AppResult<submission_answers::Model> {
-        ops::override_answer(&self.db, answer_id, is_correct, points).await
+    pub async fn override_answer(&self, answer_id: Uuid, is_correct: bool, points: f64, teacher_id: Uuid) -> AppResult<submission_answers::Model> {
+        ops::override_answer(&self.db, answer_id, is_correct, points, teacher_id).await
     }
 
     pub async fn save_answer_items(&self, submission_answer_id: Uuid, items: Vec<(Option<Uuid>, Option<Uuid>, Option<String>, bool)>) -> AppResult<()> {
@@ -294,8 +294,8 @@ impl AssessmentRepository {
         ops::find_answer_items_by_submission_answer_id(&self.db, submission_answer_id).await
     }
 
-    pub async fn save_answer_choices(&self, submission_answer_id: Uuid, choice_ids: Vec<Uuid>) -> AppResult<()> {
-        ops::save_answer_choices(&self.db, submission_answer_id, choice_ids).await
+    pub async fn save_answer_choices(&self, submission_answer_id: Uuid, choices: Vec<(Uuid, bool)>) -> AppResult<()> {
+        ops::save_answer_choices(&self.db, submission_answer_id, choices).await
     }
 
     pub async fn save_answer_text(&self, submission_answer_id: Uuid, answer_text: String) -> AppResult<()> {

@@ -34,5 +34,5 @@ class GradingConfig {
 String formatGradeNum(double value) {
   return value == value.roundToDouble()
       ? value.toInt().toString()
-      : value.toStringAsFixed(1);
+      : value.toStringAsFixed(2);
 }

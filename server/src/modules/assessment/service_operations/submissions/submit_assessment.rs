@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
+use crate::modules::grading::helpers::auto_populate;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn submit_assessment(
@@ -36,6 +37,13 @@ impl crate::modules::assessment::service::AssessmentService {
         println!("📤 [SERVICE] submit_assessment() - mark_submitted() returned: submitted_at={:?}",
             submitted.submitted_at);
 
+        let grade_item_id = auto_populate::auto_populate_score(
+            &self.grade_computation_repo, "assessment", submission.assessment_id, submission.user_id, final_score,
+        ).await?;
+
+        let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
+
         let student = self.user_repo.find_by_id(student_id).await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
@@ -43,6 +51,14 @@ impl crate::modules::assessment::service::AssessmentService {
             inv.invalidate_assessment_submissions(submission.assessment_id).await;
             inv.invalidate_assessment_submission_detail(submission_id).await;
             inv.invalidate_student_results(submission_id).await;
+            inv.invalidate_assessment_student_submission(submission.assessment_id, submission.user_id).await;
+            if let Some(period) = assessment.grading_period_number {
+                inv.invalidate_class_grades(assessment.class_id, period).await;
+                inv.invalidate_student_grades(assessment.class_id, submission.user_id, period).await;
+            }
+            if let Some(item_id) = grade_item_id {
+                inv.invalidate_item_scores(item_id).await;
+            }
         }
 
         let response = SubmissionSummaryResponse {

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
@@ -24,7 +26,7 @@ void main() {
       when(() => mockRepository.setScoreOverride(
         scoreId: any(named: 'scoreId'),
         overrideScore: any(named: 'overrideScore'),
-      )).thenAnswer((_) async => const Right(null));
+      )).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await useCase(scoreId: tScoreId, overrideScore: tOverrideScore);
 

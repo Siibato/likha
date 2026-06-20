@@ -11,21 +11,21 @@ pub async fn create_linked_grade_item(
     class_id: Uuid,
     title: &str,
     component: &str,
-    quarter: i32,
+    period: i32,
     total_points: f64,
 ) -> AppResult<()> {
     if repo.find_by_source(source_type, &source_id.to_string()).await?.is_some() {
         return Ok(());
     }
 
-    let existing = repo.get_items_by_component(class_id, quarter, component).await?;
+    let existing = repo.get_items_by_component(class_id, period, component).await?;
     let order_index = existing.len() as i32;
 
     repo.create_item(
         class_id,
         title.to_string(),
         component.to_string(),
-        Some(quarter),
+        Some(period),
         total_points,
         source_type.to_string(),
         Some(source_id.to_string()),
@@ -44,11 +44,12 @@ pub async fn auto_populate_score(
     source_id: Uuid,
     student_id: Uuid,
     score: f64,
-) -> AppResult<()> {
+) -> AppResult<Option<uuid::Uuid>> {
     let grade_item = repo.find_by_source(source_type, &source_id.to_string()).await?;
     if let Some(item) = grade_item {
         repo.upsert_score(item.id, student_id, Some(score), true).await?;
+        Ok(Some(item.id))
+    } else {
+        Ok(None)
     }
-
-    Ok(())
 }

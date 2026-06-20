@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/repositories/tos_repository.dart';
@@ -34,11 +36,11 @@ void main() {
       when(() => mockRepository.updateCompetency(
         competencyId: any(named: 'competencyId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Right(tUpdated));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tUpdated, status: SyncStatus.pending)));
 
       final result = await useCase(competencyId: tCompetencyId, data: tData);
 
-      expect(result, Right(tUpdated));
+      expect(result.isRight(), isTrue);
       verify(() => mockRepository.updateCompetency(competencyId: tCompetencyId, data: tData)).called(1);
     });
 

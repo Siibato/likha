@@ -6,6 +6,8 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/events/data_event_bus.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
@@ -113,7 +115,7 @@ void main() {
               title: any(named: 'title'),
               description: any(named: 'description'),
               contentText: any(named: 'contentText'),
-            )).thenAnswer((_) async => Right(tMaterial));
+            )).thenAnswer((_) async => Right(MutationResult(entity: tMaterial, status: SyncStatus.pending)));
 
         final states = <LearningMaterialState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
@@ -154,7 +156,7 @@ void main() {
         notifier.state = notifier.state.copyWith(materials: [tMaterial]);
 
         when(() => mockDelete.call(any()))
-            .thenAnswer((_) async => const Right(null));
+            .thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
         final states = <LearningMaterialState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);

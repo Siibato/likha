@@ -4,40 +4,6 @@ import 'essay_section_editor.dart';
 import 'identification_section_editor.dart';
 import 'multiple_choice_section_editor.dart';
 
-// Data classes for editor state (replaces file-local _ChoiceEdit, _EnumerationItemEdit)
-
-class ChoiceEntry {
-  final TextEditingController controller;
-  bool isCorrect;
-  final String? id; // For edit_question_page tracking
-
-  ChoiceEntry({
-    TextEditingController? controller,
-    this.isCorrect = false,
-    this.id,
-  }) : controller = controller ?? TextEditingController();
-
-  void dispose() {
-    controller.dispose();
-  }
-}
-
-class EnumerationItemEntry {
-  final List<TextEditingController> answerControllers;
-  final String? id; // For edit_question_page tracking
-
-  EnumerationItemEntry({
-    List<TextEditingController>? answerControllers,
-    this.id,
-  }) : answerControllers = answerControllers ?? [];
-
-  void dispose() {
-    for (final controller in answerControllers) {
-      controller.dispose();
-    }
-  }
-}
-
 enum EditorStyleVariant { questionCard, form }
 
 /// Unified question editor body widget handling Multiple Choice, Identification, and Enumeration questions.

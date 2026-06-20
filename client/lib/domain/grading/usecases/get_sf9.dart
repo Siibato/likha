@@ -11,6 +11,7 @@ class GetSf9 {
     return _repository.getSf9(
       classId: params.classId,
       studentId: params.studentId,
+      skipBackgroundRefresh: params.skipBackgroundRefresh,
     );
   }
 }
@@ -18,6 +19,7 @@ class GetSf9 {
 class GetSf9Params {
   final String classId;
   final String studentId;
+  final bool skipBackgroundRefresh;
 
-  GetSf9Params({required this.classId, required this.studentId});
+  GetSf9Params({required this.classId, required this.studentId, this.skipBackgroundRefresh = false});
 }

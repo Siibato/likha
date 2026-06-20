@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
+import 'package:likha/core/utils/labels.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_info_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/status_badge.dart';
 
@@ -13,21 +14,6 @@ class AnswerResultCard extends StatelessWidget {
     required this.answer,
     required this.questionNumber,
   });
-
-  String _questionTypeLabel(String type) {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'identification':
-        return 'Identification';
-      case 'enumeration':
-        return 'Enumeration';
-      case 'essay':
-        return 'Essay';
-      default:
-        return type;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +39,7 @@ class AnswerResultCard extends StatelessWidget {
 
     return BaseInfoCard(
       title: 'Q$questionNumber. ${answer.questionText}',
-      subtitle: '${_questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
+      subtitle: '${questionTypeLabel(answer.questionType)} - ${answer.points} pt${answer.points != 1 ? 's' : ''}',
       icon: Icon(statusIcon, color: statusColor),
       trailing: StatusBadge(
         label: isPending

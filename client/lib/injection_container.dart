@@ -22,8 +22,7 @@ import 'package:likha/data/validation/services/timestamp_validator.dart';
 import 'package:likha/data/validation/data_sources/validation_remote_datasource.dart';
 import 'package:likha/data/validation/repositories/validation_metadata_repository.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/local/assessments/impl/assessment_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/data/repositories/assessments/assessment_repository_impl.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
@@ -50,8 +49,7 @@ import 'package:likha/domain/assessments/usecases/delete_question.dart';
 import 'package:likha/domain/assessments/usecases/reorder_assessment.dart';
 import 'package:likha/domain/assessments/usecases/reorder_questions.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/local/assignments/impl/assignment_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/data/repositories/assignments/assignment_repository_impl.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
@@ -73,8 +71,7 @@ import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
 import 'package:likha/domain/assignments/usecases/get_student_assignment_submission.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
-import 'package:likha/data/datasources/local/auth/impl/auth_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/repositories/auth/auth_repository_impl.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
@@ -89,8 +86,7 @@ import 'package:likha/domain/auth/usecases/logout.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
-import 'package:likha/data/datasources/local/classes/impl/class_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
@@ -105,9 +101,8 @@ import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/local/learning_materials/impl/learning_material_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
-import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/repositories/learning_materials/learning_material_repository_impl.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
@@ -120,8 +115,7 @@ import 'package:likha/domain/learning_materials/usecases/reorder_material.dart' 
 import 'package:likha/domain/learning_materials/usecases/update_material.dart';
 import 'package:likha/domain/learning_materials/usecases/upload_file.dart' as material;
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
-import 'package:likha/data/datasources/local/grading/impl/grading_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/repositories/grading/grading_repository_impl.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/domain/grading/usecases/clear_score_override.dart';
@@ -147,10 +141,10 @@ import 'package:likha/domain/grading/usecases/get_sf10.dart';
 import 'package:likha/domain/grading/usecases/update_period_grade.dart';
 import 'package:likha/domain/grading/services/score_generation_service.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
+import 'package:likha/domain/grading/usecases/get_class_grades.dart';
 import 'package:likha/domain/grading/usecases/get_grade_data_batch.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
-import 'package:likha/data/datasources/local/tos/impl/tos_local_datasource_impl.dart';
-import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/data/repositories/tos/tos_repository_impl.dart';
 import 'package:likha/domain/tos/repositories/tos_repository.dart';
 import 'package:likha/domain/tos/usecases/get_tos_list.dart';
@@ -163,6 +157,38 @@ import 'package:likha/domain/tos/usecases/update_competency.dart';
 import 'package:likha/domain/tos/usecases/delete_competency.dart';
 import 'package:likha/domain/tos/usecases/bulk_add_competencies.dart';
 import 'package:likha/domain/tos/usecases/search_melcs.dart';
+import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
+import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
+import 'package:likha/data/repositories/setup/setup_repository_impl.dart';
+import 'package:likha/domain/setup/repositories/setup_repository.dart';
+import 'package:likha/domain/setup/usecases/get_school_settings.dart';
+import 'package:likha/domain/setup/usecases/update_school_settings.dart';
+import 'package:likha/domain/setup/usecases/update_school_code.dart';
+import 'package:likha/domain/document_exports/repositories/document_export_repository.dart';
+import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
+import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
+import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
+import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
+import 'package:likha/data/repositories/document_exports/document_export_repository_impl.dart';
+import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
+import 'package:likha/data/repositories/student_records/student_records_repository_impl.dart';
+import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
+import 'package:likha/domain/student_records/usecases/get_learner_details.dart';
+import 'package:likha/domain/student_records/usecases/upsert_learner_details.dart';
+import 'package:likha/domain/student_records/usecases/get_attendance.dart';
+import 'package:likha/domain/student_records/usecases/upsert_attendance.dart';
+import 'package:likha/domain/student_records/usecases/get_core_values.dart';
+import 'package:likha/domain/student_records/usecases/upsert_core_values.dart';
+import 'package:likha/domain/student_records/usecases/get_sf10_v2.dart';
+import 'package:likha/domain/student_records/usecases/get_school_history.dart';
+import 'package:likha/domain/student_records/usecases/create_school_history.dart';
+import 'package:likha/domain/student_records/usecases/update_school_history.dart';
+import 'package:likha/domain/student_records/usecases/delete_school_history.dart';
+import 'package:likha/domain/student_records/usecases/get_previous_subjects.dart';
+import 'package:likha/domain/student_records/usecases/upsert_previous_subject.dart';
+import 'package:likha/domain/student_records/usecases/get_previous_attendance.dart';
+import 'package:likha/domain/student_records/usecases/upsert_previous_attendance.dart';
 import 'package:likha/services/storage_service.dart';
 final sl = GetIt.instance;
 
@@ -252,6 +278,21 @@ Future<void> init() async {
   sl.registerLazySingleton<SyncRemoteDataSource>(
     () => SyncRemoteDataSourceImpl(dioClient: sl<DioClient>()),
   );
+  sl.registerLazySingleton<GradingRemoteDataSource>(
+    () => GradingRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<SetupRemoteDataSource>(
+    () => SetupRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<TosRemoteDataSource>(
+    () => TosRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<DocumentExportRemoteDataSource>(
+    () => DocumentExportRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton<StudentRecordsRemoteDataSource>(
+    () => StudentRecordsRemoteDataSourceImpl(sl<DioClient>()),
+  );
 
   // Local Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
@@ -271,6 +312,18 @@ Future<void> init() async {
       sl<LocalDatabase>(),
       sl<SyncQueue>(),
     ),
+  );
+  sl.registerLazySingleton<SetupLocalDataSource>(
+    () => SetupLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+  sl.registerLazySingleton<GradingLocalDataSource>(
+    () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+  sl.registerLazySingleton<TosLocalDataSource>(
+    () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
+  );
+  sl.registerLazySingleton<StudentRecordsLocalDataSource>(
+    () => StudentRecordsLocalDataSourceImpl(sl<LocalDatabase>()),
   );
 
   // Validation services
@@ -308,25 +361,21 @@ Future<void> init() async {
     () => AuthRepositoryImpl(
       remoteDataSource: sl<AuthRemoteDataSource>(),
       localDataSource: sl<AuthLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       syncQueue: sl<SyncQueue>(),
-      localDatabase: sl<LocalDatabase>(),
       classLocalDataSource: sl<ClassLocalDataSource>(),
       assignmentLocalDataSource: sl<AssignmentLocalDataSource>(),
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
       learningMaterialLocalDataSource: sl<LearningMaterialLocalDataSource>(),
       gradingLocalDataSource: sl<GradingLocalDataSource>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<ClassRepository>(
     () => ClassRepositoryImpl(
       remoteDataSource: sl<ClassRemoteDataSource>(),
       localDataSource: sl<ClassLocalDataSource>(),
-      validationService: sl<ValidationService>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
-      storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
     ),
   );
@@ -337,20 +386,14 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
-      storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
-      syncLogger: sl<SyncLogger>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
     () => AssignmentRepositoryImpl(
       remoteDataSource: sl<AssignmentRemoteDataSource>(),
       localDataSource: sl<AssignmentLocalDataSource>(),
-      validationService: sl<ValidationService>(),
-      connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
     ),
@@ -359,11 +402,7 @@ Future<void> init() async {
     () => LearningMaterialRepositoryImpl(
       remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
       localDataSource: sl<LearningMaterialLocalDataSource>(),
-      validationService: sl<ValidationService>(),
-      connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
-      storageService: sl<StorageService>(),
       dataEventBus: sl<DataEventBus>(),
     ),
   );
@@ -383,9 +422,24 @@ Future<void> init() async {
       sl<LocalDatabase>(), // LocalDatabase
       sl<AssessmentRemoteDataSource>(), // AssessmentRemoteDataSource
       sl<AssessmentLocalDataSource>(), // AssessmentLocalDataSource
+      sl<AssignmentRemoteDataSource>(), // AssignmentRemoteDataSource
+      sl<AssignmentLocalDataSource>(), // AssignmentLocalDataSource
+      sl<AuthRemoteDataSource>(), // AuthRemoteDataSource
+      sl<AuthLocalDataSource>(), // AuthLocalDataSource
+      sl<ClassRemoteDataSource>(), // ClassRemoteDataSource
+      sl<ClassLocalDataSource>(), // ClassLocalDataSource
+      sl<GradingRemoteDataSource>(), // GradingRemoteDataSource
+      sl<GradingLocalDataSource>(), // GradingLocalDataSource
+      sl<LearningMaterialRemoteDataSource>(), // LearningMaterialRemoteDataSource
+      sl<LearningMaterialLocalDataSource>(), // LearningMaterialLocalDataSource
+      sl<SetupRemoteDataSource>(), // SetupRemoteDataSource
+      sl<StudentRecordsRemoteDataSource>(), // StudentRecordsRemoteDataSource
+      sl<TosRemoteDataSource>(), // TosRemoteDataSource
+      sl<TosLocalDataSource>(), // TosLocalDataSource
       sl<SyncLogger>(), // SyncLogger
       sl<StorageService>(), // StorageService
       sl<ServerClockService>(), // ServerClockService
+      sl<DataEventBus>(), // DataEventBus
     ),
   );
 
@@ -472,23 +526,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => material.DeleteFile(sl()));
   sl.registerLazySingleton(() => material.DownloadFile(sl()));
 
-  // Grading - Remote Data Source
-  sl.registerLazySingleton<GradingRemoteDataSource>(
-    () => GradingRemoteDataSourceImpl(sl<DioClient>()),
-  );
-
-  // Grading - Local Data Source
-  sl.registerLazySingleton<GradingLocalDataSource>(
-    () => GradingLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
-  );
-
   // Grading - Repository
   sl.registerLazySingleton<GradingRepository>(
     () => GradingRepositoryImpl(
       remoteDataSource: sl<GradingRemoteDataSource>(),
       localDataSource: sl<GradingLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
+      dataEventBus: sl<DataEventBus>(),
+      studentRecordsRepository: sl<StudentRecordsRepository>(),
     ),
   );
 
@@ -531,28 +576,46 @@ Future<void> init() async {
   sl.registerLazySingleton(() => HasScoresForGradeItem(sl<ScoreGenerationService>()));
   sl.registerLazySingleton(() => GetScoreSummary(sl<ScoreGenerationService>()));
   
+  // Unified read
+  sl.registerLazySingleton(() => GetClassGrades(sl<GradingRepository>()));
+
   // Batch Operations
   sl.registerLazySingleton(() => GetGradeDataBatch(sl<GradingRepository>()));
 
-  // TOS - Remote Data Source
-  sl.registerLazySingleton<TosRemoteDataSource>(
-    () => TosRemoteDataSourceImpl(sl<DioClient>()),
-  );
-
-  // TOS - Local Data Source
-  sl.registerLazySingleton<TosLocalDataSource>(
-    () => TosLocalDataSourceImpl(sl<LocalDatabase>(), sl<SyncQueue>()),
-  );
-
   // TOS - Repository
+  sl.registerLazySingleton<SetupRepository>(
+    () => SetupRepositoryImpl(
+      remoteDataSource: sl<SetupRemoteDataSource>(),
+      localDataSource: sl<SetupLocalDataSource>(),
+      syncQueue: sl<SyncQueue>(),
+      dataEventBus: sl<DataEventBus>(),
+    ),
+  );
   sl.registerLazySingleton<TosRepository>(
     () => TosRepositoryImpl(
       remoteDataSource: sl<TosRemoteDataSource>(),
       localDataSource: sl<TosLocalDataSource>(),
-      serverReachabilityService: sl<ServerReachabilityService>(),
       syncQueue: sl<SyncQueue>(),
+      dataEventBus: sl<DataEventBus>(),
     ),
   );
+  sl.registerLazySingleton<DocumentExportRepository>(
+    () => DocumentExportRepositoryImpl(sl<DocumentExportRemoteDataSource>()),
+  );
+  sl.registerLazySingleton<StudentRecordsRepository>(
+    () => StudentRecordsRepositoryImpl(
+      sl<StudentRecordsRemoteDataSource>(),
+      sl<StudentRecordsLocalDataSource>(),
+      sl<GradingLocalDataSource>(),
+      sl<SyncQueue>(),
+      sl<DataEventBus>(),
+    ),
+  );
+
+  // Setup use cases
+  sl.registerLazySingleton(() => GetSchoolSettings(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolSettings(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolCode(sl()));
 
   // TOS use cases
   sl.registerLazySingleton(() => GetTosList(sl()));
@@ -565,4 +628,27 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteCompetency(sl()));
   sl.registerLazySingleton(() => BulkAddCompetencies(sl()));
   sl.registerLazySingleton(() => SearchMelcs(sl()));
+
+  // Document Export use cases
+  sl.registerLazySingleton(() => ExportClassGrades(sl()));
+  sl.registerLazySingleton(() => ExportSf9(sl()));
+  sl.registerLazySingleton(() => ExportSf10Pdf(sl()));
+  sl.registerLazySingleton(() => ExportSf10Excel(sl()));
+
+  // Student Records use cases
+  sl.registerLazySingleton(() => GetLearnerDetails(sl()));
+  sl.registerLazySingleton(() => UpsertLearnerDetails(sl()));
+  sl.registerLazySingleton(() => GetAttendance(sl()));
+  sl.registerLazySingleton(() => UpsertAttendance(sl()));
+  sl.registerLazySingleton(() => GetCoreValues(sl()));
+  sl.registerLazySingleton(() => UpsertCoreValues(sl()));
+  sl.registerLazySingleton(() => GetSf10V2(sl()));
+  sl.registerLazySingleton(() => GetSchoolHistory(sl()));
+  sl.registerLazySingleton(() => CreateSchoolHistory(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolHistory(sl()));
+  sl.registerLazySingleton(() => DeleteSchoolHistory(sl()));
+  sl.registerLazySingleton(() => GetPreviousSubjects(sl()));
+  sl.registerLazySingleton(() => UpsertPreviousSubject(sl()));
+  sl.registerLazySingleton(() => GetPreviousAttendance(sl()));
+  sl.registerLazySingleton(() => UpsertPreviousAttendance(sl()));
 }

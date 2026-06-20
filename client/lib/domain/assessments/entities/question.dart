@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 class Question extends Equatable {
   final String id;
@@ -17,7 +18,7 @@ class Question extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const Question({
     required this.id,
@@ -36,11 +37,11 @@ class Question extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   @override
-  List<Object?> get props => [id, assessmentId, questionType, questionText, points, orderIndex, difficulty, createdAt, updatedAt, needsSync, cachedAt];
+  List<Object?> get props => [id, assessmentId, questionType, questionText, points, orderIndex, difficulty, createdAt, updatedAt, syncStatus, cachedAt];
 }
 
 class Choice extends Equatable {

@@ -50,6 +50,13 @@ impl super::SyncPushService {
                     _ => self.error_result(op, &format!("Unknown action for admin_user update: {}", action)),
                 }
             }
+            "delete" => {
+                let target_user_id = extract_field!(self, op, parse_uuid_field, "id");
+                match self.admin_service.delete_account(target_user_id, user_id).await {
+                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => self.error_result(op, &e.to_string()),
+                }
+            }
             _ => self.error_result(op, &format!("Unsupported operation for admin_user: {}", op.operation)),
         }
     }

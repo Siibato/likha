@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 
 class ClassModel extends ClassEntity {
@@ -17,7 +18,7 @@ class ClassModel extends ClassEntity {
     required super.createdAt,
     required super.updatedAt,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
     this.deletedAt,
   });
 
@@ -35,6 +36,7 @@ class ClassModel extends ClassEntity {
       gradingPeriodType: json['grading_period_type'] as String? ?? 'quarter',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      syncStatus: SyncStatus.synced,
       deletedAt: json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
@@ -61,7 +63,10 @@ class ClassModel extends ClassEntity {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -81,7 +86,20 @@ class ClassModel extends ClassEntity {
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
+    };
+  }
+
+  Map<String, dynamic> toPayload() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'teacher_id': teacherId,
+      'teacher_username': teacherUsername,
+      'teacher_full_name': teacherFullName,
+      'is_advisory': isAdvisory,
+      'grading_period_type': gradingPeriodType,
     };
   }
 }

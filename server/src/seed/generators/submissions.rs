@@ -10,14 +10,14 @@ use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
 use crate::seed::tools::seed_id;
 
-/// Generate assessment submissions with deterministic skip patterns
+/// Generate assessment submissions: every enrolled student submits
 pub fn generate_assessment_submissions(
     ctx: &SeedContext,
     assessments: &[AssessmentSpec],
     students: &[UserSpec],
     enrollments: &[EnrollmentSpec],
 ) -> Vec<AssessmentSubmissionSpec> {
-    let mut submissions = Vec::with_capacity(1200);
+    let mut submissions = Vec::with_capacity(2400);
 
     // Build student index map for quick lookup
     let student_indices: std::collections::HashMap<Uuid, usize> = students
@@ -51,20 +51,9 @@ pub fn generate_assessment_submissions(
                 continue;
             };
 
-            // Skip rule: (student_idx + assessment_idx) % 7 == 0
-            if (global_student_idx + assess_idx) % 7 == 0 {
-                continue;
-            }
-
-            // 90% submitted, 10% in-progress
-            let is_submitted = (global_student_idx + assess_idx) % 10 != 0;
-
+            // All students submit
             let started_at = started_base + chrono::Duration::minutes((global_student_idx * 5) as i64);
-            let submitted_at = if is_submitted {
-                Some(started_at + chrono::Duration::minutes(15 + (global_student_idx % 30) as i64))
-            } else {
-                None
-            };
+            let submitted_at = Some(started_at + chrono::Duration::minutes(15 + (global_student_idx % 30) as i64));
 
             // Generate answers
             let answers = generate_assessment_answers(
@@ -113,13 +102,19 @@ fn generate_assessment_answers(
         };
 
         let choice_ids = if !question.choices.is_empty() {
-            // For MCQ: pick a choice based on correctness
+            // Find the actual correct choice ID from the fixture
+            let correct_choice = question.choices.iter().find(|c| c.is_correct);
+            let wrong_choices: Vec<_> = question.choices.iter().filter(|c| !c.is_correct).collect();
+
             if correctness == 0 {
-                // Correct answer - pick the first (correct) choice
-                vec![question.choices[0].id]
+                // Fully correct - pick the real correct choice
+                correct_choice.map(|c| vec![c.id])
+                    .unwrap_or_else(|| vec![question.choices[0].id])
             } else {
-                // Wrong answer - pick a different choice
-                vec![question.choices[1].id]
+                // Wrong/partial - pick a wrong choice deterministically
+                let wrong_idx = (student_idx + assess_idx + q_idx) % wrong_choices.len().max(1);
+                wrong_choices.get(wrong_idx).map(|c| vec![c.id])
+                    .unwrap_or_else(|| vec![question.choices[0].id])
             }
         } else {
             vec![]
@@ -189,37 +184,13 @@ pub fn generate_assignment_submissions(
                 continue;
             };
 
-            // Skip rule: (student_idx + assignment_idx) % 7 == 0
-            if (global_student_idx + assign_idx) % 7 == 0 {
-                continue;
-            }
-
-            // 50% submitted (not graded), 50% graded
-            let is_graded = (global_student_idx + assign_idx) % 2 == 0;
-
+            // All submissions are graded
             let submitted_at = submitted_at_base + chrono::Duration::hours((global_student_idx % 24) as i64);
 
-            let (status, points, feedback, graded_by, graded_at) = if is_graded {
-                let score = (70 + (global_student_idx % 30)) as i32; // 70-100% score
-                let points = (assignment.total_points * score) / 100;
-                let feedbacks = ["Good work.", "Needs improvement.", "Excellent!"];
-                let feedback = feedbacks[global_student_idx % 3];
-                (
-                    "graded".into(),
-                    Some(points),
-                    Some(feedback.into()),
-                    teacher_id,
-                    Some(ctx.days_ago(3)),
-                )
-            } else {
-                (
-                    "submitted".into(),
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-            };
+            let score = (60 + (global_student_idx % 41)) as i32; // 60-100% score
+            let points = (assignment.total_points * score) / 100;
+            let feedbacks = ["Good work.", "Needs improvement.", "Excellent!", "Well done, keep it up.", "Satisfactory."];
+            let feedback = feedbacks[global_student_idx % feedbacks.len()];
 
             let sub_id = seed_id("assignment_submissions", &format!("assign_{}_student_{}", assign_idx, global_student_idx));
 
@@ -228,12 +199,12 @@ pub fn generate_assignment_submissions(
                 assignment_id: assignment.id,
                 student_id: *student_id,
                 text: Some("Assignment submission text.".into()),
-                status,
-                points,
-                feedback,
-                graded_by,
+                status: "graded".into(),
+                points: Some(points),
+                feedback: Some(feedback.into()),
+                graded_by: teacher_id,
                 submitted_at,
-                graded_at,
+                graded_at: Some(ctx.days_ago(3)),
             });
         }
     }

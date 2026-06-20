@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_shell_scaffold.dart';
-import 'package:likha/presentation/pages/mobile/teacher/class/classes_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/class/class_list_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/grade/grades_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/profile_page.dart';
 
@@ -16,7 +16,7 @@ class _TeacherShellPageState extends ConsumerState<TeacherShellPage> {
   int _currentIndex = 0;
 
   final _pages = const [
-    TeacherClassesPage(),
+    TeacherClassListPage(),
     TeacherGradesPage(),
     TeacherProfilePage(),
   ];

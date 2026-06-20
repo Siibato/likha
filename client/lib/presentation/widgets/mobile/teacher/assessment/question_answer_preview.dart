@@ -8,22 +8,6 @@ class QuestionChoicePreview {
   const QuestionChoicePreview({required this.text, required this.isCorrect});
 }
 
-/// Converts question type keys to human-readable labels.
-String questionTypeLabel(String type) {
-  switch (type) {
-    case 'multiple_choice':
-      return 'Multiple Choice';
-    case 'identification':
-      return 'Identification';
-    case 'enumeration':
-      return 'Enumeration';
-    case 'essay':
-      return 'Essay';
-    default:
-      return type;
-  }
-}
-
 /// Returns the accent color used for a question type chip.
 Color questionTypeColor(String type) {
   switch (type) {

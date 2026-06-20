@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
@@ -30,6 +32,10 @@ void main() {
       createdAt: DateTime(2024, 1, 1),
       updatedAt: DateTime(2024, 1, 15),
     );
+    final tMutationResult = MutationResult(
+      entity: tUpdatedClass,
+      status: SyncStatus.pending,
+    );
 
     test('should update class successfully', () async {
       final params = UpdateClassParams(classId: tClassId, title: 'Updated Science 7');
@@ -40,12 +46,12 @@ void main() {
         description: any(named: 'description'),
         teacherId: any(named: 'teacherId'),
         isAdvisory: any(named: 'isAdvisory'),
-      )).thenAnswer((_) async => Right(tUpdatedClass));
+      )).thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase(params);
 
-      expect(result, Right(tUpdatedClass));
-      expect(result.getOrElse(() => throw Exception()).title, 'Updated Science 7');
+      expect(result, Right(tMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.title, 'Updated Science 7');
     });
 
     test('should return ValidationFailure when title is empty', () async {

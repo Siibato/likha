@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/events/data_event_bus.dart';
-import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
@@ -82,6 +81,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   final DeleteClass _deleteClass;
 
   late StreamSubscription<void> _refreshSub;
+  late StreamSubscription<String> _participantsSub;
   bool _isAdminMode = false;
 
   ClassNotifier(
@@ -101,6 +101,12 @@ class ClassNotifier extends StateNotifier<ClassState> {
         loadAllClasses(skipBackgroundRefresh: true);
       } else {
         loadClasses(skipBackgroundRefresh: true);
+      }
+    });
+
+    _participantsSub = sl<DataEventBus>().onParticipantsChanged.listen((classId) {
+      if (state.currentClassDetail?.id == classId) {
+        loadParticipants(classId);
       }
     });
   }
@@ -153,7 +159,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     String? teacherFullName,
     bool isAdvisory = false,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
     final result = await _createClass(CreateClassParams(
       title: title,
@@ -166,12 +172,10 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (newClass) => state = state.copyWith(
-        isLoading: false,
-        classes: [newClass, ...state.classes],
+      (mutationResult) => state = state.copyWith(
+        classes: [mutationResult.entity, ...state.classes],
         successMessage: 'Class created successfully',
       ),
     );
@@ -216,7 +220,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
     String? teacherId,
     bool? isAdvisory,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
     final result = await _updateClass(UpdateClassParams(
       classId: classId,
@@ -228,26 +232,11 @@ class ClassNotifier extends StateNotifier<ClassState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (updatedClass) {
-        // Update the class in the classes list
-        final updatedClasses = state.classes.map((c) {
-          if (c.id == classId) {
-            return updatedClass;
-          }
-          return c;
-        }).toList();
-
-        state = state.copyWith(
-          isLoading: false,
-          classes: updatedClasses,
-          successMessage: 'Class updated successfully',
-        );
-        // Reload class detail to get updated info
-        loadClassDetail(classId);
-      },
+      (_) => state = state.copyWith(
+        successMessage: 'Class updated successfully',
+      ),
     );
   }
 
@@ -261,116 +250,20 @@ class ClassNotifier extends StateNotifier<ClassState> {
       loadingStudentIds: {...state.loadingStudentIds, studentId},
     );
 
-    // Try to get the student from search results to show in UI immediately
-    final studentToAdd = state.searchResults.firstWhere(
-      (u) => u.id == studentId,
-      orElse: () => UserModel(
-        id: studentId,
-        username: '',
-        fullName: '',
-        role: 'student',
-        accountStatus: 'pending',
-        isActive: false,
-        createdAt: DateTime.now(),
-      ),
-    );
-
-    final currentDetail = state.currentClassDetail;
-
-    // Optimistic update: immediately show student as added
-    if (currentDetail != null) {
-      final optimisticParticipant = Participant(
-        id: 'temp_${studentToAdd.id}', // Temporary ID that will be updated on sync
-        student: studentToAdd,
-        joinedAt: DateTime.now(),
-      );
-
-      final updatedDetail = ClassDetail(
-        id: currentDetail.id,
-        title: currentDetail.title,
-        description: currentDetail.description,
-        teacherId: currentDetail.teacherId,
-        isArchived: currentDetail.isArchived,
-        isAdvisory: currentDetail.isAdvisory,
-        students: [optimisticParticipant, ...currentDetail.students],
-        createdAt: currentDetail.createdAt,
-        updatedAt: currentDetail.updatedAt,
-      );
-
-      state = state.copyWith(
-        currentClassDetail: updatedDetail,
-        participantIds: {...state.participantIds, studentId},
-      );
-    }
-
-    // Perform the actual operation in background
     final result = await _addStudent(AddStudentParams(
       classId: classId,
       studentId: studentId,
     ));
 
     result.fold(
-      (failure) {
-        // On failure, remove the optimistically added student and show error
-        if (currentDetail != null) {
-          final revertedDetail = ClassDetail(
-            id: currentDetail.id,
-            title: currentDetail.title,
-            description: currentDetail.description,
-            teacherId: currentDetail.teacherId,
-            isArchived: currentDetail.isArchived,
-            isAdvisory: currentDetail.isAdvisory,
-            students: currentDetail.students, // Revert to original students
-            createdAt: currentDetail.createdAt,
-            updatedAt: currentDetail.updatedAt,
-          );
-          state = state.copyWith(
-            currentClassDetail: revertedDetail,
-            participantIds: Set<String>.from(state.participantIds)..remove(studentId),
-            error: AppErrorMapper.fromFailure(failure),
-            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
-          );
-        } else {
-          state = state.copyWith(
-            error: AppErrorMapper.fromFailure(failure),
-            loadingStudentIds: state.loadingStudentIds..remove(studentId),
-          );
-        }
-      },
-      (participant) {
-        // On success, update with real participant data from server
-        if (currentDetail != null) {
-          final updatedDetail = ClassDetail(
-            id: currentDetail.id,
-            title: currentDetail.title,
-            description: currentDetail.description,
-            teacherId: currentDetail.teacherId,
-            isArchived: currentDetail.isArchived,
-            isAdvisory: currentDetail.isAdvisory,
-            students: currentDetail.students.map((s) {
-              // Replace temp participant with real one
-              if (s.id.startsWith('temp_') && s.student.id == studentId) {
-                return participant;
-              }
-              return s;
-            }).toList(),
-            createdAt: currentDetail.createdAt,
-            updatedAt: currentDetail.updatedAt,
-          );
-          state = state.copyWith(
-            currentClassDetail: updatedDetail,
-            successMessage: 'Student added to class',
-            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
-          );
-        } else {
-          state = state.copyWith(
-            successMessage: 'Student added to class',
-            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
-          );
-        }
-        // Reload class detail in background to sync with server
-        loadClassDetail(classId);
-      },
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
+      ),
+      (_) => state = state.copyWith(
+        successMessage: 'Student added to class',
+        loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
+      ),
     );
   }
 
@@ -384,64 +277,20 @@ class ClassNotifier extends StateNotifier<ClassState> {
       loadingStudentIds: {...state.loadingStudentIds, studentId},
     );
 
-    final currentDetail = state.currentClassDetail;
-    final removedStudent = currentDetail?.students
-        .cast<Participant?>()
-        .firstWhere((e) => e?.student.id == studentId, orElse: () => null);
-
-    // Optimistic update: immediately remove the student
-    if (currentDetail != null) {
-      final updatedDetail = ClassDetail(
-        id: currentDetail.id,
-        title: currentDetail.title,
-        description: currentDetail.description,
-        teacherId: currentDetail.teacherId,
-        isArchived: currentDetail.isArchived,
-        isAdvisory: currentDetail.isAdvisory,
-        students: currentDetail.students
-            .where((e) => e.student.id != studentId)
-            .toList(),
-        createdAt: currentDetail.createdAt,
-        updatedAt: currentDetail.updatedAt,
-      );
-      state = state.copyWith(
-        currentClassDetail: updatedDetail,
-        participantIds: Set<String>.from(state.participantIds)..remove(studentId),
-      );
-    }
-
-    // Perform the actual operation in background
     final result = await _removeStudent(RemoveStudentParams(
       classId: classId,
       studentId: studentId,
     ));
 
     result.fold(
-      (failure) {
-        // On failure, restore the removed student and show error
-        if (currentDetail != null && removedStudent != null) {
-          state = state.copyWith(
-            currentClassDetail: currentDetail, // Restore original detail
-            participantIds: Set<String>.from(state.participantIds)..add(studentId),
-            error: AppErrorMapper.fromFailure(failure),
-            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
-          );
-        } else {
-          state = state.copyWith(
-            error: AppErrorMapper.fromFailure(failure),
-            loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
-          );
-        }
-      },
-      (_) {
-        // On success, confirm the removal
-        state = state.copyWith(
-          successMessage: 'Student removed from class',
-          loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
-        );
-        // Reload class detail in background to sync with server
-        loadClassDetail(classId);
-      },
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
+      ),
+      (_) => state = state.copyWith(
+        successMessage: 'Student removed from class',
+        loadingStudentIds: Set<String>.from(state.loadingStudentIds)..remove(studentId),
+      ),
     );
   }
 
@@ -471,19 +320,54 @@ class ClassNotifier extends StateNotifier<ClassState> {
     );
   }
 
+  Future<void> loadParticipants(String classId) async {
+    final result = await _getParticipants(classId: classId);
+    result.fold(
+      (failure) {}, // silent: background refresh should not show errors
+      (students) {
+        final ids = students.map((e) => e.id).toSet();
+        state = state.copyWith(
+          participantIds: ids,
+          searchResults: students,
+        );
+        // Also update currentClassDetail.students if available
+        final currentDetail = state.currentClassDetail;
+        if (currentDetail != null) {
+          final updatedStudents = students.map((user) {
+            return Participant(
+              id: 'local_${classId}_${user.id}',
+              student: user,
+              joinedAt: user.createdAt,
+            );
+          }).toList();
+          state = state.copyWith(
+            currentClassDetail: ClassDetail(
+              id: currentDetail.id,
+              title: currentDetail.title,
+              description: currentDetail.description,
+              teacherId: currentDetail.teacherId,
+              isArchived: currentDetail.isArchived,
+              isAdvisory: currentDetail.isAdvisory,
+              students: updatedStudents,
+              createdAt: currentDetail.createdAt,
+              updatedAt: currentDetail.updatedAt,
+            ),
+          );
+        }
+      },
+    );
+  }
+
   Future<void> deleteClass(String classId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
 
     final result = await _deleteClass(classId: classId);
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
       ),
       (_) => state = state.copyWith(
-        isLoading: false,
-        classes: state.classes.where((c) => c.id != classId).toList(),
         successMessage: 'Class deleted successfully',
       ),
     );
@@ -500,6 +384,7 @@ class ClassNotifier extends StateNotifier<ClassState> {
   @override
   void dispose() {
     _refreshSub.cancel();
+    _participantsSub.cancel();
     super.dispose();
   }
 }

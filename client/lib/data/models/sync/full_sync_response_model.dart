@@ -86,6 +86,27 @@ class FullSyncResponseModel {
   @JsonKey(name: 'sync_plan')
   final SyncPlanModel? syncPlan;
 
+  @JsonKey(name: 'school_settings')
+  final Map<String, dynamic>? schoolSettings;
+
+  @JsonKey(name: 'learner_details', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> learnerDetails;
+
+  @JsonKey(name: 'attendance_records', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> attendanceRecords;
+
+  @JsonKey(name: 'core_values_records', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> coreValuesRecords;
+
+  @JsonKey(name: 'student_school_history', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> studentSchoolHistory;
+
+  @JsonKey(name: 'previous_school_subjects', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> previousSchoolSubjects;
+
+  @JsonKey(name: 'previous_school_attendance', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> previousSchoolAttendance;
+
   FullSyncResponseModel({
     required this.syncToken,
     required this.serverTime,
@@ -111,6 +132,13 @@ class FullSyncResponseModel {
     this.user,
     this.enrolledStudents,
     this.syncPlan,
+    this.schoolSettings,
+    this.learnerDetails = const [],
+    this.attendanceRecords = const [],
+    this.coreValuesRecords = const [],
+    this.studentSchoolHistory = const [],
+    this.previousSchoolSubjects = const [],
+    this.previousSchoolAttendance = const [],
   });
 
   factory FullSyncResponseModel.fromJson(Map<String, dynamic> json) =>

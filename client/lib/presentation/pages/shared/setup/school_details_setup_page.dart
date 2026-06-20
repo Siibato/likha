@@ -25,6 +25,9 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
   final _schoolNameController = TextEditingController();
   final _regionController = TextEditingController();
   final _divisionController = TextEditingController();
+  final _districtController = TextEditingController();
+  final _schoolHeadNameController = TextEditingController();
+  final _schoolHeadPositionController = TextEditingController();
   final _schoolYearController = TextEditingController();
   bool _isSaving = false;
   String? _error;
@@ -34,6 +37,9 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
     _schoolNameController.dispose();
     _regionController.dispose();
     _divisionController.dispose();
+    _districtController.dispose();
+    _schoolHeadNameController.dispose();
+    _schoolHeadPositionController.dispose();
     _schoolYearController.dispose();
     super.dispose();
   }
@@ -62,6 +68,15 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           'school_division': _divisionController.text.trim().isEmpty
               ? null
               : _divisionController.text.trim(),
+          'school_district': _districtController.text.trim().isEmpty
+              ? null
+              : _districtController.text.trim(),
+          'school_head_name': _schoolHeadNameController.text.trim().isEmpty
+              ? null
+              : _schoolHeadNameController.text.trim(),
+          'school_head_position': _schoolHeadPositionController.text.trim().isEmpty
+              ? null
+              : _schoolHeadPositionController.text.trim(),
           'school_year': _schoolYearController.text.trim().isEmpty
               ? null
               : _schoolYearController.text.trim(),
@@ -126,6 +141,9 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
             schoolNameController: _schoolNameController,
             regionController: _regionController,
             divisionController: _divisionController,
+            districtController: _districtController,
+            schoolHeadNameController: _schoolHeadNameController,
+            schoolHeadPositionController: _schoolHeadPositionController,
             schoolYearController: _schoolYearController,
             enabled: !_isSaving,
             onSchoolNameChanged: (_) => setState(() => _error = null),

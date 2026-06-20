@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 
 /// Server sends NaiveDateTime (UTC without Z suffix).
@@ -30,7 +31,7 @@ class AssignmentModel extends Assignment {
     required super.createdAt,
     required super.updatedAt,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
     this.deletedAt,
   });
 
@@ -57,6 +58,7 @@ class AssignmentModel extends Assignment {
       component: json['component'] as String?,
       createdAt: json['created_at'] != null ? _parseUtc(json['created_at'] as String) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? _parseUtc(json['updated_at'] as String) : DateTime.now(),
+      syncStatus: SyncStatus.synced,
       deletedAt: json['deleted_at'] != null
           ? _parseUtc(json['deleted_at'] as String)
           : null,
@@ -101,7 +103,10 @@ class AssignmentModel extends Assignment {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -130,7 +135,25 @@ class AssignmentModel extends Assignment {
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
+    };
+  }
+
+  Map<String, dynamic> toPayload() {
+    return {
+      'id': id,
+      'class_id': classId,
+      'title': title,
+      'instructions': instructions,
+      'total_points': totalPoints,
+      'allows_text_submission': allowsTextSubmission,
+      'allows_file_submission': allowsFileSubmission,
+      if (allowedFileTypes != null) 'allowed_file_types': allowedFileTypes,
+      if (maxFileSizeMb != null) 'max_file_size_mb': maxFileSizeMb,
+      'due_at': dueAt.toUtc().toIso8601String().replaceAll('Z', ''),
+      'is_published': isPublished,
+      if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+      if (component != null) 'component': component,
     };
   }
 }

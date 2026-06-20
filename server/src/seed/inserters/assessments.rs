@@ -1,9 +1,8 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 
 use crate::utils::AppError;
 use crate::modules::assessment::repository::AssessmentRepository;
-use crate::modules::assessment::service::AssessmentService;
 use crate::seed::specs::{AssessmentSpec, QuestionSpec};
 use ::entity::{answer_key_acceptable_answers, answer_keys, assessment_questions};
 
@@ -46,19 +45,11 @@ pub async fn insert_assessment_with_questions(
     }
 
     if spec.is_published && spec.deleted_at.is_none() {
-        let teacher = ::entity::class_participants::Entity::find()
-            .filter(::entity::class_participants::Column::ClassId.eq(spec.class_id))
-            .one(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        repo.update_total_points(spec.id).await?;
+        repo.publish_assessment(spec.id).await?;
 
-        if let Some(participant) = teacher {
-            let service = AssessmentService::new(db.clone());
-            service.publish_assessment(spec.id, participant.user_id).await?;
-
-            if spec.results_released {
-                repo.release_results(spec.id).await?;
-            }
+        if spec.results_released {
+            repo.release_results(spec.id).await?;
         }
     }
 

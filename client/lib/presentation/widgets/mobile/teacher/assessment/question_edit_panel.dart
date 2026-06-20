@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_type_dropdown.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_editor_body.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';

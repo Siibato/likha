@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
@@ -7,7 +8,7 @@ class CreateClass {
 
   CreateClass(this._repository);
 
-  ResultFuture<ClassEntity> call(CreateClassParams params) {
+  ResultFuture<MutationResult<ClassEntity>> call(CreateClassParams params) {
     return _repository.createClass(
       title: params.title,
       description: params.description,

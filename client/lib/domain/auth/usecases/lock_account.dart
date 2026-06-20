@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
@@ -7,7 +8,7 @@ class LockAccount {
 
   LockAccount(this._repository);
 
-  ResultFuture<User> call(LockAccountParams params) {
+  ResultFuture<MutationResult<User>> call(LockAccountParams params) {
     return _repository.lockAccount(
       userId: params.userId,
       locked: params.locked,

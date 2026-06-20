@@ -9,6 +9,7 @@ pub mod add_student;
 pub mod remove_student;
 pub mod is_student_enrolled;
 pub mod get_classes_metadata;
+pub mod get_participants;
 
 pub use create_class::create_class;
 pub use update_class::update_class;
@@ -21,3 +22,4 @@ pub use add_student::add_student;
 pub use remove_student::remove_student;
 pub use is_student_enrolled::is_student_enrolled;
 pub use get_classes_metadata::get_classes_metadata;
+pub use get_participants::get_participants;

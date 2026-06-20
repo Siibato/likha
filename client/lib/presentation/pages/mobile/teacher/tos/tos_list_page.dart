@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 import 'package:likha/presentation/widgets/shared/primitives/chevron_trailing.dart';
-import 'package:likha/presentation/pages/mobile/teacher/tos/create_tos_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/tos/tos_create_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/tos/tos_detail_page.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';

@@ -22,16 +22,16 @@ pub async fn get_all_answer_details_for_assessment(
             DbBackend::Sqlite,
             r#"
             SELECT
-                s.user_id as student_id,
-                s.total_points as submission_total_points,
+                s.user_id,
+                s.total_points,
                 sa.question_id,
-                sa.points as answer_points,
+                sa.points,
                 sai.choice_id,
-                sai.is_correct as item_is_correct
+                sai.is_correct
             FROM assessment_submissions s
-            JOIN submission_answers sa ON sa.submission_id = s.id
+            LEFT JOIN submission_answers sa ON sa.submission_id = s.id
             LEFT JOIN submission_answer_items sai ON sai.submission_answer_id = sa.id
-            WHERE s.assessment_id = $1
+            WHERE s.assessment_id = ?
               AND s.submitted_at IS NOT NULL
               AND s.deleted_at IS NULL
             ORDER BY s.total_points DESC, sa.question_id
@@ -43,17 +43,36 @@ pub async fn get_all_answer_details_for_assessment(
 
     let mut details = Vec::new();
     for row in rows {
-        let student_id: String = row.try_get("", "student_id").unwrap_or_default();
-        let submission_total_points: f64 = row.try_get("", "submission_total_points").unwrap_or(0.0);
-        let question_id: String = row.try_get("", "question_id").unwrap_or_default();
-        let answer_points: f64 = row.try_get("", "answer_points").unwrap_or(0.0);
+        let student_id: String = row.try_get("", "user_id").unwrap_or_default();
+        let submission_total_points: f64 = row.try_get("", "total_points").unwrap_or(0.0);
+        let question_id: Option<String> = row.try_get("", "question_id").ok();
+        let answer_points: f64 = row.try_get("", "points").unwrap_or(0.0);
         let choice_id: Option<String> = row.try_get("", "choice_id").ok();
-        let item_is_correct: bool = row.try_get("", "item_is_correct").unwrap_or(false);
+        let item_is_correct: bool = row.try_get("", "is_correct").unwrap_or(false);
+
+        let student_uuid = match Uuid::parse_str(&student_id) {
+            Ok(uuid) => uuid,
+            Err(_) => {
+                tracing::warn!("Skipping row with unparseable student_id: {}", student_id);
+                continue;
+            }
+        };
+
+        let question_uuid = match question_id {
+            Some(ref qid) => match Uuid::parse_str(qid) {
+                Ok(uuid) => Some(uuid),
+                Err(_) => {
+                    tracing::warn!("Skipping row with unparseable question_id: {}", qid);
+                    continue;
+                }
+            },
+            None => None,
+        };
 
         details.push(AnswerDetail {
-            student_id: Uuid::parse_str(&student_id).unwrap_or_default(),
+            student_id: student_uuid,
             submission_total_points,
-            question_id: Uuid::parse_str(&question_id).unwrap_or_default(),
+            question_id: question_uuid.unwrap_or_default(),
             answer_points,
             choice_id: choice_id.and_then(|s| Uuid::parse_str(&s).ok()),
             item_is_correct,

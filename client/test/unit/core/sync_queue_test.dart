@@ -54,8 +54,9 @@ void main() {
   group('SyncStatus', () {
     test('dbValue matches Dart enum name', () {
       expect(SyncStatus.pending.dbValue, 'pending');
+      expect(SyncStatus.syncing.dbValue, 'syncing');
+      expect(SyncStatus.synced.dbValue, 'synced');
       expect(SyncStatus.failed.dbValue, 'failed');
-      expect(SyncStatus.succeeded.dbValue, 'succeeded');
     });
   });
 

@@ -1,6 +1,7 @@
 use chrono::{Duration, NaiveDateTime, Utc};
 use uuid::Uuid;
 
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use crate::utils::{AppError, AppResult};
 use crate::modules::sync::helpers::enrich_questions;
 use crate::modules::sync::sync_scope::SyncScope;
@@ -83,7 +84,7 @@ impl super::SyncDeltaService {
         let mut grade_configs_raw: Vec<serde_json::Value> = Vec::new();
         let mut grade_items_raw: Vec<serde_json::Value> = Vec::new();
         let mut grade_scores_raw: Vec<serde_json::Value> = Vec::new();
-        let mut quarterly_grades_raw: Vec<serde_json::Value> = Vec::new();
+        let mut period_grades_raw: Vec<serde_json::Value> = Vec::new();
         let mut tos_raw: Vec<serde_json::Value> = Vec::new();
         let mut tos_competencies_raw: Vec<serde_json::Value> = Vec::new();
         let mut activity_logs_raw: Vec<serde_json::Value> = Vec::new();
@@ -192,12 +193,12 @@ impl super::SyncDeltaService {
                 }
             };
 
-            quarterly_grades_raw = match user_role {
+            period_grades_raw = match user_role {
                 "student" => self.manifest_repo
-                    .get_student_quarterly_grades_since(user_id, class_ids, last_sync_at)
+                    .get_student_period_grades_since(user_id, class_ids, last_sync_at)
                     .await?,
                 _ => self.manifest_repo
-                    .get_all_quarterly_grades_since(class_ids, last_sync_at)
+                    .get_all_period_grades_since(class_ids, last_sync_at)
                     .await?,
             };
         }
@@ -224,6 +225,60 @@ impl super::SyncDeltaService {
             tracing::debug!("Got {} activity log deltas", activity_logs_raw.len());
         }
 
+        // Fetch school settings delta (global, not role-scoped)
+        tracing::debug!("Fetching school settings deltas since {}", last_sync_at);
+        let school_settings_raw = self
+            .manifest_repo
+            .get_school_settings_since(last_sync_at)
+            .await?;
+        tracing::debug!("Got {} school settings deltas", school_settings_raw.len());
+
+        // Fetch student record deltas if scoped
+        let mut learner_details_raw: Vec<serde_json::Value> = Vec::new();
+        let mut attendance_records_raw: Vec<serde_json::Value> = Vec::new();
+        let mut core_values_records_raw: Vec<serde_json::Value> = Vec::new();
+        let mut student_school_history_raw: Vec<serde_json::Value> = Vec::new();
+        let mut previous_school_subjects_raw: Vec<serde_json::Value> = Vec::new();
+        let mut previous_school_attendance_raw: Vec<serde_json::Value> = Vec::new();
+
+        if scope.include_student_records {
+            let class_ids: Vec<Uuid> = manifest.classes.iter().map(|e| e.id).collect();
+
+            // Derive student_ids from class_participants for all entitled classes
+            let participants = ::entity::class_participants::Entity::find()
+                .filter(::entity::class_participants::Column::ClassId.is_in(class_ids.clone()))
+                .filter(::entity::class_participants::Column::RemovedAt.is_null())
+                .all(&self.db)
+                .await
+                .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?;
+
+            let student_ids: Vec<Uuid> = participants
+                .iter()
+                .map(|p| p.user_id)
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
+
+            learner_details_raw = self.manifest_repo
+                .get_learner_details_since(student_ids.clone(), last_sync_at)
+                .await?;
+            attendance_records_raw = self.manifest_repo
+                .get_attendance_since(class_ids.clone(), last_sync_at)
+                .await?;
+            core_values_records_raw = self.manifest_repo
+                .get_core_values_since(class_ids.clone(), last_sync_at)
+                .await?;
+            student_school_history_raw = self.manifest_repo
+                .get_school_history_since(student_ids.clone(), last_sync_at)
+                .await?;
+            previous_school_subjects_raw = self.manifest_repo
+                .get_previous_subjects_since(student_ids.clone(), last_sync_at)
+                .await?;
+            previous_school_attendance_raw = self.manifest_repo
+                .get_previous_attendance_since(student_ids, last_sync_at)
+                .await?;
+        }
+
         // Step 6: Separate updated vs deleted for each entity type
         let classes_deltas = separate_deltas(classes);
         let enrollments_deltas = separate_deltas(enrollments);
@@ -236,10 +291,17 @@ impl super::SyncDeltaService {
         let grade_configs_deltas = separate_deltas(grade_configs_raw);
         let grade_items_deltas = separate_deltas(grade_items_raw);
         let grade_scores_deltas = separate_deltas(grade_scores_raw);
-        let quarterly_grades_deltas = separate_deltas(quarterly_grades_raw);
+        let period_grades_deltas = separate_deltas(period_grades_raw);
         let tos_deltas = separate_deltas(tos_raw);
         let tos_competencies_deltas = separate_deltas(tos_competencies_raw);
         let activity_logs_deltas = separate_deltas(activity_logs_raw);
+        let school_settings_deltas = separate_deltas(school_settings_raw);
+        let learner_details_deltas = separate_deltas(learner_details_raw);
+        let attendance_records_deltas = separate_deltas(attendance_records_raw);
+        let core_values_records_deltas = separate_deltas(core_values_records_raw);
+        let student_school_history_deltas = separate_deltas(student_school_history_raw);
+        let previous_school_subjects_deltas = separate_deltas(previous_school_subjects_raw);
+        let previous_school_attendance_deltas = separate_deltas(previous_school_attendance_raw);
 
         let now = Utc::now();
         let sync_token = now.to_rfc3339();
@@ -269,10 +331,17 @@ impl super::SyncDeltaService {
                 grade_configs: grade_configs_deltas,
                 grade_items: grade_items_deltas,
                 grade_scores: grade_scores_deltas,
-                period_grades: quarterly_grades_deltas,
+                period_grades: period_grades_deltas,
                 table_of_specifications: tos_deltas,
                 tos_competencies: tos_competencies_deltas,
                 activity_logs: activity_logs_deltas,
+                school_settings: school_settings_deltas,
+                learner_details: learner_details_deltas,
+                attendance_records: attendance_records_deltas,
+                core_values_records: core_values_records_deltas,
+                student_school_history: student_school_history_deltas,
+                previous_school_subjects: previous_school_subjects_deltas,
+                previous_school_attendance: previous_school_attendance_deltas,
             },
         })
     }

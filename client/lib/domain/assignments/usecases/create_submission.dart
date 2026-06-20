@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -7,7 +8,7 @@ class CreateSubmission {
 
   CreateSubmission(this._repository);
 
-  ResultFuture<AssignmentSubmission> call(CreateSubmissionParams params) {
+  ResultFuture<MutationResult<AssignmentSubmission>> call(CreateSubmissionParams params) {
     return _repository.createSubmission(
       assignmentId: params.assignmentId,
       textContent: params.textContent,

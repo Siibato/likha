@@ -35,7 +35,7 @@ class _StudentClassGradeDetailPageState
   bool _isLoading = false;
   String? _error;
 
-  List<PeriodGrade> _quarterlyGrades = [];
+  List<PeriodGrade> _periodGrades = [];
   PeriodGrade? _currentQuarterGrade;
   List<GradeItemDetail> _items = [];
   GradingConfig? _config;
@@ -64,7 +64,7 @@ class _StudentClassGradeDetailPageState
       },
       (grades) {
         if (mounted) {
-          _quarterlyGrades = grades;
+          _periodGrades = grades;
           if (grades.isNotEmpty) {
             final withGrades =
                 grades.where((g) => g.transmutedGrade != null).toList();
@@ -89,7 +89,7 @@ class _StudentClassGradeDetailPageState
       _currentQuarterGrade = null;
     });
 
-    final qg = _quarterlyGrades
+    final qg = _periodGrades
         .where((g) => g.gradingPeriodNumber == _selectedQuarter)
         .toList();
     if (qg.isNotEmpty) _currentQuarterGrade = qg.first;
@@ -202,7 +202,7 @@ class _StudentClassGradeDetailPageState
         const SizedBox(height: 20),
         QuarterSelector(
           selectedQuarter: _selectedQuarter,
-          quarterlyGrades: _quarterlyGrades,
+          periodGrades: _periodGrades,
           onChanged: (quarter) {
             setState(() => _selectedQuarter = quarter);
             _loadQuarterDetail();
@@ -226,7 +226,7 @@ class _StudentClassGradeDetailPageState
           const SizedBox(height: 14),
           GradeComponentSection(
             title: 'Quarterly Assessment',
-            component: 'quarterly_assessment',
+            component: 'period_assessment',
             weight: _config?.qaWeight ?? 20,
             items: _items,
           ),
@@ -235,7 +235,7 @@ class _StudentClassGradeDetailPageState
         ] else if (!hasGrade) ...[
           _buildEmptyQuarterState(),
         ],
-        FinalGradeSection(quarterlyGrades: _quarterlyGrades),
+        FinalGradeSection(periodGrades: _periodGrades),
         const SizedBox(height: 32),
       ],
     );

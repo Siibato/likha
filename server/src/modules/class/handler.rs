@@ -46,6 +46,16 @@ pub async fn update_class(
     }
 }
 
+pub async fn get_participants(
+    State(class_service): State<Arc<ClassService>>,
+    Path(class_id): Path<Uuid>,
+) -> impl IntoResponse {
+    match class_service.get_participants(class_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 pub async fn get_classes(
     State(class_service): State<Arc<ClassService>>,
     auth_user: AuthUser,

@@ -3,6 +3,7 @@ pub mod assessments;
 pub mod assignments;
 pub mod classes;
 pub mod grading;
+pub mod learner_details;
 pub mod materials;
 pub mod school;
 pub mod submissions;

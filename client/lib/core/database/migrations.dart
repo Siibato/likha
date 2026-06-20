@@ -76,12 +76,14 @@ class MigrationRunner {
   /// in local_database.dart. This list is kept for future migrations only.
   /// The database version was reset to 1 as part of this consolidation.
   static List<Migration> get allMigrations => [
-    // Future migrations will be added here as needed
-    // Example:
-    // Migration(
-    //   version: 2,
-    //   description: 'Add new_feature table',
-    //   up: (db) async { ... },
-    // ),
+    Migration(
+      version: 1,
+      description: 'Add school_district to school_settings',
+      up: (db) async {
+        await db.execute(
+          'ALTER TABLE school_settings ADD COLUMN school_district TEXT',
+        );
+      },
+    ),
   ];
 }

@@ -106,6 +106,9 @@ pub fn e2e_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
         school_region: Some("NCR".into()),
         school_division: Some("Division of City Schools".into()),
         school_year: Some("2025-2026".into()),
+        school_district: None,
+        school_head_name: None,
+        school_head_position: None,
         updated_at: ctx.now(),
     }
 }
@@ -512,7 +515,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             close_at: now + chrono::Duration::days(-2),
             show_results_immediately: true,
             total_points: 6,
-            component: "quarterly_assessment".into(),
+            component: "period_assessment".into(),
             tos_id: TOS_SCI_8A_ID,
             created_at: created,
             deleted_at: None,

@@ -303,7 +303,7 @@ pub async fn get_statistics(
         return r;
     }
 
-    match service.get_statistics_cached(assessment_id, auth_user.user_id).await {
+    match service.get_statistics(assessment_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -419,6 +419,21 @@ pub async fn reorder_assessments(
         Ok(()) => success_response(
             MessageResponse { message: "Assessments reordered".to_string() },
             StatusCode::OK,
+        ).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_student_submission(
+    State(service): State<Arc<AssessmentService>>,
+    auth_user: AuthUser,
+    Path((assessment_id, student_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    match service.get_student_submission_cached(assessment_id, student_id, auth_user.user_id, &auth_user.role).await {
+        Ok(Some(response)) => success_response(response, StatusCode::OK).into_response(),
+        Ok(None) => success_response(
+            crate::modules::auth::schema::MessageResponse { message: "No submission found".to_string() },
+            StatusCode::NO_CONTENT,
         ).into_response(),
         Err(e) => e.into_response(),
     }

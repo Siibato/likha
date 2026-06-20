@@ -17,6 +17,7 @@ pub async fn get_student_enrolled_classes(
         WHERE cp.user_id = $1
           AND cp.removed_at IS NULL
           AND c.deleted_at IS NULL
+          AND c.is_advisory = 0
         "#,
     );
     let mut params: Vec<sea_orm::Value> = vec![student_id.into()];
@@ -39,9 +40,8 @@ pub async fn get_student_enrolled_classes(
 
     let mut results = Vec::new();
     for row in rows {
-        let id_str: String = row.try_get("", "id").unwrap_or_default();
         results.push(StudentEnrolledClass {
-            class_id: Uuid::parse_str(&id_str).unwrap_or_default(),
+            class_id: row.try_get("", "id").unwrap_or_default(),
             title: row.try_get("", "title").unwrap_or_default(),
             school_year: row.try_get("", "school_year").ok(),
         });

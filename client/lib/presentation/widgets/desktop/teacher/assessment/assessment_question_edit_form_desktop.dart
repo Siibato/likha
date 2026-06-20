@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_type_editors.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_decorators.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
 
 /// Inline edit form for a question in the desktop assessment builder.
 ///

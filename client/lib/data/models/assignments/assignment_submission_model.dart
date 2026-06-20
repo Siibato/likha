@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/assignments/submission_file_model.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 
@@ -24,7 +25,7 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
     required super.createdAt,
     required super.updatedAt,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
     this.deletedAt,
   });
 
@@ -84,7 +85,10 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -104,7 +108,7 @@ class AssignmentSubmissionModel extends AssignmentSubmission {
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
     };
   }
 }

@@ -10,7 +10,7 @@ use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::setup::schema::{UpdateCodeRequest, UpdateSchoolSettingsRequest, VerifyQuery};
 use crate::modules::setup::service::SetupService;
 use crate::utils::response::success_response;
-use crate::utils::auth_guards::require_admin;
+use crate::utils::auth_guards::{require_admin, require_teacher_or_admin};
 
 /// PUBLIC — students verify their school code.
 pub async fn verify_code(
@@ -76,12 +76,12 @@ pub async fn update_school_code(
     }
 }
 
-/// ADMIN — returns all school settings.
+/// TEACHER/ADMIN — returns all school settings.
 pub async fn get_school_settings(
     State(setup_service): State<Arc<SetupService>>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
-    if let Err(e) = require_admin(&auth_user) {
+    if let Err(e) = require_teacher_or_admin(&auth_user) {
         return e.into_response();
     }
     match setup_service.get_school_settings().await {

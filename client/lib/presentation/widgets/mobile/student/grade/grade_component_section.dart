@@ -19,7 +19,17 @@ class GradeComponentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final componentItems = items.where((i) => i.component == component).toList();
+    final componentItems = items.where((i) {
+      if (i.component == component) return true;
+      // Accept both abbreviated and full naming conventions
+      if (component == 'written_work' && (i.component == 'ww' || i.component == 'written_work')) return true;
+      if (component == 'performance_task' && (i.component == 'pt' || i.component == 'performance_task')) return true;
+      if (component == 'period_assessment' && (i.component == 'qa' || i.component == 'period_assessment')) return true;
+      if (component == 'ww' && (i.component == 'ww' || i.component == 'written_work')) return true;
+      if (component == 'pt' && (i.component == 'pt' || i.component == 'performance_task')) return true;
+      if (component == 'qa' && (i.component == 'qa' || i.component == 'period_assessment')) return true;
+      return false;
+    }).toList();
 
     return Container(
       decoration: BoxDecoration(

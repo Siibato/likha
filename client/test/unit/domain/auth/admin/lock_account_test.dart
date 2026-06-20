@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -38,6 +40,9 @@ void main() {
       createdAt: DateTime(2024, 1, 1),
     );
 
+    final tLockedMutationResult = MutationResult(entity: tLockedUser, status: SyncStatus.pending);
+    final tUnlockedMutationResult = MutationResult(entity: tUnlockedUser, status: SyncStatus.pending);
+
     test('should lock account successfully with reason', () async {
       final lockParams = LockAccountParams(
         userId: 'user-1',
@@ -49,12 +54,12 @@ void main() {
         userId: any(named: 'userId'),
         locked: any(named: 'locked'),
         reason: any(named: 'reason'),
-      )).thenAnswer((_) async => Right(tLockedUser));
+      )).thenAnswer((_) async => Right(tLockedMutationResult));
 
       final result = await useCase(lockParams);
 
-      expect(result, Right(tLockedUser));
-      expect(result.getOrElse(() => throw Exception()).isLocked, true);
+      expect(result, Right(tLockedMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.isLocked, true);
       verify(() => mockRepository.lockAccount(
         userId: 'user-1',
         locked: true,
@@ -72,7 +77,7 @@ void main() {
         userId: any(named: 'userId'),
         locked: any(named: 'locked'),
         reason: any(named: 'reason'),
-      )).thenAnswer((_) async => Right(tLockedUser));
+      )).thenAnswer((_) async => Right(tLockedMutationResult));
 
       final result = await useCase(lockParams);
 
@@ -89,12 +94,12 @@ void main() {
         userId: any(named: 'userId'),
         locked: any(named: 'locked'),
         reason: any(named: 'reason'),
-      )).thenAnswer((_) async => Right(tUnlockedUser));
+      )).thenAnswer((_) async => Right(tUnlockedMutationResult));
 
       final result = await useCase(unlockParams);
 
-      expect(result, Right(tUnlockedUser));
-      expect(result.getOrElse(() => throw Exception()).isActivated, true);
+      expect(result, Right(tUnlockedMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.isActivated, true);
     });
 
     test('should return ServerFailure when user not found', () async {

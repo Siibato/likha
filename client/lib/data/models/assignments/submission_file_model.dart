@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 
 /// Server sends NaiveDateTime (UTC without Z suffix).
@@ -16,7 +17,7 @@ class SubmissionFileModel extends SubmissionFile {
     required super.uploadedAt,
     super.localPath,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
   });
 
   factory SubmissionFileModel.fromJson(Map<String, dynamic> json) {
@@ -42,7 +43,10 @@ class SubmissionFileModel extends SubmissionFile {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -56,7 +60,7 @@ class SubmissionFileModel extends SubmissionFile {
       'uploaded_at': uploadedAt.toIso8601String(),
       'local_path': localPath,
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
     };
   }
 }

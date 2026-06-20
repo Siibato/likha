@@ -27,6 +27,7 @@ impl crate::modules::tos::service::TosService {
             .enumerate()
             .map(|(i, c)| {
                 (
+                    c.id.as_deref().and_then(|s| Uuid::parse_str(s).ok()),
                     c.competency_code,
                     c.competency_text,
                     c.time_units_taught,

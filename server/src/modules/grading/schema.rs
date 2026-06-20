@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::modules::grading::helpers::deped_weights::get_descriptor;
@@ -49,6 +50,7 @@ pub struct StudentScore {
 
 #[derive(Debug, Deserialize)]
 pub struct BulkUpdateScoresRequest {
+    #[serde(default)]
     pub grade_item_id: String,
     pub scores: Vec<StudentScore>,
 }
@@ -59,7 +61,7 @@ pub struct OverrideScoreRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct QuarterQuery {
+pub struct PeriodQuery {
     pub grading_period_number: Option<i32>,
 }
 
@@ -75,7 +77,7 @@ pub struct GradingConfigResponse {
     pub qa_weight: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GradeItemResponse {
     pub id: String,
     pub class_id: String,
@@ -86,9 +88,11 @@ pub struct GradeItemResponse {
     pub source_type: String,
     pub source_id: Option<String>,
     pub order_index: i32,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub scores: Vec<GradeScoreResponse>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GradeScoreResponse {
     pub id: String,
     pub grade_item_id: String,
@@ -110,9 +114,6 @@ pub struct PeriodGradeResponse {
     pub descriptor: Option<String>,
     pub is_locked: bool,
 }
-
-/// Backward-compat alias
-pub type QuarterlyGradeResponse = PeriodGradeResponse;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FinalGradeResponse {
@@ -197,28 +198,29 @@ pub struct Sf9Response {
     pub grade_level: Option<String>,
     pub school_year: Option<String>,
     pub section: Option<String>,
+    pub lrn: Option<String>,
+    pub age: Option<i32>,
+    pub sex: Option<String>,
+    pub track_strand: Option<String>,
+    pub curriculum: Option<String>,
+    pub teacher_name: Option<String>,
+    pub grading_period_type: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
-    pub general_average: Option<Sf9QuarterlyAverages>,
+    pub general_average: Option<Sf9PeriodAverages>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9SubjectRow {
     pub class_title: String,
     pub subject_group: Option<String>,
-    pub q1: Option<i32>,
-    pub q2: Option<i32>,
-    pub q3: Option<i32>,
-    pub q4: Option<i32>,
+    pub period_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Sf9QuarterlyAverages {
-    pub q1: Option<i32>,
-    pub q2: Option<i32>,
-    pub q3: Option<i32>,
-    pub q4: Option<i32>,
+pub struct Sf9PeriodAverages {
+    pub period_grades: Vec<Option<i32>>,
     pub final_average: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -250,6 +252,7 @@ impl From<::entity::grade_items::Model> for GradeItemResponse {
             source_type: m.source_type,
             source_id: m.source_id,
             order_index: m.order_index,
+            scores: vec![],
         }
     }
 }
@@ -291,5 +294,7 @@ impl From<::entity::period_grades::Model> for PeriodGradeResponse {
 pub struct AllGradeDataResponse {
     pub grade_items: Vec<GradeItemResponse>,
     pub grade_summary: GradeSummaryResponse,
-    pub quarter: i32,
+    pub period: i32,
+    pub scores_by_item: HashMap<String, Vec<GradeScoreResponse>>,
+    pub config: Option<GradingConfigResponse>,
 }

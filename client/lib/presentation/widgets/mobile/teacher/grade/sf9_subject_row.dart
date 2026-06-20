@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/grading_period_utils.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9SubjectRowWidget extends StatelessWidget {
   final Sf9SubjectRow row;
+  final String? gradingPeriodType;
 
-  const Sf9SubjectRowWidget({super.key, required this.row});
+  const Sf9SubjectRowWidget({super.key, required this.row, this.gradingPeriodType});
 
   @override
   Widget build(BuildContext context) {
+    final periodCount = periodCountFromType(gradingPeriodType);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -24,10 +28,9 @@ class Sf9SubjectRowWidget extends StatelessWidget {
               ),
             ),
           ),
-          _gradeChip(row.q1),
-          _gradeChip(row.q2),
-          _gradeChip(row.q3),
-          _gradeChip(row.q4),
+          ...List.generate(periodCount, (i) => _gradeChip(
+            row.periodGrades.length > i ? row.periodGrades[i] : null,
+          )),
           SizedBox(
             width: 48,
             child: Text(

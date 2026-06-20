@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/item_analysis_card.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/item_analysis_print.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/test_summary_card.dart';
 
 class ItemAnalysisTab extends StatelessWidget {
@@ -71,31 +70,7 @@ class ItemAnalysisTab extends StatelessWidget {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: () => ItemAnalysisPrintService.printReport(context, stats),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.accentCharcoal,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.print_outlined, size: 14, color: Colors.white),
-                      SizedBox(width: 4),
-                      Text(
-                        'Print',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const SizedBox.shrink(),
             ],
           ),
           const SizedBox(height: 12),

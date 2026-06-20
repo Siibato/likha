@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -43,14 +45,18 @@ void main() {
         submissionId: any(named: 'submissionId'),
         score: any(named: 'score'),
         feedback: any(named: 'feedback'),
-      )).thenAnswer((_) async => Right(tGradedSubmission));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tGradedSubmission, status: SyncStatus.pending)));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tGradedSubmission));
-      expect(result.getOrElse(() => throw Exception()).status, 'graded');
-      expect(result.getOrElse(() => throw Exception()).score, 85);
-      expect(result.getOrElse(() => throw Exception()).feedback, 'Good work!');
+      expect(result.isRight(), true);
+      result.fold(
+        (failure) => fail('should not be left'),
+        (mutationResult) {
+          expect(mutationResult.entity, tGradedSubmission);
+          expect(mutationResult.status, SyncStatus.pending);
+        },
+      );
       verify(() => mockRepository.gradeSubmission(
         submissionId: 'submission-1',
         score: 85,
@@ -83,7 +89,7 @@ void main() {
         submissionId: any(named: 'submissionId'),
         score: any(named: 'score'),
         feedback: any(named: 'feedback'),
-      )).thenAnswer((_) async => Right(gradedNoFeedback));
+      )).thenAnswer((_) async => Right(MutationResult(entity: gradedNoFeedback, status: SyncStatus.pending)));
 
       final result = await useCase(noFeedbackParams);
 
