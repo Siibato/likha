@@ -163,8 +163,8 @@ impl CacheInvalidator {
         self.cache.del(&CacheKey::SchoolInfo.as_str()).await;
     }
 
-    pub async fn invalidate_school_settings(&self) {
-        self.cache.del(&CacheKey::SchoolSettings.as_str()).await;
+    pub async fn invalidate_school_details(&self) {
+        self.cache.del(&CacheKey::SchoolDetails.as_str()).await;
     }
 
     pub async fn invalidate_school_code(&self) {

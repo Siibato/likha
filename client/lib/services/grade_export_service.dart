@@ -4,7 +4,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/setup/entities/school_settings.dart';
+import 'package:likha/domain/setup/entities/school_details.dart';
 import 'package:likha/services/excel/grade_excel_generator.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/services/pdf/grade_pdf_generator.dart';
@@ -72,7 +72,7 @@ class GradeExportContext {
   final String? subject;
   final String? teacherName;
   final int quarter;
-  final SchoolSettings? schoolSettings;
+  final SchoolDetails? schoolDetails;
   final GradeConfig? config;
   final SectionInfo ww;
   final SectionInfo pt;
@@ -86,7 +86,7 @@ class GradeExportContext {
     this.subject,
     this.teacherName,
     required this.quarter,
-    this.schoolSettings,
+    this.schoolDetails,
     this.config,
     required this.ww,
     required this.pt,
@@ -102,12 +102,12 @@ class GradeExportContext {
     return 'QUARTER $q';
   }
 
-  String? get schoolName => schoolSettings?.schoolName;
-  String? get region => schoolSettings?.schoolRegion;
-  String? get division => schoolSettings?.schoolDivision;
-  String? get district => schoolSettings?.schoolDistrict;
-  String? get schoolId => schoolSettings?.schoolCode;
-  String? get schoolYear => schoolSettings?.schoolYear;
+  String? get schoolName => schoolDetails?.schoolName;
+  String? get region => schoolDetails?.schoolRegion;
+  String? get division => schoolDetails?.schoolDivision;
+  String? get district => schoolDetails?.schoolDistrict;
+  String? get schoolId => schoolDetails?.schoolCode;
+  String? get schoolYear => schoolDetails?.schoolYear;
 }
 
 /// Service for exporting grade data to different formats
@@ -131,7 +131,7 @@ class GradeExportService {
     required Map<String, List<GradeScore>> scoresByItem,
     required GradeConfig? config,
     required List<Map<String, dynamic>>? summary,
-    SchoolSettings? schoolSettings,
+    SchoolDetails? schoolDetails,
     String? teacherName,
     String? gradeLevel,
     String? section,
@@ -145,7 +145,7 @@ class GradeExportService {
       scoresByItem: scoresByItem,
       config: config,
       summary: summary,
-      schoolSettings: schoolSettings,
+      schoolDetails: schoolDetails,
       teacherName: teacherName,
       gradeLevel: gradeLevel,
       section: section,
@@ -164,17 +164,17 @@ class GradeExportService {
     required Map<String, List<GradeScore>> scoresByItem,
     required GradeConfig? config,
     required List<Map<String, dynamic>>? summary,
-    SchoolSettings? schoolSettings,
+    SchoolDetails? schoolDetails,
     String? teacherName,
     String? gradeLevel,
     String? section,
     String? subject,
   }) async {
-    ServiceLogger.instance.log('exportToPdf: Building context with schoolSettings=${schoolSettings != null}');
-    if (schoolSettings != null) {
-      ServiceLogger.instance.log('exportToPdf: schoolSettings in context - name="${schoolSettings.schoolName}", region="${schoolSettings.schoolRegion}", division="${schoolSettings.schoolDivision}", code="${schoolSettings.schoolCode}", year="${schoolSettings.schoolYear}"');
+    ServiceLogger.instance.log('exportToPdf: Building context with schoolDetails=${schoolDetails != null}');
+    if (schoolDetails != null) {
+      ServiceLogger.instance.log('exportToPdf: schoolDetails in context - name="${schoolDetails.schoolName}", region="${schoolDetails.schoolRegion}", division="${schoolDetails.schoolDivision}", code="${schoolDetails.schoolCode}", year="${schoolDetails.schoolYear}"');
     } else {
-      ServiceLogger.instance.warn('exportToPdf: schoolSettings is NULL in exportToPdf');
+      ServiceLogger.instance.warn('exportToPdf: schoolDetails is NULL in exportToPdf');
     }
     
     final ctx = _buildContext(
@@ -185,7 +185,7 @@ class GradeExportService {
       scoresByItem: scoresByItem,
       config: config,
       summary: summary,
-      schoolSettings: schoolSettings,
+      schoolDetails: schoolDetails,
       teacherName: teacherName,
       gradeLevel: gradeLevel,
       section: section,
@@ -206,7 +206,7 @@ class GradeExportService {
     required Map<String, List<GradeScore>> scoresByItem,
     required GradeConfig? config,
     required List<Map<String, dynamic>>? summary,
-    SchoolSettings? schoolSettings,
+    SchoolDetails? schoolDetails,
     String? teacherName,
     String? gradeLevel,
     String? section,
@@ -321,7 +321,7 @@ class GradeExportService {
       subject: subject,
       teacherName: teacherName,
       quarter: quarter,
-      schoolSettings: schoolSettings,
+      schoolDetails: schoolDetails,
       config: config,
       ww: wwSection,
       pt: ptSection,

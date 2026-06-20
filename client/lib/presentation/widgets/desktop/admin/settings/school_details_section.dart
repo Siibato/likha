@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
-import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_details_form.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/form_fields.dart';
 
 /// A comprehensive school settings section widget
 /// that includes the form, save functionality, and QR code generation.
-class SchoolSettingsSection extends StatefulWidget {
+class SchoolDetailsSection extends StatefulWidget {
   final TextEditingController schoolNameController;
   final TextEditingController regionController;
   final TextEditingController divisionController;
@@ -21,7 +21,7 @@ class SchoolSettingsSection extends StatefulWidget {
   final VoidCallback onShowQrCode;
   final ValueChanged<String>? onSchoolNameChanged;
 
-  const SchoolSettingsSection({
+  const SchoolDetailsSection({
     super.key,
     required this.schoolNameController,
     required this.regionController,
@@ -38,10 +38,10 @@ class SchoolSettingsSection extends StatefulWidget {
   });
 
   @override
-  State<SchoolSettingsSection> createState() => _SchoolSettingsSectionState();
+  State<SchoolDetailsSection> createState() => _SchoolDetailsSectionState();
 }
 
-class _SchoolSettingsSectionState extends State<SchoolSettingsSection> {
+class _SchoolDetailsSectionState extends State<SchoolDetailsSection> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
@@ -84,7 +84,7 @@ class _SchoolSettingsSectionState extends State<SchoolSettingsSection> {
             // Form
             Form(
               key: _formKey,
-              child: SchoolSettingsForm(
+              child: SchoolDetailsForm(
                 schoolNameController: widget.schoolNameController,
                 regionController: widget.regionController,
                 divisionController: widget.divisionController,
@@ -268,7 +268,7 @@ class _InfoRow extends StatelessWidget {
 }
 
 /// A compact school settings card for dashboard use
-class SchoolSettingsCard extends StatelessWidget {
+class SchoolDetailsCard extends StatelessWidget {
   final String schoolName;
   final String? schoolCode;
   final String? region;
@@ -277,7 +277,7 @@ class SchoolSettingsCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double? width;
 
-  const SchoolSettingsCard({
+  const SchoolDetailsCard({
     super.key,
     required this.schoolName,
     this.schoolCode,

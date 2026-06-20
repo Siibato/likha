@@ -20,7 +20,7 @@ class UppercaseInputFormatter extends TextInputFormatter {
 
 /// Shared form widget for school settings (name, region, division, school year, and optional code).
 /// Used by both the first-time setup page and the admin settings page.
-class SchoolSettingsForm extends StatelessWidget {
+class SchoolDetailsForm extends StatelessWidget {
   final TextEditingController schoolNameController;
   final TextEditingController regionController;
   final TextEditingController divisionController;
@@ -32,7 +32,7 @@ class SchoolSettingsForm extends StatelessWidget {
   final bool enabled;
   final ValueChanged<String>? onSchoolNameChanged;
 
-  const SchoolSettingsForm({
+  const SchoolDetailsForm({
     super.key,
     required this.schoolNameController,
     required this.regionController,

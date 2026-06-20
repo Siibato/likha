@@ -1,11 +1,11 @@
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/domain/setup/entities/school_settings.dart';
+import 'package:likha/domain/setup/entities/school_details.dart';
 
-class SchoolSettingsModel extends SchoolSettings {
+class SchoolDetailsModel extends SchoolDetails {
   final DateTime? cachedAt;
   final SyncStatus syncStatus;
 
-  const SchoolSettingsModel({
+  const SchoolDetailsModel({
     required super.id,
     required super.schoolName,
     required super.schoolRegion,
@@ -19,8 +19,8 @@ class SchoolSettingsModel extends SchoolSettings {
     this.syncStatus = SyncStatus.synced,
   });
 
-  factory SchoolSettingsModel.fromJson(Map<String, dynamic> json) {
-    return SchoolSettingsModel(
+  factory SchoolDetailsModel.fromJson(Map<String, dynamic> json) {
+    return SchoolDetailsModel(
       id: json['id'] as String? ?? '1',
       schoolName: json['school_name'] as String? ?? '',
       schoolRegion: json['school_region'] as String? ?? '',
@@ -34,8 +34,8 @@ class SchoolSettingsModel extends SchoolSettings {
     );
   }
 
-  factory SchoolSettingsModel.fromMap(Map<String, dynamic> map) {
-    return SchoolSettingsModel(
+  factory SchoolDetailsModel.fromMap(Map<String, dynamic> map) {
+    return SchoolDetailsModel(
       id: map['id'] as String? ?? '1',
       schoolName: map['school_name'] as String? ?? '',
       schoolRegion: map['school_region'] as String? ?? '',
@@ -85,7 +85,7 @@ class SchoolSettingsModel extends SchoolSettings {
     };
   }
 
-  SchoolSettingsModel copyWith({
+  SchoolDetailsModel copyWith({
     String? id,
     String? schoolName,
     String? schoolRegion,
@@ -101,7 +101,7 @@ class SchoolSettingsModel extends SchoolSettings {
     DateTime? cachedAt,
     SyncStatus? syncStatus,
   }) {
-    return SchoolSettingsModel(
+    return SchoolDetailsModel(
       id: id ?? this.id,
       schoolName: schoolName ?? this.schoolName,
       schoolRegion: schoolRegion ?? this.schoolRegion,

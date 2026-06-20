@@ -4,10 +4,10 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
-import 'package:likha/domain/setup/entities/school_settings.dart';
+import 'package:likha/domain/setup/entities/school_details.dart';
 import 'package:likha/domain/setup/repositories/setup_repository.dart';
-import 'operations/get_school_settings.dart' as ops_get;
-import 'operations/update_school_settings.dart' as ops_update;
+import 'operations/get_school_details.dart' as ops_get;
+import 'operations/update_school_details.dart' as ops_update;
 import 'operations/update_school_code.dart' as ops_code;
 
 class SetupRepositoryImpl implements SetupRepository {
@@ -27,8 +27,8 @@ class SetupRepositoryImpl implements SetupRepository {
         _dataEventBus = dataEventBus;
 
   @override
-  ResultFuture<SchoolSettings> getSchoolSettings({bool skipBackgroundRefresh = false}) =>
-      ops_get.getSchoolSettings(
+  ResultFuture<SchoolDetails> getSchoolDetails({bool skipBackgroundRefresh = false}) =>
+      ops_get.getSchoolDetails(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
@@ -36,7 +36,7 @@ class SetupRepositoryImpl implements SetupRepository {
       );
 
   @override
-  ResultFuture<MutationResult<SchoolSettings>> updateSchoolSettings({
+  ResultFuture<MutationResult<SchoolDetails>> updateSchoolDetails({
     required String schoolName,
     required String schoolRegion,
     required String schoolDivision,
@@ -46,7 +46,7 @@ class SetupRepositoryImpl implements SetupRepository {
     String? schoolHeadName,
     String? schoolHeadPosition,
   }) =>
-      ops_update.updateSchoolSettings(
+      ops_update.updateSchoolDetails(
         _localDataSource,
         _syncQueue,
         schoolName: schoolName,
@@ -60,7 +60,7 @@ class SetupRepositoryImpl implements SetupRepository {
       );
 
   @override
-  ResultFuture<MutationResult<SchoolSettings>> updateSchoolCode({
+  ResultFuture<MutationResult<SchoolDetails>> updateSchoolCode({
     required String schoolCode,
   }) =>
       ops_code.updateSchoolCode(

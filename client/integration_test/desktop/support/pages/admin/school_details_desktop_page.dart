@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_details_form.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 import '../_base_page.dart';
 
-class SchoolSettingsDesktopPage extends BasePage {
-  SchoolSettingsDesktopPage(super.tester);
+class SchoolDetailsDesktopPage extends BasePage {
+  SchoolDetailsDesktopPage(super.tester);
 
   static const String titleText = 'School Settings';
   static const String saveButtonLabel = 'Save Settings';
@@ -17,7 +17,7 @@ class SchoolSettingsDesktopPage extends BasePage {
 
   Future<void> enterSchoolName(String name) async {
     final fields = find.descendant(
-      of: find.byType(SchoolSettingsForm),
+      of: find.byType(SchoolDetailsForm),
       matching: find.byType(StyledTextField),
     );
     await tester.enterText(fields.at(0), name);
@@ -26,7 +26,7 @@ class SchoolSettingsDesktopPage extends BasePage {
 
   Future<void> enterRegion(String region) async {
     final fields = find.descendant(
-      of: find.byType(SchoolSettingsForm),
+      of: find.byType(SchoolDetailsForm),
       matching: find.byType(StyledTextField),
     );
     await tester.enterText(fields.at(1), region);
@@ -35,7 +35,7 @@ class SchoolSettingsDesktopPage extends BasePage {
 
   Future<void> enterDivision(String division) async {
     final fields = find.descendant(
-      of: find.byType(SchoolSettingsForm),
+      of: find.byType(SchoolDetailsForm),
       matching: find.byType(StyledTextField),
     );
     await tester.enterText(fields.at(2), division);
@@ -44,7 +44,7 @@ class SchoolSettingsDesktopPage extends BasePage {
 
   Future<void> enterSchoolYear(String year) async {
     final fields = find.descendant(
-      of: find.byType(SchoolSettingsForm),
+      of: find.byType(SchoolDetailsForm),
       matching: find.byType(StyledTextField),
     );
     await tester.enterText(fields.at(3), year);
@@ -53,7 +53,7 @@ class SchoolSettingsDesktopPage extends BasePage {
 
   Future<void> enterSchoolCode(String code) async {
     final fields = find.descendant(
-      of: find.byType(SchoolSettingsForm),
+      of: find.byType(SchoolDetailsForm),
       matching: find.byType(StyledTextField),
     );
     await tester.enterText(fields.at(4), code);

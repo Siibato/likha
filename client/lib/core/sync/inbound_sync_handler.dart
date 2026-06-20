@@ -127,8 +127,8 @@ class InboundSyncHandler {
       await _upsertHelpers.upsertActivityLogs(txn, baseResponse.activityLogs);
 
       // Upsert school settings from sync response (if present)
-      if (baseResponse.schoolSettings != null) {
-        await _upsertHelpers.upsertSchoolSettings(txn, [baseResponse.schoolSettings!]);
+      if (baseResponse.schoolDetails != null) {
+        await _upsertHelpers.upsertSchoolDetails(txn, [baseResponse.schoolDetails!]);
       }
     });
 

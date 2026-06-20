@@ -74,8 +74,8 @@ pub fn realistic_users(ctx: &SeedContext) -> Vec<UserSpec> {
 }
 
 // ─── School Settings ───────────────────────────────────────────────────────────
-pub fn realistic_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
-    SchoolSettingsSpec {
+pub fn realistic_school_details(ctx: &SeedContext) -> SchoolDetailsSpec {
+    SchoolDetailsSpec {
         id: 1,
         school_code: "LIKHA1".into(),
         school_name: Some("Likha National High School".into()),
@@ -356,6 +356,16 @@ pub fn realistic_learner_details() -> Vec<LearnerDetailsSpec> {
             sex: Some((*sex).into()),
             track_strand: Some((*track).into()),
             curriculum: Some((*curriculum).into()),
+            birthdate: None,
+            birthplace: None,
+            home_address: None,
+            father_name: None,
+            father_contact: None,
+            mother_name: None,
+            mother_contact: None,
+            guardian_name: None,
+            guardian_contact: None,
+            date_admitted: None,
         });
     }
 

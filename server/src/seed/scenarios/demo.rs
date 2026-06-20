@@ -17,7 +17,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let ctx = SeedContext::new();
 
     // Build all fixture specs
-    let school = fixtures::demo_school_settings(&ctx);
+    let school = fixtures::demo_school_details(&ctx);
     let users = fixtures::demo_users(&ctx);
     let classes = fixtures::demo_classes(&ctx);
     let enrollments = fixtures::demo_enrollments();
@@ -53,7 +53,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     // Insert everything in FK-safe order
     disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
-    inserters::school::insert_school_settings(db, &school).await?;
+    inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
     inserters::learner_details::insert_learner_details(db, &learner_details).await?;
     inserters::classes::insert_classes(db, &classes).await?;

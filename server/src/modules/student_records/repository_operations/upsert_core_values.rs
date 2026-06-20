@@ -47,6 +47,7 @@ pub async fn upsert_core_values(
             marking: sea_orm::ActiveValue::Set(marking),
             created_at: sea_orm::ActiveValue::Set(now),
             updated_at: sea_orm::ActiveValue::Set(now),
+            deleted_at: sea_orm::ActiveValue::Set(None),
         };
         am.insert(db)
             .await

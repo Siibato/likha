@@ -1183,7 +1183,7 @@ class SyncUpsertHelpers {
     }
   }
 
-  Future<void> upsertSchoolSettings(
+  Future<void> upsertSchoolDetails(
     DatabaseExecutor db,
     List<dynamic> records,
   ) async {
@@ -1197,30 +1197,30 @@ class SyncUpsertHelpers {
         final id = record['id']?.toString() ?? '1';
         final data = {
           CommonCols.id: id,
-          SchoolSettingsCols.schoolName: record['school_name'],
-          SchoolSettingsCols.schoolRegion: record['school_region'],
-          SchoolSettingsCols.schoolDivision: record['school_division'],
-          SchoolSettingsCols.schoolYear: record['school_year'],
-          SchoolSettingsCols.schoolCode: record['school_code'],
-          SchoolSettingsCols.schoolDistrict: record['school_district'],
-          SchoolSettingsCols.schoolHeadName: record['school_head_name'],
-          SchoolSettingsCols.schoolHeadPosition: record['school_head_position'],
+          SchoolDetailsCols.schoolName: record['school_name'],
+          SchoolDetailsCols.schoolRegion: record['school_region'],
+          SchoolDetailsCols.schoolDivision: record['school_division'],
+          SchoolDetailsCols.schoolYear: record['school_year'],
+          SchoolDetailsCols.schoolCode: record['school_code'],
+          SchoolDetailsCols.schoolDistrict: record['school_district'],
+          SchoolDetailsCols.schoolHeadName: record['school_head_name'],
+          SchoolDetailsCols.schoolHeadPosition: record['school_head_position'],
           CommonCols.updatedAt: record['updated_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
         };
 
         final existing = await db.query(
-          DbTables.schoolSettings,
+          DbTables.schoolDetails,
           where: '${CommonCols.id} = ?',
           whereArgs: [id],
           limit: 1,
         );
         if (existing.isEmpty) {
-          await db.insert(DbTables.schoolSettings, data);
+          await db.insert(DbTables.schoolDetails, data);
         } else {
           await db.update(
-            DbTables.schoolSettings,
+            DbTables.schoolDetails,
             data,
             where: '${CommonCols.id} = ?',
             whereArgs: [id],
@@ -1229,13 +1229,13 @@ class SyncUpsertHelpers {
         successCount++;
       } catch (e) {
         failedCount++;
-        _log.error('Failed to upsert school_settings', e);
+        _log.error('Failed to upsert school_details', e);
       }
     }
 
-    _log.upsertSummary('school_settings', successCount);
+    _log.upsertSummary('school_details', successCount);
     if (failedCount > 0) {
-      _log.warn('Failed to upsert school_settings', failedCount);
+      _log.warn('Failed to upsert school_details', failedCount);
     }
   }
 
@@ -1265,11 +1265,12 @@ class SyncUpsertHelpers {
             LearnerDetailsCols.birthplace: record['birthplace'],
             LearnerDetailsCols.homeAddress: record['home_address'],
             LearnerDetailsCols.fatherName: record['father_name'],
+            LearnerDetailsCols.fatherContact: record['father_contact'],
             LearnerDetailsCols.motherName: record['mother_name'],
+            LearnerDetailsCols.motherContact: record['mother_contact'],
             LearnerDetailsCols.guardianName: record['guardian_name'],
             LearnerDetailsCols.guardianContact: record['guardian_contact'],
             LearnerDetailsCols.dateAdmitted: record['date_admitted'],
-            LearnerDetailsCols.admittedToGrade: record['admitted_to_grade'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -1915,14 +1916,14 @@ class SyncUpsertHelpers {
       // (current user, enrolled students, search results)
     }
 
-    // Handle school_settings delta
-    final schoolSettingsDeltas = deltas['school_settings'];
-    if (schoolSettingsDeltas != null) {
-      final updated = schoolSettingsDeltas.updated;
-      updatedCounts['school_settings'] = updated.length;
-      await upsertSchoolSettings(db, updated);
+    // Handle school_details delta
+    final schoolDetailsDeltas = deltas['school_details'];
+    if (schoolDetailsDeltas != null) {
+      final updated = schoolDetailsDeltas.updated;
+      updatedCounts['school_details'] = updated.length;
+      await upsertSchoolDetails(db, updated);
 
-      // Note: We don't soft-delete school_settings - it's a singleton
+      // Note: We don't soft-delete school_details - it's a singleton
     }
 
     // Handle learner_details delta

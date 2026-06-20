@@ -1,11 +1,11 @@
 use crate::modules::setup::repository::SetupRepository;
-use crate::modules::setup::schema::{SchoolSettingsResponse, UpdateSchoolSettingsRequest};
+use crate::modules::setup::schema::{SchoolDetailsResponse, UpdateSchoolDetailsRequest};
 use crate::utils::AppResult;
 
-pub async fn update_school_settings(
+pub async fn update_school_details(
     repo: &SetupRepository,
-    request: UpdateSchoolSettingsRequest,
-) -> AppResult<SchoolSettingsResponse> {
+    request: UpdateSchoolDetailsRequest,
+) -> AppResult<SchoolDetailsResponse> {
     let updated = repo
         .update_settings(
             None,
@@ -19,7 +19,7 @@ pub async fn update_school_settings(
         )
         .await?;
 
-    Ok(SchoolSettingsResponse {
+    Ok(SchoolDetailsResponse {
         school_code: updated.school_code,
         school_name: updated.school_name,
         school_region: updated.school_region,

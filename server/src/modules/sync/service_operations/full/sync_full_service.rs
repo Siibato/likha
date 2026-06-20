@@ -3,7 +3,7 @@ use sea_orm::DatabaseConnection;
 
 use crate::modules::sync::ManifestRepository;
 use crate::modules::entitlement::EntitlementService;
-use crate::modules::setup::schema::SchoolSettingsResponse;
+use crate::modules::setup::schema::SchoolDetailsResponse;
 
 /// Request for full sync
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -45,7 +45,7 @@ pub struct FullSyncResponse {
     pub tos_competencies: Vec<serde_json::Value>,
     pub activity_logs: Vec<serde_json::Value>,
     pub sync_plan: Option<SyncPlan>,
-    pub school_settings: Option<SchoolSettingsResponse>,
+    pub school_details: Option<SchoolDetailsResponse>,
     pub learner_details: Vec<serde_json::Value>,
     pub attendance_records: Vec<serde_json::Value>,
     pub core_values_records: Vec<serde_json::Value>,

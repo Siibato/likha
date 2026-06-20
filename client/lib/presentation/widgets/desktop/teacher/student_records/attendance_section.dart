@@ -35,10 +35,10 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
   @override
   Widget build(BuildContext context) {
     if (widget.students.isEmpty) {
-      return DesktopPageScaffold(
+      return const DesktopPageScaffold(
         title: 'Attendance',
         subtitle: 'Monthly attendance records for SF10',
-        body: const EmptyState.generic(title: 'No students enrolled'),
+        body: EmptyState.generic(title: 'No students enrolled'),
       );
     }
 
@@ -169,9 +169,15 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
 
   @override
   void dispose() {
-    for (final c in _schoolDaysCtrls.values) c.dispose();
-    for (final c in _presentCtrls.values) c.dispose();
-    for (final c in _absentCtrls.values) c.dispose();
+    for (final c in _schoolDaysCtrls.values) {
+      c.dispose();
+    }
+    for (final c in _presentCtrls.values) {
+      c.dispose();
+    }
+    for (final c in _absentCtrls.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 

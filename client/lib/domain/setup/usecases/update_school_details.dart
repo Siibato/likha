@@ -1,14 +1,14 @@
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
-import 'package:likha/domain/setup/entities/school_settings.dart';
+import 'package:likha/domain/setup/entities/school_details.dart';
 import 'package:likha/domain/setup/repositories/setup_repository.dart';
 
-class UpdateSchoolSettings {
+class UpdateSchoolDetails {
   final SetupRepository _repository;
 
-  UpdateSchoolSettings(this._repository);
+  UpdateSchoolDetails(this._repository);
 
-  ResultFuture<MutationResult<SchoolSettings>> call({
+  ResultFuture<MutationResult<SchoolDetails>> call({
     required String schoolName,
     required String schoolRegion,
     required String schoolDivision,
@@ -18,7 +18,7 @@ class UpdateSchoolSettings {
     String? schoolHeadName,
     String? schoolHeadPosition,
   }) {
-    return _repository.updateSchoolSettings(
+    return _repository.updateSchoolDetails(
       schoolName: schoolName,
       schoolRegion: schoolRegion,
       schoolDivision: schoolDivision,

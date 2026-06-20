@@ -10,24 +10,24 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/setup/entities/school_config.dart';
 import 'package:likha/injection_container.dart' as di;
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/providers/school_settings_provider.dart';
+import 'package:likha/presentation/providers/school_details_provider.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
-import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_details_form.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:likha/presentation/widgets/desktop/admin/settings/qr_code_dialog.dart';
 
-class AdminSchoolSettingsPage extends ConsumerStatefulWidget {
-  const AdminSchoolSettingsPage({super.key});
+class AdminSchoolDetailsPage extends ConsumerStatefulWidget {
+  const AdminSchoolDetailsPage({super.key});
 
   @override
-  ConsumerState<AdminSchoolSettingsPage> createState() =>
-      _AdminSchoolSettingsPageState();
+  ConsumerState<AdminSchoolDetailsPage> createState() =>
+      _AdminSchoolDetailsPageState();
 }
 
-class _AdminSchoolSettingsPageState
-    extends ConsumerState<AdminSchoolSettingsPage> {
+class _AdminSchoolDetailsPageState
+    extends ConsumerState<AdminSchoolDetailsPage> {
   final _formKey = GlobalKey<FormState>();
   final _schoolNameController = TextEditingController();
   final _regionController = TextEditingController();
@@ -47,7 +47,7 @@ class _AdminSchoolSettingsPageState
     super.initState();
     _originalSchoolCode = '';
     Future.microtask(() {
-      ref.read(schoolSettingsProvider.notifier).loadSchoolSettings();
+      ref.read(schoolDetailsProvider.notifier).loadSchoolDetails();
     });
   }
 
@@ -64,7 +64,7 @@ class _AdminSchoolSettingsPageState
     super.dispose();
   }
 
-  void _syncControllersWithState(SchoolSettingsState state) {
+  void _syncControllersWithState(SchoolDetailsState state) {
     final settings = state.settings;
     if (settings == null) return;
     _schoolNameController.text = settings.schoolName;
@@ -190,13 +190,13 @@ class _AdminSchoolSettingsPageState
       if (shouldProceed != true) return;
     }
 
-    final notifier = ref.read(schoolSettingsProvider.notifier);
+    final notifier = ref.read(schoolDetailsProvider.notifier);
 
     if (codeChanged) {
       final codeOk = await notifier.updateSchoolCode(schoolCode: newCode);
       if (!codeOk) {
         if (mounted) {
-          final state = ref.read(schoolSettingsProvider);
+          final state = ref.read(schoolDetailsProvider);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.error ?? 'Failed to update code')),
           );
@@ -207,7 +207,7 @@ class _AdminSchoolSettingsPageState
     }
 
     final name = _schoolNameController.text.trim();
-    final ok = await notifier.updateSchoolSettings(
+    final ok = await notifier.updateSchoolDetails(
       schoolName: name,
       schoolRegion: _regionController.text.trim(),
       schoolDivision: _divisionController.text.trim(),
@@ -237,7 +237,7 @@ class _AdminSchoolSettingsPageState
         );
       }
     } else if (mounted) {
-      final state = ref.read(schoolSettingsProvider);
+      final state = ref.read(schoolDetailsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(state.error ?? 'Failed to save settings')),
       );
@@ -246,13 +246,13 @@ class _AdminSchoolSettingsPageState
 
   @override
   Widget build(BuildContext context) {
-    final providerState = ref.watch(schoolSettingsProvider);
+    final providerState = ref.watch(schoolDetailsProvider);
 
     if (!_hasSyncedControllers && providerState.settings != null) {
       _syncControllersWithState(providerState);
     }
 
-    ref.listen(schoolSettingsProvider, (previous, next) {
+    ref.listen(schoolDetailsProvider, (previous, next) {
       if (previous?.settings != next.settings) {
         _syncControllersWithState(next);
       }
@@ -296,7 +296,7 @@ class _AdminSchoolSettingsPageState
                     const SizedBox(height: 24),
                     Form(
                       key: _formKey,
-                      child: SchoolSettingsForm(
+                      child: SchoolDetailsForm(
                         schoolNameController: _schoolNameController,
                         regionController: _regionController,
                         divisionController: _divisionController,

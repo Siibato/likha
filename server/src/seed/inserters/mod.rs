@@ -6,6 +6,8 @@ pub mod grading;
 pub mod learner_details;
 pub mod materials;
 pub mod school;
+pub mod school_history;
+pub mod student_records;
 pub mod submissions;
 pub mod tos;
 pub mod users;

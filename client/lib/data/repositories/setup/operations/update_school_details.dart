@@ -4,10 +4,10 @@ import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
+import 'package:likha/data/models/setup/school_details_model.dart';
 import 'package:uuid/uuid.dart';
 
-ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
+ResultFuture<MutationResult<SchoolDetailsModel>> updateSchoolDetails(
   SetupLocalDataSource localDataSource,
   SyncQueue syncQueue, {
   required String schoolName,
@@ -23,7 +23,7 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
     final queueEntryId = const Uuid().v4();
     final now = DateTime.now();
 
-    final optimisticModel = SchoolSettingsModel(
+    final optimisticModel = SchoolDetailsModel(
       id: '1',
       schoolName: schoolName,
       schoolRegion: schoolRegion,
@@ -39,7 +39,7 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
 
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
-      await localDataSource.updateSchoolSettingsLocally(
+      await localDataSource.updateSchoolDetailsLocally(
         schoolName: schoolName,
         schoolRegion: schoolRegion,
         schoolDivision: schoolDivision,
@@ -54,7 +54,7 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolSettings(
       await syncQueue.enqueue(
         SyncQueueEntry(
           id: queueEntryId,
-          entityType: SyncEntityType.schoolSettings,
+          entityType: SyncEntityType.schoolDetails,
           operation: SyncOperation.update,
           payload: optimisticModel.toPayload(),
           status: SyncStatus.pending,

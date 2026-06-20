@@ -13,11 +13,12 @@ pub struct UpsertLearnerDetailsRequest {
     pub birthplace: Option<String>,
     pub home_address: Option<String>,
     pub father_name: Option<String>,
+    pub father_contact: Option<String>,
     pub mother_name: Option<String>,
+    pub mother_contact: Option<String>,
     pub guardian_name: Option<String>,
     pub guardian_contact: Option<String>,
     pub date_admitted: Option<String>,
-    pub admitted_to_grade: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,11 +115,12 @@ pub struct LearnerDetailsResponse {
     pub birthplace: Option<String>,
     pub home_address: Option<String>,
     pub father_name: Option<String>,
+    pub father_contact: Option<String>,
     pub mother_name: Option<String>,
+    pub mother_contact: Option<String>,
     pub guardian_name: Option<String>,
     pub guardian_contact: Option<String>,
     pub date_admitted: Option<String>,
-    pub admitted_to_grade: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -283,11 +285,12 @@ impl From<::entity::learner_details::Model> for LearnerDetailsResponse {
             birthplace: m.birthplace,
             home_address: m.home_address,
             father_name: m.father_name,
+            father_contact: m.father_contact,
             mother_name: m.mother_name,
+            mother_contact: m.mother_contact,
             guardian_name: m.guardian_name,
             guardian_contact: m.guardian_contact,
             date_admitted: m.date_admitted.map(|d| d.to_string()),
-            admitted_to_grade: m.admitted_to_grade,
         }
     }
 }

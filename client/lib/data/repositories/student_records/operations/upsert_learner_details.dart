@@ -31,11 +31,12 @@ ResultFuture<LearnerDetails> upsertLearnerDetails(
       birthplace: data['birthplace'] as String?,
       homeAddress: data['home_address'] as String?,
       fatherName: data['father_name'] as String?,
+      fatherContact: data['father_contact'] as String?,
       motherName: data['mother_name'] as String?,
+      motherContact: data['mother_contact'] as String?,
       guardianName: data['guardian_name'] as String?,
       guardianContact: data['guardian_contact'] as String?,
       dateAdmitted: data['date_admitted'] as String?,
-      admittedToGrade: data['admitted_to_grade'] as String?,
     );
 
     final payload = {

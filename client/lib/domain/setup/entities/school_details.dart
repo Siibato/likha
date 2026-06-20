@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-class SchoolSettings extends Equatable {
+class SchoolDetails extends Equatable {
   final String id;
   final String schoolName;
   final String schoolRegion;
@@ -11,7 +11,7 @@ class SchoolSettings extends Equatable {
   final String? schoolHeadName;
   final String? schoolHeadPosition;
 
-  const SchoolSettings({
+  const SchoolDetails({
     required this.id,
     required this.schoolName,
     required this.schoolRegion,

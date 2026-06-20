@@ -917,9 +917,9 @@ pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
     materials
 }
 
-pub fn manual_school_settings(_ctx: &SeedContext) -> SchoolSettingsSpec {
+pub fn manual_school_details(_ctx: &SeedContext) -> SchoolDetailsSpec {
     let school_code = std::env::var("SCHOOL_CODE").unwrap_or_else(|_| "SEED-SCHOOL".to_string());
-    SchoolSettingsSpec {
+    SchoolDetailsSpec {
         id: 1,
         school_code,
         school_name: Some("Likha Test School".into()),
@@ -953,6 +953,16 @@ pub fn manual_learner_details() -> Vec<LearnerDetailsSpec> {
             sex: Some(sex.into()),
             track_strand: Some(track.into()),
             curriculum: Some(curriculum.into()),
+            birthdate: None,
+            birthplace: None,
+            home_address: None,
+            father_name: None,
+            father_contact: None,
+            mother_name: None,
+            mother_contact: None,
+            guardian_name: None,
+            guardian_contact: None,
+            date_admitted: None,
         });
     }
 

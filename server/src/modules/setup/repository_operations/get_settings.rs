@@ -1,10 +1,10 @@
 use sea_orm::*;
 
-use ::entity::school_settings;
+use ::entity::school_details;
 use crate::utils::{AppError, AppResult};
 
-pub async fn get_settings(db: &DatabaseConnection) -> AppResult<school_settings::Model> {
-    school_settings::Entity::find_by_id(1)
+pub async fn get_settings(db: &DatabaseConnection) -> AppResult<school_details::Model> {
+    school_details::Entity::find_by_id(1)
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?

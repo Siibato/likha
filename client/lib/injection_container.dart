@@ -161,8 +161,8 @@ import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
 import 'package:likha/data/repositories/setup/setup_repository_impl.dart';
 import 'package:likha/domain/setup/repositories/setup_repository.dart';
-import 'package:likha/domain/setup/usecases/get_school_settings.dart';
-import 'package:likha/domain/setup/usecases/update_school_settings.dart';
+import 'package:likha/domain/setup/usecases/get_school_details.dart';
+import 'package:likha/domain/setup/usecases/update_school_details.dart';
 import 'package:likha/domain/setup/usecases/update_school_code.dart';
 import 'package:likha/domain/document_exports/repositories/document_export_repository.dart';
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
@@ -613,8 +613,8 @@ Future<void> init() async {
   );
 
   // Setup use cases
-  sl.registerLazySingleton(() => GetSchoolSettings(sl()));
-  sl.registerLazySingleton(() => UpdateSchoolSettings(sl()));
+  sl.registerLazySingleton(() => GetSchoolDetails(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolDetails(sl()));
   sl.registerLazySingleton(() => UpdateSchoolCode(sl()));
 
   // TOS use cases

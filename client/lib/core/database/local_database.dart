@@ -9,8 +9,10 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 12 (v11 → v12: added deleted_at column to material_files)
-/// TOTAL TABLES: 37
+/// SCHEMA VERSION: 13 (v12 → v13: Phase 1 foundation — renamed school_settings→school_details,
+/// removed login_attempts, updated learner_details, added deleted_at to core_values_records
+/// and student_school_history)
+/// TOTAL TABLES: 36
 ///
 /// This database was consolidated from 12 historical versions into a single
 /// clean v1 schema. All migrations are now handled via nuclear reset:
@@ -18,7 +20,7 @@ import 'package:likha/core/logging/core_logger.dart';
 /// - Upgrades/Downgrades: Drop all tables and recreate (users must resync)
 ///
 /// TABLE CATEGORIES:
-/// - Core: users, refresh_tokens, login_attempts, activity_logs
+/// - Core: users, refresh_tokens, activity_logs
 /// - Classes: classes, class_participants
 /// - Assessments: assessments, assessment_questions, answer_keys,
 ///   answer_key_acceptable_answers, question_choices, assessment_submissions,
@@ -28,7 +30,7 @@ import 'package:likha/core/logging/core_logger.dart';
 /// - Grading: grade_record, grade_items, grade_scores, period_grades
 /// - TOS: table_of_specifications, tos_competencies, melcs
 /// - Sync: sync_queue, sync_metadata, student_results_cache, validation_metadata
-/// - Setup: school_settings
+/// - Setup: school_details
 ///
 /// INDEXES: 40+ indexes for query performance on foreign keys and common filters
 class LocalDatabase {
@@ -85,7 +87,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 12,
+            version: 13,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +108,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 11,
+        version: 12,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -176,18 +178,6 @@ class LocalDatabase {
           expires_at TEXT NOT NULL,
           is_revoked INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        )
-      ''');
-
-      // Login attempts table
-      await txn.execute('''
-        CREATE TABLE IF NOT EXISTS login_attempts (
-          id TEXT PRIMARY KEY,
-          user_id TEXT,
-          ip_address TEXT NOT NULL,
-          attempted_at TEXT NOT NULL,
-          success INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
         )
       ''');
 
@@ -690,9 +680,9 @@ class LocalDatabase {
         )
       ''');
 
-      // School settings table
+      // School details table
       await txn.execute('''
-        CREATE TABLE IF NOT EXISTS school_settings (
+        CREATE TABLE IF NOT EXISTS school_details (
           id TEXT PRIMARY KEY,
           school_name TEXT NOT NULL DEFAULT '',
           school_region TEXT NOT NULL DEFAULT '',
@@ -721,11 +711,12 @@ class LocalDatabase {
           birthplace TEXT,
           home_address TEXT,
           father_name TEXT,
+          father_contact TEXT,
           mother_name TEXT,
+          mother_contact TEXT,
           guardian_name TEXT,
           guardian_contact TEXT,
           date_admitted TEXT,
-          admitted_to_grade TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -769,6 +760,7 @@ class LocalDatabase {
           marking TEXT NOT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -791,6 +783,7 @@ class LocalDatabase {
           record_type TEXT NOT NULL DEFAULT 'previous',
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
@@ -900,12 +893,12 @@ class LocalDatabase {
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
-    // Targeted migration: add school_head_name and school_head_position to school_settings
+    // Targeted migration: add school_head_name and school_head_position to school_details
     // Web path: 9 → 10; Mobile path: 8 → 9
     if ((oldVersion == 9 && newVersion == 10) || (oldVersion == 8 && newVersion == 9)) {
       await db.transaction((txn) async {
-        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_name TEXT');
-        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_position TEXT');
+        await txn.execute('ALTER TABLE school_details ADD COLUMN school_head_name TEXT');
+        await txn.execute('ALTER TABLE school_details ADD COLUMN school_head_position TEXT');
       });
       return;
     }
@@ -1006,7 +999,6 @@ class LocalDatabase {
       'learning_materials',
       'class_participants',
       'activity_logs',
-      'login_attempts',
       'refresh_tokens',
       'classes',
       'users',
@@ -1021,7 +1013,7 @@ class LocalDatabase {
       'tos_competencies',
       'table_of_specifications',
       'melcs',
-      'school_settings',
+      'school_details',
       'previous_school_attendance',
       'previous_school_subjects',
       'student_school_history',

@@ -266,7 +266,7 @@ class _Sf10Content extends StatelessWidget {
               ]),
               const SizedBox(height: 24),
               // Scholastic records
-              Text('Scholastic Records', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+              const Text('Scholastic Records', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
               const SizedBox(height: 12),
               ...data.scholasticRecords.map((yr) => _yearCard(yr)),
               const SizedBox(height: 24),
@@ -274,7 +274,7 @@ class _Sf10Content extends StatelessWidget {
               if (data.schoolHistory.isNotEmpty) ...[
                 Row(
                   children: [
-                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Text('School History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => Navigator.push(
@@ -298,7 +298,7 @@ class _Sf10Content extends StatelessWidget {
               ] else ...[
                 Row(
                   children: [
-                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Text('School History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => Navigator.push(

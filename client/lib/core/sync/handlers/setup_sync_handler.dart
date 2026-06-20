@@ -6,7 +6,7 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_result.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
 
-/// Sync handler for all [SyncEntityType.schoolSettings] operations.
+/// Sync handler for all [SyncEntityType.schoolDetails] operations.
 class SetupSyncHandler {
   final SetupRemoteDataSource _remote;
   final LocalDatabase _localDatabase;
@@ -21,8 +21,8 @@ class SetupSyncHandler {
   Future<SyncResult> handle(SyncQueueEntry entry) async {
     try {
       switch (entry.entityType) {
-        case SyncEntityType.schoolSettings:
-          return await _handleSchoolSettings(entry);
+        case SyncEntityType.schoolDetails:
+          return await _handleSchoolDetails(entry);
         default:
           return SyncResult.permanentFailure(
             'Unsupported setup entity type: ${entry.entityType}',
@@ -37,7 +37,7 @@ class SetupSyncHandler {
     }
   }
 
-  Future<SyncResult> _handleSchoolSettings(SyncQueueEntry entry) async {
+  Future<SyncResult> _handleSchoolDetails(SyncQueueEntry entry) async {
     switch (entry.operation) {
       case SyncOperation.update:
         return await _handleUpdate(entry);
@@ -58,7 +58,7 @@ class SetupSyncHandler {
         idempotencyKey: entry.id,
       );
     } else {
-      final model = await _remote.updateSchoolSettings(
+      final model = await _remote.updateSchoolDetails(
         schoolName: payload['school_name'] as String,
         schoolRegion: payload['school_region'] as String,
         schoolDivision: payload['school_division'] as String,
@@ -73,16 +73,16 @@ class SetupSyncHandler {
       // Reconcile server response into local DB
       final db = await _localDatabase.database;
       await db.update(
-        DbTables.schoolSettings,
+        DbTables.schoolDetails,
         {
-          SchoolSettingsCols.schoolName: model.schoolName,
-          SchoolSettingsCols.schoolRegion: model.schoolRegion,
-          SchoolSettingsCols.schoolDivision: model.schoolDivision,
-          SchoolSettingsCols.schoolYear: model.schoolYear,
-          SchoolSettingsCols.schoolCode: model.schoolCode,
-          SchoolSettingsCols.schoolDistrict: model.schoolDistrict,
-          SchoolSettingsCols.schoolHeadName: model.schoolHeadName,
-          SchoolSettingsCols.schoolHeadPosition: model.schoolHeadPosition,
+          SchoolDetailsCols.schoolName: model.schoolName,
+          SchoolDetailsCols.schoolRegion: model.schoolRegion,
+          SchoolDetailsCols.schoolDivision: model.schoolDivision,
+          SchoolDetailsCols.schoolYear: model.schoolYear,
+          SchoolDetailsCols.schoolCode: model.schoolCode,
+          SchoolDetailsCols.schoolDistrict: model.schoolDistrict,
+          SchoolDetailsCols.schoolHeadName: model.schoolHeadName,
+          SchoolDetailsCols.schoolHeadPosition: model.schoolHeadPosition,
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
         where: '${CommonCols.id} = ?',
@@ -93,13 +93,13 @@ class SetupSyncHandler {
     // Mark local row as synced
     final db = await _localDatabase.database;
     await db.update(
-      DbTables.schoolSettings,
+      DbTables.schoolDetails,
       {CommonCols.syncStatus: SyncStatus.synced.dbValue},
       where: '${CommonCols.id} = ?',
       whereArgs: ['1'],
     );
 
-    _dataEventBus.notifySchoolSettingsChanged();
+    _dataEventBus.notifySchoolDetailsChanged();
 
     return const SyncResult.success();
   }

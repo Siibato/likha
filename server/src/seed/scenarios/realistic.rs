@@ -11,7 +11,7 @@ use crate::utils::AppError;
 pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let ctx = SeedContext::new();
 
-    let school = fixtures::realistic_school_settings(&ctx);
+    let school = fixtures::realistic_school_details(&ctx);
     let users = fixtures::realistic_users(&ctx);
     let classes = fixtures::realistic_classes(&ctx);
     let enrollments = fixtures::realistic_enrollments();
@@ -36,7 +36,7 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
 
     disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
-    inserters::school::insert_school_settings(db, &school).await?;
+    inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
     inserters::learner_details::insert_learner_details(db, &learner_details).await?;
     inserters::classes::insert_classes(db, &classes).await?;

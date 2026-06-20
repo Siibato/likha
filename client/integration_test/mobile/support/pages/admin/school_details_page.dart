@@ -4,8 +4,8 @@ import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 import '../_base_page.dart';
 
-class SchoolSettingsPage extends BasePage {
-  SchoolSettingsPage(super.tester);
+class SchoolDetailsPage extends BasePage {
+  SchoolDetailsPage(super.tester);
 
   static const String titleText = 'School Settings';
   static const String saveButtonLabel = 'Save Settings';

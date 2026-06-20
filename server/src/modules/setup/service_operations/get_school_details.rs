@@ -1,10 +1,10 @@
 use crate::modules::setup::repository::SetupRepository;
-use crate::modules::setup::schema::SchoolSettingsResponse;
+use crate::modules::setup::schema::SchoolDetailsResponse;
 use crate::utils::AppResult;
 
-pub async fn get_school_settings(repo: &SetupRepository) -> AppResult<SchoolSettingsResponse> {
+pub async fn get_school_details(repo: &SetupRepository) -> AppResult<SchoolDetailsResponse> {
     let row = repo.get_settings().await?;
-    Ok(SchoolSettingsResponse {
+    Ok(SchoolDetailsResponse {
         school_code: row.school_code,
         school_name: row.school_name,
         school_region: row.school_region,

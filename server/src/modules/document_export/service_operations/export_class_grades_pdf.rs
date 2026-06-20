@@ -83,7 +83,7 @@ pub async fn run(
     }
 
     let grade_data = grade_service.get_all_grade_data(class_id, period).await?;
-    let settings = setup_service.get_school_settings().await?;
+    let settings = setup_service.get_school_details().await?;
     let class_model = grade_service
         .class_repo
         .find_by_id(class_id)

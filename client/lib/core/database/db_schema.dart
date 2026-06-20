@@ -8,7 +8,6 @@ library db_schema;
 abstract final class DbTables {
   static const String users = 'users';
   static const String refreshTokens = 'refresh_tokens';
-  static const String loginAttempts = 'login_attempts';
   static const String activityLogs = 'activity_logs';
   static const String classes = 'classes';
   static const String classParticipants = 'class_participants';
@@ -36,7 +35,7 @@ abstract final class DbTables {
   static const String tosCompetencies = 'tos_competencies';
   static const String melcs = 'melcs';
   static const String validationMetadata = 'validation_metadata';
-  static const String schoolSettings = 'school_settings';
+  static const String schoolDetails = 'school_details';
   static const String learnerDetails = 'learner_details';
   static const String attendanceRecords = 'attendance_records';
   static const String coreValuesRecords = 'core_values_records';
@@ -71,13 +70,6 @@ abstract final class RefreshTokensCols {
   static const String token = 'token';
   static const String expiresAt = 'expires_at';
   static const String isRevoked = 'is_revoked';
-}
-
-abstract final class LoginAttemptsCols {
-  static const String userId = 'user_id';
-  static const String ipAddress = 'ip_address';
-  static const String attemptedAt = 'attempted_at';
-  static const String success = 'success';
 }
 
 abstract final class ActivityLogsCols {
@@ -352,7 +344,7 @@ abstract final class MelcsCols {
   static const String domain = 'domain';
 }
 
-abstract final class SchoolSettingsCols {
+abstract final class SchoolDetailsCols {
   static const String schoolName = 'school_name';
   static const String schoolRegion = 'school_region';
   static const String schoolDivision = 'school_division';
@@ -376,11 +368,12 @@ abstract final class LearnerDetailsCols {
   static const String birthplace = 'birthplace';
   static const String homeAddress = 'home_address';
   static const String fatherName = 'father_name';
+  static const String fatherContact = 'father_contact';
   static const String motherName = 'mother_name';
+  static const String motherContact = 'mother_contact';
   static const String guardianName = 'guardian_name';
   static const String guardianContact = 'guardian_contact';
   static const String dateAdmitted = 'date_admitted';
-  static const String admittedToGrade = 'admitted_to_grade';
 }
 
 abstract final class AttendanceRecordsCols {
@@ -401,6 +394,7 @@ abstract final class CoreValuesRecordsCols {
   static const String coreValue = 'core_value';
   static const String behaviorStatement = 'behavior_statement';
   static const String marking = 'marking';
+  static const String deletedAt = 'deleted_at';
 }
 
 abstract final class StudentSchoolHistoryCols {
@@ -413,6 +407,7 @@ abstract final class StudentSchoolHistoryCols {
   static const String dateFrom = 'date_from';
   static const String dateTo = 'date_to';
   static const String recordType = 'record_type';
+  static const String deletedAt = 'deleted_at';
 }
 
 abstract final class PreviousSchoolSubjectsCols {

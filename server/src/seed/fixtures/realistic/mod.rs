@@ -110,8 +110,8 @@ pub fn realistic_users(ctx: &SeedContext) -> Vec<UserSpec> {
     common::realistic_users(ctx)
 }
 
-pub fn realistic_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
-    common::realistic_school_settings(ctx)
+pub fn realistic_school_details(ctx: &SeedContext) -> SchoolDetailsSpec {
+    common::realistic_school_details(ctx)
 }
 
 pub fn realistic_classes(ctx: &SeedContext) -> Vec<ClassSpec> {

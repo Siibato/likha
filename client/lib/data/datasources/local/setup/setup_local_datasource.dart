@@ -1,14 +1,14 @@
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
+import 'package:likha/data/models/setup/school_details_model.dart';
 import 'operations/setup.dart' as ops;
 
 abstract class SetupLocalDataSource {
   LocalDatabase get localDatabase;
 
-  Future<SchoolSettingsModel> getCachedSchoolSettings();
-  Future<void> cacheSchoolSettings(SchoolSettingsModel settings);
-  Future<void> updateSchoolSettingsLocally({
+  Future<SchoolDetailsModel> getCachedSchoolDetails();
+  Future<void> cacheSchoolDetails(SchoolDetailsModel settings);
+  Future<void> updateSchoolDetailsLocally({
     required String schoolName,
     required String schoolRegion,
     required String schoolDivision,
@@ -30,15 +30,15 @@ class SetupLocalDataSourceImpl implements SetupLocalDataSource {
   SetupLocalDataSourceImpl(this.localDatabase, this.syncQueue);
 
   @override
-  Future<SchoolSettingsModel> getCachedSchoolSettings() =>
-      ops.getCachedSchoolSettings(localDatabase);
+  Future<SchoolDetailsModel> getCachedSchoolDetails() =>
+      ops.getCachedSchoolDetails(localDatabase);
 
   @override
-  Future<void> cacheSchoolSettings(SchoolSettingsModel settings) =>
-      ops.cacheSchoolSettings(localDatabase, settings);
+  Future<void> cacheSchoolDetails(SchoolDetailsModel settings) =>
+      ops.cacheSchoolDetails(localDatabase, settings);
 
   @override
-  Future<void> updateSchoolSettingsLocally({
+  Future<void> updateSchoolDetailsLocally({
     required String schoolName,
     required String schoolRegion,
     required String schoolDivision,
@@ -50,7 +50,7 @@ class SetupLocalDataSourceImpl implements SetupLocalDataSource {
     SyncStatus syncStatus = SyncStatus.synced,
     Transaction? txn,
   }) =>
-      ops.updateSchoolSettingsLocally(
+      ops.updateSchoolDetailsLocally(
         localDatabase,
         schoolName: schoolName,
         schoolRegion: schoolRegion,

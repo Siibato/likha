@@ -59,8 +59,8 @@ class DeltaPayload {
   @JsonKey(name: 'activity_logs')
   final EntityDeltas activityLogs;
 
-  @JsonKey(name: 'school_settings')
-  final EntityDeltas schoolSettings;
+  @JsonKey(name: 'school_details')
+  final EntityDeltas schoolDetails;
 
   @JsonKey(name: 'learner_details')
   final EntityDeltas learnerDetails;
@@ -96,7 +96,7 @@ class DeltaPayload {
     required this.tableOfSpecifications,
     required this.tosCompetencies,
     required this.activityLogs,
-    required this.schoolSettings,
+    required this.schoolDetails,
     required this.learnerDetails,
     required this.attendanceRecords,
     required this.coreValuesRecords,

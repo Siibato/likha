@@ -8,7 +8,7 @@ use crate::utils::AppResult;
 use crate::modules::sync::helpers::enrich_questions;
 use crate::modules::sync::sync_scope::SyncScope;
 use crate::modules::setup::repository::SetupRepository;
-use crate::modules::setup::schema::SchoolSettingsResponse;
+use crate::modules::setup::schema::SchoolDetailsResponse;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 use super::enrich_submissions::enrich_assessment_submissions;
@@ -160,10 +160,10 @@ impl super::SyncFullService {
             };
 
             // Fetch school settings for all authenticated users
-            let school_settings = {
+            let school_details = {
                 let setup_repo = SetupRepository::new(self.db.clone());
                 match setup_repo.get_settings().await {
-                    Ok(row) => Some(SchoolSettingsResponse {
+                    Ok(row) => Some(SchoolDetailsResponse {
                         school_code: row.school_code,
                         school_name: row.school_name,
                         school_region: row.school_region,
@@ -208,7 +208,7 @@ impl super::SyncFullService {
                     needs_entity_batches,
                     total_classes,
                 }),
-                school_settings,
+                school_details,
                 learner_details: vec![],
                 attendance_records: vec![],
                 core_values_records: vec![],
@@ -258,7 +258,7 @@ impl super::SyncFullService {
                 tos_competencies: vec![],
                 activity_logs: vec![],
                 sync_plan: None,
-                school_settings: None,
+                school_details: None,
                 learner_details: vec![],
                 attendance_records: vec![],
                 core_values_records: vec![],
@@ -674,7 +674,7 @@ impl super::SyncFullService {
             tos_competencies,
             activity_logs: vec![],
             sync_plan: None,
-            school_settings: None,
+            school_details: None,
             learner_details,
             attendance_records,
             core_values_records,

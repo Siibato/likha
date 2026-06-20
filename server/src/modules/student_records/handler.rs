@@ -71,11 +71,12 @@ pub async fn upsert_learner_details(
         req.birthplace,
         req.home_address,
         req.father_name,
+        req.father_contact,
         req.mother_name,
+        req.mother_contact,
         req.guardian_name,
         req.guardian_contact,
         parse_date(&req.date_admitted),
-        req.admitted_to_grade,
     ).await {
         Ok(model) => success_response(LearnerDetailsResponse::from(model), StatusCode::OK).into_response(),
         Err(e) => e.into_response(),

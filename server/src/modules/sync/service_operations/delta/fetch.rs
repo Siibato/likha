@@ -227,11 +227,11 @@ impl super::SyncDeltaService {
 
         // Fetch school settings delta (global, not role-scoped)
         tracing::debug!("Fetching school settings deltas since {}", last_sync_at);
-        let school_settings_raw = self
+        let school_details_raw = self
             .manifest_repo
-            .get_school_settings_since(last_sync_at)
+            .get_school_details_since(last_sync_at)
             .await?;
-        tracing::debug!("Got {} school settings deltas", school_settings_raw.len());
+        tracing::debug!("Got {} school settings deltas", school_details_raw.len());
 
         // Fetch student record deltas if scoped
         let mut learner_details_raw: Vec<serde_json::Value> = Vec::new();
@@ -295,7 +295,7 @@ impl super::SyncDeltaService {
         let tos_deltas = separate_deltas(tos_raw);
         let tos_competencies_deltas = separate_deltas(tos_competencies_raw);
         let activity_logs_deltas = separate_deltas(activity_logs_raw);
-        let school_settings_deltas = separate_deltas(school_settings_raw);
+        let school_details_deltas = separate_deltas(school_details_raw);
         let learner_details_deltas = separate_deltas(learner_details_raw);
         let attendance_records_deltas = separate_deltas(attendance_records_raw);
         let core_values_records_deltas = separate_deltas(core_values_records_raw);
@@ -335,7 +335,7 @@ impl super::SyncDeltaService {
                 table_of_specifications: tos_deltas,
                 tos_competencies: tos_competencies_deltas,
                 activity_logs: activity_logs_deltas,
-                school_settings: school_settings_deltas,
+                school_details: school_details_deltas,
                 learner_details: learner_details_deltas,
                 attendance_records: attendance_records_deltas,
                 core_values_records: core_values_records_deltas,

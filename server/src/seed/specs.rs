@@ -178,7 +178,7 @@ pub struct MaterialSpec {
 }
 
 #[derive(Debug, Clone)]
-pub struct SchoolSettingsSpec {
+pub struct SchoolDetailsSpec {
     pub id: i32,
     pub school_code: String,
     pub school_name: Option<String>,
@@ -253,4 +253,79 @@ pub struct LearnerDetailsSpec {
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,
+    pub birthdate: Option<chrono::NaiveDate>,
+    pub birthplace: Option<String>,
+    pub home_address: Option<String>,
+    pub father_name: Option<String>,
+    pub father_contact: Option<String>,
+    pub mother_name: Option<String>,
+    pub mother_contact: Option<String>,
+    pub guardian_name: Option<String>,
+    pub guardian_contact: Option<String>,
+    pub date_admitted: Option<chrono::NaiveDate>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AttendanceSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub class_id: Uuid,
+    pub school_year: String,
+    pub month: String,
+    pub school_days: i32,
+    pub days_present: i32,
+    pub days_absent: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct CoreValuesSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub class_id: Uuid,
+    pub school_year: String,
+    pub grading_period_number: i32,
+    pub core_value: String,
+    pub behavior_statement: String,
+    pub marking: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct SchoolHistorySpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub school_name: String,
+    pub school_id: Option<String>,
+    pub grade_level: String,
+    pub school_year: String,
+    pub section: Option<String>,
+    pub date_from: Option<chrono::NaiveDate>,
+    pub date_to: Option<chrono::NaiveDate>,
+    pub record_type: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PreviousSubjectSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub school_history_id: Uuid,
+    pub subject_name: String,
+    pub subject_group: Option<String>,
+    pub q1_grade: Option<i32>,
+    pub q2_grade: Option<i32>,
+    pub q3_grade: Option<i32>,
+    pub q4_grade: Option<i32>,
+    pub final_grade: Option<i32>,
+    pub descriptor: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PreviousAttendanceSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub school_history_id: Uuid,
+    pub school_year: String,
+    pub month: String,
+    pub school_days: i32,
+    pub days_present: i32,
+    pub days_absent: i32,
 }

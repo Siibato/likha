@@ -5,10 +5,10 @@ import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
+import 'package:likha/data/models/setup/school_details_model.dart';
 import 'package:uuid/uuid.dart';
 
-ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolCode(
+ResultFuture<MutationResult<SchoolDetailsModel>> updateSchoolCode(
   SetupLocalDataSource localDataSource,
   SyncQueue syncQueue, {
   required String schoolCode,
@@ -18,11 +18,11 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolCode(
     final now = DateTime.now();
 
     // Read current settings to preserve other fields
-    SchoolSettingsModel current;
+    SchoolDetailsModel current;
     try {
-      current = await localDataSource.getCachedSchoolSettings();
+      current = await localDataSource.getCachedSchoolDetails();
     } on CacheException {
-      current = const SchoolSettingsModel(
+      current = const SchoolDetailsModel(
         id: '1',
         schoolName: '',
         schoolRegion: '',
@@ -32,7 +32,7 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolCode(
       );
     }
 
-    final optimisticModel = SchoolSettingsModel(
+    final optimisticModel = SchoolDetailsModel(
       id: '1',
       schoolName: current.schoolName,
       schoolRegion: current.schoolRegion,
@@ -45,7 +45,7 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolCode(
 
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
-      await localDataSource.updateSchoolSettingsLocally(
+      await localDataSource.updateSchoolDetailsLocally(
         schoolName: optimisticModel.schoolName,
         schoolRegion: optimisticModel.schoolRegion,
         schoolDivision: optimisticModel.schoolDivision,
@@ -57,7 +57,7 @@ ResultFuture<MutationResult<SchoolSettingsModel>> updateSchoolCode(
       await syncQueue.enqueue(
         SyncQueueEntry(
           id: queueEntryId,
-          entityType: SyncEntityType.schoolSettings,
+          entityType: SyncEntityType.schoolDetails,
           operation: SyncOperation.update,
           payload: {
             ...optimisticModel.toPayload(),

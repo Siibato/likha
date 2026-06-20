@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
+import 'package:likha/data/models/setup/school_details_model.dart';
 
-Future<SchoolSettingsModel> updateSchoolSettings(
+Future<SchoolDetailsModel> updateSchoolDetails(
   DioClient dioClient, {
   required String schoolName,
   required String schoolRegion,
@@ -33,7 +33,7 @@ Future<SchoolSettingsModel> updateSchoolSettings(
       options: options,
     );
     final data = response.data['data'] as Map<String, dynamic>;
-    return SchoolSettingsModel.fromJson(data);
+    return SchoolDetailsModel.fromJson(data);
   } on DioException catch (e) {
     throw dioClient.handleError(e);
   }

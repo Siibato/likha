@@ -119,8 +119,8 @@ pub fn demo_users(ctx: &SeedContext) -> Vec<UserSpec> {
     base::users::demo_users(ctx)
 }
 
-pub fn demo_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
-    base::school::demo_school_settings(ctx)
+pub fn demo_school_details(ctx: &SeedContext) -> SchoolDetailsSpec {
+    base::school::demo_school_details(ctx)
 }
 
 pub fn demo_classes(ctx: &SeedContext) -> Vec<ClassSpec> {

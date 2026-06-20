@@ -48,7 +48,7 @@ pub enum CacheKey {
 
     // Setup
     SchoolInfo,
-    SchoolSettings,
+    SchoolDetails,
     SchoolCode,
 
     // Static
@@ -105,7 +105,7 @@ impl CacheKey {
 
             // Setup
             CacheKey::SchoolInfo => "setup:school_info".to_string(),
-            CacheKey::SchoolSettings => "setup:school_settings".to_string(),
+            CacheKey::SchoolDetails => "setup:school_details".to_string(),
             CacheKey::SchoolCode => "setup:school_code".to_string(),
 
             // Static

@@ -109,7 +109,7 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
   syncPlan: json['sync_plan'] == null
       ? null
       : SyncPlanModel.fromJson(json['sync_plan'] as Map<String, dynamic>),
-  schoolSettings: json['school_settings'] as Map<String, dynamic>?,
+  schoolDetails: json['school_details'] as Map<String, dynamic>?,
   learnerDetails:
       (json['learner_details'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
@@ -169,7 +169,7 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'user': instance.user,
   'enrolled_students': instance.enrolledStudents,
   'sync_plan': instance.syncPlan,
-  'school_settings': instance.schoolSettings,
+  'school_details': instance.schoolDetails,
   'learner_details': instance.learnerDetails,
   'attendance_records': instance.attendanceRecords,
   'core_values_records': instance.coreValuesRecords,

@@ -1,19 +1,19 @@
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
-use crate::seed::specs::SchoolSettingsSpec;
+use crate::seed::specs::SchoolDetailsSpec;
 use crate::utils::AppError;
-use ::entity::school_settings;
+use ::entity::school_details;
 
-pub async fn insert_school_settings(
+pub async fn insert_school_details(
     db: &DatabaseConnection,
-    spec: &SchoolSettingsSpec,
+    spec: &SchoolDetailsSpec,
 ) -> Result<(), AppError> {
-    if let Some(existing) = school_settings::Entity::find_by_id(spec.id)
+    if let Some(existing) = school_details::Entity::find_by_id(spec.id)
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(e.to_string()))?
     {
-        let mut model: school_settings::ActiveModel = existing.into();
+        let mut model: school_details::ActiveModel = existing.into();
         model.school_code = Set(spec.school_code.clone());
         model.school_name = Set(spec.school_name.clone());
         model.school_region = Set(spec.school_region.clone());
@@ -25,7 +25,7 @@ pub async fn insert_school_settings(
         model.updated_at = Set(spec.updated_at);
         model.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
     } else {
-        let model = school_settings::ActiveModel {
+        let model = school_details::ActiveModel {
             id: Set(spec.id),
             school_code: Set(spec.school_code.clone()),
             school_name: Set(spec.school_name.clone()),

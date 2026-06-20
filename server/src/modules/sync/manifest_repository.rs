@@ -245,8 +245,8 @@ impl ManifestRepository {
         ops::get_tos_competencies_since(&self.db, class_ids, since).await
     }
 
-    pub async fn get_school_settings_since(&self, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
-        ops::get_school_settings_since(&self.db, since).await
+    pub async fn get_school_details_since(&self, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_school_details_since(&self.db, since).await
     }
 
     pub async fn get_grade_item_ids_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Uuid>> {

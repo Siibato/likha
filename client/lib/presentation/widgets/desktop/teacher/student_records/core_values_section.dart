@@ -34,10 +34,10 @@ class _CoreValuesSectionState extends ConsumerState<CoreValuesSection> {
   @override
   Widget build(BuildContext context) {
     if (widget.students.isEmpty) {
-      return DesktopPageScaffold(
+      return const DesktopPageScaffold(
         title: 'Core Values',
         subtitle: 'Character development records for SF10',
-        body: const EmptyState.generic(title: 'No students enrolled'),
+        body: EmptyState.generic(title: 'No students enrolled'),
       );
     }
 
@@ -217,7 +217,7 @@ class _CoreValuesGrid extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
       child: DropdownButtonFormField<String>(
-        value: current,
+        initialValue: current,
         decoration: InputDecoration(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.borderLight)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

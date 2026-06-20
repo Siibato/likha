@@ -41,7 +41,7 @@ pub async fn run(
     let sf10 = student_records_service
         .get_sf10(class_id, student_id, teacher_id)
         .await?;
-    let settings = setup_service.get_school_settings().await?;
+    let settings = setup_service.get_school_details().await?;
 
     let engine = PdfEngine::new("SF10")
         .map_err(|e| AppError::InternalServerError(format!("PDF init: {}", e)))?;

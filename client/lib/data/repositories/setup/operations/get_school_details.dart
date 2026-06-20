@@ -7,10 +7,10 @@ import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
-import 'package:likha/domain/setup/entities/school_settings.dart';
+import 'package:likha/data/models/setup/school_details_model.dart';
+import 'package:likha/domain/setup/entities/school_details.dart';
 
-ResultFuture<SchoolSettings> getSchoolSettings(
+ResultFuture<SchoolDetails> getSchoolDetails(
   SetupLocalDataSource localDataSource,
   SetupRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
@@ -18,25 +18,25 @@ ResultFuture<SchoolSettings> getSchoolSettings(
 }) async {
   try {
     try {
-      final cached = await localDataSource.getCachedSchoolSettings();
+      final cached = await localDataSource.getCachedSchoolDetails();
 
       if (!skipBackgroundRefresh) {
         fireRemoteFetch(
-          dedupKey: 'setup/schoolSettings/bg',
-          remote: remoteDataSource.getSchoolSettings,
+          dedupKey: 'setup/schoolDetails/bg',
+          remote: remoteDataSource.getSchoolDetails,
           onSuccess: (fresh) async {
             try {
-              final current = await localDataSource.getCachedSchoolSettings();
+              final current = await localDataSource.getCachedSchoolDetails();
               // Skip overwriting pending local changes with stale server data.
               // The sync engine will reconcile after the pending update completes.
               if (current.syncStatus == SyncStatus.pending) return;
               if (_settingsHaveChanged(current, fresh)) {
-                await localDataSource.cacheSchoolSettings(fresh);
-                dataEventBus.notifySchoolSettingsChanged();
+                await localDataSource.cacheSchoolDetails(fresh);
+                dataEventBus.notifySchoolDetailsChanged();
               }
             } on CacheException {
-              await localDataSource.cacheSchoolSettings(fresh);
-              dataEventBus.notifySchoolSettingsChanged();
+              await localDataSource.cacheSchoolDetails(fresh);
+              dataEventBus.notifySchoolDetailsChanged();
             }
           },
         );
@@ -44,10 +44,10 @@ ResultFuture<SchoolSettings> getSchoolSettings(
       return Right(cached);
     } on CacheException {
       final fresh = await remoteFetch(
-        dedupKey: 'setup/schoolSettings',
-        remote: remoteDataSource.getSchoolSettings,
+        dedupKey: 'setup/schoolDetails',
+        remote: remoteDataSource.getSchoolDetails,
       );
-      await localDataSource.cacheSchoolSettings(fresh);
+      await localDataSource.cacheSchoolDetails(fresh);
       return Right(fresh);
     }
   } on ServerException catch (e) {
@@ -62,8 +62,8 @@ ResultFuture<SchoolSettings> getSchoolSettings(
 }
 
 bool _settingsHaveChanged(
-  SchoolSettingsModel current,
-  SchoolSettingsModel fresh,
+  SchoolDetailsModel current,
+  SchoolDetailsModel fresh,
 ) {
   return current.schoolName != fresh.schoolName ||
       current.schoolRegion != fresh.schoolRegion ||

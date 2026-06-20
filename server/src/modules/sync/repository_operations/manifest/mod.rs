@@ -66,7 +66,7 @@ pub mod get_all_period_grades_since;
 pub mod get_student_period_grades_since;
 pub mod get_table_of_specifications_since;
 pub mod get_tos_competencies_since;
-pub mod get_school_settings_since;
+pub mod get_school_details_since;
 
 // Section F: Student Records sync queries
 pub mod get_learner_details_for_students;
@@ -156,7 +156,7 @@ pub use get_all_period_grades_since::get_all_period_grades_since;
 pub use get_student_period_grades_since::get_student_period_grades_since;
 pub use get_table_of_specifications_since::get_table_of_specifications_since;
 pub use get_tos_competencies_since::get_tos_competencies_since;
-pub use get_school_settings_since::get_school_settings_since;
+pub use get_school_details_since::get_school_details_since;
 
 pub use get_learner_details_for_students::get_learner_details_for_students;
 pub use get_learner_details_since::get_learner_details_since;

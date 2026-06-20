@@ -2,15 +2,15 @@ use chrono::NaiveDateTime;
 use sea_orm::*;
 use serde_json::Value;
 
-use ::entity::school_settings;
+use ::entity::school_details;
 use crate::utils::{AppError, AppResult};
 
-pub async fn get_school_settings_since(
+pub async fn get_school_details_since(
     db: &DatabaseConnection,
     since: NaiveDateTime,
 ) -> AppResult<Vec<Value>> {
-    let record = school_settings::Entity::find()
-        .filter(school_settings::Column::UpdatedAt.gt(since))
+    let record = school_details::Entity::find()
+        .filter(school_details::Column::UpdatedAt.gt(since))
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;

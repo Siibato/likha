@@ -36,7 +36,7 @@ String? _entityTypeToTable(String entityType) {
     case 'table_of_specifications': return DbTables.tableOfSpecifications;
     case 'tos_competency': return DbTables.tosCompetencies;
     case 'admin_user': return DbTables.users;
-    case 'school_settings': return DbTables.schoolSettings;
+    case 'school_details': return DbTables.schoolDetails;
     case 'learner_details': return DbTables.learnerDetails;
     case 'attendance_records': return DbTables.attendanceRecords;
     case 'core_values_records': return DbTables.coreValuesRecords;
@@ -297,7 +297,7 @@ class OutboundSyncHandler {
 
     // Route setup operations to the dedicated handler.
     final setupOps = regularOps
-        .where((e) => e.entityType == SyncEntityType.schoolSettings)
+        .where((e) => e.entityType == SyncEntityType.schoolDetails)
         .toList();
     if (setupOps.isNotEmpty && _setupHandler != null) {
       _log.log('Processing ${setupOps.length} setup ops via handler');
@@ -351,7 +351,7 @@ class OutboundSyncHandler {
             e.entityType != SyncEntityType.materialFile &&
             e.entityType != SyncEntityType.tableOfSpecifications &&
             e.entityType != SyncEntityType.tosCompetency &&
-            e.entityType != SyncEntityType.schoolSettings &&
+            e.entityType != SyncEntityType.schoolDetails &&
             e.entityType != SyncEntityType.learnerDetails &&
             e.entityType != SyncEntityType.attendanceRecords &&
             e.entityType != SyncEntityType.coreValuesRecords &&

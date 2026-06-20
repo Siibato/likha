@@ -98,8 +98,8 @@ pub const MAT_ARCHIVED_ID: Uuid = uuid!("a1b2c3d4-1111-2222-cccc-000000000004");
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
-pub fn e2e_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
-    SchoolSettingsSpec {
+pub fn e2e_school_details(ctx: &SeedContext) -> SchoolDetailsSpec {
+    SchoolDetailsSpec {
         id: 1,
         school_code: "E2ETST".into(),
         school_name: Some("Likha E2E Test School".into()),

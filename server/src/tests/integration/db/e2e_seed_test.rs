@@ -66,9 +66,9 @@ async fn test_e2e_seed_produces_expected_row_counts() {
     assert_eq!(grade_records.len(), 8, "expected 8 grade records");
 
     // ── School Settings ────────────────────────────────────────────────────────
-    let settings = ::entity::school_settings::Entity::find()
-        .all(&db).await.expect("find school_settings");
-    assert_eq!(settings.len(), 1, "expected 1 school_settings row");
+    let settings = ::entity::school_details::Entity::find()
+        .all(&db).await.expect("find school_details");
+    assert_eq!(settings.len(), 1, "expected 1 school_details row");
 
     // ── Hardcoded UUID spot checks ─────────────────────────────────────────────
     let admin = ::entity::users::Entity::find_by_id(ADMIN_ID)

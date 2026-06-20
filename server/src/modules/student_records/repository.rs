@@ -36,16 +36,18 @@ impl StudentRecordsRepository {
         birthplace: Option<String>,
         home_address: Option<String>,
         father_name: Option<String>,
+        father_contact: Option<String>,
         mother_name: Option<String>,
+        mother_contact: Option<String>,
         guardian_name: Option<String>,
         guardian_contact: Option<String>,
         date_admitted: Option<NaiveDate>,
-        admitted_to_grade: Option<String>,
     ) -> AppResult<learner_details::Model> {
         ops::upsert_learner_details(
             &self.db, user_id, lrn, age, sex, track_strand, curriculum,
-            birthdate, birthplace, home_address, father_name, mother_name,
-            guardian_name, guardian_contact, date_admitted, admitted_to_grade,
+            birthdate, birthplace, home_address, father_name, father_contact,
+            mother_name, mother_contact,
+            guardian_name, guardian_contact, date_admitted,
         ).await
     }
 

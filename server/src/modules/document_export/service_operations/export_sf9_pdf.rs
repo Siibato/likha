@@ -44,7 +44,7 @@ pub async fn run(
     let sf9 = grade_service
         .compute_sf9(class_id, student_id, teacher_id)
         .await?;
-    let settings = setup_service.get_school_settings().await?;
+    let settings = setup_service.get_school_details().await?;
 
     let engine = PdfEngine::new_with_size("SF9", Mm(PAGE_W), Mm(PAGE_H))
         .map_err(|e| AppError::InternalServerError(format!("PDF init: {}", e)))?;

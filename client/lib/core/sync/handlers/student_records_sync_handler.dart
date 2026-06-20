@@ -9,6 +9,7 @@ import 'package:likha/data/datasources/remote/student_records/student_records_re
 class StudentRecordsSyncHandler {
   final StudentRecordsRemoteDataSource _remote;
   final LocalDatabase _localDatabase;
+  // ignore: unused_field
   final SyncLogger _log;
 
   StudentRecordsSyncHandler(

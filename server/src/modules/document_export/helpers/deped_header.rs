@@ -1,4 +1,4 @@
-use crate::modules::setup::schema::SchoolSettingsResponse;
+use crate::modules::setup::schema::SchoolDetailsResponse;
 
 pub struct DepedHeaderData {
     pub region: String,
@@ -16,7 +16,7 @@ pub struct DepedHeaderData {
 
 impl DepedHeaderData {
     pub fn from_settings(
-        settings: &SchoolSettingsResponse,
+        settings: &SchoolDetailsResponse,
         class_title: &str,
         grade_level: Option<&str>,
         teacher_name: &str,
