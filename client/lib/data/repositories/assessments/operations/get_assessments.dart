@@ -45,7 +45,7 @@ ResultFuture<List<Assessment>> getAssessments(
       }
 
       for (final a in cachedAssessments) {
-        RepoLogger.instance.log('${a.title} | totalPoints=${a.totalPoints} | gradingPeriod=${a.termNumber} | component=${a.component}');
+        RepoLogger.instance.log('${a.title} | totalPoints=${a.totalPoints} | termNumber=${a.termNumber} | component=${a.component}');
       }
       return Right(cachedAssessments.cast<Assessment>());
     } on CacheException {

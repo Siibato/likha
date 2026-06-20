@@ -82,11 +82,11 @@ impl CacheKey {
             CacheKey::StudentAssessmentSubmissions(class_id, student_id) => format!("assessment:student_submissions:{}:{}", class_id, student_id),
 
             // Grading
-            CacheKey::GradeItems(class_id, period) => format!("grade:items:{}:{}", class_id, period),
-            CacheKey::TermGrades(class_id, period) => format!("grade:period:{}:{}", class_id, period),
-            CacheKey::StudentTermGrade(class_id, student_id, period) => format!("grade:student:{}:{}:{}", class_id, student_id, period),
+            CacheKey::GradeItems(class_id, term) => format!("grade:items:{}:{}", class_id, term),
+            CacheKey::TermGrades(class_id, term) => format!("grade:term:{}:{}", class_id, term),
+            CacheKey::StudentTermGrade(class_id, student_id, term) => format!("grade:student:{}:{}:{}", class_id, student_id, term),
             CacheKey::StudentAllGrades(class_id, student_id) => format!("grade:student_all:{}:{}", class_id, student_id),
-            CacheKey::GradeSummary(class_id, period) => format!("grade:summary:{}:{}", class_id, period),
+            CacheKey::GradeSummary(class_id, term) => format!("grade:summary:{}:{}", class_id, term),
             CacheKey::ItemScores(item_id) => format!("grade:item_scores:{}", item_id),
             CacheKey::FinalGrade(class_id, student_id) => format!("grade:final:{}:{}", class_id, student_id),
             CacheKey::GeneralAverages(class_id) => format!("grade:general_averages:{}", class_id),

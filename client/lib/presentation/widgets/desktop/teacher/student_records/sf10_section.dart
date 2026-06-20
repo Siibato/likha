@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
@@ -407,16 +408,15 @@ class _Sf10Content extends StatelessWidget {
             children: [
               TableRow(children: [
                 _th('Subject'),
-                _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'),
+                ...List.generate(termCountFromType(null), (i) => _th('T${i + 1}')),
                 _th('Final'),
                 _th('Descriptor'),
               ]),
               ...yr.subjects.map((s) => TableRow(children: [
                 _td(s.classTitle),
-                _td(s.termGrades.isNotEmpty ? s.termGrades[0]?.toString() ?? '-' : '-'),
-                _td(s.termGrades.length > 1 ? s.termGrades[1]?.toString() ?? '-' : '-'),
-                _td(s.termGrades.length > 2 ? s.termGrades[2]?.toString() ?? '-' : '-'),
-                _td(s.termGrades.length > 3 ? s.termGrades[3]?.toString() ?? '-' : '-'),
+                ...List.generate(termCountFromType(null), (i) =>
+                  _td(s.termGrades.length > i ? s.termGrades[i]?.toString() ?? '-' : '-'),
+                ),
                 _td(s.finalGrade?.toString() ?? '-'),
                 _td(s.descriptor ?? '-'),
               ])),

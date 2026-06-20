@@ -21,7 +21,7 @@ ClassModel _sampleClass({String id = 'class-001'}) {
     teacherFullName: 'Mr. Teacher',
     isArchived: false,
     studentCount: 0,
-    termType: 'quarter',
+    termType: 'term',
     createdAt: now,
     updatedAt: now,
   );
@@ -84,7 +84,7 @@ void main() {
         teacherFullName: 'Mr. Teacher',
         isArchived: false,
         studentCount: 0,
-        termType: 'quarter',
+        termType: 'term',
         createdAt: DateTime(2026, 4, 19),
         updatedAt: DateTime(2026, 4, 19),
         syncStatus: SyncStatus.pending,

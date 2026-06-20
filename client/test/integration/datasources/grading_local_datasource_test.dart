@@ -74,8 +74,8 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('saveItems and getItemsByClassQuarter returns grade items', () async {
-      final items = await datasource.getItemsByClassQuarter(_classId, 1);
+    test('saveItems and getItemsByClassTerm returns grade items', () async {
+      final items = await datasource.getItemsByClassTerm(_classId, 1);
       expect(items, isEmpty);
     });
   });

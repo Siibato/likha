@@ -44,6 +44,8 @@ mod m20260620_000002_phase_1_foundation;
 mod m20260620_000003_rename_terms;
 mod m20260620_000004_phase_3_normalization;
 mod m20260620_000005_phase_4_fk_constraints;
+mod m20260620_000006_rename_period_assessment_component;
+mod m20260621_000001_core_values_normalization;
 
 pub struct Migrator;
 
@@ -95,6 +97,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260620_000003_rename_terms::Migration),
             Box::new(m20260620_000004_phase_3_normalization::Migration),
             Box::new(m20260620_000005_phase_4_fk_constraints::Migration),
+            Box::new(m20260620_000006_rename_period_assessment_component::Migration),
+            Box::new(m20260621_000001_core_values_normalization::Migration),
         ]
     }
 }

@@ -11,21 +11,21 @@ pub async fn create_linked_grade_item(
     class_id: Uuid,
     title: &str,
     component: &str,
-    period: i32,
+    term_number: i32,
     total_points: f64,
 ) -> AppResult<()> {
     if repo.find_by_source(source_type, &source_id.to_string()).await?.is_some() {
         return Ok(());
     }
 
-    let existing = repo.get_items_by_component(class_id, period, component).await?;
+    let existing = repo.get_items_by_component(class_id, term_number, component).await?;
     let order_index = existing.len() as i32;
 
     repo.create_item(
         class_id,
         title.to_string(),
         component.to_string(),
-        Some(period),
+        Some(term_number),
         total_points,
         source_type.to_string(),
         Some(source_id.to_string()),

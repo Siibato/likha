@@ -29,7 +29,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       classId: classId,
       title: data['title'] as String,
       component: data['component'] as String,
-      termNumber: (data['term_number'] as num?)?.toInt() ?? (data['quarter'] as num?)?.toInt() ?? 1,
+      termNumber: (data['term_number'] as num?)?.toInt() ?? 1,
       totalPoints: (data['total_points'] as num).toDouble(),
       sourceType: (data['source_type'] as String?) ?? 'manual',
       sourceId: data['source_id'] as String?,

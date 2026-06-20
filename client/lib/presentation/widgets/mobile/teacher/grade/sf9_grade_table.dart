@@ -5,7 +5,7 @@ import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9GradeTable extends StatelessWidget {
   final List<Sf9SubjectRow> subjects;
-  final Sf9PeriodAverages? generalAverage;
+  final Sf9TermAverages? generalAverage;
   final String? termType;
 
   const Sf9GradeTable({
@@ -23,8 +23,8 @@ class Sf9GradeTable extends StatelessWidget {
     const descWidth = 80.0;
     const cellHeight = 40.0;
 
-    final periodCount = periodCountFromType(termType);
-    final prefix = periodLabelPrefix(termType);
+    final termCount = termCountFromType(termType);
+    final prefix = termLabelPrefix(termType);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -49,7 +49,7 @@ class Sf9GradeTable extends StatelessWidget {
               child: Row(
                 children: [
                   _cell('Learning Area', nameWidth, cellHeight, bold: true, align: Alignment.centerLeft),
-                  ...List.generate(periodCount, (i) => _cell('$prefix${i + 1}', cellWidth, cellHeight, bold: true)),
+                  ...List.generate(termCount, (i) => _cell('$prefix${i + 1}', cellWidth, cellHeight, bold: true)),
                   _cell('Final', fgWidth, cellHeight, bold: true),
                   _cell('Remarks', descWidth, cellHeight, bold: true),
                 ],
@@ -65,7 +65,7 @@ class Sf9GradeTable extends StatelessWidget {
                 child: Row(
                   children: [
                     _cell(s.classTitle, nameWidth, cellHeight, align: Alignment.centerLeft),
-                    ...List.generate(periodCount, (pi) => _gradeCell(
+                    ...List.generate(termCount, (pi) => _gradeCell(
                       s.termGrades.length > pi ? s.termGrades[pi] : null,
                       cellWidth,
                       cellHeight,
@@ -95,7 +95,7 @@ class Sf9GradeTable extends StatelessWidget {
                       children: [
                         _cell('General Average', nameWidth, cellHeight,
                             bold: true, align: Alignment.centerLeft),
-                        ...List.generate(periodCount, (pi) => _gradeCell(
+                        ...List.generate(termCount, (pi) => _gradeCell(
                           ga.termGrades.length > pi ? ga.termGrades[pi] : null,
                           cellWidth,
                           cellHeight,

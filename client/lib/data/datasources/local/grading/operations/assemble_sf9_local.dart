@@ -10,14 +10,14 @@ String _getDescriptor(int grade) {
   return 'Did Not Meet Expectations';
 }
 
-int _periodCount(String termType) {
+int _termCount(String termType) {
   switch (termType) {
     case 'semester':
       return 2;
     case 'trimester':
       return 3;
     default:
-      return 4;
+      return 3;
   }
 }
 
@@ -45,9 +45,9 @@ Future<Sf9ResponseModel?> assembleSf9Local(
   final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
   final section = classRow[ClassesCols.title] as String?;
   final termType =
-      classRow[ClassesCols.termType] as String? ?? 'quarter';
+      classRow[ClassesCols.termType] as String? ?? 'term';
   final teacherName = classRow[ClassesCols.teacherFullName] as String?;
-  final numPeriods = _periodCount(termType);
+  final numTerms = _termCount(termType);
 
   // 2. Get student name from users table
   final userRows = await db.query(
@@ -99,7 +99,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
 
   // 6. For each enrolled class, get term_grades
   final subjects = <Sf9SubjectRowModel>[];
-  final periodSums = List<List<int>>.generate(numPeriods, (_) => []);
+  final termSums = List<List<int>>.generate(numTerms, (_) => []);
   final finalGrades = <int>[];
 
   for (final classMatch in classMatches) {
@@ -113,20 +113,20 @@ Future<Sf9ResponseModel?> assembleSf9Local(
       whereArgs: [cid, studentId],
     );
 
-    final periodVals = List<int?>.filled(numPeriods, null);
+    final termVals = List<int?>.filled(numTerms, null);
     for (final pg in pgRows) {
-      final periodNum = pg[TermGradesCols.termNumber] as int?;
+      final termNum = pg[TermGradesCols.termNumber] as int?;
       final transmuted = pg[TermGradesCols.transmutedGrade] as int?;
-      if (periodNum != null && transmuted != null) {
-        final idx = periodNum - 1;
-        if (idx >= 0 && idx < numPeriods) {
-          periodVals[idx] = transmuted;
-          periodSums[idx].add(transmuted);
+      if (termNum != null && transmuted != null) {
+        final idx = termNum - 1;
+        if (idx >= 0 && idx < numTerms) {
+          termVals[idx] = transmuted;
+          termSums[idx].add(transmuted);
         }
       }
     }
 
-    final transmuted = periodVals.whereType<int>().toList();
+    final transmuted = termVals.whereType<int>().toList();
     final int? finalGrade;
     if (transmuted.isEmpty) {
       finalGrade = null;
@@ -143,7 +143,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
 
     subjects.add(Sf9SubjectRowModel(
       classTitle: ctitle,
-      termGrades: periodVals,
+      termGrades: termVals,
       finalGrade: finalGrade,
       descriptor: descriptor,
     ));
@@ -160,8 +160,8 @@ Future<Sf9ResponseModel?> assembleSf9Local(
   final gaDescriptor =
       finalAverage != null ? _getDescriptor(finalAverage) : null;
 
-  final generalAverage = Sf9PeriodAveragesModel(
-    termGrades: periodSums.map((s) => computeAvg(s)).toList(),
+  final generalAverage = Sf9TermAveragesModel(
+    termGrades: termSums.map((s) => computeAvg(s)).toList(),
     finalAverage: finalAverage,
     descriptor: gaDescriptor,
   );

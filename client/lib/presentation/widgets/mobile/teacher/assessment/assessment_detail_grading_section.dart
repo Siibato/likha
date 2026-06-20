@@ -19,12 +19,12 @@ class AssessmentDetailGradingSection extends StatelessWidget {
       termNumber: assessment.termNumber,
       component: assessment.component,
       isEditing: controller.isEditingGrading,
-      editingGradingPeriod: controller.editingGradingPeriod,
+      editingTermNumber: controller.editingTermNumber,
       editingComponent: controller.editingComponent,
       onEdit: () => controller.startEditingGrading(assessment),
-      onSave: (period, component) => controller.saveGradingSettings(),
+      onSave: (term, component) => controller.saveGradingSettings(),
       onCancel: controller.cancelEditingGrading,
-      onPeriodChanged: controller.setEditingGradingPeriod,
+      onTermChanged: controller.setEditingTermNumber,
       onComponentChanged: controller.setEditingComponent,
     );
   }

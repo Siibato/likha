@@ -43,7 +43,7 @@ class SetupSyncHandler {
         return await _handleUpdate(entry);
       default:
         return SyncResult.permanentFailure(
-          'Unsupported school settings operation: ${entry.operation}',
+          'Unsupported school details operation: ${entry.operation}',
         );
     }
   }

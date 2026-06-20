@@ -11,7 +11,7 @@ class Sf9SubjectRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final periodCount = periodCountFromType(termType);
+    final termCount = termCountFromType(termType);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -28,7 +28,7 @@ class Sf9SubjectRowWidget extends StatelessWidget {
               ),
             ),
           ),
-          ...List.generate(periodCount, (i) => _gradeChip(
+          ...List.generate(termCount, (i) => _gradeChip(
             row.termGrades.length > i ? row.termGrades[i] : null,
           )),
           SizedBox(

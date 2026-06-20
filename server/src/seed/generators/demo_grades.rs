@@ -7,7 +7,7 @@ use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
 use crate::modules::grading::helpers::deped_weights::transmute_grade;
 
-/// Generate grade records for each class × each quarter.
+/// Generate grade records for each class × each term.
 pub fn generate_grade_records(classes: &[ClassSpec]) -> Vec<GradeRecordSpec> {
     let mut records = Vec::new();
     for class in classes {
@@ -19,10 +19,10 @@ pub fn generate_grade_records(classes: &[ClassSpec]) -> Vec<GradeRecordSpec> {
         } else {
             (50.0, 30.0, 20.0)
         };
-        for period in 1..=4 {
+        for term in 1..=4 {
             records.push(GradeRecordSpec {
                 class_id: class.id,
-                term_number: period,
+                term_number: term,
                 ww_weight: ww,
                 pt_weight: pt,
                 qa_weight: qa,
@@ -143,7 +143,7 @@ pub fn generate_grade_scores(
     scores
 }
 
-/// Compute period grades from grade scores using DepEd formulas.
+/// Compute term grades from grade scores using DepEd formulas.
 pub fn generate_term_grades(
     grade_records: &[GradeRecordSpec],
     grade_scores: &[GradeScoreSpec],
@@ -185,7 +185,7 @@ pub fn generate_term_grades(
                     match component.as_str() {
                         "written_work" => { ww_sum += effective; ww_total += *total_points; }
                         "performance_task" => { pt_sum += effective; pt_total += *total_points; }
-                        "period_assessment" => { qa_sum += effective; qa_total += *total_points; }
+                        "term_assessment" => { qa_sum += effective; qa_total += *total_points; }
                         _ => {}
                     }
                 }

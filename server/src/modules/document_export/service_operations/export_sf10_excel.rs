@@ -69,7 +69,7 @@ pub async fn run(
             .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
         row += 1;
 
-        let headers = ["Subject", "Q1", "Q2", "Q3", "Q4", "Final", "Descriptor", "School"];
+        let headers = ["Subject", "T1", "T2", "T3", "T4", "Final", "Descriptor", "School"];
         for (col, h) in headers.iter().enumerate() {
             sheet.write_with_format(row, col as u16, *h, &header_fmt())
                 .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;

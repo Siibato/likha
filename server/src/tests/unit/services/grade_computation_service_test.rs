@@ -15,13 +15,13 @@ fn make_grade_record(
     ww: f64,
     pt: f64,
     qa: f64,
-    period: Option<i32>,
+    term_number: Option<i32>,
 ) -> ::entity::grade_record::Model {
     let now = chrono::Utc::now().naive_utc();
     ::entity::grade_record::Model {
         id: Uuid::new_v4(),
         class_id: Uuid::new_v4(),
-        term_number: period,
+        term_number,
         ww_weight: ww,
         pt_weight: pt,
         qa_weight: qa,
@@ -67,7 +67,7 @@ fn make_grade_score(
     }
 }
 
-fn make_period_grade(
+fn make_term_grade(
     initial_grade: Option<f64>,
     transmuted_grade: Option<i32>,
 ) -> ::entity::term_grades::Model {
@@ -149,43 +149,43 @@ fn test_grade_score_effective_score_is_none_when_both_absent() {
 // ── TermGradeResponse::from — descriptor lookup ───────────────────────────
 
 #[test]
-fn test_period_grade_descriptor_outstanding_for_transmuted_90() {
-    let model = make_period_grade(Some(80.0), Some(90));
+fn test_term_grade_descriptor_outstanding_for_transmuted_90() {
+    let model = make_term_grade(Some(80.0), Some(90));
     let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Outstanding"));
 }
 
 #[test]
-fn test_period_grade_descriptor_did_not_meet_for_transmuted_74() {
-    let model = make_period_grade(Some(55.0), Some(74));
+fn test_term_grade_descriptor_did_not_meet_for_transmuted_74() {
+    let model = make_term_grade(Some(55.0), Some(74));
     let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Did Not Meet Expectations"));
 }
 
 #[test]
-fn test_period_grade_descriptor_none_when_no_transmuted_grade() {
-    let model = make_period_grade(None, None);
+fn test_term_grade_descriptor_none_when_no_transmuted_grade() {
+    let model = make_term_grade(None, None);
     let response = TermGradeResponse::from(model);
     assert!(response.descriptor.is_none());
 }
 
 #[test]
-fn test_period_grade_descriptor_very_satisfactory_for_87() {
-    let model = make_period_grade(Some(75.0), Some(87));
+fn test_term_grade_descriptor_very_satisfactory_for_87() {
+    let model = make_term_grade(Some(75.0), Some(87));
     let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Very Satisfactory"));
 }
 
 #[test]
-fn test_period_grade_descriptor_fairly_satisfactory_for_75() {
-    let model = make_period_grade(Some(60.0), Some(75));
+fn test_term_grade_descriptor_fairly_satisfactory_for_75() {
+    let model = make_term_grade(Some(60.0), Some(75));
     let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Fairly Satisfactory"));
 }
 
 #[test]
-fn test_period_grade_response_is_locked_maps_correctly() {
-    let mut model = make_period_grade(Some(70.0), Some(80));
+fn test_term_grade_response_is_locked_maps_correctly() {
+    let mut model = make_term_grade(Some(70.0), Some(80));
     model.is_locked = true;
     let response = TermGradeResponse::from(model);
     assert!(response.is_locked);

@@ -5,7 +5,7 @@ import 'package:likha/presentation/widgets/shared/forms/school_details_form.dart
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/form_fields.dart';
 
-/// A comprehensive school settings section widget
+/// A comprehensive school details section widget
 /// that includes the form, save functionality, and QR code generation.
 class SchoolDetailsSection extends StatefulWidget {
   final TextEditingController schoolNameController;
@@ -267,7 +267,7 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-/// A compact school settings card for dashboard use
+/// A compact school details card for dashboard use
 class SchoolDetailsCard extends StatelessWidget {
   final String schoolName;
   final String? schoolCode;
@@ -332,7 +332,7 @@ class SchoolDetailsCard extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'School Settings',
+                'School Details',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,

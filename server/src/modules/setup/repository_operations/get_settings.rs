@@ -8,5 +8,5 @@ pub async fn get_settings(db: &DatabaseConnection) -> AppResult<school_details::
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-        .ok_or_else(|| AppError::InternalServerError("School settings not initialized".to_string()))
+        .ok_or_else(|| AppError::InternalServerError("School details not initialized".to_string()))
 }

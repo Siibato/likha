@@ -6,11 +6,11 @@ import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 
 import '_helpers.dart' as helpers;
 
-ResultFuture<List<PeriodGrade>> getTermGrades(
+ResultFuture<List<TermGrade>> getTermGrades(
   GradingLocalDataSource localDataSource,
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {

@@ -8,7 +8,7 @@ class GradeCsvGenerator {
   Future<void> generateCsv(GradeExportContext ctx) async {
     final csv = _buildCsv(ctx);
     final fileName =
-        '${ctx.className}_Q${ctx.quarter}_Grades_${DateTime.now().millisecondsSinceEpoch}.csv';
+        '${ctx.className}_T${ctx.termNumber}_Grades_${DateTime.now().millisecondsSinceEpoch}.csv';
     await FileSaver.instance.saveFile(
       name: fileName,
       bytes: Uint8List.fromList(csv.codeUnits),
@@ -36,7 +36,7 @@ class GradeCsvGenerator {
       'GRADE & SECTION: ${ctx.gradeLevel ?? ''} ${ctx.section ?? ctx.className}',
       'TEACHER: ${ctx.teacherName ?? ''}',
       'SUBJECT: ${ctx.subject ?? ''}',
-      ctx.quarterLabel,
+      ctx.termLabel,
     ]));
     buffer.writeln();
 
@@ -59,7 +59,7 @@ class GradeCsvGenerator {
     cells.addAll(_sectionHeaders(ctx.pt, 'PT'));
     cells.addAll(_sectionHeaders(ctx.qa, 'QA'));
 
-    cells.addAll(['Initial Grade', 'Quarterly Grade']);
+    cells.addAll(['Initial Grade', 'Term Grade']);
     return _csvRow(cells);
   }
 

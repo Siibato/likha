@@ -33,7 +33,7 @@ class ClassModel extends ClassEntity {
       isArchived: json['is_archived'] as bool,
       isAdvisory: json['is_advisory'] as bool? ?? false,
       studentCount: json['student_count'] as int? ?? 0,
-      termType: json['term_type'] as String? ?? 'quarter',
+      termType: json['term_type'] as String? ?? 'term',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       syncStatus: SyncStatus.synced,
@@ -54,7 +54,7 @@ class ClassModel extends ClassEntity {
       isArchived: (map['is_archived'] as int?) == 1,
       isAdvisory: (map['is_advisory'] as int?) == 1,
       studentCount: map['student_count'] as int? ?? 0,
-      termType: map['term_type'] as String? ?? 'quarter',
+      termType: map['term_type'] as String? ?? 'term',
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       deletedAt: map['deleted_at'] != null

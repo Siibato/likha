@@ -11,7 +11,7 @@ class SearchMelcs {
     return _repository.searchMelcs(
       subject: params.subject,
       gradeLevel: params.gradeLevel,
-      termNumber: params.quarter,
+      termNumber: params.termNumber,
       query: params.query,
       limit: params.limit,
       offset: params.offset,
@@ -22,7 +22,7 @@ class SearchMelcs {
 class SearchMelcsParams {
   final String? subject;
   final String? gradeLevel;
-  final int? quarter;
+  final int? termNumber;
   final String? query;
   final int limit;
   final int offset;
@@ -30,7 +30,7 @@ class SearchMelcsParams {
   SearchMelcsParams({
     this.subject,
     this.gradeLevel,
-    this.quarter,
+    this.termNumber,
     this.query,
     this.limit = 30,
     this.offset = 0,
@@ -39,7 +39,7 @@ class SearchMelcsParams {
   SearchMelcsParams copyWith({
     String? subject,
     String? gradeLevel,
-    int? quarter,
+    int? termNumber,
     String? query,
     int? limit,
     int? offset,
@@ -47,7 +47,7 @@ class SearchMelcsParams {
     return SearchMelcsParams(
       subject: subject ?? this.subject,
       gradeLevel: gradeLevel ?? this.gradeLevel,
-      quarter: quarter ?? this.quarter,
+      termNumber: termNumber ?? this.termNumber,
       query: query ?? this.query,
       limit: limit ?? this.limit,
       offset: offset ?? this.offset,

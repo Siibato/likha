@@ -33,7 +33,7 @@ ResultFuture<MutationResult<ClassModel>> createClass(
       isArchived: false,
       isAdvisory: isAdvisory,
       studentCount: 0,
-      termType: 'quarter',
+      termType: 'term',
       createdAt: now,
       updatedAt: now,
       syncStatus: SyncStatus.pending,

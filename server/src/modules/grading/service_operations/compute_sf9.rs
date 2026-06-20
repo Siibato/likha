@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::cache::CacheKey;
-use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9PeriodAverages};
+use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9TermAverages};
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
 
@@ -46,8 +46,8 @@ impl crate::modules::grading::service::GradeComputationService {
         let learner_details = self.repo.get_learner_details(student_id).await?;
 
         let mut subjects = Vec::new();
-        let num_periods = crate::modules::grading::helpers::period_count::period_count(&class.term_type);
-        let mut period_sums: Vec<Vec<i32>> = (0..num_periods).map(|_| Vec::new()).collect();
+        let num_terms = crate::modules::grading::helpers::term_count::term_count(&class.term_type);
+        let mut term_sums: Vec<Vec<i32>> = (0..num_terms).map(|_| Vec::new()).collect();
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
@@ -55,18 +55,18 @@ impl crate::modules::grading::service::GradeComputationService {
                 student_id, ec.class_id,
             ).await?;
 
-            let mut period_vals: Vec<Option<i32>> = vec![None; num_periods];
+            let mut term_vals: Vec<Option<i32>> = vec![None; num_terms];
             for pg in &term_grades_raw {
                 let idx = (pg.term_number - 1) as usize;
-                if idx < num_periods {
+                if idx < num_terms {
                     if let Some(t) = pg.transmuted_grade {
-                        period_vals[idx] = Some(t);
-                        period_sums[idx].push(t);
+                        term_vals[idx] = Some(t);
+                        term_sums[idx].push(t);
                     }
                 }
             }
 
-            let transmuted: Vec<i32> = period_vals.iter().filter_map(|&v| v).collect();
+            let transmuted: Vec<i32> = term_vals.iter().filter_map(|&v| v).collect();
             let final_grade = if transmuted.is_empty() {
                 None
             } else {
@@ -83,7 +83,7 @@ impl crate::modules::grading::service::GradeComputationService {
             subjects.push(Sf9SubjectRow {
                 class_title: ec.title.clone(),
                 subject_group: None,
-                term_grades: period_vals,
+                term_grades: term_vals,
                 final_grade,
                 descriptor,
             });
@@ -101,8 +101,8 @@ impl crate::modules::grading::service::GradeComputationService {
         let final_average = compute_avg(&final_grades);
         let ga_descriptor = final_average.map(|fa| deped_weights::get_descriptor(fa).to_string());
 
-        let general_average = Some(Sf9PeriodAverages {
-            term_grades: (0..num_periods).map(|i| compute_avg(&period_sums[i])).collect(),
+        let general_average = Some(Sf9TermAverages {
+            term_grades: (0..num_terms).map(|i| compute_avg(&term_sums[i])).collect(),
             final_average,
             descriptor: ga_descriptor,
         });

@@ -1,6 +1,6 @@
 //! Pure functions for generating grading data.
 //!
-//! Grade scores and period grades are computed from submission data
+//! Grade scores and term grades are computed from submission data
 //! using the deterministic rules from the seeding spec.
 
 use uuid::Uuid;
@@ -44,12 +44,12 @@ pub fn generate_term_grades(
         }
     }
 
-    // Generate 4 period records per non-deleted class (Q1-Q4)
+    // Generate term records per non-deleted class (T1-T4)
     for class in classes {
         if class.deleted_at.is_some() {
             continue;
         }
-        for period in 1..=4 {
+        for term in 1..=4 {
             let enrolled = class_students.get(&class.id).cloned().unwrap_or_default();
 
             for &student_idx in &enrolled {
@@ -73,7 +73,7 @@ pub fn generate_term_grades(
                 term_grades.push(TermGradeSpec {
                     class_id: class.id,
                     student_id,
-                    term_number: period,
+                    term_number: term,
                     initial_grade: Some(initial_grade),
                     transmuted_grade: Some(transmuted),
                     is_locked: false,

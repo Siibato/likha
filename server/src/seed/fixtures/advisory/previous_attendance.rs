@@ -30,8 +30,7 @@ pub fn advisory_previous_attendance() -> Vec<PreviousAttendanceSpec> {
 
         for (hidx, hist) in student_history.iter().enumerate() {
             for (month_idx, &(month, school_days)) in PREV_MONTHS.iter().enumerate() {
-                let days_absent = ((sidx + hidx + month_idx) % 6) as i32;
-                let days_present = school_days - days_absent;
+                let days_present = school_days - ((sidx + hidx + month_idx) % 6) as i32;
                 let id = seed_id(
                     "previous_school_attendance",
                     &format!("{}_{}_{}_{}", uname, hist.school_year, month, hist.grade_level),

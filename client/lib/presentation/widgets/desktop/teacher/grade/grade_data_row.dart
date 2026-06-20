@@ -10,7 +10,7 @@ import 'package:likha/presentation/widgets/desktop/teacher/grade/grade_spreadshe
 /// Single student row for the grade spreadsheet.
 ///
 /// Renders score cells for all three grade components plus the computed
-/// initial-grade, quarterly-grade, and remarks columns.
+/// initial-grade, term-grade, and remarks columns.
 class GradeDataRow extends StatelessWidget {
   final int index;
   final Participant participant;

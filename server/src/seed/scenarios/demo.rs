@@ -1,7 +1,7 @@
 //! Demo seeding scenario.
 //!
 //! Creates a focused dataset: 1 teacher, 30 students, 2 classes,
-//! 4 quarters of assessments, assignments, and learning modules,
+//! 4 terms of assessments, assignments, and learning modules,
 //! with tiered student submissions and derived grades.
 
 use sea_orm::DatabaseConnection;
@@ -88,7 +88,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     }
 
     println!(
-        "Demo seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
+        "Demo seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
         users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),

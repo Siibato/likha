@@ -8,7 +8,7 @@ Future<List<MelcEntryModel>> searchMelcs(
   DioClient dioClient, {
   String? subject,
   String? gradeLevel,
-  int? quarter,
+  int? termNumber,
   String? query,
   int limit = 30,
   int offset = 0,
@@ -17,7 +17,7 @@ Future<List<MelcEntryModel>> searchMelcs(
     final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
     if (subject != null) queryParams['subject'] = subject;
     if (gradeLevel != null) queryParams['grade_level'] = gradeLevel;
-    if (quarter != null) queryParams['quarter'] = quarter;
+    if (termNumber != null) queryParams['quarter'] = termNumber;
     if (query != null) queryParams['q'] = query;
 
     final response = await dioClient.dio.get(

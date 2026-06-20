@@ -242,8 +242,7 @@ class CoreValuesNotifier extends StateNotifier<CoreValuesState> {
       (record) {
         final updated = [
           ...state.records.where((r) =>
-              r.coreValue != record.coreValue ||
-              r.behaviorStatement != record.behaviorStatement ||
+              r.coreValueId != record.coreValueId ||
               r.termNumber != record.termNumber),
           record,
         ];

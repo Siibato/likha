@@ -225,13 +225,13 @@ impl super::SyncDeltaService {
             tracing::debug!("Got {} activity log deltas", activity_logs_raw.len());
         }
 
-        // Fetch school settings delta (global, not role-scoped)
-        tracing::debug!("Fetching school settings deltas since {}", last_sync_at);
+        // Fetch school details delta (global, not role-scoped)
+        tracing::debug!("Fetching school details deltas since {}", last_sync_at);
         let school_details_raw = self
             .manifest_repo
             .get_school_details_since(last_sync_at)
             .await?;
-        tracing::debug!("Got {} school settings deltas", school_details_raw.len());
+        tracing::debug!("Got {} school details deltas", school_details_raw.len());
 
         // Fetch student record deltas if scoped
         let mut learner_details_raw: Vec<serde_json::Value> = Vec::new();

@@ -71,7 +71,7 @@ impl SetupService {
     // Admin endpoints
     // ---------------------------------------------------------------------------
 
-    /// Returns all school settings.
+    /// Returns all school details.
     pub async fn get_school_details(&self) -> AppResult<SchoolDetailsResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::SchoolDetails.as_str();

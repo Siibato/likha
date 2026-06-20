@@ -8,7 +8,7 @@ import '../_base_page.dart';
 class SchoolDetailsDesktopPage extends BasePage {
   SchoolDetailsDesktopPage(super.tester);
 
-  static const String titleText = 'School Settings';
+  static const String titleText = 'School Details';
   static const String saveButtonLabel = 'Save Settings';
 
   Future<void> waitUntilVisible() async {

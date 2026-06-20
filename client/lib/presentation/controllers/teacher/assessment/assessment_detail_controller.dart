@@ -16,7 +16,7 @@ class AssessmentDetailController extends ChangeNotifier {
   List<Question> questionReorderBuffer = [];
   final Map<String, int> questionAnimatingIndices = {};
   String? formError;
-  int? editingGradingPeriod;
+  int? editingTermNumber;
   String? editingComponent;
   bool isEditingGrading = false;
 
@@ -72,7 +72,7 @@ class AssessmentDetailController extends ChangeNotifier {
   // ── Grading settings ──
 
   void startEditingGrading(Assessment assessment) {
-    editingGradingPeriod = assessment.termNumber;
+    editingTermNumber = assessment.termNumber;
     editingComponent = assessment.component;
     isEditingGrading = true;
     formError = null;
@@ -80,7 +80,7 @@ class AssessmentDetailController extends ChangeNotifier {
   }
 
   void cancelEditingGrading() {
-    editingGradingPeriod = null;
+    editingTermNumber = null;
     editingComponent = null;
     isEditingGrading = false;
     formError = null;
@@ -95,12 +95,12 @@ class AssessmentDetailController extends ChangeNotifier {
       await notifier.updateAssessment(
         UpdateAssessmentParams(
           assessmentId: assessmentId,
-          termNumber: editingGradingPeriod,
+          termNumber: editingTermNumber,
           component: editingComponent,
         ),
       );
 
-      editingGradingPeriod = null;
+      editingTermNumber = null;
       editingComponent = null;
     } catch (e) {
       isEditingGrading = true;
@@ -109,8 +109,8 @@ class AssessmentDetailController extends ChangeNotifier {
     }
   }
 
-  void setEditingGradingPeriod(int? value) {
-    editingGradingPeriod = value;
+  void setEditingTermNumber(int? value) {
+    editingTermNumber = value;
     notifyListeners();
   }
 

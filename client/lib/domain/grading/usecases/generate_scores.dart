@@ -30,7 +30,7 @@ class GenerateScores {
 
   GenerateScores(this._service);
 
-  /// Generate scores for all grade items in a class for a specific grading period
+  /// Generate scores for all grade items in a class for a specific term
   ResultFuture<void> generateScoresForClass(GenerateScoresParams params) async {
     return await _service.generateScoresForClass(
       classId: params.classId,

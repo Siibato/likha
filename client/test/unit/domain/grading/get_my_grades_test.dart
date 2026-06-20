@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
@@ -22,7 +22,7 @@ void main() {
 
     test('should get my grades successfully', () async {
       when(() => mockRepository.getMyGrades(classId: any(named: 'classId')))
-          .thenAnswer((_) async => const Right(<PeriodGrade>[]));
+          .thenAnswer((_) async => const Right(<TermGrade>[]));
 
       final result = await useCase(tClassId);
 

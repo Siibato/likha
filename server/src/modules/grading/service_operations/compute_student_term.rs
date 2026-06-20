@@ -17,7 +17,7 @@ impl crate::modules::grading::service::GradeComputationService {
             .await?
             .ok_or_else(|| {
                 AppError::BadRequest(
-                    "Grading config not set up for this class/period".to_string(),
+                    "Grading config not set up for this class/term".to_string(),
                 )
             })?;
 
@@ -30,14 +30,14 @@ impl crate::modules::grading::service::GradeComputationService {
             match item.component.as_str() {
                 "written_work" => ww_items.push(item),
                 "performance_task" => pt_items.push(item),
-                "period_assessment" => qa_items.push(item),
+                "term_assessment" => qa_items.push(item),
                 _ => {}
             }
         }
 
         let scores = self
             .repo
-            .get_scores_by_student_class_period(student_id, class_id, term_number)
+            .get_scores_by_student_class_term(student_id, class_id, term_number)
             .await?;
 
         let mut score_map = std::collections::HashMap::new();

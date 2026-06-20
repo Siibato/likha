@@ -5,7 +5,7 @@ import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/usecases/clear_score_override.dart';
 import 'package:likha/domain/grading/usecases/compute_grades.dart';
 import 'package:likha/domain/grading/usecases/create_grade_item.dart';
@@ -19,7 +19,7 @@ import 'package:likha/domain/grading/usecases/save_scores.dart';
 import 'package:likha/domain/grading/usecases/set_score_override.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/usecases/update_grading_config.dart';
-import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/usecases/update_term_grade.dart';
 import 'package:likha/domain/grading/usecases/update_grade_item.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/domain/assessments/usecases/get_assessments.dart';
@@ -143,7 +143,7 @@ class GradingConfigNotifier extends StateNotifier<GradingConfigState> {
 
 class GradeItemsState {
   final List<GradeItem> items;
-  final int currentQuarter;
+  final int currentTerm;
   final String currentComponent;
   final bool isLoading;
   final String? error;
@@ -151,7 +151,7 @@ class GradeItemsState {
 
   GradeItemsState({
     this.items = const [],
-    this.currentQuarter = 1,
+    this.currentTerm = 1,
     this.currentComponent = '',
     this.isLoading = false,
     this.error,
@@ -160,7 +160,7 @@ class GradeItemsState {
 
   GradeItemsState copyWith({
     List<GradeItem>? items,
-    int? currentQuarter,
+    int? currentTerm,
     String? currentComponent,
     bool? isLoading,
     Object? error = _unset,
@@ -168,7 +168,7 @@ class GradeItemsState {
   }) {
     return GradeItemsState(
       items: items ?? this.items,
-      currentQuarter: currentQuarter ?? this.currentQuarter,
+      currentTerm: currentTerm ?? this.currentTerm,
       currentComponent: currentComponent ?? this.currentComponent,
       isLoading: isLoading ?? this.isLoading,
       error: identical(error, _unset) ? this.error : error as String?,
@@ -191,11 +191,11 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
   ) : super(GradeItemsState());
 
   Future<void> loadItems(String classId) async {
-    ProviderLogger.instance.log('loadItems() - starting for classId: $classId, quarter: ${state.currentQuarter}, component: ${state.currentComponent}');
+    ProviderLogger.instance.log('loadItems() - starting for classId: $classId, term: ${state.currentTerm}, component: ${state.currentComponent}');
     state = state.copyWith(isLoading: state.items.isEmpty, error: null);
     final result = await _getGradeItems(GetGradeItemsParams(
       classId: classId,
-      termNumber: state.currentQuarter,
+      termNumber: state.currentTerm,
       component: state.currentComponent.isEmpty ? null : state.currentComponent,
     ));
         result.fold(
@@ -244,13 +244,13 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     switch (c) {
       case 'written_work': return 'ww';
       case 'performance_task': return 'pt';
-      case 'period_assessment': return 'qa';
+      case 'term_assessment': return 'qa';
       default: return c;
     }
   }
 
   Future<void> backfillFromActivities(String classId, int termNumber) async {
-    ProviderLogger.instance.log('backfillFromActivities() - starting for classId: $classId, quarter: $termNumber');
+    ProviderLogger.instance.log('backfillFromActivities() - starting for classId: $classId, term: $termNumber');
     ProviderLogger.instance.log('backfillFromActivities() - current state has ${state.items.length} items');
 
     final existingSourceIds = state.items
@@ -271,7 +271,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
       (assessments) async {
         ProviderLogger.instance.log('backfillFromActivities() - got ${assessments.length} assessments');
         for (final a in assessments) {
-          ProviderLogger.instance.log('backfillFromActivities() - checking assessment: ${a.title} (${a.component}) - quarter: ${a.termNumber}, id: ${a.id}');
+          ProviderLogger.instance.log('backfillFromActivities() - checking assessment: ${a.title} (${a.component}) - term: ${a.termNumber}, id: ${a.id}');
           if (a.termNumber == termNumber && a.component != null && !existingSourceIds.contains(a.id)) {
             final component = _toGradeComponent(a.component!);
             // Check if a manually-created item with the same title+component exists (link it instead of creating a duplicate)
@@ -335,7 +335,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
           } else {
             String reason = "";
             if (a.termNumber != termNumber) {
-              reason = "wrong quarter (${a.termNumber} != $termNumber)";
+              reason = "wrong term (${a.termNumber} != $termNumber)";
             } else if (a.component == null) {
               reason = "component is null";
             } else if (existingSourceIds.contains(a.id)) {
@@ -381,7 +381,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
       (assignments) async {
         ProviderLogger.instance.log('backfillFromActivities() - got ${assignments.length} assignments');
         for (final a in assignments) {
-          ProviderLogger.instance.log('backfillFromActivities() - checking assignment: ${a.title} (${a.component}) - quarter: ${a.termNumber}, id: ${a.id}');
+          ProviderLogger.instance.log('backfillFromActivities() - checking assignment: ${a.title} (${a.component}) - term: ${a.termNumber}, id: ${a.id}');
           if (a.termNumber == termNumber && a.component != null && !existingSourceIds.contains(a.id)) {
             ProviderLogger.instance.log('backfillFromActivities() - assignment qualifies for backfill, creating grade item');
             try {
@@ -412,7 +412,7 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
           } else {
             String reason = "";
             if (a.termNumber != termNumber) {
-              reason = "wrong quarter (${a.termNumber} != $termNumber)";
+              reason = "wrong term (${a.termNumber} != $termNumber)";
             } else if (a.component == null) {
               reason = "component is null";
             } else if (existingSourceIds.contains(a.id)) {
@@ -427,8 +427,8 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
     ProviderLogger.instance.log('Backfill completed');
   }
 
-  void setQuarter(int quarter) {
-    state = state.copyWith(currentQuarter: quarter);
+  void setTerm(int term) {
+    state = state.copyWith(currentTerm: term);
   }
 
   void setComponent(String component) {
@@ -441,11 +441,11 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
 
   /// Generate scores for grade items that don't have scores yet
   Future<void> generateScoresForItems(String classId) async {
-    ProviderLogger.instance.log('generateScoresForItems() - starting for classId: $classId, quarter: ${state.currentQuarter}');
+    ProviderLogger.instance.log('generateScoresForItems() - starting for classId: $classId, term: ${state.currentTerm}');
     
     final result = await _generateScores.generateScoresForClass(GenerateScoresParams(
       classId: classId,
-      termNumber: state.currentQuarter,
+      termNumber: state.currentTerm,
       items: state.items.isNotEmpty ? state.items : null,
     ));
     
@@ -616,10 +616,10 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
   }
 }
 
-// ===== Quarterly Grades =====
+// ===== Term Grades =====
 
 class TermGradesState {
-  final List<PeriodGrade> grades;
+  final List<TermGrade> grades;
   final List<Map<String, dynamic>>? summary;
   final bool isLoading;
   final String? error;
@@ -632,7 +632,7 @@ class TermGradesState {
   });
 
   TermGradesState copyWith({
-    List<PeriodGrade>? grades,
+    List<TermGrade>? grades,
     Object? summary = _unset,
     bool? isLoading,
     Object? error = _unset,
@@ -650,20 +650,20 @@ class TermGradesNotifier extends StateNotifier<TermGradesState> {
   final GetTermGrades _getTermGrades;
   final ComputeGrades _computeGrades;
   final GetGradeSummary _getGradeSummary;
-  final UpdatePeriodGrade _updatePeriodGrade;
+  final UpdateTermGrade _updateTermGrade;
 
   TermGradesNotifier(
     this._getTermGrades,
     this._computeGrades,
     this._getGradeSummary,
-    this._updatePeriodGrade,
+    this._updateTermGrade,
   ) : super(TermGradesState());
 
-  Future<void> loadGrades(String classId, int quarter) async {
+  Future<void> loadGrades(String classId, int term) async {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _getTermGrades(
       classId: classId,
-      termNumber: quarter,
+      termNumber: term,
     );
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
@@ -671,35 +671,35 @@ class TermGradesNotifier extends StateNotifier<TermGradesState> {
     );
   }
 
-  Future<void> computeGrades(String classId, int quarter) async {
+  Future<void> computeGrades(String classId, int term) async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _computeGrades(classId: classId, termNumber: quarter);
+    final result = await _computeGrades(classId: classId, termNumber: term);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (_) => state = state.copyWith(isLoading: false),
     );
   }
 
-  Future<void> loadSummary(String classId, int quarter) async {
+  Future<void> loadSummary(String classId, int term) async {
     state = state.copyWith(isLoading: state.summary == null || state.summary!.isEmpty, error: null);
-    final result = await _getGradeSummary(classId: classId, termNumber: quarter);
+    final result = await _getGradeSummary(classId: classId, termNumber: term);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (summary) => state = state.copyWith(isLoading: false, summary: summary),
     );
   }
 
-  Future<void> updatePeriodGrade({
+  Future<void> updateTermGrade({
     required String classId,
     required String studentId,
-    required int quarter,
+    required int term,
     required int transmutedGrade,
   }) async {
     state = state.copyWith(error: null);
-    final result = await _updatePeriodGrade(
+    final result = await _updateTermGrade(
       classId: classId,
       studentId: studentId,
-      termNumber: quarter,
+      termNumber: term,
       transmutedGrade: transmutedGrade,
     );
     result.fold(
@@ -744,6 +744,6 @@ final termGradesProvider = StateNotifierProvider<TermGradesNotifier, TermGradesS
     sl<GetTermGrades>(),
     sl<ComputeGrades>(),
     sl<GetGradeSummary>(),
-    sl<UpdatePeriodGrade>(),
+    sl<UpdateTermGrade>(),
   );
 });

@@ -20,8 +20,9 @@ impl crate::modules::tos::service::TosService {
             ));
         }
 
-        if !(1..=4).contains(&request.term_number) {
-            return Err(AppError::BadRequest("term_number must be between 1 and 4".to_string()));
+        let max_terms = crate::modules::grading::helpers::term_count::term_count("term") as i32;
+        if !(1..=max_terms).contains(&request.term_number) {
+            return Err(AppError::BadRequest(format!("term_number must be between 1 and {}", max_terms)));
         }
 
         let time_unit = request.time_unit.as_deref().unwrap_or("days");

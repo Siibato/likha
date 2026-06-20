@@ -4,7 +4,7 @@ import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
@@ -64,7 +64,7 @@ abstract class GradingRepository {
   ResultFuture<MutationResult<void>> clearScoreOverride({required String scoreId});
 
   // Computed Grades
-  ResultFuture<List<PeriodGrade>> getTermGrades({
+  ResultFuture<List<TermGrade>> getTermGrades({
     required String classId,
     required int termNumber,
   });
@@ -91,7 +91,7 @@ abstract class GradingRepository {
   });
 
   // Student
-  ResultFuture<List<PeriodGrade>> getMyGrades({required String classId});
+  ResultFuture<List<TermGrade>> getMyGrades({required String classId});
 
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,

@@ -109,7 +109,7 @@ abstract class AssessmentLocalDataSource {
     required List<QuestionModel> questions,
     bool isPublished = true,
     String? linkedTosId,
-    int? quarter,
+    int? termNumber,
     String? component,
     Transaction? txn,
   });
@@ -371,7 +371,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     required List<QuestionModel> questions,
     bool isPublished = true,
     String? linkedTosId,
-    int? quarter,
+    int? termNumber,
     String? component,
     Transaction? txn,
   }) =>
@@ -387,7 +387,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         questions,
         isPublished,
         linkedTosId,
-        quarter,
+        termNumber,
         component,
         id: id,
         txn: txn,

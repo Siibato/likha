@@ -133,7 +133,7 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
           questions: questionModels,
           isPublished: isPublished,
           linkedTosId: tosId,
-          quarter: termNumber,
+          termNumber: termNumber,
           component: component,
           txn: txn,
         );

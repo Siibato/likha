@@ -18,7 +18,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
   final DateTime closeAt;
   final bool showResultsImmediately;
   final bool isPublished;
-  final int? quarter;
+  final int? termNumber;
   final String? component;
   final bool isDepartmentalExam;
   final String? linkedTosId;
@@ -28,7 +28,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
   final ValueChanged<DateTime> onCloseAtChanged;
   final void Function(bool) onShowResultsChanged;
   final void Function(bool) onPublishChanged;
-  final void Function(int?) onQuarterChanged;
+  final void Function(int?) onTermChanged;
   final void Function(String?) onComponentChanged;
   final void Function(bool) onDepartmentalExamChanged;
   final void Function(String?) onLinkedTosChanged;
@@ -44,7 +44,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
     required this.closeAt,
     required this.showResultsImmediately,
     required this.isPublished,
-    required this.quarter,
+    required this.termNumber,
     required this.component,
     required this.isDepartmentalExam,
     required this.linkedTosId,
@@ -54,7 +54,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
     required this.onCloseAtChanged,
     required this.onShowResultsChanged,
     required this.onPublishChanged,
-    required this.onQuarterChanged,
+    required this.onTermChanged,
     required this.onComponentChanged,
     required this.onDepartmentalExamChanged,
     required this.onLinkedTosChanged,
@@ -147,19 +147,19 @@ class AssessmentSettingsPanel extends StatelessWidget {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<int?>(
-              initialValue: quarter,
-              decoration: assessmentInputDecoration('Quarter (for grading)'),
+              initialValue: termNumber,
+              decoration: assessmentInputDecoration('Term (for grading)'),
               items: [
                 const DropdownMenuItem(value: null, child: Text('None')),
                 ...List.generate(
                   4,
                   (i) => DropdownMenuItem(
                     value: i + 1,
-                    child: Text('Quarter ${i + 1}'),
+                    child: Text('Term ${i + 1}'),
                   ),
                 ),
               ],
-              onChanged: isSaving ? null : onQuarterChanged,
+              onChanged: isSaving ? null : onTermChanged,
             ),
             const SizedBox(height: 16),
 
@@ -175,7 +175,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
                 ),
                 DropdownMenuItem(
                   value: 'qa',
-                  child: Text('Quarterly Assessment'),
+                  child: Text('Term Assessment'),
                 ),
               ],
               onChanged: isSaving ? null : onComponentChanged,
@@ -185,7 +185,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
               const SizedBox(height: 8),
               AssessmentSwitchTile(
                 title: 'Departmental Exam',
-                subtitle: 'Mark as departmental quarterly exam',
+                subtitle: 'Mark as departmental term exam',
                 value: isDepartmentalExam,
                 onChanged: isSaving ? null : onDepartmentalExamChanged,
               ),
@@ -202,7 +202,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
                     (tos) => DropdownMenuItem(
                       value: tos.id,
                       child: Text(
-                        '${tos.title} (Q${tos.termNumber})',
+                        '${tos.title} (T${tos.termNumber})',
                       ),
                     ),
                   ),

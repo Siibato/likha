@@ -3,7 +3,7 @@ import 'package:likha/core/grade_computation_util.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 
 void main() {
   group('GradeComputationUtil', () {
@@ -63,7 +63,7 @@ void main() {
         final items = [
           createItem(id: 'ww1', component: 'written_work', totalPoints: 100),
           createItem(id: 'pt1', component: 'performance_task', totalPoints: 100),
-          createItem(id: 'qa1', component: 'period_assessment', totalPoints: 100),
+          createItem(id: 'qa1', component: 'term_assessment', totalPoints: 100),
         ];
         final scoresByItem = {
           'ww1': [createScore(itemId: 'ww1', score: 80)], // 80%
@@ -204,7 +204,7 @@ void main() {
         final items = [
           createItem(id: 'ww1', component: 'written_work'),
           createItem(id: 'pt1', component: 'performance_task'),
-          createItem(id: 'qa1', component: 'period_assessment'),
+          createItem(id: 'qa1', component: 'term_assessment'),
         ];
         final scoresByItem = {
           'ww1': [createScore(itemId: 'ww1', score: 80)], // 80 * 0.40 = 32
@@ -294,7 +294,7 @@ void main() {
 
       test('returns null when no grades are locked', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -309,7 +309,7 @@ void main() {
 
       test('returns null when no grades have transmuted grades', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -324,7 +324,7 @@ void main() {
 
       test('computes average of single locked grade', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -339,7 +339,7 @@ void main() {
 
       test('computes average of multiple locked grades', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -348,7 +348,7 @@ void main() {
             transmutedGrade: 84,
             isLocked: true,
           ),
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg2',
             classId: 'class-1',
             studentId: 'student-1',
@@ -364,7 +364,7 @@ void main() {
 
       test('ignores unlocked grades in average', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -373,7 +373,7 @@ void main() {
             transmutedGrade: 84,
             isLocked: true,
           ),
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg2',
             classId: 'class-1',
             studentId: 'student-1',
@@ -388,7 +388,7 @@ void main() {
 
       test('ignores grades with null transmuted in average', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -397,7 +397,7 @@ void main() {
             transmutedGrade: 84,
             isLocked: true,
           ),
-          const PeriodGrade(
+          const TermGrade(
             id: 'pg2',
             classId: 'class-1',
             studentId: 'student-1',
@@ -410,9 +410,9 @@ void main() {
         expect(GradeComputationUtil.computeFinalGrade(grades), equals(84.0));
       });
 
-      test('handles all four quarters (SF10 use case)', () {
+      test('handles all four terms (SF10 use case)', () {
         final grades = [
-          const PeriodGrade(
+          const TermGrade(
             id: 'q1',
             classId: 'class-1',
             studentId: 'student-1',
@@ -421,7 +421,7 @@ void main() {
             transmutedGrade: 88,
             isLocked: true,
           ),
-          const PeriodGrade(
+          const TermGrade(
             id: 'q2',
             classId: 'class-1',
             studentId: 'student-1',
@@ -430,7 +430,7 @@ void main() {
             transmutedGrade: 89,
             isLocked: true,
           ),
-          const PeriodGrade(
+          const TermGrade(
             id: 'q3',
             classId: 'class-1',
             studentId: 'student-1',
@@ -439,7 +439,7 @@ void main() {
             transmutedGrade: 88,
             isLocked: true,
           ),
-          const PeriodGrade(
+          const TermGrade(
             id: 'q4',
             classId: 'class-1',
             studentId: 'student-1',

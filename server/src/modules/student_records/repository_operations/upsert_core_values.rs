@@ -11,8 +11,7 @@ pub async fn upsert_core_values(
     class_id: Uuid,
     school_year: String,
     term_number: i32,
-    core_value: String,
-    behavior_statement: String,
+    core_value_id: i32,
     marking: String,
 ) -> AppResult<core_values_records::Model> {
     let now = Utc::now().naive_utc();
@@ -22,8 +21,7 @@ pub async fn upsert_core_values(
         .filter(core_values_records::Column::ClassId.eq(class_id))
         .filter(core_values_records::Column::SchoolYear.eq(&school_year))
         .filter(core_values_records::Column::TermNumber.eq(term_number))
-        .filter(core_values_records::Column::CoreValue.eq(&core_value))
-        .filter(core_values_records::Column::BehaviorStatement.eq(&behavior_statement))
+        .filter(core_values_records::Column::CoreValueId.eq(core_value_id))
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
@@ -42,8 +40,7 @@ pub async fn upsert_core_values(
             class_id: sea_orm::ActiveValue::Set(class_id),
             school_year: sea_orm::ActiveValue::Set(school_year),
             term_number: sea_orm::ActiveValue::Set(term_number),
-            core_value: sea_orm::ActiveValue::Set(core_value),
-            behavior_statement: sea_orm::ActiveValue::Set(behavior_statement),
+            core_value_id: sea_orm::ActiveValue::Set(core_value_id),
             marking: sea_orm::ActiveValue::Set(marking),
             created_at: sea_orm::ActiveValue::Set(now),
             updated_at: sea_orm::ActiveValue::Set(now),

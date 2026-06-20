@@ -1,12 +1,12 @@
 //! Demo seeding fixtures for focused demonstration dataset.
 //!
 //! 1 teacher + 30 students, 2 classes (Science 10 + Advisory 10),
-//! 4 quarters of complete assessments, assignments, and learning modules.
+//! 4 terms of complete assessments, assignments, and learning modules.
 
-pub mod q1;
-pub mod q2;
-pub mod q3;
-pub mod q4;
+pub mod t1;
+pub mod t2;
+pub mod t3;
+pub mod t4;
 pub mod base;
 
 use uuid::Uuid;
@@ -22,15 +22,15 @@ pub fn tid(key: &str) -> Uuid { seed_id("tos", key) }
 pub fn compid(key: &str) -> Uuid { seed_id("competencies", key) }
 pub fn aid(key: &str) -> Uuid { seed_id("assessments", key) }
 pub fn qid(prefix: &str, n: u32) -> Uuid { seed_id("questions", &format!("{prefix}_q{n}")) }
-pub fn chid(q_key: &str, n: u32) -> Uuid { seed_id("choices", &format!("{q_key}_c{n}")) }
+pub fn chid(t_key: &str, n: u32) -> Uuid { seed_id("choices", &format!("{t_key}_c{n}")) }
 pub fn asid(key: &str) -> Uuid { seed_id("assignments", key) }
 pub fn mid(key: &str) -> Uuid { seed_id("materials", key) }
 
 // ─── Choice / Question helpers ─────────────────────────────────────────────
 
-pub fn mc_choices(q_key: &str, texts: &[&str], correct_idx: usize) -> Vec<ChoiceSpec> {
+pub fn mc_choices(t_key: &str, texts: &[&str], correct_idx: usize) -> Vec<ChoiceSpec> {
     texts.iter().enumerate().map(|(i, t)| ChoiceSpec {
-        id: chid(q_key, i as u32),
+        id: chid(t_key, i as u32),
         text: (*t).into(),
         is_correct: i == correct_idx,
         order: i as i32,
@@ -47,7 +47,7 @@ pub fn build_questions(
     let mut qs = Vec::new();
     let mut idx = 0;
     for (text, choices, correct, diff, cog) in mcqs {
-        let q_key = format!("{prefix}_q{idx}");
+        let t_key = format!("{prefix}_q{idx}");
         let comp = comps[idx % comps.len()];
         qs.push(QuestionSpec {
             id: qid(prefix, idx as u32),
@@ -59,7 +59,7 @@ pub fn build_questions(
             tos_competency_id: Some(comp),
             difficulty: Some((*diff).into()),
             cognitive_level: Some((*cog).into()),
-            choices: mc_choices(&q_key, choices, *correct),
+            choices: mc_choices(&t_key, choices, *correct),
             answer_key: AnswerKeySpec {
                 acceptable_answers: if *correct < choices.len() { vec![choices[*correct].into()] } else { vec![] }
             },
@@ -103,10 +103,10 @@ pub fn build_questions(
     qs
 }
 
-// ─── QuarterAnswers ────────────────────────────────────────────────────────
+// ─── TermAnswers ────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
-pub struct QuarterAnswers {
+pub struct TermAnswers {
     pub exam_essay_1: [String; 4],
     pub exam_essay_2: [String; 4],
     pub assignment_1: [String; 4],
@@ -145,36 +145,36 @@ pub fn demo_competencies() -> Vec<CompetencySpec> {
 
 pub fn demo_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
     let mut materials = Vec::new();
-    materials.extend(q1::materials::demo_materials_q1(ctx));
-    materials.extend(q2::materials::demo_materials_q2(ctx));
-    materials.extend(q3::materials::demo_materials_q3(ctx));
-    materials.extend(q4::materials::demo_materials_q4(ctx));
+    materials.extend(t1::materials::demo_materials_t1(ctx));
+    materials.extend(t2::materials::demo_materials_t2(ctx));
+    materials.extend(t3::materials::demo_materials_t3(ctx));
+    materials.extend(t4::materials::demo_materials_t4(ctx));
     materials
 }
 
 pub fn demo_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let mut assessments = Vec::new();
-    assessments.extend(q1::assessments::demo_assessments_q1(ctx));
-    assessments.extend(q2::assessments::demo_assessments_q2(ctx));
-    assessments.extend(q3::assessments::demo_assessments_q3(ctx));
-    assessments.extend(q4::assessments::demo_assessments_q4(ctx));
+    assessments.extend(t1::assessments::demo_assessments_t1(ctx));
+    assessments.extend(t2::assessments::demo_assessments_t2(ctx));
+    assessments.extend(t3::assessments::demo_assessments_t3(ctx));
+    assessments.extend(t4::assessments::demo_assessments_t4(ctx));
     assessments
 }
 
 pub fn demo_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     let mut assignments = Vec::new();
-    assignments.extend(q1::assignments::demo_assignments_q1(ctx));
-    assignments.extend(q2::assignments::demo_assignments_q2(ctx));
-    assignments.extend(q3::assignments::demo_assignments_q3(ctx));
-    assignments.extend(q4::assignments::demo_assignments_q4(ctx));
+    assignments.extend(t1::assignments::demo_assignments_t1(ctx));
+    assignments.extend(t2::assignments::demo_assignments_t2(ctx));
+    assignments.extend(t3::assignments::demo_assignments_t3(ctx));
+    assignments.extend(t4::assignments::demo_assignments_t4(ctx));
     assignments
 }
 
-pub fn demo_answers() -> std::collections::HashMap<String, QuarterAnswers> {
+pub fn demo_answers() -> std::collections::HashMap<String, TermAnswers> {
     let mut map = std::collections::HashMap::new();
-    map.insert("q1".into(), q1::answers::demo_answers_q1());
-    map.insert("q2".into(), q2::answers::demo_answers_q2());
-    map.insert("q3".into(), q3::answers::demo_answers_q3());
-    map.insert("q4".into(), q4::answers::demo_answers_q4());
+    map.insert("t1".into(), t1::answers::demo_answers_t1());
+    map.insert("t2".into(), t2::answers::demo_answers_t2());
+    map.insert("t3".into(), t3::answers::demo_answers_t3());
+    map.insert("t4".into(), t4::answers::demo_answers_t4());
     map
 }

@@ -1,11 +1,11 @@
 //! Realistic seeding fixtures with Filipino names and Grade 9 English/Science content.
-//! Organized by quarter for maintainability.
+//! Organized by term for maintainability.
 
 pub mod common;
-pub mod q1;
-pub mod q2;
-pub mod q3;
-pub mod q4;
+pub mod t1;
+pub mod t2;
+pub mod t3;
+pub mod t4;
 
 use uuid::Uuid;
 use crate::seed::specs::*;
@@ -140,18 +140,18 @@ pub fn realistic_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
 
 pub fn realistic_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let mut assessments = Vec::new();
-    assessments.extend(q1::assessments::realistic_assessments_q1(ctx));
-    assessments.extend(q2::assessments::realistic_assessments_q2(ctx));
-    assessments.extend(q3::assessments::realistic_assessments_q3(ctx));
-    assessments.extend(q4::assessments::realistic_assessments_q4(ctx));
+    assessments.extend(t1::assessments::realistic_assessments_t1(ctx));
+    assessments.extend(t2::assessments::realistic_assessments_t2(ctx));
+    assessments.extend(t3::assessments::realistic_assessments_t3(ctx));
+    assessments.extend(t4::assessments::realistic_assessments_t4(ctx));
     assessments
 }
 
 pub fn realistic_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     let mut assignments = Vec::new();
-    assignments.extend(q1::assignments::realistic_assignments_q1(ctx));
-    assignments.extend(q2::assignments::realistic_assignments_q2(ctx));
-    assignments.extend(q3::assignments::realistic_assignments_q3(ctx));
-    assignments.extend(q4::assignments::realistic_assignments_q4(ctx));
+    assignments.extend(t1::assignments::realistic_assignments_t1(ctx));
+    assignments.extend(t2::assignments::realistic_assignments_t2(ctx));
+    assignments.extend(t3::assignments::realistic_assignments_t3(ctx));
+    assignments.extend(t4::assignments::realistic_assignments_t4(ctx));
     assignments
 }

@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/domain/grading/usecases/get_final_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/final_grade_table.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_stats_footer.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/grade/period_grade_table.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/term_grade_table.dart';
 import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
 class GradeSummaryPage extends ConsumerStatefulWidget {
   final String classId;
-  final int initialQuarter;
+  final int initialTerm;
 
   const GradeSummaryPage({
     super.key,
     required this.classId,
-    this.initialQuarter = 1,
+    this.initialTerm = 1,
   });
 
   @override
@@ -26,7 +27,7 @@ class GradeSummaryPage extends ConsumerStatefulWidget {
 
 class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     with SingleTickerProviderStateMixin {
-  late int _selectedQuarter;
+  late int _selectedTerm;
   late TabController _tabController;
 
   List<Map<String, dynamic>>? _finalGrades;
@@ -36,11 +37,11 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   @override
   void initState() {
     super.initState();
-    _selectedQuarter = widget.initialQuarter;
+    _selectedTerm = widget.initialTerm;
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadQuarterlySummary();
+      _loadTermSummary();
       ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
     });
   }
@@ -53,10 +54,10 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     }
   }
 
-  void _loadQuarterlySummary() {
+  void _loadTermSummary() {
     ref
         .read(termGradesProvider.notifier)
-        .loadSummary(widget.classId, _selectedQuarter);
+        .loadSummary(widget.classId, _selectedTerm);
   }
 
   Future<void> _loadFinalGrades() async {
@@ -80,9 +81,9 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     );
   }
 
-  void _onQuarterChanged(int quarter) {
-    setState(() => _selectedQuarter = quarter);
-    _loadQuarterlySummary();
+  void _onTermChanged(int term) {
+    setState(() => _selectedTerm = term);
+    _loadTermSummary();
   }
 
   @override
@@ -107,21 +108,21 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
               showBackButton: true,
             ),
 
-            // Quarter selector
+            // Term selector
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Row(
-                children: List.generate(4, (i) {
+                children: List.generate(termCountFromType(null), (i) {
                   final q = i + 1;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text('Q$q'),
-                      selected: _selectedQuarter == q,
+                      label: Text('T$q'),
+                      selected: _selectedTerm == q,
                       selectedColor: AppColors.accentCharcoal,
                       backgroundColor: Colors.white,
                       labelStyle: TextStyle(
-                        color: _selectedQuarter == q
+                        color: _selectedTerm == q
                             ? Colors.white
                             : AppColors.foregroundSecondary,
                         fontWeight: FontWeight.w600,
@@ -130,12 +131,12 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
-                          color: _selectedQuarter == q
+                          color: _selectedTerm == q
                               ? AppColors.accentCharcoal
                               : AppColors.borderLight,
                         ),
                       ),
-                      onSelected: (_) => _onQuarterChanged(q),
+                      onSelected: (_) => _onTermChanged(q),
                     ),
                   );
                 }),
@@ -169,7 +170,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 tabs: const [
-                  Tab(text: 'Quarterly'),
+                  Tab(text: 'Term'),
                   Tab(text: 'Final Grades'),
                 ],
               ),
@@ -180,7 +181,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildQuarterlyTab(gradesState, configState),
+                  _buildTermTab(gradesState, configState),
                   _buildFinalGradesTab(),
                 ],
               ),
@@ -192,10 +193,10 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   }
 
   // ---------------------------------------------------------------------------
-  // Quarterly Tab
+  // Term Tab
   // ---------------------------------------------------------------------------
 
-  Widget _buildQuarterlyTab(
+  Widget _buildTermTab(
     TermGradesState gradesState,
     GradingConfigState configState,
   ) {
@@ -243,7 +244,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
       );
     }
 
-    // Resolve component weights for the selected quarter
+    // Resolve component weights for the selected term
     final wwWeight = _getWeight(configState.configs, 'ww');
     final ptWeight = _getWeight(configState.configs, 'pt');
     final qaWeight = _getWeight(configState.configs, 'qa');
@@ -251,16 +252,16 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     return Column(
       children: [
         Expanded(
-          child: PeriodGradeTable(
+          child: TermGradeTable(
             summary: summary,
             wwWeight: wwWeight,
             ptWeight: ptWeight,
             qaWeight: qaWeight,
             onQgChanged: (studentId, grade) {
-              ref.read(termGradesProvider.notifier).updatePeriodGrade(
+              ref.read(termGradesProvider.notifier).updateTermGrade(
                     classId: widget.classId,
                     studentId: studentId,
-                    quarter: _selectedQuarter,
+                    term: _selectedTerm,
                     transmutedGrade: grade,
                   );
             },
@@ -324,7 +325,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
             ),
             SizedBox(height: 4),
             Text(
-              'Compute quarterly grades first',
+              'Compute term grades first',
               style: TextStyle(fontSize: 12, color: AppColors.foregroundLight),
             ),
           ],
@@ -341,7 +342,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   double _getWeight(List<dynamic> configs, String component) {
     for (final config in configs) {
-      if (config.quarter == _selectedQuarter) {
+      if (config.termNumber == _selectedTerm) {
         return switch (component) {
           'ww' => config.wwWeight as double,
           'pt' => config.ptWeight as double,

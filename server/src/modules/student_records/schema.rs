@@ -35,8 +35,7 @@ pub struct UpsertCoreValuesRequest {
     pub class_id: String,
     pub school_year: String,
     pub term_number: i32,
-    pub core_value: String,
-    pub behavior_statement: String,
+    pub core_value_id: i32,
     pub marking: String,
 }
 
@@ -137,8 +136,7 @@ pub struct CoreValuesResponse {
     pub class_id: String,
     pub school_year: String,
     pub term_number: i32,
-    pub core_value: String,
-    pub behavior_statement: String,
+    pub core_value_id: i32,
     pub marking: String,
 }
 
@@ -306,8 +304,7 @@ impl From<::entity::core_values_records::Model> for CoreValuesResponse {
             class_id: m.class_id.to_string(),
             school_year: m.school_year,
             term_number: m.term_number,
-            core_value: m.core_value,
-            behavior_statement: m.behavior_statement,
+            core_value_id: m.core_value_id,
             marking: m.marking,
         }
     }

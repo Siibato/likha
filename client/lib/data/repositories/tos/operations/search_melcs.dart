@@ -44,7 +44,7 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
           remote: () => remoteDataSource.searchMelcs(
             subject: subject,
             gradeLevel: gradeLevel,
-            quarter: termNumber,
+            termNumber: termNumber,
             query: query,
             limit: limit,
             offset: offset,
@@ -72,7 +72,7 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
         remote: () => remoteDataSource.searchMelcs(
           subject: subject,
           gradeLevel: gradeLevel,
-          quarter: termNumber,
+          termNumber: termNumber,
           query: query,
           limit: limit,
           offset: offset,

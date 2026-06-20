@@ -1,5 +1,6 @@
 pub mod activity_logs;
 pub mod attendance_records;
+pub mod core_values;
 pub mod core_values_records;
 pub mod previous_school_attendance;
 pub mod previous_school_subjects;
@@ -34,6 +35,7 @@ pub mod users;
 
 pub use activity_logs::Entity as ActivityLogs;
 pub use attendance_records::Entity as AttendanceRecords;
+pub use core_values::Entity as CoreValues;
 pub use core_values_records::Entity as CoreValuesRecords;
 pub use previous_school_attendance::Entity as PreviousSchoolAttendance;
 pub use previous_school_subjects::Entity as PreviousSchoolSubjects;
@@ -69,6 +71,7 @@ pub use users::Entity as Users;
 pub mod prelude {
     pub use super::activity_logs::{self, Entity as ActivityLogs};
     pub use super::attendance_records::{self, Entity as AttendanceRecords};
+    pub use super::core_values::{self, Entity as CoreValues};
     pub use super::core_values_records::{self, Entity as CoreValuesRecords};
     pub use super::previous_school_attendance::{self, Entity as PreviousSchoolAttendance};
     pub use super::previous_school_subjects::{self, Entity as PreviousSchoolSubjects};

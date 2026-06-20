@@ -25,8 +25,7 @@ ResultFuture<CoreValuesRecord> upsertCoreValues(
       classId: classId,
       schoolYear: data['school_year'] as String,
       termNumber: data['term_number'] as int,
-      coreValue: data['core_value'] as String,
-      behaviorStatement: data['behavior_statement'] as String,
+      coreValueId: data['core_value_id'] as int,
       marking: data['marking'] as String,
     );
 

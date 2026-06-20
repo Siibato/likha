@@ -2,7 +2,7 @@ import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 import 'package:likha/data/models/grading/general_average_model.dart';
 import 'package:likha/data/models/grading/sf9_model.dart';
 import 'package:likha/data/datasources/remote/grading/operations/grading.dart' as ops;
@@ -60,7 +60,7 @@ abstract class GradingRemoteDataSource {
   Future<void> clearScoreOverride({required String scoreId, String? idempotencyKey});
 
   // Computed Grades
-  Future<List<PeriodGradeModel>> getTermGrades({
+  Future<List<TermGradeModel>> getTermGrades({
     required String classId,
     required int termNumber,
   });
@@ -75,7 +75,7 @@ abstract class GradingRemoteDataSource {
   Future<List<Map<String, dynamic>>> getFinalGrades({required String classId});
 
   // Student
-  Future<List<PeriodGradeModel>> getMyGrades({required String classId});
+  Future<List<TermGradeModel>> getMyGrades({required String classId});
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
     required int termNumber,
@@ -252,7 +252,7 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   // ===== Computed Grades =====
 
   @override
-  Future<List<PeriodGradeModel>> getTermGrades({
+  Future<List<TermGradeModel>> getTermGrades({
     required String classId,
     required int termNumber,
   }) =>
@@ -296,7 +296,7 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   // ===== Student =====
 
   @override
-  Future<List<PeriodGradeModel>> getMyGrades({
+  Future<List<TermGradeModel>> getMyGrades({
     required String classId,
   }) =>
       ops.getMyGrades(

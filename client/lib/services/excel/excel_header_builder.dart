@@ -66,7 +66,7 @@ class ExcelHeaderBuilder {
   }
 
   void _buildClassInfoRow(Sheet sheet, GradeExportContext ctx, int row, int totalCols) {
-    // Minimum columns needed: quarter(1) + gs_label(1) + gs_value(2) +
+    // Minimum columns needed: term(1) + gs_label(1) + gs_value(2) +
     //   teacher_label(1) + teacher_value(2) + subject_label(1) + subject_value(2) + box(1) = 11
     int gsValueSpan = 2;
     int teacherValueSpan = 2;
@@ -89,8 +89,8 @@ class ExcelHeaderBuilder {
 
     var col = 0;
 
-    // Quarter label
-    ExcelStyleUtils.setCell(sheet, row, col, ctx.quarterLabel,
+    // Term label
+    ExcelStyleUtils.setCell(sheet, row, col, ctx.termLabel,
         bold: true, fontSize: 8);
     col += 1;
 
@@ -130,9 +130,9 @@ class ExcelHeaderBuilder {
     }
     col += subjectValueSpan;
 
-    // Quarter box (remaining columns)
+    // Term box (remaining columns)
     if (col < totalCols) {
-      ExcelStyleUtils.setCell(sheet, row, col, ctx.quarterLabel,
+      ExcelStyleUtils.setCell(sheet, row, col, ctx.termLabel,
           bold: true, fontSize: 9, bgColor: '#D9D9D9',
           hAlign: HorizontalAlign.Center, allBorders: true);
       if (col + 1 < totalCols) {

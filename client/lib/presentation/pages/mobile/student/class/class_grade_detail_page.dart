@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/usecases/get_my_grade_detail.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
 import 'package:likha/injection_container.dart';
@@ -12,7 +12,7 @@ import 'package:likha/presentation/widgets/mobile/student/grade/grade_component_
 import 'package:likha/presentation/widgets/mobile/student/grade/grade_item_models.dart';
 import 'package:likha/presentation/widgets/mobile/student/grade/grade_summary_section.dart';
 import 'package:likha/presentation/widgets/mobile/student/grade/overall_grade_banner.dart';
-import 'package:likha/presentation/widgets/mobile/student/grade/quarter_selector.dart';
+import 'package:likha/presentation/widgets/mobile/student/grade/term_selector.dart';
 
 class StudentClassGradeDetailPage extends ConsumerStatefulWidget {
   final String classId;
@@ -31,12 +31,12 @@ class StudentClassGradeDetailPage extends ConsumerStatefulWidget {
 
 class _StudentClassGradeDetailPageState
     extends ConsumerState<StudentClassGradeDetailPage> {
-  int _selectedQuarter = 1;
+  int _selectedTerm = 1;
   bool _isLoading = false;
   String? _error;
 
-  List<PeriodGrade> _termGrades = [];
-  PeriodGrade? _currentQuarterGrade;
+  List<TermGrade> _termGrades = [];
+  TermGrade? _currentTermGrade;
   List<GradeItemDetail> _items = [];
   GradingConfig? _config;
 
@@ -71,32 +71,32 @@ class _StudentClassGradeDetailPageState
             if (withGrades.isNotEmpty) {
               withGrades.sort(
                   (a, b) => b.termNumber.compareTo(a.termNumber));
-              _selectedQuarter = withGrades.first.termNumber;
+              _selectedTerm = withGrades.first.termNumber;
             }
           }
-          _loadQuarterDetail();
+          _loadTermDetail();
         }
       },
     );
   }
 
-  Future<void> _loadQuarterDetail() async {
+  Future<void> _loadTermDetail() async {
     setState(() {
       _isLoading = true;
       _error = null;
       _items = [];
       _config = null;
-      _currentQuarterGrade = null;
+      _currentTermGrade = null;
     });
 
     final qg = _termGrades
-        .where((g) => g.termNumber == _selectedQuarter)
+        .where((g) => g.termNumber == _selectedTerm)
         .toList();
-    if (qg.isNotEmpty) _currentQuarterGrade = qg.first;
+    if (qg.isNotEmpty) _currentTermGrade = qg.first;
 
     final result = await sl<GetMyGradeDetail>()(
       classId: widget.classId,
-      termNumber: _selectedQuarter,
+      termNumber: _selectedTerm,
     );
 
     result.fold(
@@ -118,14 +118,14 @@ class _StudentClassGradeDetailPageState
   }
 
   void _parseDetailResponse(Map<String, dynamic> data) {
-    final qgMap = data['quarterly_grade'] as Map<String, dynamic>?;
+    final qgMap = data['term_grade'] as Map<String, dynamic>?;
     if (qgMap != null) {
-      _currentQuarterGrade = PeriodGrade(
+      _currentTermGrade = TermGrade(
         id: qgMap['id']?.toString() ?? '',
         classId: qgMap['class_id']?.toString() ?? widget.classId,
         studentId: qgMap['student_id']?.toString() ?? '',
         termNumber:
-            (qgMap['quarter'] as num?)?.toInt() ?? _selectedQuarter,
+            (qgMap['term_number'] as num?)?.toInt() ?? _selectedTerm,
         initialGrade: (qgMap['initial_grade'] as num?)?.toDouble(),
         transmutedGrade: (qgMap['transmuted_grade'] as num?)?.toInt(),
         isLocked: qgMap['is_locked'] == true || qgMap['is_locked'] == 1,
@@ -188,21 +188,21 @@ class _StudentClassGradeDetailPageState
   }
 
   Widget _buildContent() {
-    final qg = _currentQuarterGrade;
+    final qg = _currentTermGrade;
     final hasGrade = qg?.transmutedGrade != null;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       children: [
         const SizedBox(height: 8),
-        OverallGradeBanner(quarterGrade: qg),
+        OverallGradeBanner(termGrade: qg),
         const SizedBox(height: 20),
-        QuarterSelector(
-          selectedQuarter: _selectedQuarter,
+        TermSelector(
+          selectedTerm: _selectedTerm,
           termGrades: _termGrades,
-          onChanged: (quarter) {
-            setState(() => _selectedQuarter = quarter);
-            _loadQuarterDetail();
+          onChanged: (term) {
+            setState(() => _selectedTerm = term);
+            _loadTermDetail();
           },
         ),
         const SizedBox(height: 20),
@@ -222,15 +222,15 @@ class _StudentClassGradeDetailPageState
           ),
           const SizedBox(height: 14),
           GradeComponentSection(
-            title: 'Quarterly Assessment',
-            component: 'period_assessment',
+            title: 'Term Assessment',
+            component: 'term_assessment',
             weight: _config?.qaWeight ?? 20,
             items: _items,
           ),
           const SizedBox(height: 20),
-          GradeSummarySection(quarterGrade: qg!),
+          GradeSummarySection(termGrade: qg!),
         ] else if (!hasGrade) ...[
-          _buildEmptyQuarterState(),
+          _buildEmptyTermState(),
         ],
         FinalGradeSection(termGrades: _termGrades),
         const SizedBox(height: 32),
@@ -269,7 +269,7 @@ class _StudentClassGradeDetailPageState
     );
   }
 
-  Widget _buildEmptyQuarterState() {
+  Widget _buildEmptyTermState() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: const Column(
@@ -277,7 +277,7 @@ class _StudentClassGradeDetailPageState
           Icon(Icons.assignment_outlined, size: 48, color: AppColors.foregroundLight),
           SizedBox(height: 12),
           Text(
-            'No grades for this quarter',
+            'No grades for this term',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,

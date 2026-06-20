@@ -18,7 +18,7 @@ class UppercaseInputFormatter extends TextInputFormatter {
   }
 }
 
-/// Shared form widget for school settings (name, region, division, school year, and optional code).
+/// Shared form widget for school details (name, region, division, school year, and optional code).
 /// Used by both the first-time setup page and the admin settings page.
 class SchoolDetailsForm extends StatelessWidget {
   final TextEditingController schoolNameController;

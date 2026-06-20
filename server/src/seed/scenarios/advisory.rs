@@ -62,7 +62,7 @@ pub async fn seed_advisory_world(db: &DatabaseConnection) -> Result<(), AppError
 
     println!(
         "Advisory seed complete: {} users, {} classes, {} enrollments, {} learner details, \
-         {} grade records, {} grade items, {} grade scores, {} period grades, \
+         {} grade records, {} grade items, {} grade scores, {} term grades, \
          {} attendance records, {} core values records, \
          {} school history, {} previous subjects, {} previous attendance",
         users.len(), classes.len(), enrollments.len(), learner_details.len(),

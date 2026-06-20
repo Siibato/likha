@@ -10,14 +10,14 @@ String _getDescriptor(int grade) {
   return 'Did Not Meet Expectations';
 }
 
-int _periodCount(String termType) {
+int _termCount(String termType) {
   switch (termType) {
     case 'semester':
       return 2;
     case 'trimester':
       return 3;
     default:
-      return 4;
+      return 3;
   }
 }
 
@@ -45,8 +45,8 @@ Future<Sf10ResponseModel?> assembleSf10Local(
   final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
   final section = classRow[ClassesCols.title] as String?;
   final termType =
-      classRow[ClassesCols.termType] as String? ?? 'quarter';
-  final numPeriods = _periodCount(termType);
+      classRow[ClassesCols.termType] as String? ?? 'term';
+  final numTerms = _termCount(termType);
 
   // 2. Get student name
   final userRows = await db.query(
@@ -109,19 +109,19 @@ Future<Sf10ResponseModel?> assembleSf10Local(
       whereArgs: [cid, studentId],
     );
 
-    final periodVals = List<int?>.filled(numPeriods, null);
+    final termVals = List<int?>.filled(numTerms, null);
     for (final pg in pgRows) {
-      final periodNum = pg[TermGradesCols.termNumber] as int?;
+      final termNum = pg[TermGradesCols.termNumber] as int?;
       final transmuted = pg[TermGradesCols.transmutedGrade] as int?;
-      if (periodNum != null && transmuted != null) {
-        final idx = periodNum - 1;
-        if (idx >= 0 && idx < numPeriods) {
-          periodVals[idx] = transmuted;
+      if (termNum != null && transmuted != null) {
+        final idx = termNum - 1;
+        if (idx >= 0 && idx < numTerms) {
+          termVals[idx] = transmuted;
         }
       }
     }
 
-    final transmuted = periodVals.whereType<int>().toList();
+    final transmuted = termVals.whereType<int>().toList();
     final int? finalGrade;
     if (transmuted.isEmpty) {
       finalGrade = null;
@@ -138,7 +138,7 @@ Future<Sf10ResponseModel?> assembleSf10Local(
 
     subjects.add(Sf10SubjectRowModel(
       classTitle: ctitle,
-      termGrades: periodVals,
+      termGrades: termVals,
       finalGrade: finalGrade,
       descriptor: descriptor,
     ));

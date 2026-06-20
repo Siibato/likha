@@ -11,7 +11,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
@@ -350,7 +350,7 @@ class FakeEntities {
     overrideScore: overrideScore,
   );
 
-  static PeriodGrade periodGrade({
+  static TermGrade termGrade({
     String? id,
     String? classId,
     String? studentId,
@@ -359,7 +359,7 @@ class FakeEntities {
     int? transmutedGrade,
     bool? isLocked,
     bool? isPreview,
-  }) => PeriodGrade(
+  }) => TermGrade(
     id: id ?? 'grade-1',
     classId: classId ?? 'class-1',
     studentId: studentId ?? 'student-1',

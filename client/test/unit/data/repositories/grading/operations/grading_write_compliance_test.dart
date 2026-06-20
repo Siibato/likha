@@ -13,7 +13,7 @@ import 'package:likha/data/datasources/local/grading/grading_local_datasource.da
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 import 'package:likha/data/repositories/grading/operations/clear_score_override.dart';
 import 'package:likha/data/repositories/grading/operations/create_grade_item.dart';
 import 'package:likha/data/repositories/grading/operations/delete_grade_item.dart';
@@ -89,14 +89,14 @@ GradeScoreModel _fakeScore({
   );
 }
 
-PeriodGradeModel _fakePeriodGrade({
+TermGradeModel _fakeTermGrade({
   String id = 'pg-1',
   String classId = 'class-1',
   String studentId = 'student-1',
   int termNumber = 1,
 }) {
   final now = DateTime.now();
-  return PeriodGradeModel(
+  return TermGradeModel(
     id: id,
     classId: classId,
     studentId: studentId,
@@ -121,7 +121,7 @@ Future<void> _seedScore(GradingLocalDataSource local, GradeScoreModel score) asy
   await local.saveScores([score]);
 }
 
-Future<void> _seedPeriodGrade(GradingLocalDataSource local, PeriodGradeModel pg) async {
+Future<void> _seedTermGrade(GradingLocalDataSource local, TermGradeModel pg) async {
   await local.saveTermGrades([pg]);
 }
 
@@ -183,7 +183,7 @@ Future<Map<String, dynamic>?> _getScoreRow(String id) async {
   return rows.isEmpty ? null : rows.first;
 }
 
-Future<Map<String, dynamic>?> _getPeriodGradeRow(String id) async {
+Future<Map<String, dynamic>?> _getTermGradeRow(String id) async {
   final db = await LocalDatabase().database;
   final rows = await db.query(
     DbTables.termGrades,
@@ -270,7 +270,7 @@ void main() {
         syncQueue,
         classId: 'class-1',
         configs: [
-          {'id': 'c1', 'quarter': 1, 'ww_weight': 35.0, 'pt_weight': 45.0, 'qa_weight': 20.0},
+          {'id': 'c1', 'term_number': 1, 'ww_weight': 35.0, 'pt_weight': 45.0, 'qa_weight': 20.0},
         ],
       );
 
@@ -445,7 +445,7 @@ void main() {
 
   group('updateTransmutedGrade', () {
     test('returns MutationResult<void> with pending and enqueues update op', () async {
-      await _seedPeriodGrade(local, _fakePeriodGrade(id: 'pg1'));
+      await _seedTermGrade(local, _fakeTermGrade(id: 'pg1'));
 
       final result = await updateTransmutedGrade(
         local,
@@ -458,7 +458,7 @@ void main() {
 
       _assertMutationResult(result);
 
-      final row = await _getPeriodGradeRow('pg1');
+      final row = await _getTermGradeRow('pg1');
       expect(row![TermGradesCols.transmutedGrade], 90);
       expect(row[CommonCols.syncStatus], SyncStatus.pending.dbValue);
 

@@ -292,7 +292,7 @@ void main() {
     });
   });
 
-  group('Admin School Settings E2E Flow', () {
+  group('Admin School Details E2E Flow', () {
     testWidgets('admin changes school details and code', (tester) async {
       app.main();
       await tester.pump(const Duration(seconds: 2));

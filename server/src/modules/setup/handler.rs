@@ -76,7 +76,7 @@ pub async fn update_school_code(
     }
 }
 
-/// TEACHER/ADMIN — returns all school settings.
+/// TEACHER/ADMIN — returns all school details.
 pub async fn get_school_details(
     State(setup_service): State<Arc<SetupService>>,
     auth_user: AuthUser,

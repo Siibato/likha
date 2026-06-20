@@ -6,8 +6,7 @@ class CoreValuesRecord extends Equatable {
   final String classId;
   final String schoolYear;
   final int termNumber;
-  final String coreValue;
-  final String behaviorStatement;
+  final int coreValueId;
   final String marking;
 
   const CoreValuesRecord({
@@ -16,8 +15,7 @@ class CoreValuesRecord extends Equatable {
     required this.classId,
     required this.schoolYear,
     required this.termNumber,
-    required this.coreValue,
-    required this.behaviorStatement,
+    required this.coreValueId,
     required this.marking,
   });
 

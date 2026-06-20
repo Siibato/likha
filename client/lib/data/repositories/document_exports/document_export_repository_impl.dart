@@ -12,12 +12,12 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
   @override
   ResultFuture<List<int>> exportClassGradesPdf({
     required String classId,
-    required int period,
+    required int termNumber,
   }) async {
     try {
       final bytes = await _remoteDataSource.exportClassGradesPdf(
         classId: classId,
-        period: period,
+        termNumber: termNumber,
       );
       return Right(bytes);
     } catch (e) {
@@ -28,12 +28,12 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
   @override
   ResultFuture<List<int>> exportClassGradesExcel({
     required String classId,
-    required int period,
+    required int termNumber,
   }) async {
     try {
       final bytes = await _remoteDataSource.exportClassGradesExcel(
         classId: classId,
-        period: period,
+        termNumber: termNumber,
       );
       return Right(bytes);
     } catch (e) {

@@ -72,7 +72,7 @@ class AdminDashboardPage extends ConsumerWidget {
                     const SizedBox(height: 14),
                     NavigationCard(
                       icon: Icons.settings_outlined,
-                      title: 'School Settings',
+                      title: 'School Details',
                       subtitle: 'Configure school info for printed reports',
                       onTap: () => Navigator.push(
                         context,

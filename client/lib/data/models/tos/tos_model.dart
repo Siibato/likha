@@ -30,7 +30,7 @@ class TosModel extends TableOfSpecifications {
     return TosModel(
       id: json['id'] as String,
       classId: json['class_id'] as String,
-      termNumber: json['term_number'] as int? ?? json['quarter'] as int,
+      termNumber: json['term_number'] as int,
       title: json['title'] as String,
       classificationMode: json['classification_mode'] as String,
       totalItems: json['total_items'] as int,

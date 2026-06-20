@@ -26,7 +26,7 @@ impl crate::modules::grading::service::GradeComputationService {
 
         let config = config_opt.ok_or_else(|| {
             AppError::BadRequest(
-                "Grading config not set up for this class/period".to_string(),
+                "Grading config not set up for this class/term".to_string(),
             )
         })?;
 

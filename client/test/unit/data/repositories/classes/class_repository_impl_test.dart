@@ -27,7 +27,7 @@ ClassModel _fakeClass({String id = 'cl-1', String teacherId = 't-1'}) =>
       teacherFullName: 'Teacher One',
       isArchived: false,
       studentCount: 0,
-      termType: 'quarter',
+      termType: 'term',
       createdAt: DateTime(2024, 1, 1),
       updatedAt: DateTime(2024, 1, 1),
       syncStatus: SyncStatus.synced,

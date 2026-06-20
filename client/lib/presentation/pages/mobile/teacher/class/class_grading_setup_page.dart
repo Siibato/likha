@@ -268,7 +268,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
                             ),
                             const SizedBox(height: 10),
                             _WeightRow(
-                              label: 'Quarterly Assessment',
+                              label: 'Term Assessment',
                               percentage: weights.qa,
                             ),
                           ],

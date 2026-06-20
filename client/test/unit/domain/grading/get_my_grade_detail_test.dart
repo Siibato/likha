@@ -23,7 +23,7 @@ void main() {
       'wwGrade': 80.0,
       'ptGrade': 85.0,
       'qaGrade': 90.0,
-      'periodGrade': 84.0,
+      'termGrade': 84.0,
     };
 
     test('should get my grade detail successfully', () async {

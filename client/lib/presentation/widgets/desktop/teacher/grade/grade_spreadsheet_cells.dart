@@ -283,7 +283,7 @@ class GradeRemarksCell extends StatelessWidget {
   }
 }
 
-/// Inline text-editing cell for score or quarterly-grade input.
+/// Inline text-editing cell for score or term-grade input.
 class GradeInlineEditCell extends StatelessWidget {
   final TextEditingController ctrl;
   final FocusNode focus;

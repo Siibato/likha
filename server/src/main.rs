@@ -193,7 +193,6 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
 
-                // Get all table names to clear (excluding migrations)
                 let tables = vec![
                     "users", "classes", "enrollments", "assessments", "assessment_questions",
                     "question_choices", "answer_keys", "tos_competencies", "table_of_specifications",
@@ -202,7 +201,7 @@ async fn main() {
                     "grade_scores", "term_grades", "activity_logs", "advisory_class_students",
                     "sync_manifest", "sync_processed_operations",
                     "student_school_history", "previous_school_subjects", "previous_school_attendance",
-                    "attendance_records", "core_values_records", "learner_details",
+                    "attendance_records", "core_values_records", "core_values", "learner_details",
                 ];
 
                 for table in tables {

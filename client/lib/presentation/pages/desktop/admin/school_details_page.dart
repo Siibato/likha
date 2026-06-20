@@ -262,7 +262,7 @@ class _AdminSchoolDetailsPageState
     final isSaving = providerState.isSaving;
 
     return DesktopPageScaffold(
-      title: 'School Settings',
+      title: 'School Details',
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(

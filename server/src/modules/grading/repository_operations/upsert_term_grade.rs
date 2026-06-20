@@ -48,9 +48,9 @@ pub async fn upsert_term_grade(
 
     db.execute(stmt)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to upsert period grade: {}", e)))?;
+        .map_err(|e| AppError::InternalServerError(format!("Failed to upsert term grade: {}", e)))?;
 
     get_term_grade(db, class_id, student_id, term_number)
         .await?
-        .ok_or_else(|| AppError::InternalServerError("Period grade not found after upsert".to_string()))
+        .ok_or_else(|| AppError::InternalServerError("Term grade not found after upsert".to_string()))
 }

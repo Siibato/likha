@@ -71,7 +71,7 @@ class GradeExportContext {
   final String? section;
   final String? subject;
   final String? teacherName;
-  final int quarter;
+  final int termNumber;
   final SchoolDetails? schoolDetails;
   final GradeConfig? config;
   final SectionInfo ww;
@@ -85,7 +85,7 @@ class GradeExportContext {
     this.section,
     this.subject,
     this.teacherName,
-    required this.quarter,
+    required this.termNumber,
     this.schoolDetails,
     this.config,
     required this.ww,
@@ -94,12 +94,9 @@ class GradeExportContext {
     required this.studentRows,
   });
 
-  String get quarterLabel {
-    final q = quarter;
-    if (q >= 1 && q <= 4) {
-      return 'QUARTER $q';
-    }
-    return 'QUARTER $q';
+  String get termLabel {
+    final t = termNumber;
+    return 'TERM $t';
   }
 
   String? get schoolName => schoolDetails?.schoolName;
@@ -125,7 +122,7 @@ class GradeExportService {
   Future<void> exportToExcel({
     required String classId,
     required String className,
-    required int quarter,
+    required int termNumber,
     required List<Participant> students,
     required List<GradeItem> gradeItems,
     required Map<String, List<GradeScore>> scoresByItem,
@@ -139,7 +136,7 @@ class GradeExportService {
   }) async {
     final ctx = _buildContext(
       className: className,
-      quarter: quarter,
+      termNumber: termNumber,
       students: students,
       gradeItems: gradeItems,
       scoresByItem: scoresByItem,
@@ -158,7 +155,7 @@ class GradeExportService {
   Future<void> exportToPdf({
     required String classId,
     required String className,
-    required int quarter,
+    required int termNumber,
     required List<Participant> students,
     required List<GradeItem> gradeItems,
     required Map<String, List<GradeScore>> scoresByItem,
@@ -179,7 +176,7 @@ class GradeExportService {
     
     final ctx = _buildContext(
       className: className,
-      quarter: quarter,
+      termNumber: termNumber,
       students: students,
       gradeItems: gradeItems,
       scoresByItem: scoresByItem,
@@ -200,7 +197,7 @@ class GradeExportService {
   /// Build export context with all computed values
   GradeExportContext _buildContext({
     required String className,
-    required int quarter,
+    required int termNumber,
     required List<Participant> students,
     required List<GradeItem> gradeItems,
     required Map<String, List<GradeScore>> scoresByItem,
@@ -212,21 +209,21 @@ class GradeExportService {
     String? section,
     String? subject,
   }) {
-    // Filter grade items by quarter
-    final quarterItems = gradeItems
-        .where((item) => item.termNumber == quarter)
+    // Filter grade items by term
+    final termItems = gradeItems
+        .where((item) => item.termNumber == termNumber)
         .toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     // Group items by component
-    final wwItems = quarterItems
+    final wwItems = termItems
         .where((i) => i.component == 'ww' || i.component == 'written_work')
         .toList();
-    final ptItems = quarterItems
+    final ptItems = termItems
         .where((i) => i.component == 'pt' || i.component == 'performance_task')
         .toList();
-    final qaItems = quarterItems
-        .where((i) => i.component == 'qa' || i.component == 'period_assessment')
+    final qaItems = termItems
+        .where((i) => i.component == 'qa' || i.component == 'term_assessment')
         .toList();
 
     // Build score lookup: studentId -> gradeItemId -> GradeScore
@@ -279,7 +276,7 @@ class GradeExportService {
       hpsTotal: ptHps,
     );
     final qaSection = SectionInfo(
-      label: 'Quarterly Assessment',
+      label: 'Term Assessment',
       abbreviation: 'QA',
       weight: config?.qaWeight ?? 20,
       items: qaItems,
@@ -320,7 +317,7 @@ class GradeExportService {
       section: section,
       subject: subject,
       teacherName: teacherName,
-      quarter: quarter,
+      termNumber: termNumber,
       schoolDetails: schoolDetails,
       config: config,
       ww: wwSection,

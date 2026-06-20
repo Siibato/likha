@@ -11,7 +11,7 @@ pub struct DepedHeaderData {
     pub section: String,
     pub teacher_name: String,
     pub subject: String,
-    pub quarter_label: String,
+    pub term_label: String,
 }
 
 impl DepedHeaderData {
@@ -20,7 +20,7 @@ impl DepedHeaderData {
         class_title: &str,
         grade_level: Option<&str>,
         teacher_name: &str,
-        quarter: i32,
+        term_number: i32,
     ) -> Self {
         Self {
             region: settings.school_region.clone().unwrap_or_default(),
@@ -33,7 +33,7 @@ impl DepedHeaderData {
             section: class_title.to_string(),
             teacher_name: teacher_name.to_string(),
             subject: class_title.to_string(),
-            quarter_label: format!("TERM {}", quarter),
+            term_label: format!("TERM {}", term_number),
         }
     }
 }

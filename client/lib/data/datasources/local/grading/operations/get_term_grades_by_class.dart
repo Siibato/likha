@@ -1,8 +1,8 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 
-Future<List<PeriodGradeModel>> getTermGradesByClass(
+Future<List<TermGradeModel>> getTermGradesByClass(
   LocalDatabase localDatabase,
   String classId,
   int termNumber,
@@ -14,5 +14,5 @@ Future<List<PeriodGradeModel>> getTermGradesByClass(
         '${TermGradesCols.classId} = ? AND ${TermGradesCols.termNumber} = ?',
     whereArgs: [classId, termNumber],
   );
-  return results.map((row) => PeriodGradeModel.fromMap(row)).toList();
+  return results.map((row) => TermGradeModel.fromMap(row)).toList();
 }

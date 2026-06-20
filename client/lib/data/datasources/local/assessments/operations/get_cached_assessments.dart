@@ -58,7 +58,7 @@ Future<List<AssessmentModel>> getCachedAssessments(
       final effectiveSubCount = liveSubCount > 0 ? liveSubCount : assessment.submissionCount;
       final effectiveTotalPoints = computedTotalPoints > 0 ? computedTotalPoints : assessment.totalPoints;
 
-      RepoLogger.instance.log('${assessment.title} | dbTotalPoints=${assessment.totalPoints} | computedFromQuestions=$computedTotalPoints | effectiveTotalPoints=$effectiveTotalPoints | gradingPeriod=${assessment.termNumber} | component=${assessment.component}');
+      RepoLogger.instance.log('${assessment.title} | dbTotalPoints=${assessment.totalPoints} | computedFromQuestions=$computedTotalPoints | effectiveTotalPoints=$effectiveTotalPoints | termNumber=${assessment.termNumber} | component=${assessment.component}');
 
       assessments.add(AssessmentModel(
         id: assessment.id,

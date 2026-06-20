@@ -206,7 +206,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     switch (c) {
       case 'written_work': return 'ww';
       case 'performance_task': return 'pt';
-      case 'period_assessment': return 'qa';
+      case 'term_assessment': return 'qa';
       default: return c;
     }
   }

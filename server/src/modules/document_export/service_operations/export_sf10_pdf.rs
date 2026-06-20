@@ -82,7 +82,7 @@ pub async fn run(
             engine.draw_text(
                 &layer,
                 &format!(
-                    "  {} — Q1:{} Q2:{} Q3:{} Q4:{} Final:{}",
+                    "  {} — T1:{} T2:{} T3:{} T4:{} Final:{}",
                     subject.class_title,
                     subject.term_grades.first().and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
                     subject.term_grades.get(1).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),

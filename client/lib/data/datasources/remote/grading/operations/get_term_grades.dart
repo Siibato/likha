@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 
 import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 
-Future<List<PeriodGradeModel>> getTermGrades(
+Future<List<TermGradeModel>> getTermGrades(
   DioClient dioClient, {
   required String classId,
   required int termNumber,
@@ -18,7 +18,7 @@ Future<List<PeriodGradeModel>> getTermGrades(
     final grades = data['grades'] as List<dynamic>? ?? [];
     return grades
         .map(
-            (e) => PeriodGradeModel.fromJson(e as Map<String, dynamic>))
+            (e) => TermGradeModel.fromJson(e as Map<String, dynamic>))
         .toList();
   } on DioException catch (e) {
     throw dioClient.handleError(e);

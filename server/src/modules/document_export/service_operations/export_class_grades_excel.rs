@@ -17,14 +17,14 @@ impl DocumentExportService {
     pub async fn export_class_grades_excel(
         &self,
         class_id: Uuid,
-        period: i32,
+        term_number: i32,
         teacher_id: Uuid,
     ) -> AppResult<Vec<u8>> {
         run(
             &self.grade_service,
             &self.setup_service,
             class_id,
-            period,
+            term_number,
             teacher_id,
         )
         .await
@@ -35,7 +35,7 @@ pub async fn run(
     grade_service: &Arc<GradeComputationService>,
     setup_service: &Arc<SetupService>,
     class_id: Uuid,
-    period: i32,
+    term_number: i32,
     teacher_id: Uuid,
 ) -> AppResult<Vec<u8>> {
     if !grade_service
@@ -46,7 +46,7 @@ pub async fn run(
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let grade_data = grade_service.get_all_grade_data(class_id, period).await?;
+    let grade_data = grade_service.get_all_grade_data(class_id, term_number).await?;
     let settings = setup_service.get_school_details().await?;
     let class_model = grade_service
         .class_repo
@@ -64,7 +64,7 @@ pub async fn run(
         &class_model.title,
         class_model.grade_level.as_deref(),
         &teacher_name,
-        period,
+        term_number,
     );
 
     let table = GradeTableData::build(&grade_data);
@@ -290,7 +290,7 @@ fn write_header_grid(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Class info row  (Term label | GRADE & SECTION | TEACHER | SUBJECT)
-// FIX: no "QUARTER 1" label on left; use header.quarter_label only for the
+// FIX: no "TERM 1" label on left; use header.term_label only for the
 //      right-side grey badge.  Grade & Section now gets 4 cols so it never clips.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -312,7 +312,7 @@ fn write_class_info_row(
         .set_border(FormatBorder::Thin);
 
     // col 0: term label (e.g. "TERM 1") — matches Image 2 left cell
-    sheet.write_with_format(row, 0, &header.quarter_label, &lbl)?;
+    sheet.write_with_format(row, 0, &header.term_label, &lbl)?;
 
     // col 1: "GRADE & SECTION:"
     sheet.write_with_format(row, 1, "GRADE & SECTION:", &lbl)?;
@@ -350,9 +350,9 @@ fn write_class_info_row(
     // Grey badge: last 2 cols
     if badge_start + 1 < total_cols {
         sheet.merge_range(row, badge_start, row, total_cols - 1,
-            &header.quarter_label, &grey_fmt)?;
+            &header.term_label, &grey_fmt)?;
     } else {
-        sheet.write_with_format(row, badge_start, &header.quarter_label, &grey_fmt)?;
+        sheet.write_with_format(row, badge_start, &header.term_label, &grey_fmt)?;
     }
 
     Ok(())
@@ -397,7 +397,7 @@ fn write_section_header_row(
     for (section, start, prefix) in [
         (&table.ww, ww_start, "WRITTEN WORKS"),
         (&table.pt, pt_start, "PERFORMANCE TASKS"),
-        (&table.qa, qa_start, "QUARTERLY ASSESSMENT"),
+        (&table.qa, qa_start, "TERM ASSESSMENT"),
     ] {
         if start < 0 { continue; }
         let span  = (section.items.len() + 3) as i32;
@@ -406,7 +406,7 @@ fn write_section_header_row(
     }
 
     sheet.write_with_format(row, initial_col  as u16, "INITIAL\nGRADE",   &fmt)?;
-    // ── FIX: "TERM GRADE" not "QUARTERLY GRADE" ──
+    // ── "TERM GRADE" ──
     sheet.write_with_format(row, tg_col       as u16, "TERM\nGRADE",      &fmt)?;
     sheet.write_with_format(row, remarks_col  as u16, "REMARKS",           &fmt)?;
 

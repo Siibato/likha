@@ -10,7 +10,7 @@ class AdminDashboardPage extends BasePage {
   static const String createAccountLabel = 'Create Account';
   static const String accountManagementLabel = 'Account Management';
   static const String classManagementLabel = 'Class Management';
-  static const String schoolDetailsLabel = 'School Settings';
+  static const String schoolDetailsLabel = 'School Details';
   static const String logoutLabel = 'Log out';
 
   Future<void> waitUntilVisible() async {

@@ -17,7 +17,7 @@ Future<String> createAssessmentWithQuestions(
   List<QuestionModel> questions,
   bool isPublished,
   String? linkedTosId,
-  int? quarter,
+  int? termNumber,
   String? component, {
   String? id,
   Transaction? txn,
@@ -43,7 +43,7 @@ Future<String> createAssessmentWithQuestions(
           AssessmentsCols.isPublished: isPublished ? 1 : 0,
           AssessmentsCols.orderIndex: 0,
           if (linkedTosId != null) AssessmentsCols.tosId: linkedTosId,
-          if (quarter != null) AssessmentsCols.termNumber: quarter,
+          if (termNumber != null) AssessmentsCols.termNumber: termNumber,
           if (component != null) AssessmentsCols.component: component,
           CommonCols.createdAt: now.toIso8601String(),
           CommonCols.updatedAt: now.toIso8601String(),

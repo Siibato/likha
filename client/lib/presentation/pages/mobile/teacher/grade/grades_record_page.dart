@@ -7,7 +7,7 @@ import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_export_dialog.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/grade/quarter_selector.dart';
+import 'package:likha/presentation/widgets/mobile/teacher/grade/term_selector.dart';
 import 'package:likha/presentation/pages/mobile/teacher/class/class_grading_setup_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/grade/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_grades_provider.dart';
@@ -26,7 +26,7 @@ class ClassRecordPage extends ConsumerStatefulWidget {
 }
 
 class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
-  int _selectedQuarter = 1;
+  int _selectedTerm = 1;
   bool _initialCheckDone = false;
 
   @override
@@ -53,7 +53,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     if (configState.isConfigured) {
       ref.read(classGradesProvider.notifier).loadClassGrades(
         classId: widget.classId,
-        termNumber: _selectedQuarter,
+        termNumber: _selectedTerm,
       );
     }
   }
@@ -71,18 +71,18 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     }
   }
 
-  void _onQuarterChanged(int quarter) {
-    setState(() => _selectedQuarter = quarter);
+  void _onTermChanged(int term) {
+    setState(() => _selectedTerm = term);
     ref.read(classGradesProvider.notifier).loadClassGrades(
       classId: widget.classId,
-      termNumber: quarter,
+      termNumber: term,
     );
   }
 
   void _reloadGrades() {
     ref.read(classGradesProvider.notifier).loadClassGrades(
       classId: widget.classId,
-      termNumber: _selectedQuarter,
+      termNumber: _selectedTerm,
       skipBackgroundRefresh: true,
     );
   }
@@ -93,7 +93,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
     showAddGradeItemDialog(
       context: context,
       classId: widget.classId,
-      selectedQuarter: _selectedQuarter,
+      selectedTerm: _selectedTerm,
       ref: ref,
     );
   }
@@ -103,7 +103,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       context,
       ref,
       classId: widget.classId,
-      quarter: _selectedQuarter,
+      termNumber: _selectedTerm,
     );
   }
 
@@ -141,14 +141,14 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
           : null,
       body: Column(
         children: [
-          QuarterSelector(
-            selectedQuarter: _selectedQuarter,
-            onQuarterChanged: _onQuarterChanged,
+          TermSelector(
+            selectedTerm: _selectedTerm,
+            onTermChanged: _onTermChanged,
             onComputeGrades: () async {
               final messenger = ScaffoldMessenger.of(context);
               await ref
                   .read(termGradesProvider.notifier)
-                  .computeGrades(widget.classId, _selectedQuarter);
+                  .computeGrades(widget.classId, _selectedTerm);
               if (!mounted) return;
               _reloadGrades();
               messenger.showSnackBar(
@@ -159,7 +159,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
               MaterialPageRoute(
                 builder: (_) => GradeSummaryPage(
                   classId: widget.classId,
-                  initialQuarter: _selectedQuarter,
+                  initialTerm: _selectedTerm,
                 ),
               ),
             ),
@@ -243,10 +243,10 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                 },
                 onQgChanged: (studentId, grade) {
                   if (grade == null) return;
-                  ref.read(termGradesProvider.notifier).updatePeriodGrade(
+                  ref.read(termGradesProvider.notifier).updateTermGrade(
                         classId: widget.classId,
                         studentId: studentId,
-                        quarter: _selectedQuarter,
+                        term: _selectedTerm,
                         transmutedGrade: grade,
                       );
                   _reloadGrades();

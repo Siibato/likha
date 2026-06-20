@@ -1,14 +1,14 @@
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 
 /// Client-side grade computation for offline preview.
 /// Mirrors the server algorithm in server/src/services/grade_computation/compute.rs
 class GradeComputationUtil {
   /// Compute a preview period grade from local data.
-  static PeriodGrade computePreview({
+  static TermGrade computePreview({
     required GradeConfig config,
     required List<GradeItem> items,
     required Map<String, List<GradeScore>> scoresByItem,
@@ -22,7 +22,7 @@ class GradeComputationUtil {
     final ptItems =
         items.where((i) => i.component == 'pt' || i.component == 'performance_task').toList();
     final qaItems =
-        items.where((i) => i.component == 'qa' || i.component == 'period_assessment').toList();
+        items.where((i) => i.component == 'qa' || i.component == 'term_assessment').toList();
 
     // 2. For each component: sum effective scores / sum total_points * 100
     final wwResult = _computeComponent(wwItems, scoresByItem, studentId);
@@ -46,7 +46,7 @@ class GradeComputationUtil {
         qaResult.isComplete &&
         (wwItems.isNotEmpty || ptItems.isNotEmpty || qaItems.isNotEmpty);
 
-    return PeriodGrade(
+    return TermGrade(
       id: '', // preview, no real ID
       classId: classId,
       studentId: studentId,
@@ -59,7 +59,7 @@ class GradeComputationUtil {
   }
 
   /// Compute final grade as average of completed period transmuted grades.
-  static double? computeFinalGrade(List<PeriodGrade> termGrades) {
+  static double? computeFinalGrade(List<TermGrade> termGrades) {
     final complete = termGrades
         .where((g) => g.isLocked && g.transmutedGrade != null)
         .toList();

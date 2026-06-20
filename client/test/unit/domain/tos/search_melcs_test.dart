@@ -18,13 +18,13 @@ void main() {
   });
 
   group('SearchMelcs', () {
-    final tParams = SearchMelcsParams(subject: 'Math', gradeLevel: 'Grade 7', quarter: 1);
+    final tParams = SearchMelcsParams(subject: 'Math', gradeLevel: 'Grade 7', termNumber: 1);
     final tMelcs = [
       const MelcEntryModel(
         id: 1,
         subject: 'Math',
         gradeLevel: 'Grade 7',
-        quarter: 1,
+        termNumber: 1,
         competencyCode: 'M7NS-Ia-1',
         competencyText: 'Describes well-defined sets',
       ),

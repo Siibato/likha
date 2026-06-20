@@ -23,10 +23,10 @@ class AssessmentDetailsSection extends StatelessWidget {
   final ValueChanged<bool> onShowResultsChanged;
   final ValueChanged<bool> onIsPublishedChanged;
   final VoidCallback onAutoSave;
-  final int? selectedQuarter;
+  final int? selectedTerm;
   final String? selectedComponent;
   final bool isDepartmentalExam;
-  final ValueChanged<int?>? onQuarterChanged;
+  final ValueChanged<int?>? onTermChanged;
   final ValueChanged<String?>? onComponentChanged;
   final ValueChanged<bool>? onDepartmentalExamChanged;
   final String? selectedTosId;
@@ -49,10 +49,10 @@ class AssessmentDetailsSection extends StatelessWidget {
     required this.onShowResultsChanged,
     required this.onIsPublishedChanged,
     required this.onAutoSave,
-    this.selectedQuarter,
+    this.selectedTerm,
     this.selectedComponent,
     this.isDepartmentalExam = false,
-    this.onQuarterChanged,
+    this.onTermChanged,
     this.onComponentChanged,
     this.onDepartmentalExamChanged,
     this.selectedTosId,
@@ -146,19 +146,19 @@ class AssessmentDetailsSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int?>(
-                  initialValue: selectedQuarter,
-                  decoration: assessmentInputDecoration('Quarter (for grading)'),
+                  initialValue: selectedTerm,
+                  decoration: assessmentInputDecoration('Term (for grading)'),
                   items: [
                     const DropdownMenuItem(value: null, child: Text('None')),
                     ...List.generate(
                       4,
                       (i) => DropdownMenuItem(
                         value: i + 1,
-                        child: Text('Quarter ${i + 1}'),
+                        child: Text('Term ${i + 1}'),
                       ),
                     ),
                   ],
-                  onChanged: isLoading ? null : onQuarterChanged,
+                  onChanged: isLoading ? null : onTermChanged,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String?>(
@@ -175,17 +175,17 @@ class AssessmentDetailsSection extends StatelessWidget {
                       child: Text('Performance Task'),
                     ),
                     DropdownMenuItem(
-                      value: 'period_assessment',
-                      child: Text('Quarterly Assessment'),
+                      value: 'term_assessment',
+                      child: Text('Term Assessment'),
                     ),
                   ],
                   onChanged: isLoading ? null : onComponentChanged,
                 ),
-                if (selectedComponent == 'period_assessment') ...[
+                if (selectedComponent == 'term_assessment') ...[
                   const SizedBox(height: 8),
                   AssessmentSwitchTile(
-                    title: 'Departmental Quarterly Exam',
-                    subtitle: 'Mark as departmental quarterly exam',
+                    title: 'Departmental Term Exam',
+                    subtitle: 'Mark as departmental term exam',
                     value: isDepartmentalExam,
                     onChanged: isLoading ? null : onDepartmentalExamChanged,
                   ),
@@ -202,7 +202,7 @@ class AssessmentDetailsSection extends StatelessWidget {
                         (tos) => DropdownMenuItem(
                           value: tos.id,
                           child: Text(
-                            '${tos.title} (Grading Period ${tos.termNumber})',
+                            '${tos.title} (Term ${tos.termNumber})',
                           ),
                         ),
                       ),

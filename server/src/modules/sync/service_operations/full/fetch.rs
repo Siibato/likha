@@ -159,7 +159,7 @@ impl super::SyncFullService {
                 Vec::new()
             };
 
-            // Fetch school settings for all authenticated users
+            // Fetch school details for all authenticated users
             let school_details = {
                 let setup_repo = SetupRepository::new(self.db.clone());
                 match setup_repo.get_settings().await {
@@ -174,7 +174,7 @@ impl super::SyncFullService {
                         school_head_position: row.school_head_position,
                     }),
                     Err(e) => {
-                        tracing::warn!("Failed to fetch school settings for sync: {}", e);
+                        tracing::warn!("Failed to fetch school details for sync: {}", e);
                         None
                     }
                 }

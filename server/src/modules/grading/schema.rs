@@ -61,7 +61,7 @@ pub struct OverrideScoreRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PeriodQuery {
+pub struct TermQuery {
     pub term_number: Option<i32>,
 }
 
@@ -206,7 +206,7 @@ pub struct Sf9Response {
     pub teacher_name: Option<String>,
     pub term_type: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
-    pub general_average: Option<Sf9PeriodAverages>,
+    pub general_average: Option<Sf9TermAverages>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -219,7 +219,7 @@ pub struct Sf9SubjectRow {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Sf9PeriodAverages {
+pub struct Sf9TermAverages {
     pub term_grades: Vec<Option<i32>>,
     pub final_average: Option<i32>,
     pub descriptor: Option<String>,
@@ -294,7 +294,7 @@ impl From<::entity::term_grades::Model> for TermGradeResponse {
 pub struct AllGradeDataResponse {
     pub grade_items: Vec<GradeItemResponse>,
     pub grade_summary: GradeSummaryResponse,
-    pub period: i32,
+    pub term_number: i32,
     pub scores_by_item: HashMap<String, Vec<GradeScoreResponse>>,
     pub config: Option<GradingConfigResponse>,
 }

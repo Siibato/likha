@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 16 (v15 → v16: Phase 4 FK constraints — assessments.tos_id, assessment_questions.tos_competency_id)
+/// SCHEMA VERSION: 17 (v16 → v17: Rename period_assessment component to term_assessment)
 /// TOTAL TABLES: 36
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 16,
+            version: 17,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 15,
+        version: 16,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -754,8 +754,7 @@ class LocalDatabase {
           class_id TEXT NOT NULL,
           school_year TEXT NOT NULL,
           term_number INTEGER NOT NULL,
-          core_value TEXT NOT NULL,
-          behavior_statement TEXT NOT NULL,
+          core_value_id INTEGER NOT NULL,
           marking TEXT NOT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
@@ -970,6 +969,15 @@ class LocalDatabase {
         await txn.execute('DROP TABLE submission_answer_items');
         await txn.execute('ALTER TABLE submission_answer_items_new RENAME TO submission_answer_items');
       });
+      return;
+    }
+
+    // Targeted migration: Rename period_assessment component to term_assessment
+    // Web path: 16 → 17; Mobile path: 15 → 16
+    if ((oldVersion == 16 && newVersion == 17) || (oldVersion == 15 && newVersion == 16)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
       return;
     }
 

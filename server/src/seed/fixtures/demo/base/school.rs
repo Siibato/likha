@@ -1,4 +1,4 @@
-//! Demo school settings.
+//! Demo school details.
 
 use crate::seed::specs::SchoolDetailsSpec;
 use crate::seed::tools::SeedContext;

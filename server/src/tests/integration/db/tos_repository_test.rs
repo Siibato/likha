@@ -16,13 +16,13 @@ async fn test_create_tos_and_find_by_id() {
 
     let tos = repo
         .create_tos(
-            tos_id, class_id, 1, "Q1 TOS", "difficulty", 30,
+            tos_id, class_id, 1, "T1 TOS", "difficulty", 30,
             "days", 50.0, 30.0, 20.0, 16.67, 16.67, 16.67, 16.67, 16.67, 16.67,
         )
         .await
         .expect("create_tos failed");
 
-    assert_eq!(tos.title, "Q1 TOS");
+    assert_eq!(tos.title, "T1 TOS");
     assert_eq!(tos.class_id, class_id);
 
     let found = repo.find_tos_by_id(tos_id).await.expect("find failed");
@@ -40,7 +40,7 @@ async fn test_find_tos_by_class() {
     let repo = TosRepository::new(db);
 
     repo.create_tos(
-        Uuid::new_v4(), class_id, 1, "TOS Q1", "blooms", 20,
+        Uuid::new_v4(), class_id, 1, "TOS T1", "blooms", 20,
         "days", 50.0, 30.0, 20.0, 16.67, 16.67, 16.67, 16.67, 16.67, 16.67,
     )
     .await

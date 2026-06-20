@@ -138,7 +138,7 @@ import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/get_general_averages.dart';
 import 'package:likha/domain/grading/usecases/get_sf9.dart';
 import 'package:likha/domain/grading/usecases/get_sf10.dart';
-import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/usecases/update_term_grade.dart';
 import 'package:likha/domain/grading/services/score_generation_service.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/domain/grading/usecases/get_class_grades.dart';
@@ -553,7 +553,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ComputeGrades(sl()));
   sl.registerLazySingleton(() => GetGradeSummary(sl()));
   sl.registerLazySingleton(() => GetFinalGrades(sl()));
-  sl.registerLazySingleton(() => UpdatePeriodGrade(sl()));
+  sl.registerLazySingleton(() => UpdateTermGrade(sl()));
   sl.registerLazySingleton(() => GetMyGrades(sl()));
   sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
 

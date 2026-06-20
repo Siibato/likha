@@ -43,17 +43,17 @@ pub const ASSESS_SCI_TEST2_ID: Uuid = uuid!("a1b2c3d4-1111-2222-7777-00000000000
 pub const ASSESS_DELETED_MATH_ID: Uuid = uuid!("a1b2c3d4-1111-2222-7777-000000000099");
 
 // ─── Question IDs ────────────────────────────────────────────────────────────
-pub const Q_MATH_Q1_1: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000001");
-pub const Q_MATH_Q1_2: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000002");
-pub const Q_MATH_Q1_3: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000003");
-pub const Q_MATH_Q1_4: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000004");
-pub const Q_MATH_Q1_5: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000005");
+pub const Q_MATH_T1_1: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000001");
+pub const Q_MATH_T1_2: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000002");
+pub const Q_MATH_T1_3: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000003");
+pub const Q_MATH_T1_4: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000004");
+pub const Q_MATH_T1_5: Uuid = uuid!("a1b2c3d4-1111-2222-8801-000000000005");
 
-pub const Q_MATH_Q2_1: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000001");
-pub const Q_MATH_Q2_2: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000002");
-pub const Q_MATH_Q2_3: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000003");
-pub const Q_MATH_Q2_4: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000004");
-pub const Q_MATH_Q2_5: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000005");
+pub const Q_MATH_T2_1: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000001");
+pub const Q_MATH_T2_2: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000002");
+pub const Q_MATH_T2_3: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000003");
+pub const Q_MATH_T2_4: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000004");
+pub const Q_MATH_T2_5: Uuid = uuid!("a1b2c3d4-1111-2222-8802-000000000005");
 
 pub const Q_SCI_T1_1: Uuid = uuid!("a1b2c3d4-1111-2222-8803-000000000001");
 pub const Q_SCI_T1_2: Uuid = uuid!("a1b2c3d4-1111-2222-8803-000000000002");
@@ -80,9 +80,9 @@ pub const ASSIGN_MATH_PROJECT_ID: Uuid = uuid!("a1b2c3d4-1111-2222-9999-00000000
 pub const ASSIGN_DELETED_ID: Uuid = uuid!("a1b2c3d4-1111-2222-9999-000000000099");
 
 // ─── Submission IDs ──────────────────────────────────────────────────────────
-pub const SUB_ASSESS_S01_MQ1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000001");
-pub const SUB_ASSESS_S02_MQ1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000002");
-pub const SUB_ASSESS_S03_MQ1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000003");
+pub const SUB_ASSESS_S01_MT1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000001");
+pub const SUB_ASSESS_S02_MT1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000002");
+pub const SUB_ASSESS_S03_MT1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000003");
 pub const SUB_ASSESS_S01_ST1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000004");
 pub const SUB_ASSESS_S02_ST1: Uuid = uuid!("a1b2c3d4-1111-2222-aaaa-000000000005");
 
@@ -280,8 +280,8 @@ pub fn e2e_tos() -> Vec<TosSpec> {
         TosSpec {
             id: TOS_MATH_8A_ID,
             class_id: CLASS_MATH_8A_ID,
-            period: 1,
-            title: "TOS for Mathematics 8A - Q1".into(),
+            term_number: 1,
+            title: "TOS for Mathematics 8A - T1".into(),
             template_type: "difficulty".into(),
             total_items: 30,
             time_limit_unit: "days".into(),
@@ -301,8 +301,8 @@ pub fn e2e_tos() -> Vec<TosSpec> {
         TosSpec {
             id: TOS_SCI_8A_ID,
             class_id: CLASS_SCI_8A_ID,
-            period: 1,
-            title: "TOS for Science 8A - Q1".into(),
+            term_number: 1,
+            title: "TOS for Science 8A - T1".into(),
             template_type: "bloom".into(),
             total_items: 30,
             time_limit_unit: "days".into(),
@@ -398,9 +398,9 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             results_released: true,
             term_number: 1,
             questions: vec![
-                // Q1: multiple choice, easy, remembering
+                // T1: multiple choice, easy, remembering
                 QuestionSpec {
-                    id: Q_MATH_Q1_1,
+                    id: Q_MATH_T1_1,
                     question_type: "multiple_choice".into(),
                     text: "What is the first concept in this topic?".into(),
                     points: 1,
@@ -417,9 +417,9 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                     ],
                     answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into(), "Option B".into()] },
                 },
-                // Q2: multiple choice, medium, understanding
+                // T2: multiple choice, medium, understanding
                 QuestionSpec {
-                    id: Q_MATH_Q1_2,
+                    id: Q_MATH_T1_2,
                     question_type: "multiple_choice".into(),
                     text: "Which statement best describes the second concept?".into(),
                     points: 2,
@@ -436,9 +436,9 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                     ],
                     answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into(), "Option C".into()] },
                 },
-                // Q3: identification, easy, applying
+                // T3: identification, easy, applying
                 QuestionSpec {
-                    id: Q_MATH_Q1_3,
+                    id: Q_MATH_T1_3,
                     question_type: "identification".into(),
                     text: "Name the key term for the third concept.".into(),
                     points: 1,
@@ -450,9 +450,9 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                     choices: vec![],
                     answer_key: AnswerKeySpec { acceptable_answers: vec!["42".into(), "42-variant".into()] },
                 },
-                // Q4: identification, medium, analyzing
+                // T4: identification, medium, analyzing
                 QuestionSpec {
-                    id: Q_MATH_Q1_4,
+                    id: Q_MATH_T1_4,
                     question_type: "identification".into(),
                     text: "Identify the principle used in the fourth concept.".into(),
                     points: 2,
@@ -466,7 +466,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 },
                 // Q5: essay, hard, evaluating
                 QuestionSpec {
-                    id: Q_MATH_Q1_5,
+                    id: Q_MATH_T1_5,
                     question_type: "essay".into(),
                     text: "Explain the fifth concept in your own words.".into(),
                     points: 5,
@@ -498,11 +498,11 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             results_released: false,
             term_number: 1,
             questions: vec![
-                QuestionSpec { id: Q_MATH_Q2_1, question_type: "multiple_choice".into(), text: "Open quiz Q1".into(), points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(COMP_MATH_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B (correct)".into(), is_correct: true, order: 1 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] } },
-                QuestionSpec { id: Q_MATH_Q2_2, question_type: "multiple_choice".into(), text: "Open quiz Q2".into(), points: 2, order: 1, is_multi_select: false, tos_competency_id: Some(COMP_MATH_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B".into(), is_correct: false, order: 1 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "C (correct)".into(), is_correct: true, order: 2 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] } },
-                QuestionSpec { id: Q_MATH_Q2_3, question_type: "identification".into(), text: "Open quiz Q3".into(), points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(COMP_MATH_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("applying".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec!["ans".into()] } },
-                QuestionSpec { id: Q_MATH_Q2_4, question_type: "identification".into(), text: "Open quiz Q4".into(), points: 2, order: 3, is_multi_select: false, tos_competency_id: Some(COMP_MATH_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("analyzing".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec!["ans".into()] } },
-                QuestionSpec { id: Q_MATH_Q2_5, question_type: "essay".into(), text: "Open quiz Q5 (essay)".into(), points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(COMP_MATH_3_ID), difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec![] } },
+                QuestionSpec { id: Q_MATH_T2_1, question_type: "multiple_choice".into(), text: "Open quiz Q1".into(), points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(COMP_MATH_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B (correct)".into(), is_correct: true, order: 1 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] } },
+                QuestionSpec { id: Q_MATH_T2_2, question_type: "multiple_choice".into(), text: "Open quiz Q2".into(), points: 2, order: 1, is_multi_select: false, tos_competency_id: Some(COMP_MATH_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B".into(), is_correct: false, order: 1 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "C (correct)".into(), is_correct: true, order: 2 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] } },
+                QuestionSpec { id: Q_MATH_T2_3, question_type: "identification".into(), text: "Open quiz Q3".into(), points: 1, order: 2, is_multi_select: false, tos_competency_id: Some(COMP_MATH_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("applying".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec!["ans".into()] } },
+                QuestionSpec { id: Q_MATH_T2_4, question_type: "identification".into(), text: "Open quiz Q4".into(), points: 2, order: 3, is_multi_select: false, tos_competency_id: Some(COMP_MATH_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("analyzing".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec!["ans".into()] } },
+                QuestionSpec { id: Q_MATH_T2_5, question_type: "essay".into(), text: "Open quiz Q5 (essay)".into(), points: 5, order: 4, is_multi_select: false, tos_competency_id: Some(COMP_MATH_3_ID), difficulty: Some("hard".into()), cognitive_level: Some("evaluating".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec![] } },
             ],
         },
         AssessmentSpec {
@@ -515,7 +515,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             close_at: now + chrono::Duration::days(-2),
             show_results_immediately: true,
             total_points: 6,
-            component: "period_assessment".into(),
+            component: "term_assessment".into(),
             tos_id: TOS_SCI_8A_ID,
             created_at: created,
             deleted_at: None,
@@ -632,7 +632,7 @@ pub fn e2e_assignment_submissions(ctx: &SeedContext) -> Vec<AssignmentSubmission
 
 pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
     vec![
-        // Math 8A - Period 1
+        // Math 8A - Term 1
         GradeRecordSpec {
             class_id: CLASS_MATH_8A_ID,
             term_number: 1,
@@ -640,7 +640,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
             pt_weight: 50.0,
             qa_weight: 20.0,
         },
-        // Math 8A - Period 2
+        // Math 8A - Term 2
         GradeRecordSpec {
             class_id: CLASS_MATH_8A_ID,
             term_number: 2,
@@ -648,7 +648,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
             pt_weight: 50.0,
             qa_weight: 20.0,
         },
-        // Science 8A - Period 1
+        // Science 8A - Term 1
         GradeRecordSpec {
             class_id: CLASS_SCI_8A_ID,
             term_number: 1,
@@ -656,7 +656,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
             pt_weight: 50.0,
             qa_weight: 20.0,
         },
-        // Science 8A - Period 2
+        // Science 8A - Term 2
         GradeRecordSpec {
             class_id: CLASS_SCI_8A_ID,
             term_number: 2,
@@ -785,50 +785,50 @@ pub fn e2e_assessment_submissions(ctx: &SeedContext) -> Vec<AssessmentSubmission
     vec![
         // Student 01 - Math Quiz 1 (all correct except essay)
         AssessmentSubmissionSpec {
-            id: SUB_ASSESS_S01_MQ1,
+            id: SUB_ASSESS_S01_MT1,
             assessment_id: ASSESS_MATH_QUIZ1_ID,
             student_id: STUDENT_01_ID,
             started_at: started_mq1,
             submitted_at: Some(submitted_mq1),
             total_points: 6.0, // 1 + 2 + 1 + 2 + 0 = 6
             answers: vec![
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_1, choice_ids: vec![], text: None, is_correct: Some(true), points: 1.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_2, choice_ids: vec![], text: None, is_correct: Some(true), points: 2.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_3, choice_ids: vec![], text: Some("42".into()), is_correct: Some(true), points: 1.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_4, choice_ids: vec![], text: Some("principle".into()), is_correct: Some(true), points: 2.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_5, choice_ids: vec![], text: None, is_correct: None, points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_1, choice_ids: vec![], text: None, is_correct: Some(true), points: 1.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_2, choice_ids: vec![], text: None, is_correct: Some(true), points: 2.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_3, choice_ids: vec![], text: Some("42".into()), is_correct: Some(true), points: 1.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_4, choice_ids: vec![], text: Some("principle".into()), is_correct: Some(true), points: 2.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_5, choice_ids: vec![], text: None, is_correct: None, points: 0.0 },
             ],
         },
         // Student 02 - Math Quiz 1 (only Q1 correct)
         AssessmentSubmissionSpec {
-            id: SUB_ASSESS_S02_MQ1,
+            id: SUB_ASSESS_S02_MT1,
             assessment_id: ASSESS_MATH_QUIZ1_ID,
             student_id: STUDENT_02_ID,
             started_at: started_mq1,
             submitted_at: Some(submitted_mq1),
             total_points: 1.0,
             answers: vec![
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_1, choice_ids: vec![], text: None, is_correct: Some(true), points: 1.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_2, choice_ids: vec![], text: None, is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_3, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_4, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_5, choice_ids: vec![], text: None, is_correct: None, points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_1, choice_ids: vec![], text: None, is_correct: Some(true), points: 1.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_2, choice_ids: vec![], text: None, is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_3, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_4, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_5, choice_ids: vec![], text: None, is_correct: None, points: 0.0 },
             ],
         },
         // Student 03 - Math Quiz 1 (all wrong)
         AssessmentSubmissionSpec {
-            id: SUB_ASSESS_S03_MQ1,
+            id: SUB_ASSESS_S03_MT1,
             assessment_id: ASSESS_MATH_QUIZ1_ID,
             student_id: STUDENT_03_ID,
             started_at: started_mq1 + chrono::Duration::days(1),
             submitted_at: Some(submitted_mq1 + chrono::Duration::days(1)),
             total_points: 0.0,
             answers: vec![
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_1, choice_ids: vec![], text: None, is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_2, choice_ids: vec![], text: None, is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_3, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_4, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
-                SubmissionAnswerSpec { question_id: Q_MATH_Q1_5, choice_ids: vec![], text: None, is_correct: None, points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_1, choice_ids: vec![], text: None, is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_2, choice_ids: vec![], text: None, is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_3, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_4, choice_ids: vec![], text: Some("wrong".into()), is_correct: Some(false), points: 0.0 },
+                SubmissionAnswerSpec { question_id: Q_MATH_T1_5, choice_ids: vec![], text: None, is_correct: None, points: 0.0 },
             ],
         },
         // Student 01 - Science Test 1 (all correct except essay)

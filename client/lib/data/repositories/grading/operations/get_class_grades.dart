@@ -26,8 +26,8 @@ ResultFuture<ClassGrades> getClassGrades(
   try {
     // 1. Cache-first: read config, items, scores in parallel
     final configFuture = _safeGetConfig(localDataSource, classId);
-    final itemsFuture = localDataSource.getItemsByClassQuarter(classId, termNumber, component: null);
-    final scoresFuture = localDataSource.getScoresForClassQuarter(classId, termNumber);
+    final itemsFuture = localDataSource.getItemsByClassTerm(classId, termNumber, component: null);
+    final scoresFuture = localDataSource.getScoresForClassTerm(classId, termNumber);
     final summaryFuture = _safeGetSummary(localDataSource, classId, termNumber);
 
     final rawConfigs = await configFuture;
@@ -35,7 +35,7 @@ ResultFuture<ClassGrades> getClassGrades(
     final scoresModels = await scoresFuture;
     final summary = await summaryFuture;
 
-    final config = _configForQuarter(
+    final config = _configForTerm(
       rawConfigs.map((c) => helpers.configToEntity(c as GradeConfigModel)).toList(),
       termNumber,
     );
@@ -167,18 +167,18 @@ Future<List<dynamic>> _safeGetConfig(GradingLocalDataSource local, String classI
   }
 }
 
-Future<List<Map<String, dynamic>>?> _safeGetSummary(GradingLocalDataSource local, String classId, int quarter) async {
+Future<List<Map<String, dynamic>>?> _safeGetSummary(GradingLocalDataSource local, String classId, int term) async {
   try {
-    final summary = await local.getCachedGradeSummary(classId, quarter);
+    final summary = await local.getCachedGradeSummary(classId, term);
     return summary;
   } catch (_) {
     return null;
   }
 }
 
-GradeConfig? _configForQuarter(List<GradeConfig> configs, int quarter) {
+GradeConfig? _configForTerm(List<GradeConfig> configs, int term) {
   try {
-    return configs.firstWhere((c) => c.termNumber == quarter);
+    return configs.firstWhere((c) => c.termNumber == term);
   } catch (_) {
     return configs.isNotEmpty ? configs.first : null;
   }
@@ -201,17 +201,17 @@ Map<String, List<GradeScore>> _groupScoresByItem(List<dynamic> scoreModels, List
 Future<bool> _hasChanged(
   GradingLocalDataSource local,
   String classId,
-  int quarter,
+  int term,
   List<dynamic> freshItems,
   Map<String, dynamic> freshScoresByItem,
   dynamic freshConfig,
   List<dynamic> freshSummary,
 ) async {
   try {
-    final currentItems = await local.getItemsByClassQuarter(classId, quarter);
+    final currentItems = await local.getItemsByClassTerm(classId, term);
     if (currentItems.length != freshItems.length) return true;
 
-    final currentScores = await local.getScoresForClassQuarter(classId, quarter);
+    final currentScores = await local.getScoresForClassTerm(classId, term);
     var freshScoreCount = 0;
     for (final scores in freshScoresByItem.values) {
       freshScoreCount += (scores as List).length;

@@ -9,7 +9,7 @@ import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
@@ -186,7 +186,7 @@ class GradingRepositoryImpl implements GradingRepository {
   // ===== Computed Grades =====
 
   @override
-  ResultFuture<List<PeriodGrade>> getTermGrades({
+  ResultFuture<List<TermGrade>> getTermGrades({
     required String classId,
     required int termNumber,
   }) =>
@@ -252,7 +252,7 @@ class GradingRepositoryImpl implements GradingRepository {
   // ===== Student =====
 
   @override
-  ResultFuture<List<PeriodGrade>> getMyGrades({
+  ResultFuture<List<TermGrade>> getMyGrades({
     required String classId,
   }) =>
       ops.getMyGrades(
@@ -360,7 +360,7 @@ class GradingRepositoryImpl implements GradingRepository {
       generalAverage: () {
         final cr = currentRecord;
         if (cr != null && cr.finalAverage != null) {
-          return Sf9PeriodAverages(
+          return Sf9TermAverages(
             finalAverage: cr.finalAverage,
             descriptor: cr.descriptor,
           );

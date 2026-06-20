@@ -16,9 +16,9 @@ pub fn routes(setup_service: Arc<SetupService>) -> Router {
             "/admin/setup/code",
             get(handler::get_school_code).put(handler::update_school_code),
         )
-        // Admin — school settings (name, region, division, year)
+        // Admin — school details (name, region, division, year)
         .route(
-            "/admin/setup/school-settings",
+            "/admin/setup/school-details",
             get(handler::get_school_details).put(handler::update_school_details),
         )
         .with_state(setup_service)

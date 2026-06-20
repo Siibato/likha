@@ -44,7 +44,7 @@ class ClassGradeCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   hasGrade
-                      ? 'Q${classGrade.latestPeriod}'
+                      ? 'T${classGrade.latestTerm}'
                       : 'No grades yet',
                   style: const TextStyle(
                     fontSize: 13,

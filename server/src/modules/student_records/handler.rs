@@ -199,8 +199,7 @@ pub async fn upsert_core_values(
         req_class_id,
         req.school_year,
         req.term_number,
-        req.core_value,
-        req.behavior_statement,
+        req.core_value_id,
         req.marking,
     ).await {
         Ok(model) => success_response(CoreValuesResponse::from(model), StatusCode::OK).into_response(),

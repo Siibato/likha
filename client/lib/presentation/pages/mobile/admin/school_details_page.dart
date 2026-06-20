@@ -214,7 +214,7 @@ class _AdminSchoolDetailsPageState
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.accentCharcoal),
         title: const Text(
-          'School Settings',
+          'School Details',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,

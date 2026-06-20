@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 
 /// Large grade display banner shown at the top of the grade detail screen.
 class OverallGradeBanner extends StatelessWidget {
-  final PeriodGrade? quarterGrade;
+  final TermGrade? termGrade;
 
-  const OverallGradeBanner({super.key, required this.quarterGrade});
+  const OverallGradeBanner({super.key, required this.termGrade});
 
   @override
   Widget build(BuildContext context) {
-    final hasGrade = quarterGrade?.transmutedGrade != null;
-    final gradeDisplay = hasGrade ? '${quarterGrade!.transmutedGrade}' : '--';
+    final hasGrade = termGrade?.transmutedGrade != null;
+    final gradeDisplay = hasGrade ? '${termGrade!.transmutedGrade}' : '--';
     final descriptor = hasGrade
-        ? TransmutationUtil.getDescriptor(quarterGrade!.transmutedGrade!)
+        ? TransmutationUtil.getDescriptor(termGrade!.transmutedGrade!)
         : 'No grade yet';
 
     return Column(

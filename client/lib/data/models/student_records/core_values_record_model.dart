@@ -7,8 +7,7 @@ class CoreValuesRecordModel extends CoreValuesRecord {
     required super.classId,
     required super.schoolYear,
     required super.termNumber,
-    required super.coreValue,
-    required super.behaviorStatement,
+    required super.coreValueId,
     required super.marking,
   });
 
@@ -19,8 +18,7 @@ class CoreValuesRecordModel extends CoreValuesRecord {
       classId: json['class_id'] as String,
       schoolYear: json['school_year'] as String,
       termNumber: json['term_number'] as int,
-      coreValue: json['core_value'] as String,
-      behaviorStatement: json['behavior_statement'] as String,
+      coreValueId: json['core_value_id'] as int,
       marking: json['marking'] as String,
     );
   }
@@ -31,8 +29,7 @@ class CoreValuesRecordModel extends CoreValuesRecord {
     'class_id': classId,
     'school_year': schoolYear,
     'term_number': termNumber,
-    'core_value': coreValue,
-    'behavior_statement': behaviorStatement,
+    'core_value_id': coreValueId,
     'marking': marking,
   };
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/student_records_provider.dart';
@@ -9,7 +10,17 @@ import 'package:likha/presentation/widgets/desktop/teacher/student_records/skele
 
 const _coreValues = ['Maka-Diyos', 'Maka-tao', 'Maka-bayan', 'Maka-kalikasan'];
 const _markings = ['AO', 'SO', 'NO', 'RO'];
-const _periods = [1, 2, 3, 4];
+final _terms = List.generate(termCountFromType(null), (i) => i + 1);
+
+int _coreValueNameToId(String name) {
+  switch (name) {
+    case 'Maka-Diyos': return 1;
+    case 'Maka-tao': return 2;
+    case 'Maka-bayan': return 3;
+    case 'Maka-kalikasan': return 4;
+    default: return 0;
+  }
+}
 
 class CoreValuesSection extends ConsumerStatefulWidget {
   final String classId;
@@ -127,24 +138,25 @@ class _CoreValuesGrid extends StatelessWidget {
     required this.ref,
   });
 
-  String? _getMarking(int period, String coreValue) {
-    final rec = state.records.where((r) => r.termNumber == period && r.coreValue == coreValue).firstOrNull;
+  String? _getMarking(int term, String coreValue) {
+    final cvId = _coreValueNameToId(coreValue);
+    final rec = state.records.where((r) => r.termNumber == term && r.coreValueId == cvId).firstOrNull;
     return rec?.marking;
   }
 
-  Future<void> _saveMarking(BuildContext context, int period, String coreValue, String marking) async {
+  Future<void> _saveMarking(BuildContext context, int term, String coreValue, String marking) async {
+    final cvId = _coreValueNameToId(coreValue);
     final success = await ref.read(coreValuesProvider.notifier).save(classId, studentId, {
       'class_id': classId,
       'school_year': schoolYear,
-      'term_number': period,
-      'core_value': coreValue,
-      'behavior_statement': '',
+      'term_number': term,
+      'core_value_id': cvId,
       'marking': marking,
     });
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? '$coreValue ($period) saved' : 'Failed to save'),
+          content: Text(success ? '$coreValue (T$term) saved' : 'Failed to save'),
           backgroundColor: success ? AppColors.semanticSuccessAlt : AppColors.semanticError,
           duration: const Duration(seconds: 2),
         ),
@@ -185,10 +197,7 @@ class _CoreValuesGrid extends StatelessWidget {
                 TableRow(
                   children: [
                     _header('Core Value'),
-                    _header('Q1'),
-                    _header('Q2'),
-                    _header('Q3'),
-                    _header('Q4'),
+                    ...List.generate(termCountFromType(null), (i) => _header('T${i + 1}')),
                   ],
                 ),
                 ..._coreValues.map((cv) => TableRow(
@@ -197,7 +206,7 @@ class _CoreValuesGrid extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(cv, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.foregroundDark)),
                     ),
-                    ..._periods.map((p) => _markingCell(context, p, cv)),
+                    ..._terms.map((p) => _markingCell(context, p, cv)),
                   ],
                 )),
               ],
@@ -212,8 +221,8 @@ class _CoreValuesGrid extends StatelessWidget {
     child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary)),
   );
 
-  Widget _markingCell(BuildContext context, int period, String coreValue) {
-    final current = _getMarking(period, coreValue);
+  Widget _markingCell(BuildContext context, int term, String coreValue) {
+    final current = _getMarking(term, coreValue);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
       child: DropdownButtonFormField<String>(
@@ -224,7 +233,7 @@ class _CoreValuesGrid extends StatelessWidget {
           isDense: true,
         ),
         items: _markings.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 12)))).toList(),
-        onChanged: (v) => _saveMarking(context, period, coreValue, v ?? 'NO'),
+        onChanged: (v) => _saveMarking(context, term, coreValue, v ?? 'NO'),
       ),
     );
   }

@@ -53,14 +53,14 @@ impl DocumentExportService {
     pub async fn export_class_grades_pdf(
         &self,
         class_id: Uuid,
-        period: i32,
+        term_number: i32,
         teacher_id: Uuid,
     ) -> AppResult<Vec<u8>> {
         run(
             &self.grade_service,
             &self.setup_service,
             class_id,
-            period,
+            term_number,
             teacher_id,
         )
         .await
@@ -71,7 +71,7 @@ pub async fn run(
     grade_service: &Arc<GradeComputationService>,
     setup_service: &Arc<SetupService>,
     class_id: Uuid,
-    period: i32,
+    term_number: i32,
     teacher_id: Uuid,
 ) -> AppResult<Vec<u8>> {
     if !grade_service
@@ -82,7 +82,7 @@ pub async fn run(
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let grade_data = grade_service.get_all_grade_data(class_id, period).await?;
+    let grade_data = grade_service.get_all_grade_data(class_id, term_number).await?;
     let settings = setup_service.get_school_details().await?;
     let class_model = grade_service
         .class_repo
@@ -100,7 +100,7 @@ pub async fn run(
         &class_model.title,
         class_model.grade_level.as_deref(),
         &teacher_name,
-        period,
+        term_number,
     );
 
     let table = GradeTableData::build(&grade_data);
@@ -256,7 +256,7 @@ fn draw_header(
     );
 
     let y3 = y2 - 8.0;
-    engine.draw_text(layer, &header.quarter_label, 8.0, Mm(left), Mm(y3), true);
+    engine.draw_text(layer, &header.term_label, 8.0, Mm(left), Mm(y3), true);
     let gs_val = format!("{} {}", header.grade_level, header.section).trim().to_string();
     engine.draw_text(layer, "GRADE & SECTION:", 7.0, Mm(left + 22.0), Mm(y3), true);
     engine.draw_text(layer, &gs_val, 8.0, Mm(left + 58.0), Mm(y3), false);
@@ -265,7 +265,7 @@ fn draw_header(
     engine.draw_text(layer, "SUBJECT:", 7.0, Mm(left + 190.0), Mm(y3), true);
     engine.draw_text(layer, &header.subject, 8.0, Mm(left + 214.0), Mm(y3), false);
 
-    // Quarter box on the far right
+    // Term box on the far right
     engine.draw_rect(
         layer,
         Mm(PAGE_W - MARGIN - 28.0),
@@ -277,7 +277,7 @@ fn draw_header(
     );
     engine.draw_text(
         layer,
-        &header.quarter_label,
+        &header.term_label,
         9.0,
         Mm(PAGE_W - MARGIN - 26.0),
         Mm(y3 + 0.5),
@@ -357,7 +357,7 @@ fn draw_section_header_strip(
     for (section, label) in [
         (&table.ww, "WRITTEN WORKS"),
         (&table.pt, "PERFORMANCE TASKS"),
-        (&table.qa, "QUARTERLY ASSESSMENT"),
+        (&table.qa, "TERM ASSESSMENT"),
     ] {
         if section.items.is_empty() {
             continue;

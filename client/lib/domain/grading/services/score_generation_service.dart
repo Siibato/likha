@@ -25,7 +25,7 @@ class ScoreGenerationService {
        _assessmentRepository = assessmentRepository,
        _assignmentRepository = assignmentRepository;
 
-  /// Generate scores for all grade items in a class for a specific grading period.
+  /// Generate scores for all grade items in a class for a specific term.
   ///
   /// [items] — when supplied, use these directly instead of fetching from the
   /// repository. Pass `state.items` from the provider to include locally-created
@@ -35,7 +35,7 @@ class ScoreGenerationService {
     required int termNumber,
     List<GradeItem>? items,
   }) async {
-    _logger.log('generateScoresForClass() - START: classId=$classId, period=$termNumber, providedItems=${items?.length}');
+    _logger.log('generateScoresForClass() - START: classId=$classId, term=$termNumber, providedItems=${items?.length}');
 
     try {
       List<GradeItem> gradeItems;

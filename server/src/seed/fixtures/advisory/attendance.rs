@@ -30,8 +30,7 @@ pub fn advisory_attendance() -> Vec<AttendanceSpec> {
             if school_days == 0 {
                 continue;
             }
-            let days_absent = ((idx + month_idx) % 5) as i32;
-            let days_present = school_days - days_absent;
+            let days_present = school_days - ((idx + month_idx) % 5) as i32;
             let id = seed_id(
                 "attendance_records",
                 &format!("{}_{}_{}", uname, school_year, month),

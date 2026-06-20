@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_page.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
@@ -28,7 +29,7 @@ class GradesSection extends ConsumerStatefulWidget {
 }
 
 class _GradesSectionState extends ConsumerState<GradesSection> {
-  int _selectedQuarter = 1;
+  int _selectedTerm = 1;
   bool _hasLoaded = false;
 
   @override
@@ -65,7 +66,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     if (configState.isConfigured) {
       ref.read(classGradesProvider.notifier).loadClassGrades(
         classId: widget.classId,
-        termNumber: _selectedQuarter,
+        termNumber: _selectedTerm,
       );
     }
   }
@@ -73,16 +74,16 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   void _reloadGrades() {
     ref.read(classGradesProvider.notifier).loadClassGrades(
       classId: widget.classId,
-      termNumber: _selectedQuarter,
+      termNumber: _selectedTerm,
       skipBackgroundRefresh: true,
     );
   }
 
-  void _onQuarterChanged(int quarter) {
-    setState(() => _selectedQuarter = quarter);
+  void _onTermChanged(int term) {
+    setState(() => _selectedTerm = term);
     ref.read(classGradesProvider.notifier).loadClassGrades(
       classId: widget.classId,
-      termNumber: quarter,
+      termNumber: term,
     );
   }
 
@@ -106,7 +107,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     showAddGradeItemDialog(
       context: context,
       classId: widget.classId,
-      selectedQuarter: _selectedQuarter,
+      selectedTerm: _selectedTerm,
       ref: ref,
     );
   }
@@ -122,7 +123,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       builder: (dialogContext) {
         return _DesktopExportDialog(
           classId: widget.classId,
-          quarter: _selectedQuarter,
+          termNumber: _selectedTerm,
           parentContext: context,
         );
       },
@@ -133,10 +134,10 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     if (newQg == null) return;
     ref
         .read(termGradesProvider.notifier)
-        .updatePeriodGrade(
+        .updateTermGrade(
           classId: widget.classId,
           studentId: studentId,
-          quarter: _selectedQuarter,
+          term: _selectedTerm,
           transmutedGrade: newQg,
         );
     _reloadGrades();
@@ -158,8 +159,8 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
           // Custom header matching mobile design
           _buildCustomHeader(),
 
-          // Quarter selector and actions
-          _buildQuarterSelector(),
+          // Term selector and actions
+          _buildTermSelector(),
 
           const Divider(height: 1, color: AppColors.borderLight),
 
@@ -320,7 +321,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     );
   }
 
-  Widget _buildQuarterSelector() {
+  Widget _buildTermSelector() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 4, 6),
       child: Row(
@@ -329,17 +330,17 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List.generate(4, (i) {
+                children: List.generate(termCountFromType(null), (i) {
                   final q = i + 1;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text('Q$q'),
-                      selected: _selectedQuarter == q,
+                      label: Text('T$q'),
+                      selected: _selectedTerm == q,
                       selectedColor: AppColors.accentCharcoal,
                       backgroundColor: Colors.white,
                       labelStyle: TextStyle(
-                        color: _selectedQuarter == q
+                        color: _selectedTerm == q
                             ? Colors.white
                             : AppColors.foregroundSecondary,
                         fontWeight: FontWeight.w600,
@@ -348,12 +349,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
-                          color: _selectedQuarter == q
+                          color: _selectedTerm == q
                               ? AppColors.accentCharcoal
                               : AppColors.borderLight,
                         ),
                       ),
-                      onSelected: (_) => _onQuarterChanged(q),
+                      onSelected: (_) => _onTermChanged(q),
                     ),
                   );
                 }),
@@ -368,11 +369,11 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
               final messenger = ScaffoldMessenger.of(context);
               await ref
                   .read(termGradesProvider.notifier)
-                  .computeGrades(widget.classId, _selectedQuarter);
+                  .computeGrades(widget.classId, _selectedTerm);
               if (!mounted) return;
               ref
                   .read(termGradesProvider.notifier)
-                  .loadSummary(widget.classId, _selectedQuarter);
+                  .loadSummary(widget.classId, _selectedTerm);
               messenger.showSnackBar(
                 const SnackBar(content: Text('Grades computed')),
               );
@@ -387,7 +388,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
               MaterialPageRoute(
                 builder: (_) => GradeSummaryPage(
                   classId: widget.classId,
-                  initialQuarter: _selectedQuarter,
+                  initialTerm: _selectedTerm,
                 ),
               ),
             ),
@@ -424,12 +425,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
 
 class _DesktopExportDialog extends ConsumerWidget {
   final String classId;
-  final int quarter;
+  final int termNumber;
   final BuildContext parentContext;
 
   const _DesktopExportDialog({
     required this.classId,
-    required this.quarter,
+    required this.termNumber,
     required this.parentContext,
   });
 
@@ -480,7 +481,7 @@ class _DesktopExportDialog extends ConsumerWidget {
               onTap: () {
                 ref.read(documentExportProvider.notifier).exportClassGrades(
                   classId: classId,
-                  period: quarter,
+                  termNumber: termNumber,
                   isPdf: false,
                 );
               },
@@ -492,7 +493,7 @@ class _DesktopExportDialog extends ConsumerWidget {
               onTap: () {
                 ref.read(documentExportProvider.notifier).exportClassGrades(
                   classId: classId,
-                  period: quarter,
+                  termNumber: termNumber,
                   isPdf: true,
                 );
               },

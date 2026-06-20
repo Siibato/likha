@@ -47,7 +47,7 @@ class Sf9ResponseModel extends Sf9Response {
         .toList();
 
     final generalAverage = json['general_average'] != null
-        ? Sf9PeriodAveragesModel.fromJson(Map<String, dynamic>.from(json['general_average'] as Map))
+        ? Sf9TermAveragesModel.fromJson(Map<String, dynamic>.from(json['general_average'] as Map))
         : null;
     log.log('Sf9ResponseModel.fromJson: general_average = ${generalAverage != null ? 'present' : 'null'}');
 
@@ -85,7 +85,7 @@ class Sf9ResponseModel extends Sf9Response {
       'term_type': termType,
       'subjects': subjects.map((s) => (s as Sf9SubjectRowModel).toJson()).toList(),
       'general_average': generalAverage != null
-          ? (generalAverage as Sf9PeriodAveragesModel).toJson()
+          ? (generalAverage as Sf9TermAveragesModel).toJson()
           : null,
     };
   }
@@ -121,15 +121,15 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
   }
 }
 
-class Sf9PeriodAveragesModel extends Sf9PeriodAverages {
-  const Sf9PeriodAveragesModel({
+class Sf9TermAveragesModel extends Sf9TermAverages {
+  const Sf9TermAveragesModel({
     super.termGrades,
     super.finalAverage,
     super.descriptor,
   });
 
-  factory Sf9PeriodAveragesModel.fromJson(Map<String, dynamic> json) {
-    return Sf9PeriodAveragesModel(
+  factory Sf9TermAveragesModel.fromJson(Map<String, dynamic> json) {
+    return Sf9TermAveragesModel(
       termGrades: _parseTermGrades(json['term_grades']),
       finalAverage: json['final_average'] as int?,
       descriptor: json['descriptor'] as String?,

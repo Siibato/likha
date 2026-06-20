@@ -20,7 +20,7 @@ impl crate::modules::grading::service::GradeComputationService {
             .repo
             .get_term_grade(class_id, student_id, term_number)
             .await?
-            .ok_or_else(|| AppError::NotFound("Grade not found for this period".to_string()))?;
+            .ok_or_else(|| AppError::NotFound("Grade not found for this term".to_string()))?;
         let result = TermGradeResponse::from(grade);
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentTermGrade(class_id, student_id, term_number).as_str();

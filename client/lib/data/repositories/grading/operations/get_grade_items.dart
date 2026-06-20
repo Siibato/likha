@@ -20,10 +20,10 @@ ResultFuture<List<GradeItem>> getGradeItems(
   String? component,
   bool skipBackgroundRefresh = false,
 }) async {
-  RepoLogger.instance.log('getGradeItems() - classId: $classId, quarter: $termNumber, component: $component');
+  RepoLogger.instance.log('getGradeItems() - classId: $classId, term: $termNumber, component: $component');
   try {
     try {
-      final cachedModels = await localDataSource.getItemsByClassQuarter(
+      final cachedModels = await localDataSource.getItemsByClassTerm(
         classId,
         termNumber,
         component: component,
@@ -47,7 +47,7 @@ ResultFuture<List<GradeItem>> getGradeItems(
           onSuccess: (freshModels) async {
             final List<GradeItem> current;
             try {
-              final currentModels = await localDataSource.getItemsByClassQuarter(
+              final currentModels = await localDataSource.getItemsByClassTerm(
                 classId,
                 termNumber,
                 component: component,

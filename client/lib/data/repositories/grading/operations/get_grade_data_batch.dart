@@ -54,7 +54,7 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
             updatedAt: item.updatedAt,
           ).toJson()).toList(),
           'grade_summary': gradeSummary,
-          'quarter': termNumber,
+          'term_number': termNumber,
         }),
       ),
     );

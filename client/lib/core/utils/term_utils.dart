@@ -1,6 +1,6 @@
 /// Returns the number of terms for a given [termType].
-/// Defaults to 4 (term) if the type is null or unrecognized.
-int periodCountFromType(String? termType) {
+/// Defaults to 3 (term) if the type is null or unrecognized.
+int termCountFromType(String? termType) {
   switch (termType) {
     case 'semester':
       return 2;
@@ -8,7 +8,7 @@ int periodCountFromType(String? termType) {
       return 3;
     case 'term':
     default:
-      return 4;
+      return 3;
   }
 }
 
@@ -17,7 +17,7 @@ int periodCountFromType(String? termType) {
 /// - 'semester'   → 'S'
 /// - 'trimester'  → 'T'
 /// - default      → 'T' (term)
-String periodLabelPrefix(String? termType) {
+String termLabelPrefix(String? termType) {
   switch (termType) {
     case 'term':
       return 'T';

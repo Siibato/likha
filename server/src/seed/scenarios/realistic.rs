@@ -71,7 +71,7 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     println!(
-        "Realistic seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
+        "Realistic seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
         users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),
@@ -92,10 +92,10 @@ fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crat
             else { "math_sci" };
         let preset = get_preset(subject_group)
             .unwrap_or(crate::modules::grading::helpers::deped_weights::WeightPreset { ww: 40.0, pt: 40.0, qa: 20.0 });
-        for period in 1..=4 {
+        for term in 1..=4 {
             records.push(crate::seed::specs::GradeRecordSpec {
                 class_id: class.id,
-                term_number: period,
+                term_number: term,
                 ww_weight: preset.ww,
                 pt_weight: preset.pt,
                 qa_weight: preset.qa,
@@ -248,7 +248,7 @@ fn generate_term_grades(
                     match component.as_str() {
                         "written_work" => { ww_sum += effective; ww_total += *total_points; }
                         "performance_task" => { pt_sum += effective; pt_total += *total_points; }
-                        "period_assessment" => { qa_sum += effective; qa_total += *total_points; }
+                        "term_assessment" => { qa_sum += effective; qa_total += *total_points; }
                         _ => {}
                     }
                 }

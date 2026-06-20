@@ -2,5 +2,5 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct ExportGradeQuery {
-    pub period: Option<i32>,
+    pub term_number: Option<i32>,
 }

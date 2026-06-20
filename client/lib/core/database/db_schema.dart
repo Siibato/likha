@@ -391,8 +391,7 @@ abstract final class CoreValuesRecordsCols {
   static const String classId = 'class_id';
   static const String schoolYear = 'school_year';
   static const String termNumber = 'term_number';
-  static const String coreValue = 'core_value';
-  static const String behaviorStatement = 'behavior_statement';
+  static const String coreValueId = 'core_value_id';
   static const String marking = 'marking';
   static const String deletedAt = 'deleted_at';
 }
@@ -462,7 +461,7 @@ abstract final class DbValues {
   // grade_items.component
   static const String componentWrittenWork = 'written_work';
   static const String componentPerformanceTask = 'performance_task';
-  static const String componentPeriodAssessment = 'period_assessment';
+  static const String componentTermAssessment = 'term_assessment';
 
   // grade_items.source_type
   static const String sourceManual = 'manual';

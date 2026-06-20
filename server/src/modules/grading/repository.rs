@@ -70,8 +70,8 @@ impl GradeComputationRepository {
         ops::get_scores_by_item(&self.db, grade_item_id).await
     }
 
-    pub async fn get_scores_by_student_class_period(&self, student_id: Uuid, class_id: Uuid, term_number: i32) -> AppResult<Vec<grade_scores::Model>> {
-        ops::get_scores_by_student_class_period(&self.db, student_id, class_id, term_number).await
+    pub async fn get_scores_by_student_class_term(&self, student_id: Uuid, class_id: Uuid, term_number: i32) -> AppResult<Vec<grade_scores::Model>> {
+        ops::get_scores_by_student_class_term(&self.db, student_id, class_id, term_number).await
     }
 
     pub async fn upsert_score(&self, grade_item_id: Uuid, student_id: Uuid, score: Option<f64>, is_auto_populated: bool) -> AppResult<grade_scores::Model> {
@@ -90,7 +90,7 @@ impl GradeComputationRepository {
         ops::clear_override(&self.db, id).await
     }
 
-    // ─── Period Grades ────────────────────────────────────────────────────────
+    // ─── Term Grades ────────────────────────────────────────────────────────
 
     pub async fn get_term_grade(&self, class_id: Uuid, student_id: Uuid, term_number: i32) -> AppResult<Option<term_grades::Model>> {
         ops::get_term_grade(&self.db, class_id, student_id, term_number).await

@@ -37,7 +37,7 @@ pub struct EnrollmentSpec {
 pub struct TosSpec {
     pub id: Uuid,
     pub class_id: Uuid,
-    pub period: i32,
+    pub term_number: i32,
     pub title: String,
     pub template_type: String,
     pub total_items: i32,
@@ -282,8 +282,7 @@ pub struct CoreValuesSpec {
     pub class_id: Uuid,
     pub school_year: String,
     pub term_number: i32,
-    pub core_value: String,
-    pub behavior_statement: String,
+    pub core_value_id: i32,
     pub marking: String,
 }
 

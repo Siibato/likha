@@ -25,7 +25,7 @@ class AssignmentCreateController extends ChangeNotifier {
   bool allowsFileSubmission = false;
   DateTime dueAt = DateTime.now().add(const Duration(days: 7));
   bool isPublished = true;
-  int? quarter;
+  int? termNumber;
   String? component = 'pt';
   bool noSubmissionRequired = false;
   bool isSaving = false;
@@ -77,8 +77,8 @@ class AssignmentCreateController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setQuarter(int? value) {
-    quarter = value;
+  void setTermNumber(int? value) {
+    termNumber = value;
     formError = null;
     notifyListeners();
   }
@@ -149,7 +149,7 @@ class AssignmentCreateController extends ChangeNotifier {
         maxFileSizeMb: maxFileSizeMb,
         dueAt: formatDateTimeForApi(dueAt),
         isPublished: isPublished,
-        termNumber: quarter,
+        termNumber: termNumber,
         component: component,
         noSubmissionRequired: noSubmissionRequired,
       ),

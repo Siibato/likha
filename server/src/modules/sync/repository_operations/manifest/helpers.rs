@@ -163,7 +163,7 @@ pub fn grade_score_to_json(r: grade_scores::Model) -> Value {
     })
 }
 
-pub fn period_grade_to_json(r: term_grades::Model) -> Value {
+pub fn term_grade_to_json(r: term_grades::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
@@ -225,8 +225,7 @@ pub fn core_values_record_to_json(r: core_values_records::Model) -> Value {
         "class_id": r.class_id.to_string(),
         "school_year": r.school_year,
         "term_number": r.term_number,
-        "core_value": r.core_value,
-        "behavior_statement": r.behavior_statement,
+        "core_value_id": r.core_value_id,
         "marking": r.marking,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),

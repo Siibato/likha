@@ -43,7 +43,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
         &ctx, &assignments, &students, &teachers, &enrollments,
     );
 
-    // Generate grade records (2 periods per class)
+    // Generate grade records (2 terms per class)
     let grade_records = generate_grade_records(&classes);
 
     // Insert data
@@ -85,7 +85,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     let grade_scores = generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
 
-    // Generate and insert period grades
+    // Generate and insert term grades
     let term_grades = generate_term_grades(&students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx);
     inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
@@ -93,7 +93,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
 
     // Summary
     let summary = format!(
-        "Manual seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
+        "Manual seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
         users.len(),
         classes.len(),
         enrollments.len(),
@@ -122,11 +122,11 @@ fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crat
         if class.deleted_at.is_some() {
             continue;
         }
-        // Create 4 period records per class with 40/40/20 weights (Q1-Q4)
-        for period in 1..=4 {
+        // Create 4 term records per class with 40/40/20 weights (T1-T4)
+        for term in 1..=4 {
             records.push(crate::seed::specs::GradeRecordSpec {
                 class_id: class.id,
-                term_number: period,
+                term_number: term,
                 ww_weight: 40.0,
                 pt_weight: 40.0,
                 qa_weight: 20.0,
@@ -336,7 +336,7 @@ fn generate_term_grades(
                     match component.as_str() {
                         "written_work" => { ww_sum += effective; ww_total += *total_points; }
                         "performance_task" => { pt_sum += effective; pt_total += *total_points; }
-                        "period_assessment" => { qa_sum += effective; qa_total += *total_points; }
+                        "term_assessment" => { qa_sum += effective; qa_total += *total_points; }
                         _ => {}
                     }
                 }

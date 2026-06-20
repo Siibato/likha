@@ -1,4 +1,4 @@
-//! Advisory grade generators: manual grade items + deterministic scores + computed period grades.
+//! Advisory grade generators: manual grade items + deterministic scores + computed term grades.
 //! Only for the 3 subject classes (English, Math, Science). Advisory class has no grades.
 
 use std::collections::HashMap;
@@ -18,7 +18,7 @@ const SUBJECT_CLASSES: &[(&str, &str)] = &[
 const COMPONENTS: &[(&str, &str, f64)] = &[
     ("written_work", "Written Work Quiz", 20.0),
     ("performance_task", "Performance Task", 50.0),
-    ("period_assessment", "Quarterly Assessment", 40.0),
+    ("term_assessment", "Term Assessment", 40.0),
 ];
 
 pub fn generate_grade_records() -> Vec<GradeRecordSpec> {
@@ -29,10 +29,10 @@ pub fn generate_grade_records() -> Vec<GradeRecordSpec> {
             pt: 40.0,
             qa: 20.0,
         });
-        for period in 1..=4 {
+        for term in 1..=4 {
             records.push(GradeRecordSpec {
                 class_id: cid(class_key),
-                term_number: period,
+                term_number: term,
                 ww_weight: preset.ww,
                 pt_weight: preset.pt,
                 qa_weight: preset.qa,
@@ -47,16 +47,16 @@ pub fn generate_grade_items() -> Vec<GradeItemSpec> {
     let mut order = 0;
 
     for &(class_key, _) in SUBJECT_CLASSES {
-        for period in 1..=4 {
+        for term in 1..=4 {
             for &(component, title, total_points) in COMPONENTS {
-                let item_key = format!("{}_{}_{}", class_key, period, component);
+                let item_key = format!("{}_{}_{}", class_key, term, component);
                 let id = seed_id("grade_items", &format!("advisory_manual_{}", item_key));
                 items.push(GradeItemSpec {
                     id,
                     class_id: cid(class_key),
-                    title: format!("{} - Q{}", title, period),
+                    title: format!("{} - T{}", title, term),
                     component: component.into(),
-                    term_number: period,
+                    term_number: term,
                     total_points,
                     source_type: "manual".into(),
                     source_id: None,
@@ -176,7 +176,7 @@ pub fn generate_term_grades(
                             pt_sum += effective;
                             pt_total += *total_points;
                         }
-                        "period_assessment" => {
+                        "term_assessment" => {
                             qa_sum += effective;
                             qa_total += *total_points;
                         }

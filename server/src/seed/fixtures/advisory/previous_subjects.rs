@@ -39,14 +39,14 @@ pub fn advisory_previous_subjects() -> Vec<PreviousSubjectSpec> {
         for (hidx, hist) in student_history.iter().enumerate() {
             for (subidx, &(subject_name, subject_group)) in SUBJECTS.iter().enumerate() {
                 let base: i32 = 78 + ((sidx + hidx + subidx) % 18) as i32;
-                let q1 = base;
-                let q2 = base + ((sidx + subidx) % 5) as i32 - 2;
-                let q3 = base + ((hidx + subidx) % 4) as i32 - 2;
-                let q4 = base + ((sidx + hidx) % 3) as i32 - 1;
-                let q2 = q2.max(72).min(95);
-                let q3 = q3.max(72).min(95);
-                let q4 = q4.max(72).min(95);
-                let final_grade = ((q1 + q2 + q3 + q4) as f64 / 4.0).round() as i32;
+                let t1 = base;
+                let t2 = base + ((sidx + subidx) % 5) as i32 - 2;
+                let t3 = base + ((hidx + subidx) % 4) as i32 - 2;
+                let t4 = base + ((sidx + hidx) % 3) as i32 - 1;
+                let t2 = t2.max(72).min(95);
+                let t3 = t3.max(72).min(95);
+                let t4 = t4.max(72).min(95);
+                let final_grade = ((t1 + t2 + t3 + t4) as f64 / 4.0).round() as i32;
 
                 let id = seed_id(
                     "previous_school_subjects",
@@ -59,7 +59,7 @@ pub fn advisory_previous_subjects() -> Vec<PreviousSubjectSpec> {
                     subject_name: subject_name.into(),
                     subject_group: Some(subject_group.into()),
                     term_type: "quarterly".into(),
-                    term_grades: vec![Some(q1), Some(q2), Some(q3), Some(q4)],
+                    term_grades: vec![Some(t1), Some(t2), Some(t3), Some(t4)],
                     final_grade: Some(final_grade),
                     descriptor: Some(descriptor_for(final_grade).into()),
                 });

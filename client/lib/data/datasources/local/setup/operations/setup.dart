@@ -11,7 +11,7 @@ Future<SchoolDetailsModel> getCachedSchoolDetails(LocalDatabase db) async {
     DbTables.schoolDetails,
     limit: 1,
   );
-  if (rows.isEmpty) throw CacheException('School settings not cached');
+  if (rows.isEmpty) throw CacheException('School details not cached');
   return SchoolDetailsModel.fromMap(rows.first);
 }
 
