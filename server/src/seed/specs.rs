@@ -273,7 +273,6 @@ pub struct AttendanceSpec {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -309,10 +308,8 @@ pub struct PreviousSubjectSpec {
     pub school_history_id: Uuid,
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -326,5 +323,4 @@ pub struct PreviousAttendanceSpec {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }

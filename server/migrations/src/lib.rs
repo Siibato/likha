@@ -42,6 +42,7 @@ mod m20260619_000001_add_school_head_to_settings;
 mod m20260620_000001_create_student_records_tables;
 mod m20260620_000002_phase_1_foundation;
 mod m20260620_000003_rename_terms;
+mod m20260620_000004_phase_3_normalization;
 
 pub struct Migrator;
 
@@ -91,6 +92,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260620_000001_create_student_records_tables::Migration),
             Box::new(m20260620_000002_phase_1_foundation::Migration),
             Box::new(m20260620_000003_rename_terms::Migration),
+            Box::new(m20260620_000004_phase_3_normalization::Migration),
         ]
     }
 }

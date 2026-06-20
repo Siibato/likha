@@ -135,6 +135,11 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
+  previousSchoolTermGrades:
+      (json['previous_school_term_grades'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
   previousSchoolAttendance:
       (json['previous_school_attendance'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
@@ -175,5 +180,6 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'core_values_records': instance.coreValuesRecords,
   'student_school_history': instance.studentSchoolHistory,
   'previous_school_subjects': instance.previousSchoolSubjects,
+  'previous_school_term_grades': instance.previousSchoolTermGrades,
   'previous_school_attendance': instance.previousSchoolAttendance,
 };

@@ -139,7 +139,6 @@ pub async fn upsert_attendance(
         req.month,
         req.school_days,
         req.days_present,
-        req.days_absent,
     ).await {
         Ok(model) => success_response(AttendanceResponse::from(model), StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
@@ -335,10 +334,14 @@ pub async fn get_previous_subjects(
     }
     let q_history_id = query.class_id.and_then(|s| Uuid::parse_str(&s).ok());
     match service.repo.get_previous_subjects(student_id, q_history_id).await {
-        Ok(records) => success_response(
-            records.into_iter().map(PreviousSubjectResponse::from).collect::<Vec<_>>(),
-            StatusCode::OK,
-        ).into_response(),
+        Ok(records) => {
+            let mut responses: Vec<PreviousSubjectResponse> = Vec::new();
+            for s in records {
+                let term_grades = service.repo.get_term_grades_for_subject(s.id).await.unwrap_or_default();
+                responses.push(PreviousSubjectResponse::from_with_term_grades(s, term_grades));
+            }
+            success_response(responses, StatusCode::OK).into_response()
+        }
         Err(e) => e.into_response(),
     }
 }
@@ -370,14 +373,15 @@ pub async fn upsert_previous_subject(
         req_history_id,
         req.subject_name,
         req.subject_group,
-        req.q1_grade,
-        req.q2_grade,
-        req.q3_grade,
-        req.q4_grade,
+        req.term_type,
+        req.term_grades,
         req.final_grade,
         req.descriptor,
     ).await {
-        Ok(model) => success_response(PreviousSubjectResponse::from(model), StatusCode::OK).into_response(),
+        Ok(model) => {
+            let term_grades = service.repo.get_term_grades_for_subject(model.id).await.unwrap_or_default();
+            success_response(PreviousSubjectResponse::from_with_term_grades(model, term_grades), StatusCode::OK).into_response()
+        }
         Err(e) => e.into_response(),
     }
 }
@@ -438,7 +442,6 @@ pub async fn upsert_previous_attendance(
         req.month,
         req.school_days,
         req.days_present,
-        req.days_absent,
     ).await {
         Ok(model) => success_response(PreviousAttendanceResponse::from(model), StatusCode::OK).into_response(),
         Err(e) => e.into_response(),

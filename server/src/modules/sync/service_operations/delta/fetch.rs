@@ -239,6 +239,7 @@ impl super::SyncDeltaService {
         let mut core_values_records_raw: Vec<serde_json::Value> = Vec::new();
         let mut student_school_history_raw: Vec<serde_json::Value> = Vec::new();
         let mut previous_school_subjects_raw: Vec<serde_json::Value> = Vec::new();
+        let mut previous_school_term_grades_raw: Vec<serde_json::Value> = Vec::new();
         let mut previous_school_attendance_raw: Vec<serde_json::Value> = Vec::new();
 
         if scope.include_student_records {
@@ -274,6 +275,13 @@ impl super::SyncDeltaService {
             previous_school_subjects_raw = self.manifest_repo
                 .get_previous_subjects_since(student_ids.clone(), last_sync_at)
                 .await?;
+            // Fetch term grades for those subjects
+            let subject_ids: Vec<Uuid> = previous_school_subjects_raw.iter()
+                .filter_map(|s| s.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            previous_school_term_grades_raw = self.manifest_repo
+                .get_previous_school_term_grades_since(subject_ids, last_sync_at)
+                .await?;
             previous_school_attendance_raw = self.manifest_repo
                 .get_previous_attendance_since(student_ids, last_sync_at)
                 .await?;
@@ -301,6 +309,7 @@ impl super::SyncDeltaService {
         let core_values_records_deltas = separate_deltas(core_values_records_raw);
         let student_school_history_deltas = separate_deltas(student_school_history_raw);
         let previous_school_subjects_deltas = separate_deltas(previous_school_subjects_raw);
+        let previous_school_term_grades_deltas = separate_deltas(previous_school_term_grades_raw);
         let previous_school_attendance_deltas = separate_deltas(previous_school_attendance_raw);
 
         let now = Utc::now();
@@ -341,6 +350,7 @@ impl super::SyncDeltaService {
                 core_values_records: core_values_records_deltas,
                 student_school_history: student_school_history_deltas,
                 previous_school_subjects: previous_school_subjects_deltas,
+                previous_school_term_grades: previous_school_term_grades_deltas,
                 previous_school_attendance: previous_school_attendance_deltas,
             },
         })

@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 14,
+            version: 15,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 13,
+        version: 14,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -733,9 +733,9 @@ class LocalDatabase {
           month TEXT NOT NULL,
           school_days INTEGER NOT NULL DEFAULT 0,
           days_present INTEGER NOT NULL DEFAULT 0,
-          days_absent INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -795,18 +795,33 @@ class LocalDatabase {
           school_history_id TEXT NOT NULL,
           subject_name TEXT NOT NULL,
           subject_group TEXT,
-          q1_grade INTEGER,
-          q2_grade INTEGER,
-          q3_grade INTEGER,
-          q4_grade INTEGER,
+          term_type TEXT NOT NULL DEFAULT 'quarterly',
           final_grade INTEGER,
           descriptor TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY(school_history_id) REFERENCES student_school_history(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Previous school term grades table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS previous_school_term_grades (
+          id TEXT PRIMARY KEY,
+          subject_id TEXT NOT NULL,
+          term_number INTEGER NOT NULL,
+          grade INTEGER,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(subject_id) REFERENCES previous_school_subjects(id) ON DELETE CASCADE,
+          UNIQUE(subject_id, term_number)
         )
       ''');
 
@@ -820,9 +835,9 @@ class LocalDatabase {
           month TEXT NOT NULL,
           school_days INTEGER NOT NULL DEFAULT 0,
           days_present INTEGER NOT NULL DEFAULT 0,
-          days_absent INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -884,6 +899,7 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_student_school_history_student_id ON student_school_history(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_student_id ON previous_school_subjects(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_school_history_id ON previous_school_subjects(school_history_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_term_grades_subject_id ON previous_school_term_grades(subject_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_student_id ON previous_school_attendance(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_school_history_id ON previous_school_attendance(school_history_id)');
     });
@@ -955,6 +971,15 @@ class LocalDatabase {
       return;
     }
 
+    // Targeted migration: Phase 3 normalization — previous school term grades, drop q1-q4 and days_absent
+    // Web path: 14 → 15; Mobile path: 13 → 14
+    if ((oldVersion == 14 && newVersion == 15) || (oldVersion == 13 && newVersion == 14)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
+      return;
+    }
+
     // Targeted migration: term renames — term_* → term_*, term_grades → term_grades
     // Web path: 13 → 14; Mobile path: 12 → 13
     if ((oldVersion == 13 && newVersion == 14) || (oldVersion == 12 && newVersion == 13)) {
@@ -1020,6 +1045,7 @@ class LocalDatabase {
       'table_of_specifications',
       'melcs',
       'school_details',
+      'previous_school_term_grades',
       'previous_school_attendance',
       'previous_school_subjects',
       'student_school_history',

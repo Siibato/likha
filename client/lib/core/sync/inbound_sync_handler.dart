@@ -372,6 +372,7 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertCoreValuesRecords(txn, batchResponse.coreValuesRecords);
           await _upsertHelpers.upsertStudentSchoolHistory(txn, batchResponse.studentSchoolHistory);
           await _upsertHelpers.upsertPreviousSchoolSubjects(txn, batchResponse.previousSchoolSubjects);
+          await _upsertHelpers.upsertPreviousSchoolTermGrades(txn, batchResponse.previousSchoolTermGrades);
           await _upsertHelpers.upsertPreviousSchoolAttendance(txn, batchResponse.previousSchoolAttendance);
         });
       }

@@ -77,6 +77,9 @@ class DeltaPayload {
   @JsonKey(name: 'previous_school_subjects')
   final EntityDeltas previousSchoolSubjects;
 
+  @JsonKey(name: 'previous_school_term_grades')
+  final EntityDeltas previousSchoolTermGrades;
+
   @JsonKey(name: 'previous_school_attendance')
   final EntityDeltas previousSchoolAttendance;
 
@@ -102,6 +105,7 @@ class DeltaPayload {
     required this.coreValuesRecords,
     required this.studentSchoolHistory,
     required this.previousSchoolSubjects,
+    required this.previousSchoolTermGrades,
     required this.previousSchoolAttendance,
   });
 

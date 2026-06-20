@@ -44,7 +44,6 @@ pub fn advisory_previous_attendance() -> Vec<PreviousAttendanceSpec> {
                     month: month.into(),
                     school_days,
                     days_present,
-                    days_absent,
                 });
             }
         }

@@ -3,7 +3,7 @@ use chrono::Utc;
 
 use crate::seed::specs::{SchoolHistorySpec, PreviousSubjectSpec, PreviousAttendanceSpec};
 use crate::utils::AppError;
-use ::entity::{student_school_history, previous_school_subjects, previous_school_attendance};
+use ::entity::{student_school_history, previous_school_subjects, previous_school_term_grades, previous_school_attendance};
 
 pub async fn insert_school_history(
     db: &DatabaseConnection,
@@ -48,18 +48,33 @@ pub async fn insert_previous_subjects(
             school_history_id: Set(spec.school_history_id),
             subject_name: Set(spec.subject_name.clone()),
             subject_group: Set(spec.subject_group.clone()),
-            q1_grade: Set(spec.q1_grade),
-            q2_grade: Set(spec.q2_grade),
-            q3_grade: Set(spec.q3_grade),
-            q4_grade: Set(spec.q4_grade),
+            term_type: Set(spec.term_type.clone()),
             final_grade: Set(spec.final_grade),
             descriptor: Set(spec.descriptor.clone()),
             created_at: Set(now),
             updated_at: Set(now),
+            deleted_at: Set(None),
         };
         am.insert(db)
             .await
             .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+
+        // Insert child term grades
+        for (i, grade) in spec.term_grades.iter().enumerate() {
+            let term_number = (i + 1) as i32;
+            let tg_am = previous_school_term_grades::ActiveModel {
+                id: Set(uuid::Uuid::new_v4()),
+                subject_id: Set(spec.id),
+                term_number: Set(term_number),
+                grade: Set(*grade),
+                created_at: Set(now),
+                updated_at: Set(now),
+                deleted_at: Set(None),
+            };
+            tg_am.insert(db)
+                .await
+                .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        }
     }
 
     Ok(())
@@ -80,9 +95,9 @@ pub async fn insert_previous_attendance(
             month: Set(spec.month.clone()),
             school_days: Set(spec.school_days),
             days_present: Set(spec.days_present),
-            days_absent: Set(spec.days_absent),
             created_at: Set(now),
             updated_at: Set(now),
+            deleted_at: Set(None),
         };
         am.insert(db)
             .await

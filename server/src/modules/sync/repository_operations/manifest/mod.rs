@@ -79,6 +79,7 @@ pub mod get_school_history_for_students;
 pub mod get_school_history_since;
 pub mod get_previous_subjects_for_students;
 pub mod get_previous_subjects_since;
+pub mod get_previous_school_term_grades_since;
 pub mod get_previous_attendance_for_students;
 pub mod get_previous_attendance_since;
 
@@ -168,5 +169,6 @@ pub use get_school_history_for_students::get_school_history_for_students;
 pub use get_school_history_since::get_school_history_since;
 pub use get_previous_subjects_for_students::get_previous_subjects_for_students;
 pub use get_previous_subjects_since::get_previous_subjects_since;
+pub use get_previous_school_term_grades_since::get_previous_school_term_grades_since;
 pub use get_previous_attendance_for_students::get_previous_attendance_for_students;
 pub use get_previous_attendance_since::get_previous_attendance_since;

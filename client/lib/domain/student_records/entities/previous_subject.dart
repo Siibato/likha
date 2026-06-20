@@ -6,10 +6,8 @@ class PreviousSubject extends Equatable {
   final String schoolHistoryId;
   final String subjectName;
   final String? subjectGroup;
-  final int? q1Grade;
-  final int? q2Grade;
-  final int? q3Grade;
-  final int? q4Grade;
+  final String? termType;
+  final List<int?> termGrades;
   final int? finalGrade;
   final String? descriptor;
 
@@ -19,10 +17,8 @@ class PreviousSubject extends Equatable {
     required this.schoolHistoryId,
     required this.subjectName,
     this.subjectGroup,
-    this.q1Grade,
-    this.q2Grade,
-    this.q3Grade,
-    this.q4Grade,
+    this.termType,
+    this.termGrades = const [],
     this.finalGrade,
     this.descriptor,
   });

@@ -28,7 +28,6 @@ pub struct UpsertAttendanceRequest {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -70,10 +69,8 @@ pub struct UpsertPreviousSubjectRequest {
     pub school_history_id: String,
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -85,7 +82,6 @@ pub struct UpsertPreviousAttendanceRequest {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -132,7 +128,6 @@ pub struct AttendanceResponse {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -168,10 +163,8 @@ pub struct PreviousSubjectResponse {
     pub school_history_id: String,
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -185,7 +178,6 @@ pub struct PreviousAttendanceResponse {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 // ===== SF10 AGGREGATE SCHEMAS =====
@@ -253,10 +245,8 @@ pub struct Sf10SubjectRow {
 pub struct Sf10PreviousSubject {
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -266,7 +256,6 @@ pub struct Sf10AttendanceMonth {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 // ===== FROM CONVERSIONS =====
@@ -305,7 +294,6 @@ impl From<::entity::attendance_records::Model> for AttendanceResponse {
             month: m.month,
             school_days: m.school_days,
             days_present: m.days_present,
-            days_absent: m.days_absent,
         }
     }
 }
@@ -342,18 +330,19 @@ impl From<::entity::student_school_history::Model> for SchoolHistoryResponse {
     }
 }
 
-impl From<::entity::previous_school_subjects::Model> for PreviousSubjectResponse {
-    fn from(m: ::entity::previous_school_subjects::Model) -> Self {
+impl PreviousSubjectResponse {
+    pub fn from_with_term_grades(
+        m: ::entity::previous_school_subjects::Model,
+        term_grades: Vec<Option<i32>>,
+    ) -> Self {
         Self {
             id: m.id.to_string(),
             student_id: m.student_id.to_string(),
             school_history_id: m.school_history_id.to_string(),
             subject_name: m.subject_name,
             subject_group: m.subject_group,
-            q1_grade: m.q1_grade,
-            q2_grade: m.q2_grade,
-            q3_grade: m.q3_grade,
-            q4_grade: m.q4_grade,
+            term_type: m.term_type,
+            term_grades,
             final_grade: m.final_grade,
             descriptor: m.descriptor,
         }
@@ -370,7 +359,6 @@ impl From<::entity::previous_school_attendance::Model> for PreviousAttendanceRes
             month: m.month,
             school_days: m.school_days,
             days_present: m.days_present,
-            days_absent: m.days_absent,
         }
     }
 }

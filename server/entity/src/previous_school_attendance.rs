@@ -12,9 +12,9 @@ pub struct Model {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -42,6 +42,7 @@ String? _entityTypeToTable(String entityType) {
     case 'core_values_records': return DbTables.coreValuesRecords;
     case 'school_history': return DbTables.studentSchoolHistory;
     case 'previous_school_subjects': return DbTables.previousSchoolSubjects;
+    case 'previous_school_term_grades': return DbTables.previousSchoolTermGrades;
     case 'previous_school_attendance': return DbTables.previousSchoolAttendance;
     default: return null;
   }
@@ -321,6 +322,7 @@ class OutboundSyncHandler {
             e.entityType == SyncEntityType.coreValuesRecords ||
             e.entityType == SyncEntityType.schoolHistory ||
             e.entityType == SyncEntityType.previousSchoolSubjects ||
+            e.entityType == SyncEntityType.previousSchoolTermGrades ||
             e.entityType == SyncEntityType.previousSchoolAttendance)
         .toList();
     if (studentRecordsOps.isNotEmpty && _studentRecordsHandler != null) {
@@ -357,6 +359,7 @@ class OutboundSyncHandler {
             e.entityType != SyncEntityType.coreValuesRecords &&
             e.entityType != SyncEntityType.schoolHistory &&
             e.entityType != SyncEntityType.previousSchoolSubjects &&
+            e.entityType != SyncEntityType.previousSchoolTermGrades &&
             e.entityType != SyncEntityType.previousSchoolAttendance)
         .toList();
 

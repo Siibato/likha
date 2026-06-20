@@ -20,9 +20,9 @@ pub async fn insert_attendance_records(
             month: Set(spec.month.clone()),
             school_days: Set(spec.school_days),
             days_present: Set(spec.days_present),
-            days_absent: Set(spec.days_absent),
             created_at: Set(now),
             updated_at: Set(now),
+            deleted_at: Set(None),
         };
         am.insert(db)
             .await

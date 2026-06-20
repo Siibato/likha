@@ -1311,7 +1311,7 @@ class SyncUpsertHelpers {
             AttendanceRecordsCols.month: record['month'],
             AttendanceRecordsCols.schoolDays: record['school_days'] != null ? (record['school_days'] as num).toInt() : null,
             AttendanceRecordsCols.daysPresent: record['days_present'] != null ? (record['days_present'] as num).toInt() : null,
-            AttendanceRecordsCols.daysAbsent: record['days_absent'] != null ? (record['days_absent'] as num).toInt() : null,
+            CommonCols.deletedAt: record['deleted_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -1434,12 +1434,10 @@ class SyncUpsertHelpers {
             PreviousSchoolSubjectsCols.schoolHistoryId: record['school_history_id'],
             PreviousSchoolSubjectsCols.subjectName: record['subject_name'],
             PreviousSchoolSubjectsCols.subjectGroup: record['subject_group'],
-            PreviousSchoolSubjectsCols.q1Grade: record['q1_grade'] != null ? (record['q1_grade'] as num).toDouble() : null,
-            PreviousSchoolSubjectsCols.q2Grade: record['q2_grade'] != null ? (record['q2_grade'] as num).toDouble() : null,
-            PreviousSchoolSubjectsCols.q3Grade: record['q3_grade'] != null ? (record['q3_grade'] as num).toDouble() : null,
-            PreviousSchoolSubjectsCols.q4Grade: record['q4_grade'] != null ? (record['q4_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.termType: record['term_type'] ?? 'quarterly',
             PreviousSchoolSubjectsCols.finalGrade: record['final_grade'] != null ? (record['final_grade'] as num).toDouble() : null,
             PreviousSchoolSubjectsCols.descriptor: record['descriptor'],
+            CommonCols.deletedAt: record['deleted_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -1457,6 +1455,44 @@ class SyncUpsertHelpers {
     _log.upsertSummary('previous_school_subjects', successCount);
     if (failedCount > 0) {
       _log.warn('Failed to upsert previous_school_subjects', failedCount);
+    }
+  }
+
+  Future<void> upsertPreviousSchoolTermGrades(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.previousSchoolTermGrades,
+          {
+            CommonCols.id: record['id'],
+            PreviousSchoolTermGradesCols.subjectId: record['subject_id'],
+            PreviousSchoolTermGradesCols.termNumber: record['term_number'] != null ? (record['term_number'] as num).toInt() : null,
+            PreviousSchoolTermGradesCols.grade: record['grade'] != null ? (record['grade'] as num).toInt() : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert previous_school_term_grades', e);
+      }
+    }
+
+    _log.upsertSummary('previous_school_term_grades', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert previous_school_term_grades', failedCount);
     }
   }
 
@@ -1480,7 +1516,7 @@ class SyncUpsertHelpers {
             PreviousSchoolAttendanceCols.month: record['month'],
             PreviousSchoolAttendanceCols.schoolDays: record['school_days'] != null ? (record['school_days'] as num).toInt() : null,
             PreviousSchoolAttendanceCols.daysPresent: record['days_present'] != null ? (record['days_present'] as num).toInt() : null,
-            PreviousSchoolAttendanceCols.daysAbsent: record['days_absent'] != null ? (record['days_absent'] as num).toInt() : null,
+            CommonCols.deletedAt: record['deleted_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -2010,6 +2046,24 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.delete(
           DbTables.previousSchoolSubjects,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle previous_school_term_grades delta
+    final previousSchoolTermGradesDeltas = deltas['previous_school_term_grades'];
+    if (previousSchoolTermGradesDeltas != null) {
+      final updated = previousSchoolTermGradesDeltas.updated;
+      updatedCounts['previous_school_term_grades'] = updated.length;
+      await upsertPreviousSchoolTermGrades(db, updated);
+
+      final deleted = previousSchoolTermGradesDeltas.deleted;
+      deletedCounts['previous_school_term_grades'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.previousSchoolTermGrades,
           where: '${CommonCols.id} = ?',
           whereArgs: [id],
         );

@@ -58,10 +58,8 @@ pub fn advisory_previous_subjects() -> Vec<PreviousSubjectSpec> {
                     school_history_id: hist.id,
                     subject_name: subject_name.into(),
                     subject_group: Some(subject_group.into()),
-                    q1_grade: Some(q1),
-                    q2_grade: Some(q2),
-                    q3_grade: Some(q3),
-                    q4_grade: Some(q4),
+                    term_type: "quarterly".into(),
+                    term_grades: vec![Some(q1), Some(q2), Some(q3), Some(q4)],
                     final_grade: Some(final_grade),
                     descriptor: Some(descriptor_for(final_grade).into()),
                 });

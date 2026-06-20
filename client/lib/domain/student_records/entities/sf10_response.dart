@@ -125,20 +125,16 @@ class Sf10SubjectRow extends Equatable {
 class Sf10PreviousSubject extends Equatable {
   final String subjectName;
   final String? subjectGroup;
-  final int? q1Grade;
-  final int? q2Grade;
-  final int? q3Grade;
-  final int? q4Grade;
+  final String? termType;
+  final List<int?> termGrades;
   final int? finalGrade;
   final String? descriptor;
 
   const Sf10PreviousSubject({
     required this.subjectName,
     this.subjectGroup,
-    this.q1Grade,
-    this.q2Grade,
-    this.q3Grade,
-    this.q4Grade,
+    this.termType,
+    this.termGrades = const [],
     this.finalGrade,
     this.descriptor,
   });
@@ -151,13 +147,11 @@ class Sf10AttendanceMonth extends Equatable {
   final String month;
   final int schoolDays;
   final int daysPresent;
-  final int daysAbsent;
 
   const Sf10AttendanceMonth({
     required this.month,
     required this.schoolDays,
     required this.daysPresent,
-    required this.daysAbsent,
   });
 
   @override

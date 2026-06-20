@@ -496,15 +496,18 @@ class _Sf10Content extends StatelessWidget {
                 5: FlexColumnWidth(1),
               },
               children: [
-                TableRow(children: [_th('Subject'), _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'), _th('Final')]),
-                ...h.subjects.map((s) => TableRow(children: [
-                  _td(s.subjectName),
-                  _td(s.q1Grade?.toString() ?? '-'),
-                  _td(s.q2Grade?.toString() ?? '-'),
-                  _td(s.q3Grade?.toString() ?? '-'),
-                  _td(s.q4Grade?.toString() ?? '-'),
-                  _td(s.finalGrade?.toString() ?? '-'),
-                ])),
+                TableRow(children: [_th('Subject'), _th('T1'), _th('T2'), _th('T3'), _th('T4'), _th('Final')]),
+                ...h.subjects.map((s) {
+                  final tg = s.termGrades;
+                  return TableRow(children: [
+                    _td(s.subjectName),
+                    _td(tg.isNotEmpty ? tg[0]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 1 ? tg[1]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 2 ? tg[2]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 3 ? tg[3]?.toString() ?? '-' : '-'),
+                    _td(s.finalGrade?.toString() ?? '-'),
+                  ]);
+                }),
               ],
             ),
           ],

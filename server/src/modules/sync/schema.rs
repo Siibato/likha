@@ -34,6 +34,7 @@ pub struct DeltaPayload {
     pub core_values_records: EntityDeltas,
     pub student_school_history: EntityDeltas,
     pub previous_school_subjects: EntityDeltas,
+    pub previous_school_term_grades: EntityDeltas,
     pub previous_school_attendance: EntityDeltas,
 }
 

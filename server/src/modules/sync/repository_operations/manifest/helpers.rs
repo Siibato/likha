@@ -8,6 +8,7 @@ use ::entity::{
     table_of_specifications, tos_competencies,
     learner_details, attendance_records, core_values_records,
     student_school_history, previous_school_subjects, previous_school_attendance,
+    previous_school_term_grades,
 };
 use crate::utils::{AppError, AppResult};
 use super::{ManifestEntry, PaginatedRecords};
@@ -211,9 +212,9 @@ pub fn attendance_record_to_json(r: attendance_records::Model) -> Value {
         "month": r.month,
         "school_days": r.school_days,
         "days_present": r.days_present,
-        "days_absent": r.days_absent,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
     })
 }
 
@@ -256,14 +257,24 @@ pub fn previous_school_subject_to_json(r: previous_school_subjects::Model) -> Va
         "school_history_id": r.school_history_id.to_string(),
         "subject_name": r.subject_name,
         "subject_group": r.subject_group,
-        "q1_grade": r.q1_grade,
-        "q2_grade": r.q2_grade,
-        "q3_grade": r.q3_grade,
-        "q4_grade": r.q4_grade,
+        "term_type": r.term_type,
         "final_grade": r.final_grade,
         "descriptor": r.descriptor,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
+    })
+}
+
+pub fn previous_school_term_grade_to_json(r: previous_school_term_grades::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "subject_id": r.subject_id.to_string(),
+        "term_number": r.term_number,
+        "grade": r.grade,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
     })
 }
 
@@ -276,9 +287,9 @@ pub fn previous_school_attendance_to_json(r: previous_school_attendance::Model) 
         "month": r.month,
         "school_days": r.school_days,
         "days_present": r.days_present,
-        "days_absent": r.days_absent,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
     })
 }
 

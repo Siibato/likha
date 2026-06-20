@@ -44,7 +44,6 @@ pub fn advisory_attendance() -> Vec<AttendanceSpec> {
                 month: month.into(),
                 school_days,
                 days_present,
-                days_absent,
             });
         }
     }

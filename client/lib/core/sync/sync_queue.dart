@@ -33,6 +33,7 @@ enum SyncEntityType {
   coreValuesRecords('core_values_records'),
   schoolHistory('school_history'),
   previousSchoolSubjects('previous_school_subjects'),
+  previousSchoolTermGrades('previous_school_term_grades'),
   previousSchoolAttendance('previous_school_attendance');
 
   const SyncEntityType(this.serverValue);

@@ -214,6 +214,7 @@ impl super::SyncFullService {
                 core_values_records: vec![],
                 student_school_history: vec![],
                 previous_school_subjects: vec![],
+                previous_school_term_grades: vec![],
                 previous_school_attendance: vec![],
             });
         }
@@ -264,6 +265,7 @@ impl super::SyncFullService {
                 core_values_records: vec![],
                 student_school_history: vec![],
                 previous_school_subjects: vec![],
+                previous_school_term_grades: vec![],
                 previous_school_attendance: vec![],
             });
         }
@@ -560,6 +562,7 @@ impl super::SyncFullService {
         let mut core_values_records: Vec<Value> = Vec::new();
         let mut student_school_history: Vec<Value> = Vec::new();
         let mut previous_school_subjects: Vec<Value> = Vec::new();
+        let mut previous_school_term_grades: Vec<Value> = Vec::new();
         let mut previous_school_attendance: Vec<Value> = Vec::new();
 
         if scope.include_student_records {
@@ -610,6 +613,18 @@ impl super::SyncFullService {
                 .await?
                 .records;
 
+            // Fetch term grades for those subjects
+            let subject_ids: Vec<Uuid> = previous_school_subjects.iter()
+                .filter_map(|s| s.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            previous_school_term_grades = if subject_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_previous_school_term_grades_since(subject_ids, chrono::NaiveDateTime::MIN)
+                    .await?
+            };
+
             previous_school_attendance = self
                 .manifest_repo
                 .get_previous_attendance_for_students(student_ids, 10000)
@@ -617,12 +632,13 @@ impl super::SyncFullService {
                 .records;
 
             tracing::debug!(
-                "Fetched student records: learner_details={}, attendance={}, core_values={}, school_history={}, prev_subjects={}, prev_attendance={}",
+                "Fetched student records: learner_details={}, attendance={}, core_values={}, school_history={}, prev_subjects={}, prev_term_grades={}, prev_attendance={}",
                 learner_details.len(),
                 attendance_records.len(),
                 core_values_records.len(),
                 student_school_history.len(),
                 previous_school_subjects.len(),
+                previous_school_term_grades.len(),
                 previous_school_attendance.len()
             );
         }
@@ -680,6 +696,7 @@ impl super::SyncFullService {
             core_values_records,
             student_school_history,
             previous_school_subjects,
+            previous_school_term_grades,
             previous_school_attendance,
         })
     }

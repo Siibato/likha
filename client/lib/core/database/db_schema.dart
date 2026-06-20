@@ -41,6 +41,7 @@ abstract final class DbTables {
   static const String coreValuesRecords = 'core_values_records';
   static const String studentSchoolHistory = 'student_school_history';
   static const String previousSchoolSubjects = 'previous_school_subjects';
+  static const String previousSchoolTermGrades = 'previous_school_term_grades';
   static const String previousSchoolAttendance = 'previous_school_attendance';
 }
 
@@ -382,7 +383,7 @@ abstract final class AttendanceRecordsCols {
   static const String month = 'month';
   static const String schoolDays = 'school_days';
   static const String daysPresent = 'days_present';
-  static const String daysAbsent = 'days_absent';
+  static const String deletedAt = 'deleted_at';
 }
 
 abstract final class CoreValuesRecordsCols {
@@ -414,12 +415,20 @@ abstract final class PreviousSchoolSubjectsCols {
   static const String schoolHistoryId = 'school_history_id';
   static const String subjectName = 'subject_name';
   static const String subjectGroup = 'subject_group';
-  static const String q1Grade = 'q1_grade';
-  static const String q2Grade = 'q2_grade';
-  static const String q3Grade = 'q3_grade';
-  static const String q4Grade = 'q4_grade';
+  static const String termType = 'term_type';
   static const String finalGrade = 'final_grade';
   static const String descriptor = 'descriptor';
+  static const String deletedAt = 'deleted_at';
+}
+
+abstract final class PreviousSchoolTermGradesCols {
+  static const String id = 'id';
+  static const String subjectId = 'subject_id';
+  static const String termNumber = 'term_number';
+  static const String grade = 'grade';
+  static const String createdAt = 'created_at';
+  static const String updatedAt = 'updated_at';
+  static const String deletedAt = 'deleted_at';
 }
 
 abstract final class PreviousSchoolAttendanceCols {
@@ -429,7 +438,7 @@ abstract final class PreviousSchoolAttendanceCols {
   static const String month = 'month';
   static const String schoolDays = 'school_days';
   static const String daysPresent = 'days_present';
-  static const String daysAbsent = 'days_absent';
+  static const String deletedAt = 'deleted_at';
 }
 
 // ─── Domain value strings ─────────────────────────────────────────────────────
