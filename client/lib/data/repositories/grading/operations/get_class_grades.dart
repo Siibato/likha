@@ -65,7 +65,23 @@ ResultFuture<ClassGrades> getClassGrades(
             // Save fresh data to local DB
             await localDataSource.saveItems(freshItems);
             for (final entry in freshScoresByItem.entries) {
-              await localDataSource.saveScores(entry.value);
+              // Bug 2 fix: Skip overwriting local scores whose syncStatus is
+              // pending or failed — the teacher's newer local edit must win
+              // over stale remote data.
+              final existingScores = await localDataSource.getScoresByItem(entry.key);
+              final skipStudentIds = <String>{};
+              for (final es in existingScores) {
+                final status = es.syncStatus ?? 'synced';
+                if (status == 'pending' || status == 'failed') {
+                  skipStudentIds.add(es.studentId);
+                }
+              }
+              final filteredScores = entry.value
+                  .where((s) => !skipStudentIds.contains(s.studentId))
+                  .toList();
+              if (filteredScores.isNotEmpty) {
+                await localDataSource.saveScores(filteredScores);
+              }
             }
             if (freshConfig != null) {
               final currentConfigs = await _safeGetConfig(localDataSource, classId);

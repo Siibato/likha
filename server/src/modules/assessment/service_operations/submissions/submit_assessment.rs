@@ -50,7 +50,6 @@ impl crate::modules::assessment::service::AssessmentService {
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assessment_submissions(submission.assessment_id).await;
             inv.invalidate_assessment_submission_detail(submission_id).await;
-            inv.invalidate_assessment_statistics(submission.assessment_id).await;
             inv.invalidate_student_results(submission_id).await;
             inv.invalidate_assessment_student_submission(submission.assessment_id, submission.user_id).await;
             if let Some(period) = assessment.grading_period_number {

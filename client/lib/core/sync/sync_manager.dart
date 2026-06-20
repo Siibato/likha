@@ -146,6 +146,7 @@ class SyncManager {
         _gradingLocalDataSource,
         _localDatabase,
         _log,
+        _dataEventBus,
       ),
       learningMaterialHandler: LearningMaterialSyncHandler(
         _learningMaterialRemoteDataSource,
@@ -320,6 +321,13 @@ class SyncManager {
     } finally {
       _isSyncing = false;
       _log.log('_runSync() - END');
+
+      // Re-flush any entries that arrived while we were busy syncing
+      final pendingCount = await _syncQueue.getPendingCount();
+      if (pendingCount > 0) {
+        _log.log('_runSync() - $pendingCount new queue entries arrived during sync, re-flushing');
+        _runSync();
+      }
     }
   }
 

@@ -28,7 +28,9 @@ class _SubmissionReviewPageState
       submissionId: widget.submissionId,
       notifier: ref.read(teacherAssessmentProvider.notifier),
     );
-    _controller.init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.init();
+    });
   }
 
   @override
@@ -40,7 +42,9 @@ class _SubmissionReviewPageState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(teacherAssessmentProvider);
-    final detail = state.currentSubmission;
+    final detail = state.currentSubmission?.id == widget.submissionId
+        ? state.currentSubmission
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -69,10 +73,25 @@ class _SubmissionReviewPageState
                   ),
                 )
               : detail == null
-                  ? const Center(
-                      child: Text(
-                        'Submission not found',
-                        style: TextStyle(color: AppColors.foregroundTertiary),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (state.error != null) ...[
+                              FormMessage(
+                                message: state.error,
+                                severity: MessageSeverity.error,
+                              ),
+                              const SizedBox(height: 12),
+                            ] else
+                              const Text(
+                                'Submission not found',
+                                style: TextStyle(color: AppColors.foregroundTertiary),
+                              ),
+                          ],
+                        ),
                       ),
                     )
                   : SingleChildScrollView(

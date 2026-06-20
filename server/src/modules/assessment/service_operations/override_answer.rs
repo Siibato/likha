@@ -34,7 +34,7 @@ impl crate::modules::assessment::service::AssessmentService {
         });
 
         let updated = self.assessment_repo
-            .override_answer(answer_id, request.is_correct, points)
+            .override_answer(answer_id, request.is_correct, points, teacher_id)
             .await?;
 
         let final_score = self.recalculate_final_score(submission.id).await?;

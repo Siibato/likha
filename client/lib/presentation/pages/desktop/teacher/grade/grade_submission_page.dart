@@ -50,7 +50,7 @@ class _GradeSubmissionPageState
     if (_formPrefilled) return;
 
     final submission = ref.read(assignmentProvider).currentSubmission;
-    if (submission == null) return;
+    if (submission == null || submission.id != widget.submissionId) return;
 
     _scoreController.text = submission.score?.toString() ?? '';
     _feedbackController.text = submission.feedback ?? '';
@@ -131,7 +131,9 @@ class _GradeSubmissionPageState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assignmentProvider);
-    final submission = state.currentSubmission;
+    final submission = state.currentSubmission?.id == widget.submissionId
+        ? state.currentSubmission
+        : null;
 
     if (submission != null) {
       _prefillFormIfGraded();

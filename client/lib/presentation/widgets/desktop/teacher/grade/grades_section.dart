@@ -86,13 +86,13 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     );
   }
 
-  void _handleScoreChanged(
+  Future<void> _handleScoreChanged(
     String studentId,
     String itemId,
     dynamic existingScore,
     double newScore,
-  ) {
-    ref.read(gradeScoresProvider.notifier).saveScores(itemId, [
+  ) async {
+    await ref.read(gradeScoresProvider.notifier).saveScores(itemId, [
       {
         'student_id': studentId,
         'score': newScore,

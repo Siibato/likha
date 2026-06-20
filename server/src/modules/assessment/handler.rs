@@ -303,7 +303,7 @@ pub async fn get_statistics(
         return r;
     }
 
-    match service.get_statistics_cached(assessment_id, auth_user.user_id).await {
+    match service.get_statistics(assessment_id, auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

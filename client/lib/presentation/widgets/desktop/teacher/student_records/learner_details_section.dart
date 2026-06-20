@@ -5,6 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/student_records_provider.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/skeletons/learner_details_skeleton.dart';
 
 class LearnerDetailsSection extends ConsumerStatefulWidget {
   final String classId;
@@ -102,8 +103,9 @@ class _LearnerDetailsSectionState extends ConsumerState<LearnerDetailsSection> {
                     subtitle: 'Choose a student from the list to edit their learner details',
                   )
                 : state.isLoading && state.details == null
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
+                    ? const LearnerDetailsSkeleton()
                     : _LearnerDetailsForm(
+                        key: ValueKey(_selectedStudentId),
                         classId: widget.classId,
                         studentId: _selectedStudentId!,
                         studentName: _selectedStudentName ?? 'Student',
@@ -125,6 +127,7 @@ class _LearnerDetailsForm extends StatefulWidget {
   final WidgetRef ref;
 
   const _LearnerDetailsForm({
+    super.key,
     required this.classId,
     required this.studentId,
     required this.studentName,

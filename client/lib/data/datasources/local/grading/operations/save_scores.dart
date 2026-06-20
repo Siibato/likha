@@ -12,9 +12,13 @@ Future<void> saveScores(
   final db = txn ?? await localDatabase.database;
   final batch = db.batch();
   for (final score in scores) {
+    final map = score.toMap();
+    if (score.syncStatus != null) {
+      map[CommonCols.syncStatus] = score.syncStatus;
+    }
     batch.insert(
       DbTables.gradeScores,
-      score.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }

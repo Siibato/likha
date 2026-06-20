@@ -167,6 +167,7 @@ class GradeScoreCell extends StatelessWidget {
   final bool isOverride;
   final bool empty;
   final Color? color;
+  final String? syncStatus;
 
   const GradeScoreCell({
     super.key,
@@ -177,33 +178,73 @@ class GradeScoreCell extends StatelessWidget {
     this.isOverride = false,
     this.empty = false,
     this.color,
+    this.syncStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: const Border(
-          right: BorderSide(color: AppColors.borderLight, width: 0.5),
+    final isPending = syncStatus == 'pending';
+    final isFailed = syncStatus == 'failed';
+
+    Color textColor;
+    FontWeight fontWeight;
+    if (isFailed) {
+      textColor = AppColors.semanticErrorDark;
+      fontWeight = FontWeight.w600;
+    } else if (isPending) {
+      textColor = AppColors.accentAmber;
+      fontWeight = FontWeight.w600;
+    } else if (color != null) {
+      textColor = color!;
+      fontWeight = isOverride ? FontWeight.w700 : FontWeight.w400;
+    } else if (isOverride) {
+      textColor = AppColors.accentCharcoal;
+      fontWeight = FontWeight.w700;
+    } else if (empty) {
+      textColor = AppColors.foregroundTertiary;
+      fontWeight = FontWeight.w400;
+    } else {
+      textColor = AppColors.foregroundPrimary;
+      fontWeight = FontWeight.w400;
+    }
+
+    return Stack(
+      children: [
+        Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: bgColor,
+            border: const Border(
+              right: BorderSide(color: AppColors.borderLight, width: 0.5),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: fontWeight,
+              color: textColor,
+            ),
+          ),
         ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: isOverride ? FontWeight.w700 : FontWeight.w400,
-          color: color ??
-              (isOverride
-                  ? AppColors.accentCharcoal
-                  : (empty
-                      ? AppColors.foregroundTertiary
-                      : AppColors.foregroundPrimary)),
-        ),
-      ),
+        if (isPending || isFailed)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: isFailed
+                    ? AppColors.semanticErrorDark
+                    : AppColors.accentAmber,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

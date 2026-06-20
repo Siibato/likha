@@ -113,25 +113,6 @@ impl AssessmentService {
         Ok(result)
     }
 
-    pub async fn get_statistics_cached(
-        &self,
-        assessment_id: Uuid,
-        user_id: Uuid,
-    ) -> crate::utils::AppResult<crate::modules::assessment::schema::AssessmentStatisticsResponse> {
-        if let Some(ref cache) = self.cache {
-            let key = CacheKey::AssessmentStatistics(assessment_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::AssessmentStatisticsResponse>(&key).await {
-                return Ok(cached);
-            }
-        }
-        let result = self.get_statistics(assessment_id, user_id).await?;
-        if let Some(ref cache) = self.cache {
-            let key = CacheKey::AssessmentStatistics(assessment_id).as_str();
-            cache.set(&key, &result, cache.ttl.list_seconds).await;
-        }
-        Ok(result)
-    }
-
     pub async fn get_student_results_cached(
         &self,
         submission_id: Uuid,

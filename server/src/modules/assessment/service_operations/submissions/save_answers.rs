@@ -78,10 +78,6 @@ impl crate::modules::assessment::service::AssessmentService {
 
         self.grade_submission(submission_id).await?;
 
-        if let Some(ref inv) = self.invalidator {
-            inv.invalidate_assessment_statistics(submission.assessment_id).await;
-        }
-
         Ok(())
     }
 }

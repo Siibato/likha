@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/logging/core_logger.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
@@ -540,14 +541,21 @@ class GradeScoresNotifier extends StateNotifier<GradeScoresState> {
     List<Map<String, dynamic>> scores,
   ) async {
     state = state.copyWith(error: null, successMessage: null);
+    CoreLogger.instance.log('GradeScoresProvider.saveScores: gradeItemId=$gradeItemId, scoresCount=${scores.length}');
     final result = await _saveScores(gradeItemId: gradeItemId, scores: scores);
     result.fold(
-      (failure) => state = state.copyWith(
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (_) => state = state.copyWith(
-        successMessage: 'Scores saved',
-      ),
+      (failure) {
+        CoreLogger.instance.error('GradeScoresProvider.saveScores FAILED: ${failure.message}');
+        state = state.copyWith(
+          error: AppErrorMapper.fromFailure(failure),
+        );
+      },
+      (_) {
+        CoreLogger.instance.log('GradeScoresProvider.saveScores: success');
+        state = state.copyWith(
+          successMessage: 'Scores saved',
+        );
+      },
     );
   }
 

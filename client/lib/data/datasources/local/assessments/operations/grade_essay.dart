@@ -32,9 +32,17 @@ Future<void> gradeEssay(
           whereArgs: [answerId],
         );
 
+        // Recalculate submission total_points from all answer points
+        final sumResult = await t.rawQuery(
+          'SELECT COALESCE(SUM(points), 0.0) as total FROM submission_answers WHERE submission_id = ?',
+          [submissionId],
+        );
+        final newTotal = (sumResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
         await t.update(
           'assessment_submissions',
           {
+            AssessmentSubmissionsCols.totalPoints: newTotal,
             CommonCols.syncStatus: 'pending',
             CommonCols.updatedAt: now.toIso8601String(),
           },

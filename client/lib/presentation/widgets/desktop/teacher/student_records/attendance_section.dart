@@ -5,6 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/student_records_provider.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/skeletons/attendance_skeleton.dart';
 
 const _months = [
   'June', 'July', 'August', 'September', 'October', 'November',
@@ -94,6 +95,7 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
             child: _selectedStudentId == null
                 ? const EmptyState.generic(title: 'Select a student', subtitle: 'Choose a student to view/edit attendance')
                 : _AttendanceGrid(
+                    key: ValueKey(_selectedStudentId),
                     classId: widget.classId,
                     studentId: _selectedStudentId!,
                     studentName: _selectedStudentName ?? 'Student',
@@ -117,6 +119,7 @@ class _AttendanceGrid extends StatefulWidget {
   final WidgetRef ref;
 
   const _AttendanceGrid({
+    super.key,
     required this.classId,
     required this.studentId,
     required this.studentName,
@@ -214,7 +217,7 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
           ],
           const SizedBox(height: 20),
           if (widget.state.isLoading && widget.state.records.isEmpty)
-            const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
+            const AttendanceSkeleton()
           else
             Table(
               columnWidths: const {

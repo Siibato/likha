@@ -178,7 +178,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     });
     _submissionDetailSub = sl<DataEventBus>().onSubmissionDetailChanged.listen((submissionId) {
       if (_currentSubmissionId != null && _currentSubmissionId == submissionId) {
-        loadSubmissionDetail(submissionId);
+        loadSubmissionDetail(submissionId, skipBackgroundRefresh: true);
       }
     });
   }
@@ -771,7 +771,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     );
   }
 
-  Future<void> loadSubmissionDetail(String submissionId) async {
+  Future<void> loadSubmissionDetail(String submissionId, {bool skipBackgroundRefresh = false}) async {
     RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: START $submissionId');
     if (_currentSubmissionId != submissionId) {
       _currentSubmissionId = submissionId;
@@ -783,13 +783,24 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     } else {
       state = state.copyWith(isLoading: true, error: null);
     }
-    final result = await _getSubmissionDetail(submissionId);
+    final result = await _getSubmissionDetail(submissionId, skipBackgroundRefresh: skipBackgroundRefresh);
     result.fold(
       (failure) {
         RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: FAILURE $submissionId - ${failure.message}');
         state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure));
       },
       (detail) {
+        if (detail == null) {
+          if (skipBackgroundRefresh) {
+            // Retry from event bus after fetch failed — cache still empty
+            RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: FETCH FAILED $submissionId');
+            state = state.copyWith(isLoading: false, error: 'Failed to load submission. Check your connection and try again.');
+          } else {
+            // Cache miss — background fetch in progress, keep spinner
+            RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: CACHE MISS $submissionId - background fetch started');
+          }
+          return;
+        }
         RepoLogger.instance.log('TeacherAssessmentNotifier.loadSubmissionDetail: SUCCESS $submissionId - answers=${detail.answers.length}');
         state = state.copyWith(isLoading: false, currentSubmission: detail);
       },

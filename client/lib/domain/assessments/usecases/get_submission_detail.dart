@@ -7,7 +7,7 @@ class GetSubmissionDetail {
 
   GetSubmissionDetail(this._repository);
 
-  ResultFuture<SubmissionDetail> call(String submissionId) {
-    return _repository.getSubmissionDetail(submissionId: submissionId);
+  ResultFuture<SubmissionDetail?> call(String submissionId, {bool skipBackgroundRefresh = false}) {
+    return _repository.getSubmissionDetail(submissionId: submissionId, skipBackgroundRefresh: skipBackgroundRefresh);
   }
 }

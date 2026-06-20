@@ -162,14 +162,24 @@ pub async fn update_item_scores(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
+    tracing::info!(
+        "update_item_scores: item_id={} scores_count={} teacher_id={}",
+        item_id, request.scores.len(), auth_user.user_id
+    );
     let scores: Vec<(Uuid, f64)> = request
         .scores
         .into_iter()
         .map(|s| (s.student_id, s.score))
         .collect();
     match service.save_scores(item_id, scores).await {
-        Ok(response) => success_response(response, StatusCode::OK).into_response(),
-        Err(e) => e.into_response(),
+        Ok(response) => {
+            tracing::info!("update_item_scores: saved {} scores for item_id={}", response.len(), item_id);
+            success_response(response, StatusCode::OK).into_response()
+        }
+        Err(e) => {
+            tracing::error!("update_item_scores: failed for item_id={}: {}", item_id, e);
+            e.into_response()
+        }
     }
 }
 

@@ -1,12 +1,14 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_result.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
+import 'package:likha/data/models/grading/grade_score_model.dart';
 
 /// Sync handler for all grading-related [SyncQueueEntry] operations.
 ///
@@ -18,12 +20,14 @@ class GradingSyncHandler {
   final GradingLocalDataSource _local;
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
+  final DataEventBus _dataEventBus;
 
   GradingSyncHandler(
     this._remote,
     this._local,
     this._localDatabase,
     this._log,
+    this._dataEventBus,
   );
 
   Future<SyncResult> handle(SyncQueueEntry entry) async {
@@ -171,6 +175,34 @@ class GradingSyncHandler {
           idempotencyKey: entry.id,
         );
         await _reconcileGradeItem(entry, model);
+
+        // Recreate local score records if they don't exist (e.g. after
+        // logout cleared the cache but sync queue survived).
+        final existingScores = await _local.getScoresByItem(model.id);
+        if (existingScores.isEmpty) {
+          if (model.rawScores != null && model.rawScores!.isNotEmpty) {
+            // Primary: use scores returned by the server in the response
+            final scores = model.rawScores!
+                .map((raw) => GradeScoreModel.fromJson(raw))
+                .toList();
+            await _local.saveScores(scores);
+          } else {
+            // Fallback: fetch scores directly from the server for this item
+            // (local enrolled students may be empty after logout cleared cache)
+            try {
+              final remoteScores = await _remote.getScoresByItem(
+                gradeItemId: model.id,
+              );
+              if (remoteScores.isNotEmpty) {
+                await _local.saveScores(remoteScores);
+              }
+            } catch (e) {
+              _log.log('Failed to fetch scores for item ${model.id}: $e');
+            }
+          }
+        }
+
+        _dataEventBus.notifyGradesChanged(classId);
         return SyncResult.success(serverId: model.id);
 
       case SyncOperation.update:
@@ -211,11 +243,36 @@ class GradingSyncHandler {
         final gradeItemId = payload['grade_item_id'] as String;
         final scores = (payload['scores'] as List<dynamic>)
             .cast<Map<String, dynamic>>();
-        await _remote.saveScores(
-          gradeItemId: gradeItemId,
-          scores: scores,
-          idempotencyKey: entry.id,
-        );
+        _log.log('saveScores: gradeItemId=$gradeItemId, scoresCount=${scores.length}');
+        for (final s in scores) {
+          _log.log('  score: student_id=${s['student_id']} score=${s['score']}');
+        }
+        try {
+          await _remote.saveScores(
+            gradeItemId: gradeItemId,
+            scores: scores,
+            idempotencyKey: entry.id,
+          );
+        } on ServerException catch (e, st) {
+          _log.error(
+            'saveScores FAILED for gradeItemId=$gradeItemId | status=${e.statusCode} | message=${e.message}',
+            st,
+          );
+          rethrow;
+        } on NetworkException catch (e, st) {
+          _log.error(
+            'saveScores NETWORK FAILED for gradeItemId=$gradeItemId | ${e.message}',
+            st,
+          );
+          rethrow;
+        } catch (e, st) {
+          _log.error(
+            'saveScores UNEXPECTED ERROR for gradeItemId=$gradeItemId | $e',
+            st,
+          );
+          rethrow;
+        }
+        _log.log('saveScores: server accepted, marking synced');
         await _markGradeScoresSyncedByItem(gradeItemId);
         return const SyncResult.success();
 

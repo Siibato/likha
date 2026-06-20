@@ -21,7 +21,6 @@ pub enum CacheKey {
     AssessmentSubmissions(Uuid),
     AssessmentStudentSubmission(Uuid, Uuid),
     AssessmentSubmissionDetail(Uuid),
-    AssessmentStatistics(Uuid),
     StudentResults(Uuid),
     StudentAssessmentSubmissions(Uuid, Uuid),
 
@@ -79,7 +78,6 @@ impl CacheKey {
             CacheKey::AssessmentSubmissions(id) => format!("assessment:submissions:{}", id),
             CacheKey::AssessmentStudentSubmission(assessment_id, student_id) => format!("assessment:student_submission:{}:{}", assessment_id, student_id),
             CacheKey::AssessmentSubmissionDetail(id) => format!("assessment:submission:{}", id),
-            CacheKey::AssessmentStatistics(id) => format!("assessment:statistics:{}", id),
             CacheKey::StudentResults(id) => format!("assessment:results:{}", id),
             CacheKey::StudentAssessmentSubmissions(class_id, student_id) => format!("assessment:student_submissions:{}:{}", class_id, student_id),
 

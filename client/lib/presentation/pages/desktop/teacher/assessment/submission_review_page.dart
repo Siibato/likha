@@ -31,7 +31,9 @@ class _SubmissionReviewPageState
       submissionId: widget.submissionId,
       notifier: ref.read(teacherAssessmentProvider.notifier),
     );
-    _controller.init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.init();
+    });
   }
 
   @override
@@ -57,7 +59,9 @@ class _SubmissionReviewPageState
   @override
   Widget build(BuildContext context) {
     final providerState = ref.watch(teacherAssessmentProvider);
-    final detail = providerState.currentSubmission;
+    final detail = providerState.currentSubmission?.id == widget.submissionId
+        ? providerState.currentSubmission
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -80,11 +84,26 @@ class _SubmissionReviewPageState
                     ),
                   )
                 : detail == null
-                    ? const Center(
-                        child: Text(
-                          'Submission not found',
-                          style:
-                              TextStyle(color: AppColors.foregroundTertiary),
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (providerState.error != null) ...[
+                                FormMessage(
+                                  message: providerState.error,
+                                  severity: MessageSeverity.error,
+                                ),
+                                const SizedBox(height: 12),
+                              ] else
+                                const Text(
+                                  'Submission not found',
+                                  style:
+                                      TextStyle(color: AppColors.foregroundTertiary),
+                                ),
+                            ],
+                          ),
                         ),
                       )
                     : Column(

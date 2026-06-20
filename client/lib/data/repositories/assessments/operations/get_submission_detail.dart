@@ -8,45 +8,58 @@ import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 
-ResultFuture<SubmissionDetail> getSubmissionDetail(
+ResultFuture<SubmissionDetail?> getSubmissionDetail(
   AssessmentLocalDataSource localDataSource,
   AssessmentRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String submissionId,
+  bool skipBackgroundRefresh = false,
 }) async {
   try {
     final cached = await localDataSource.getCachedSubmissionDetail(submissionId);
 
     if (cached != null) {
-      fireRemoteFetch(
-        dedupKey: 'assessments/submission/$submissionId/bg',
-        remote: () => remoteDataSource.getSubmissionDetail(submissionId: submissionId),
-        onSuccess: (fresh) async {
-          try {
-            final current = await localDataSource.getCachedSubmissionDetail(submissionId);
-            if (current == null ||
-                current.answers.length != fresh.answers.length ||
-                current.totalPoints != fresh.totalPoints ||
-                current.finalScore != fresh.finalScore) {
+      if (!skipBackgroundRefresh) {
+        fireRemoteFetch(
+          dedupKey: 'assessments/submission/$submissionId/bg',
+          remote: () => remoteDataSource.getSubmissionDetail(submissionId: submissionId),
+          onSuccess: (fresh) async {
+            try {
+              final current = await localDataSource.getCachedSubmissionDetail(submissionId);
+              if (current == null ||
+                  current.answers.length != fresh.answers.length ||
+                  current.totalPoints != fresh.totalPoints ||
+                  current.finalScore != fresh.finalScore) {
+                await localDataSource.cacheSubmissionDetail(fresh);
+                dataEventBus.notifySubmissionDetailChanged(submissionId);
+              }
+            } catch (_) {
               await localDataSource.cacheSubmissionDetail(fresh);
               dataEventBus.notifySubmissionDetailChanged(submissionId);
             }
-          } catch (_) {
-            await localDataSource.cacheSubmissionDetail(fresh);
-            dataEventBus.notifySubmissionDetailChanged(submissionId);
-          }
-        },
-      );
+          },
+        );
+      }
 
       return Right(cached);
     }
 
-    final fresh = await remoteFetch(
-      dedupKey: 'assessments/submission/$submissionId',
-      remote: () => remoteDataSource.getSubmissionDetail(submissionId: submissionId),
-    );
-    await localDataSource.cacheSubmissionDetail(fresh);
-    return Right(fresh);
+    // Cache miss: fire non-blocking background fetch, return null immediately
+    if (!skipBackgroundRefresh) {
+      fireRemoteFetch(
+        dedupKey: 'assessments/submission/$submissionId/bg',
+        remote: () => remoteDataSource.getSubmissionDetail(submissionId: submissionId),
+        onSuccess: (fresh) async {
+          await localDataSource.cacheSubmissionDetail(fresh);
+          dataEventBus.notifySubmissionDetailChanged(submissionId);
+        },
+        onError: (_) {
+          dataEventBus.notifySubmissionDetailChanged(submissionId);
+        },
+      );
+    }
+
+    return const Right(null);
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));
   } on NetworkException catch (e) {

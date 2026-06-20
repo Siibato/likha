@@ -1,4 +1,5 @@
 import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/logging/stats_logger.dart';
 import 'package:likha/data/datasources/local/assessments/operations/statistics_computer.dart';
 import 'package:likha/data/datasources/local/assessments/operations/statistics_data_fetcher.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
@@ -38,6 +39,14 @@ Future<AssessmentStatisticsModel?> computeStatistics(
     }
 
     if (!data.isComplete) {
+      final subsWithAnswers = data.answers.map((a) => a.submissionId).toSet().length;
+      final threshold = data.submissions.length < 10 ? data.submissions.length : (data.submissions.length * 0.8).ceil();
+      StatsLogger.instance.warn(
+        'computeStatistics: local data INCOMPLETE — '
+        'submissions=${data.submissions.length} '
+        'submissionsWithAnswers=$subsWithAnswers '
+        'threshold=$threshold → falling back to remote',
+      );
       return null;
     }
 

@@ -75,8 +75,9 @@ abstract class AssessmentRepository {
     bool skipBackgroundRefresh = false,
   });
 
-  ResultFuture<SubmissionDetail> getSubmissionDetail({
+  ResultFuture<SubmissionDetail?> getSubmissionDetail({
     required String submissionId,
+    bool skipBackgroundRefresh = false,
   });
 
   ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer({

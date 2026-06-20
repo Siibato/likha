@@ -35,7 +35,6 @@ abstract final class DbTables {
   static const String tableOfSpecifications = 'table_of_specifications';
   static const String tosCompetencies = 'tos_competencies';
   static const String melcs = 'melcs';
-  static const String assessmentStatisticsCache = 'assessment_statistics_cache';
   static const String validationMetadata = 'validation_metadata';
   static const String schoolSettings = 'school_settings';
   static const String learnerDetails = 'learner_details';
@@ -298,11 +297,6 @@ abstract final class PeriodGradesCols {
 abstract final class StudentResultsCacheCols {
   static const String submissionId = 'submission_id';
   static const String resultsJson = 'results_json';
-}
-
-abstract final class AssessmentStatisticsCacheCols {
-  static const String assessmentId = 'assessment_id';
-  static const String statisticsJson = 'statistics_json';
 }
 
 abstract final class ValidationMetadataCols {

@@ -11,6 +11,7 @@ pub async fn bulk_upsert_scores(
     grade_item_id: Uuid,
     scores: Vec<(Uuid, f64)>,
 ) -> AppResult<()> {
+    tracing::info!("bulk_upsert_scores: grade_item_id={} scores_count={}", grade_item_id, scores.len());
     let grade_item_exists = grade_items::Entity::find_by_id(grade_item_id)
         .one(db)
         .await
@@ -18,20 +19,14 @@ pub async fn bulk_upsert_scores(
         .is_some();
 
     if !grade_item_exists {
+        tracing::error!("bulk_upsert_scores: grade_item_id={} does not exist", grade_item_id);
         return Err(AppError::BadRequest(format!("Grade item {} does not exist", grade_item_id)));
     }
 
-    for (student_id, score) in scores {
-        match upsert_score(db, grade_item_id, student_id, Some(score), false).await {
-            Ok(_) => {}
-            Err(e) => {
-                tracing::warn!(
-                    "Failed to save score for student {} in grade item {}: {}",
-                    student_id, grade_item_id, e
-                );
-            }
-        }
+    for (student_id, score) in &scores {
+        upsert_score(db, grade_item_id, *student_id, Some(*score), false).await?;
     }
 
+    tracing::info!("bulk_upsert_scores: grade_item_id={} scores_saved={}", grade_item_id, scores.len());
     Ok(())
 }

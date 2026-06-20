@@ -282,8 +282,8 @@ impl AssessmentRepository {
         ops::update_answer_grade(&self.db, answer_id, is_auto_correct, points_awarded).await
     }
 
-    pub async fn override_answer(&self, answer_id: Uuid, is_correct: bool, points: f64) -> AppResult<submission_answers::Model> {
-        ops::override_answer(&self.db, answer_id, is_correct, points).await
+    pub async fn override_answer(&self, answer_id: Uuid, is_correct: bool, points: f64, teacher_id: Uuid) -> AppResult<submission_answers::Model> {
+        ops::override_answer(&self.db, answer_id, is_correct, points, teacher_id).await
     }
 
     pub async fn save_answer_items(&self, submission_answer_id: Uuid, items: Vec<(Option<Uuid>, Option<Uuid>, Option<String>, bool)>) -> AppResult<()> {

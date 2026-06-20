@@ -94,12 +94,24 @@ class StatisticsRawData {
 
   int get submissionCount => submissions.length;
 
-  /// Data is complete enough for statistics only when at least some answers
-  /// have real graded scores. Draft answers saved locally before submission
-  /// have points=null, so they must not trigger all-zero statistics.
+  /// Data is complete enough for statistics only when most submissions
+  /// have corresponding answers. The background refresh for submission
+  /// lists only caches summaries (no answers), so we must guard against
+  /// computing item analysis from a handful of cached answers.
   bool get isComplete {
     if (submissions.isEmpty || answers.isEmpty) return false;
-    return answers.any((a) => a.points != null);
+
+    // At least some answers must have real graded scores
+    // (draft answers saved locally before submission have points=null)
+    if (!answers.any((a) => a.points != null)) return false;
+
+    // Count how many distinct submissions actually have answer rows
+    final submissionsWithAnswers = answers.map((a) => a.submissionId).toSet().length;
+
+    // Require at least 80% of submissions to have answers, or all if < 10 subs
+    final threshold = submissions.length < 10 ? submissions.length : (submissions.length * 0.8).ceil();
+
+    return submissionsWithAnswers >= threshold;
   }
 }
 

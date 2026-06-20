@@ -5,6 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/student_records_provider.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/student_records/skeletons/core_values_skeleton.dart';
 
 const _coreValues = ['Maka-Diyos', 'Maka-tao', 'Maka-bayan', 'Maka-kalikasan'];
 const _markings = ['AO', 'SO', 'NO', 'RO'];
@@ -93,6 +94,7 @@ class _CoreValuesSectionState extends ConsumerState<CoreValuesSection> {
             child: _selectedStudentId == null
                 ? const EmptyState.generic(title: 'Select a student', subtitle: 'Choose a student to view/edit core values')
                 : _CoreValuesGrid(
+                    key: ValueKey(_selectedStudentId),
                     classId: widget.classId,
                     studentId: _selectedStudentId!,
                     studentName: _selectedStudentName ?? 'Student',
@@ -116,6 +118,7 @@ class _CoreValuesGrid extends StatelessWidget {
   final WidgetRef ref;
 
   const _CoreValuesGrid({
+    super.key,
     required this.classId,
     required this.studentId,
     required this.studentName,
@@ -168,7 +171,7 @@ class _CoreValuesGrid extends StatelessWidget {
           ],
           const SizedBox(height: 20),
           if (state.isLoading && state.records.isEmpty)
-            const Center(child: CircularProgressIndicator(color: AppColors.foregroundPrimary, strokeWidth: 2.5))
+            const CoreValuesSkeleton()
           else
             Table(
               columnWidths: const {

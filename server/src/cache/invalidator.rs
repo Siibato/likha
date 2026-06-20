@@ -112,10 +112,6 @@ impl CacheInvalidator {
         self.cache.del(&CacheKey::AssessmentSubmissionDetail(submission_id).as_str()).await;
     }
 
-    pub async fn invalidate_assessment_statistics(&self, assessment_id: Uuid) {
-        self.cache.del(&CacheKey::AssessmentStatistics(assessment_id).as_str()).await;
-    }
-
     pub async fn invalidate_student_results(&self, submission_id: Uuid) {
         self.cache.del(&CacheKey::StudentResults(submission_id).as_str()).await;
     }

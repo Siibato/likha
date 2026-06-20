@@ -49,6 +49,7 @@ GradeScore scoreToEntity(GradeScoreModel m) => GradeScore(
       score: m.score,
       isAutoPopulated: m.isAutoPopulated,
       overrideScore: m.overrideScore,
+      syncStatus: m.syncStatus ?? 'synced',
     );
 
 bool gradeItemsHaveChanged(List<GradeItem> local, List<GradeItem> remote) {

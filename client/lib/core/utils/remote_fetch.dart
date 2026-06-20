@@ -25,6 +25,7 @@ void fireRemoteFetch<T>({
   required String dedupKey,
   required Future<T> Function() remote,
   required Future<void> Function(T data) onSuccess,
+  void Function(Object error)? onError,
 }) {
   if (_inFlight.contains(dedupKey)) return;
   _inFlight.add(dedupKey);
@@ -33,12 +34,12 @@ void fireRemoteFetch<T>({
     try {
       final data = await guardRemoteCall(remote);
       await onSuccess(data);
-    } on NetworkException {
-      // silent
-    } on ServerException {
-      // silent
-    } catch (_) {
-      // silent: any unexpected error in onSuccess or remote call
+    } on NetworkException catch (e) {
+      onError?.call(e);
+    } on ServerException catch (e) {
+      onError?.call(e);
+    } catch (e) {
+      onError?.call(e);
     } finally {
       _inFlight.remove(dedupKey);
     }

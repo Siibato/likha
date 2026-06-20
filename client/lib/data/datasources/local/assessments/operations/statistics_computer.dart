@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:likha/core/logging/stats_logger.dart';
 import 'package:likha/data/datasources/local/assessments/operations/statistics_data_fetcher.dart';
 import 'package:likha/data/models/assessments/statistics_model.dart';
 
@@ -11,6 +12,15 @@ class StatisticsComputer {
   static AssessmentStatisticsModel compute(StatisticsRawData data) {
     final scores = data.submissions.map((s) => s.totalPoints).toList();
     final classStatistics = _computeClassStatistics(scores, data.totalPoints);
+
+    StatsLogger.instance.warn(
+      'compute: assessmentId=${data.assessmentId} '
+      'submissions=${data.submissions.length} '
+      'questions=${data.questions.length} '
+      'answers=${data.answers.length} '
+      'answerItems=${data.answerItems.length} '
+      'choices=${data.choices.length}',
+    );
 
     final submissionToStudent = <String, String>{};
     for (final s in data.submissions) {
@@ -56,6 +66,16 @@ class StatisticsComputer {
       }
       studentQuestionCorrect
           .putIfAbsent(studentId, () => {})[answer.questionId] = isCorrect;
+    }
+
+    StatsLogger.instance.warn(
+      'compute: studentQuestionPoints keys=${studentQuestionPoints.length} '
+      'studentQuestionCorrect keys=${studentQuestionCorrect.length}',
+    );
+    for (final entry in studentQuestionPoints.entries) {
+      StatsLogger.instance.warn(
+        'compute: student=${entry.key} answered=${entry.value.length} questions',
+      );
     }
 
     final questionStats = _computeQuestionStatistics(
@@ -237,6 +257,17 @@ class StatisticsComputer {
       lowerGroup.add(sortedStudents[i].studentId);
     }
 
+    StatsLogger.instance.warn(
+      '_computeItemAnalysis: submissionCount=${data.submissionCount} '
+      'groupSize=$groupSize upperGroup=${upperGroup.length} lowerGroup=${lowerGroup.length}',
+    );
+    StatsLogger.instance.warn(
+      'upperGroup students: ${upperGroup.toList()}',
+    );
+    StatsLogger.instance.warn(
+      'lowerGroup students: ${lowerGroup.toList()}',
+    );
+
     // Per-question average points for upper/lower groups
     final upperAvgByQuestion = <String, double>{};
     final lowerAvgByQuestion = <String, double>{};
@@ -259,6 +290,11 @@ class StatisticsComputer {
         }
       }
     }
+
+    StatsLogger.instance.warn(
+      '_computeItemAnalysis: upperAvgByQuestion keys=${upperAvgByQuestion.length} '
+      'lowerAvgByQuestion keys=${lowerAvgByQuestion.length}',
+    );
 
     // Build (studentId, questionId) -> [(choiceId, isCorrect)] for distractors
     final answerIdToQuestionId = <String, String>{};
@@ -336,6 +372,14 @@ class StatisticsComputer {
       final discriminationLabel = _getDiscriminationLabel(d);
       final verdict = _getVerdict(p, d);
 
+      StatsLogger.instance.warn(
+        'itemAnalysis[q=${q.id.substring(0, 8)}..]: '
+        'maxPoints=$maxPoints p=${p.toStringAsFixed(3)} d=${d.toStringAsFixed(3)} '
+        'upperAvg=${upperAvg.toStringAsFixed(3)}(n=$upperN) '
+        'lowerAvg=${lowerAvg.toStringAsFixed(3)}(n=$lowerN) '
+        'verdict=$verdict',
+      );
+
       totalP += p;
       totalD += d;
       switch (verdict) {
@@ -361,6 +405,11 @@ class StatisticsComputer {
                 : 0.0;
             final isEffective =
                 c.isCorrect ? true : lowerCount > upperCount;
+
+            StatsLogger.instance.warn(
+              '  distractor[${c.choiceText.substring(0, min(20, c.choiceText.length))}]: '
+              'total=$totalSelected upper=$upperCount lower=$lowerCount pct=${totalPercentage.toStringAsFixed(1)}% effective=$isEffective',
+            );
 
             distractors.add(DistractorAnalysisModel(
               choiceId: c.id,

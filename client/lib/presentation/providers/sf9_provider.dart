@@ -148,7 +148,7 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
     _currentClassId = classId;
     _currentStudentId = studentId;
     state = state.copyWith(isLoading: !hasCached, clearError: true);
-    final result = await _getSf9(GetSf9Params(classId: classId, studentId: studentId));
+    final result = await _getSf9(GetSf9Params(classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh));
     // Ignore stale results if user navigated to a different student
     if (_currentClassId != classId || _currentStudentId != studentId) {
       log.log('loadSf9: ignoring stale result (user navigated away)');
@@ -174,7 +174,7 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
     _currentClassId = classId;
     _currentStudentId = studentId;
     state = state.copyWith(isLoading: !hasCached, clearError: true);
-    final result = await _getSf10(GetSf10Params(classId: classId, studentId: studentId));
+    final result = await _getSf10(GetSf10Params(classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh));
     // Ignore stale results if user navigated to a different student
     if (_currentClassId != classId || _currentStudentId != studentId) return;
     result.fold(

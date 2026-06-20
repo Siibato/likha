@@ -355,11 +355,6 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertLearningMaterials(txn, learningMaterials);
           await _upsertHelpers.upsertMaterialFiles(txn, materialFiles);
 
-          // NOTE: assessment_statistics_cache is still skipped (no use case), but student_results_cache now exists
-          _log.warn(
-            'Skipping upsert of ${assessmentStatistics.length} assessment_statistics (table not in schema)',
-          );
-
           // Write student_results to cache
           await _upsertHelpers.upsertStudentResults(txn, studentResults);
 

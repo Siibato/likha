@@ -235,6 +235,7 @@ class GradeDataRow extends StatelessWidget {
         isOverride: gs?.overrideScore != null,
         empty: gs?.effectiveScore == null,
         color: isAutoPopulatedZero ? AppColors.foregroundTertiary : null,
+        syncStatus: gs?.syncStatus,
       ),
     );
   }

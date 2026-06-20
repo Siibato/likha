@@ -40,6 +40,7 @@ ResultFuture<MutationResult<void>> saveScores(
         overrideScore: null,
         createdAt: nowStr,
         updatedAt: nowStr,
+        syncStatus: SyncStatus.pending.dbValue,
       );
     }).toList();
 

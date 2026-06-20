@@ -106,6 +106,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
   final ReorderAllAssignments _reorderAllAssignments;
 
   String? _currentClassId;
+  String? _currentSubmissionId;
   bool _currentPublishedOnly = false;
   late StreamSubscription<String?> _refreshSub;
   late StreamSubscription<String> _submissionDetailRefreshSub;
@@ -414,7 +415,12 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
 
   Future<void> loadSubmissionDetail(String submissionId) async {
     ProviderLogger.instance.log('Loading submission detail for ID: $submissionId');
-    state = state.copyWith(isLoading: true, clearError: true);
+    if (_currentSubmissionId != submissionId) {
+      _currentSubmissionId = submissionId;
+      state = state.copyWith(isLoading: true, clearError: true, clearSubmission: true);
+    } else {
+      state = state.copyWith(isLoading: true, clearError: true);
+    }
     final result = await _getSubmissionDetail(submissionId);
     result.fold(
       (failure) {
@@ -583,6 +589,7 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
     _refreshSub.cancel();
     _submissionDetailRefreshSub.cancel();
     _studentAssignmentSubmissionsSub.cancel();
+    _currentSubmissionId = null;
     super.dispose();
   }
 }

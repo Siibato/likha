@@ -231,14 +231,16 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       );
 
   @override
-  ResultFuture<SubmissionDetail> getSubmissionDetail({
+  ResultFuture<SubmissionDetail?> getSubmissionDetail({
     required String submissionId,
+    bool skipBackgroundRefresh = false,
   }) =>
       ops.getSubmissionDetail(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         submissionId: submissionId,
+        skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
   @override
@@ -250,6 +252,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.overrideAnswer(
         _localDataSource,
         _syncQueue,
+        _dataEventBus,
         answerId: answerId,
         isCorrect: isCorrect,
         points: points,
@@ -263,6 +266,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.gradeEssayAnswer(
         _localDataSource,
         _syncQueue,
+        _dataEventBus,
         answerId: answerId,
         points: points,
       );
@@ -274,7 +278,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getStatistics(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assessmentId: assessmentId,
       );
 

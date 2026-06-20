@@ -44,7 +44,7 @@ impl crate::modules::assessment::service::AssessmentService {
         let is_correct = request.points >= max_points;
 
         let updated = self.assessment_repo
-            .override_answer(answer_id, is_correct, request.points)
+            .override_answer(answer_id, is_correct, request.points, teacher_id)
             .await?;
 
         let final_score = self.recalculate_final_score(submission.id).await?;

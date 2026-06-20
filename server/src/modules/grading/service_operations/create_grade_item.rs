@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use crate::modules::grading::schema::{GradeItemResponse, CreateGradeItemRequest};
+use crate::modules::grading::schema::{GradeItemResponse, GradeScoreResponse, CreateGradeItemRequest};
 use crate::utils::AppResult;
 
 impl crate::modules::grading::service::GradeComputationService {
@@ -41,9 +41,15 @@ impl crate::modules::grading::service::GradeComputationService {
             class_id
         );
 
+        let score_models = self.repo.get_scores_by_item(item.id).await?;
+        let scores: Vec<GradeScoreResponse> =
+            score_models.into_iter().map(GradeScoreResponse::from).collect();
+
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_class_grades(class_id, grading_period_number).await;
         }
-        Ok(GradeItemResponse::from(item))
+        let mut response = GradeItemResponse::from(item);
+        response.scores = scores;
+        Ok(response)
     }
 }

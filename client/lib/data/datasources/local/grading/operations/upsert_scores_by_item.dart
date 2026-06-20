@@ -1,17 +1,14 @@
 import 'package:sqflite_sqlcipher/sqflite.dart';
-import 'package:uuid/uuid.dart';
 
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
 
 Future<void> upsertScoresByItem(
   LocalDatabase localDatabase,
-  SyncQueue syncQueue,
   String gradeItemId,
   List<GradeScoreModel> scores, {
-  Transaction? txn,
+  required Transaction txn,
 }) async {
   final now = DateTime.now();
 
@@ -57,7 +54,7 @@ Future<void> upsertScoresByItem(
         }
         // else: row has a teacher override or manual edit — leave it untouched
       } else {
-        // Insert new score with needsSync = 1
+        // Insert new score with syncStatus = pending
         final map = score.toMap();
         map[CommonCols.syncStatus] = 'pending';
         map[CommonCols.cachedAt] = now.toIso8601String();
@@ -70,26 +67,5 @@ Future<void> upsertScoresByItem(
     }
   }
 
-  if (txn != null) {
-    await doWrite(txn);
-  } else {
-    final db = await localDatabase.database;
-    await db.transaction((innerTxn) async {
-      await doWrite(innerTxn);
-      // Enqueue a single bulk operation with all scores
-      await syncQueue.enqueue(SyncQueueEntry(
-        id: const Uuid().v4(),
-        entityType: SyncEntityType.gradeScore,
-        operation: SyncOperation.saveScores,
-        payload: {
-          'grade_item_id': gradeItemId,
-          'scores': scores.map((s) => s.toMap()).toList(),
-        },
-        status: SyncStatus.pending,
-        retryCount: 0,
-        maxRetries: 3,
-        createdAt: now,
-      ), txn: innerTxn);
-    });
-  }
+  await doWrite(txn);
 }

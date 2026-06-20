@@ -10,7 +10,7 @@ import 'package:likha/core/logging/core_logger.dart';
 /// Local SQLite Database for offline-first functionality
 ///
 /// SCHEMA VERSION: 12 (v11 → v12: added deleted_at column to material_files)
-/// TOTAL TABLES: 38
+/// TOTAL TABLES: 37
 ///
 /// This database was consolidated from 12 historical versions into a single
 /// clean v1 schema. All migrations are now handled via nuclear reset:
@@ -22,7 +22,7 @@ import 'package:likha/core/logging/core_logger.dart';
 /// - Classes: classes, class_participants
 /// - Assessments: assessments, assessment_questions, answer_keys,
 ///   answer_key_acceptable_answers, question_choices, assessment_submissions,
-///   submission_answers, submission_answer_items, assessment_statistics_cache
+///   submission_answers, submission_answer_items
 /// - Assignments: assignments, assignment_submissions, submission_files
 /// - Materials: learning_materials, material_files
 /// - Grading: grade_record, grade_items, grade_scores, period_grades
@@ -678,15 +678,6 @@ class LocalDatabase {
         )
       ''');
 
-      // Assessment statistics cache table
-      await txn.execute('''
-        CREATE TABLE IF NOT EXISTS assessment_statistics_cache (
-          assessment_id TEXT PRIMARY KEY,
-          statistics_json TEXT NOT NULL,
-          cached_at TEXT NOT NULL
-        )
-      ''');
-
       // Validation metadata table
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS validation_metadata (
@@ -1030,7 +1021,6 @@ class LocalDatabase {
       'tos_competencies',
       'table_of_specifications',
       'melcs',
-      'assessment_statistics_cache',
       'school_settings',
       'previous_school_attendance',
       'previous_school_subjects',

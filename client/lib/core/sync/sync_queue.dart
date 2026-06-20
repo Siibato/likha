@@ -235,7 +235,7 @@ class SyncQueueImpl implements SyncQueue {
     final db = await _localDatabase.database;
     final results = await db.query(
       DbTables.syncQueue,
-      where: '${SyncQueueCols.status} = ? AND ${SyncQueueCols.retryCount} < ${SyncQueueCols.maxRetries}',
+      where: '${SyncQueueCols.status} = ? AND ${SyncQueueCols.retryCount} < 5',
       whereArgs: [SyncStatus.pending.dbValue],
       orderBy: '${CommonCols.createdAt} ASC',
     );

@@ -917,6 +917,13 @@ class SyncUpsertHelpers {
           final localOverride = existing.first[GradeScoresCols.overrideScore];
           final localSyncStatus = existing.first[CommonCols.syncStatus] as String?;
 
+          // If local has any pending change, do NOT overwrite it with inbound
+          // server data — the local edit is newer than what the server knows.
+          if (localSyncStatus == SyncStatus.pending.dbValue) {
+            preservedCount++;
+            continue;
+          }
+
           // If local has a pending override AND server score is auto-populated,
           // update base score but preserve local override
           if (localOverride != null &&
@@ -1531,17 +1538,6 @@ class SyncUpsertHelpers {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-  }
-
-  /// DEPRECATED: assessment_statistics_cache table doesn't exist in schema
-  /// This method is kept for reference but is never called.
-  @Deprecated('Table assessment_statistics_cache does not exist in local_database schema')
-  Future<void> upsertStatistics(
-    DatabaseExecutor db,
-    List<dynamic> records,
-  ) async {
-    _log.warn('upsertStatistics called but table does not exist; skipping');
-    // Table doesn't exist - method is a no-op
   }
 
   /// Upsert student results cache (assessment performance data)

@@ -50,6 +50,7 @@ pub struct StudentScore {
 
 #[derive(Debug, Deserialize)]
 pub struct BulkUpdateScoresRequest {
+    #[serde(default)]
     pub grade_item_id: String,
     pub scores: Vec<StudentScore>,
 }
@@ -87,9 +88,11 @@ pub struct GradeItemResponse {
     pub source_type: String,
     pub source_id: Option<String>,
     pub order_index: i32,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub scores: Vec<GradeScoreResponse>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GradeScoreResponse {
     pub id: String,
     pub grade_item_id: String,
@@ -249,6 +252,7 @@ impl From<::entity::grade_items::Model> for GradeItemResponse {
             source_type: m.source_type,
             source_id: m.source_id,
             order_index: m.order_index,
+            scores: vec![],
         }
     }
 }

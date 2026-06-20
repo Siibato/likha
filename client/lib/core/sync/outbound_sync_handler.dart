@@ -88,6 +88,15 @@ class OutboundSyncHandler {
         _setupHandler = setupHandler,
         _studentRecordsHandler = studentRecordsHandler;
 
+  Future<void> _handleRetry(SyncQueueEntry op) async {
+    await _syncQueue.incrementRetry(op.id);
+    final updated = await _syncQueue.getById(op.id);
+    if (updated != null && updated.retryCount >= updated.maxRetries) {
+      _log.log('Retry exhausted for ${op.entityType.dbValue}.${op.operation.dbValue} (${op.id}), marking failed');
+      await _syncQueue.markFailed(op.id, 'Max retries exceeded');
+    }
+  }
+
   Future<void> outboundSync() async {
     _log.log('outboundSync() - START');
     
@@ -162,7 +171,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -183,7 +192,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -203,7 +212,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -223,7 +232,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -241,7 +250,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -259,7 +268,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -279,7 +288,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -297,7 +306,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -321,7 +330,7 @@ class OutboundSyncHandler {
         if (result.success) {
           await _syncQueue.markSucceeded(op.id);
         } else if (result.shouldRetry) {
-          await _syncQueue.incrementRetry(op.id);
+          await _handleRetry(op);
         } else {
           await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
         }
@@ -499,7 +508,7 @@ class OutboundSyncHandler {
       await processPushResults(response, pushStartTime);
     } on NetworkException catch (_) {
       for (final op in regularOps) {
-        await _syncQueue.incrementRetry(op.id);
+        await _handleRetry(op);
       }
       rethrow;
     }
@@ -737,7 +746,7 @@ class OutboundSyncHandler {
       await _syncQueue.markSucceeded(op.id);
     } on NetworkException catch (e) {
       _log.error('handleFileUpload: network error, incrementing retry - ${e.message}');
-      await _syncQueue.incrementRetry(op.id);
+      await _handleRetry(op);
       rethrow;
     } catch (e) {
       _log.error('handleFileUpload: failed, marking as failed - $e');

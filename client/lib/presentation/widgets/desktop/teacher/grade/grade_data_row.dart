@@ -219,6 +219,7 @@ class GradeDataRow extends StatelessWidget {
         bgColor: bgColor,
         isOverride: gs?.overrideScore != null,
         empty: gs?.effectiveScore == null,
+        syncStatus: gs?.syncStatus,
       ),
     );
   }

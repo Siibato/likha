@@ -65,7 +65,7 @@ class LearnerDetailsNotifier extends StateNotifier<LearnerDetailsState> {
     final hasCached = state.details != null && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: !hasCached, clearError: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true, clearDetails: !hasCached);
     final result = await _get(GetLearnerDetailsParams(classId: classId, studentId: studentId));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(
@@ -115,9 +115,9 @@ class AttendanceState {
 
   const AttendanceState({this.records = const [], this.isLoading = false, this.isSaving = false, this.error});
 
-  AttendanceState copyWith({List<AttendanceRecord>? records, bool? isLoading, bool? isSaving, String? error, bool clearError = false}) {
+  AttendanceState copyWith({List<AttendanceRecord>? records, bool? isLoading, bool? isSaving, String? error, bool clearError = false, bool clearRecords = false}) {
     return AttendanceState(
-      records: records ?? this.records,
+      records: clearRecords ? const [] : (records ?? this.records),
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
       error: clearError ? null : (error ?? this.error),
@@ -144,7 +144,7 @@ class AttendanceNotifier extends StateNotifier<AttendanceState> {
     final hasCached = state.records.isNotEmpty && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: !hasCached, clearError: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true, clearRecords: !hasCached);
     final result = await _get(GetAttendanceParams(classId: classId, studentId: studentId, schoolYear: schoolYear));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(
@@ -195,9 +195,9 @@ class CoreValuesState {
 
   const CoreValuesState({this.records = const [], this.isLoading = false, this.isSaving = false, this.error});
 
-  CoreValuesState copyWith({List<CoreValuesRecord>? records, bool? isLoading, bool? isSaving, String? error, bool clearError = false}) {
+  CoreValuesState copyWith({List<CoreValuesRecord>? records, bool? isLoading, bool? isSaving, String? error, bool clearError = false, bool clearRecords = false}) {
     return CoreValuesState(
-      records: records ?? this.records,
+      records: clearRecords ? const [] : (records ?? this.records),
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
       error: clearError ? null : (error ?? this.error),
@@ -224,7 +224,7 @@ class CoreValuesNotifier extends StateNotifier<CoreValuesState> {
     final hasCached = state.records.isNotEmpty && _classId == classId && _studentId == studentId;
     _classId = classId;
     _studentId = studentId;
-    state = state.copyWith(isLoading: !hasCached, clearError: true);
+    state = state.copyWith(isLoading: !hasCached, clearError: true, clearRecords: !hasCached);
     final result = await _get(GetCoreValuesParams(classId: classId, studentId: studentId, schoolYear: schoolYear));
     if (_classId != classId || _studentId != studentId) return;
     result.fold(
