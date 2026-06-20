@@ -59,6 +59,7 @@ class LocalDatabase {
     if (kIsWeb) return '';
     const storage = FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
+      mOptions: MacOsOptions(useDataProtectionKeyChain: false),
     );
     String? existing = await storage.read(key: _passwordStorageKey);
     if (existing != null && existing.isNotEmpty) return existing;
