@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
@@ -6,7 +7,7 @@ import 'package:likha/domain/assessments/entities/submission.dart';
 
 abstract class AssessmentRepository {
   // Teacher: Assessment CRUD
-  ResultFuture<Assessment> createAssessment({
+  ResultFuture<MutationResult<Assessment>> createAssessment({
     required String classId,
     required String title,
     String? description,
@@ -21,11 +22,11 @@ abstract class AssessmentRepository {
     String? tosId,
   });
 
-  ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false, bool forceRemote = false});
+  ResultFuture<List<Assessment>> getAssessments({required String classId, bool publishedOnly = false, bool skipBackgroundRefresh = false});
 
-  ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({required String assessmentId});
+  ResultFuture<(Assessment, List<Question>)> getAssessmentDetail({required String assessmentId, bool skipBackgroundRefresh = false});
 
-  ResultFuture<Assessment> updateAssessment({
+  ResultFuture<MutationResult<Assessment>> updateAssessment({
     required String assessmentId,
     String? title,
     String? description,
@@ -37,33 +38,33 @@ abstract class AssessmentRepository {
     String? component,
   });
 
-  ResultVoid deleteAssessment({required String assessmentId});
+  ResultFuture<MutationResult<void>> deleteAssessment({required String assessmentId});
 
-  ResultFuture<Assessment> publishAssessment({required String assessmentId});
+  ResultFuture<MutationResult<Assessment>> publishAssessment({required String assessmentId});
 
-  ResultFuture<Assessment> unpublishAssessment({required String assessmentId});
+  ResultFuture<MutationResult<Assessment>> unpublishAssessment({required String assessmentId});
 
-  ResultFuture<Assessment> releaseResults({required String assessmentId});
+  ResultFuture<MutationResult<Assessment>> releaseResults({required String assessmentId});
 
-  ResultVoid reorderAllAssessments({
+  ResultFuture<MutationResult<void>> reorderAllAssessments({
     required String classId,
     required List<String> assessmentIds,
   });
 
   // Teacher: Questions
-  ResultFuture<List<Question>> addQuestions({
+  ResultFuture<MutationResult<List<Question>>> addQuestions({
     required String assessmentId,
     required List<Map<String, dynamic>> questions,
   });
 
-  ResultFuture<Question> updateQuestion({
+  ResultFuture<MutationResult<Question>> updateQuestion({
     required String questionId,
     required Map<String, dynamic> data,
   });
 
-  ResultVoid deleteQuestion({required String questionId});
+  ResultFuture<MutationResult<void>> deleteQuestion({required String questionId});
 
-  ResultVoid reorderQuestions({
+  ResultFuture<MutationResult<void>> reorderQuestions({
     required String assessmentId,
     required List<String> questionIds,
   });
@@ -71,19 +72,21 @@ abstract class AssessmentRepository {
   // Teacher: Submissions & Grading
   ResultFuture<List<SubmissionSummary>> getSubmissions({
     required String assessmentId,
+    bool skipBackgroundRefresh = false,
   });
 
-  ResultFuture<SubmissionDetail> getSubmissionDetail({
+  ResultFuture<SubmissionDetail?> getSubmissionDetail({
     required String submissionId,
+    bool skipBackgroundRefresh = false,
   });
 
-  ResultFuture<SubmissionAnswer> overrideAnswer({
+  ResultFuture<MutationResult<SubmissionAnswer>> overrideAnswer({
     required String answerId,
     required bool isCorrect,
     double? points,
   });
 
-  ResultFuture<SubmissionAnswer> gradeEssayAnswer({
+  ResultFuture<MutationResult<SubmissionAnswer>> gradeEssayAnswer({
     required String answerId,
     required double points,
   });
@@ -93,7 +96,7 @@ abstract class AssessmentRepository {
   });
 
   // Student: Taking Assessments
-  ResultFuture<StartSubmissionResult> startAssessment({
+  ResultFuture<MutationResult<StartSubmissionResult>> startAssessment({
     required String assessmentId,
     required String studentId,
     required String studentName,
@@ -105,12 +108,12 @@ abstract class AssessmentRepository {
     required String studentId,
   });
 
-  ResultVoid saveAnswers({
+  ResultFuture<MutationResult<void>> saveAnswers({
     required String submissionId,
     required List<Map<String, dynamic>> answers,
   });
 
-  ResultFuture<SubmissionSummary> submitAssessment({
+  ResultFuture<MutationResult<SubmissionSummary>> submitAssessment({
     required String submissionId,
   });
 

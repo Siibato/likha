@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
@@ -7,7 +8,7 @@ class CreateGradeItem {
 
   CreateGradeItem(this._repository);
 
-  ResultFuture<GradeItem> call({
+  ResultFuture<MutationResult<GradeItem>> call({
     required String classId,
     required Map<String, dynamic> data,
   }) {

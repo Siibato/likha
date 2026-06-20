@@ -41,25 +41,11 @@ class ScoreDistributionChart extends StatelessWidget {
   }
 
   BarChartData _buildBarChartData() {
-    final labels = ['0-59', '60-69', '70-79', '80-89', '90-100'];
-    final counts = List.filled(5, 0);
-
-    for (final bucket in scoreDistribution) {
-      final score = bucket.score;
-      if (score < 60) {
-        counts[0] += bucket.count;
-      } else if (score < 70) {
-        counts[1] += bucket.count;
-      } else if (score < 80) {
-        counts[2] += bucket.count;
-      } else if (score < 90) {
-        counts[3] += bucket.count;
-      } else {
-        counts[4] += bucket.count;
-      }
-    }
-
-    final maxCount = counts.isEmpty ? 1 : counts.reduce((a, b) => a > b ? a : b);
+    final sorted = List<ScoreBucket>.from(scoreDistribution)
+      ..sort((a, b) => a.score.compareTo(b.score));
+    final maxCount = sorted.isEmpty
+        ? 1
+        : sorted.map((b) => b.count).reduce((a, b) => a > b ? a : b);
 
     return BarChartData(
       alignment: BarChartAlignment.spaceAround,
@@ -68,8 +54,9 @@ class ScoreDistributionChart extends StatelessWidget {
         enabled: true,
         touchTooltipData: BarTouchTooltipData(
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            final bucket = sorted[group.x];
             return BarTooltipItem(
-              '${rod.toY.toInt()} students',
+              'Score ${bucket.score}: ${rod.toY.toInt()} students',
               const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -92,13 +79,13 @@ class ScoreDistributionChart extends StatelessWidget {
             showTitles: true,
             getTitlesWidget: (value, meta) {
               final index = value.toInt();
-              if (index < 0 || index >= labels.length) {
+              if (index < 0 || index >= sorted.length) {
                 return const SizedBox.shrink();
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  labels[index],
+                  '${sorted[index].score}',
                   style: const TextStyle(fontSize: 11),
                 ),
               );
@@ -124,12 +111,13 @@ class ScoreDistributionChart extends StatelessWidget {
       ),
       borderData: FlBorderData(show: false),
       gridData: const FlGridData(show: true, drawVerticalLine: false),
-      barGroups: List.generate(5, (index) {
+      barGroups: List.generate(sorted.length, (index) {
+        final bucket = sorted[index];
         return BarChartGroupData(
           x: index,
           barRods: [
             BarChartRodData(
-              toY: counts[index].toDouble(),
+              toY: bucket.count.toDouble(),
               color: AppColors.foregroundPrimary,
               width: 20,
               borderRadius: const BorderRadius.only(
@@ -165,6 +153,11 @@ class ItemDifficultyChart extends StatelessWidget {
             'Item Difficulty Index',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            'Higher = easier question (0-1 scale)',
+            style: TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
+          ),
           const SizedBox(height: 16),
           if (items.isEmpty)
             const SizedBox(
@@ -182,9 +175,11 @@ class ItemDifficultyChart extends StatelessWidget {
   }
 
   Color _barColor(double difficultyIndex) {
-    if (difficultyIndex < 0.3) return AppColors.semanticError;
-    if (difficultyIndex > 0.7) return AppColors.semanticSuccessAlt;
-    return AppColors.accentAmber;
+    if (difficultyIndex >= 0.86) return AppColors.semanticError;
+    if (difficultyIndex >= 0.71) return AppColors.accentAmber;
+    if (difficultyIndex >= 0.30) return AppColors.semanticSuccessAlt;
+    if (difficultyIndex >= 0.15) return AppColors.accentAmber;
+    return AppColors.semanticError;
   }
 
   BarChartData _buildBarChartData() {
@@ -199,7 +194,7 @@ class ItemDifficultyChart extends StatelessWidget {
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             final item = displayItems[group.x];
             return BarTooltipItem(
-              'Q${group.x + 1}: ${item.difficultyIndex.toStringAsFixed(2)}',
+              'Q${group.x + 1}: ${item.difficultyIndex.toStringAsFixed(2)} (${item.difficultyLabel})',
               const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -260,6 +255,142 @@ class ItemDifficultyChart extends StatelessWidget {
             BarChartRodData(
               toY: item.difficultyIndex,
               color: _barColor(item.difficultyIndex),
+              width: 20,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(4),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class ItemDiscriminationChart extends StatelessWidget {
+  final List<ItemAnalysis> items;
+
+  const ItemDiscriminationChart({super.key, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Item Discrimination Index',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Higher = better at distinguishing strong vs weak students',
+            style: TextStyle(fontSize: 12, color: AppColors.foregroundTertiary),
+          ),
+          const SizedBox(height: 16),
+          if (items.isEmpty)
+            const SizedBox(
+              height: 200,
+              child: Center(child: Text('No data')),
+            )
+          else
+            SizedBox(
+              height: 200,
+              child: BarChart(_buildBarChartData()),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Color _barColor(double discriminationIndex) {
+    if (discriminationIndex >= 0.40) return AppColors.semanticSuccessAlt;
+    if (discriminationIndex >= 0.30) return AppColors.semanticSuccess;
+    if (discriminationIndex >= 0.20) return AppColors.accentAmber;
+    return AppColors.semanticError;
+  }
+
+  BarChartData _buildBarChartData() {
+    final displayItems = items.length > 30 ? items.sublist(0, 30) : items;
+
+    return BarChartData(
+      alignment: BarChartAlignment.spaceAround,
+      maxY: 1.0,
+      minY: -0.2,
+      barTouchData: BarTouchData(
+        enabled: true,
+        touchTooltipData: BarTouchTooltipData(
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            final item = displayItems[group.x];
+            return BarTooltipItem(
+              'Q${group.x + 1}: ${item.discriminationIndex.toStringAsFixed(2)} (${item.discriminationLabel})',
+              const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            );
+          },
+        ),
+      ),
+      titlesData: FlTitlesData(
+        show: true,
+        topTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, meta) {
+              final index = value.toInt();
+              if (index < 0 || index >= displayItems.length) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Q${index + 1}',
+                  style: const TextStyle(fontSize: 10),
+                ),
+              );
+            },
+            reservedSize: 30,
+          ),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 36,
+            interval: 0.2,
+            getTitlesWidget: (value, meta) {
+              return Text(
+                value.toStringAsFixed(1),
+                style: const TextStyle(fontSize: 11),
+              );
+            },
+          ),
+        ),
+      ),
+      borderData: FlBorderData(show: false),
+      gridData: const FlGridData(show: true, drawVerticalLine: false),
+      barGroups: List.generate(displayItems.length, (index) {
+        final item = displayItems[index];
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: item.discriminationIndex,
+              color: _barColor(item.discriminationIndex),
               width: 20,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),

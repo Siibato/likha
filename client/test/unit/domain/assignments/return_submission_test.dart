@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -36,12 +38,18 @@ void main() {
 
     test('should return submission successfully', () async {
       when(() => mockRepository.returnSubmission(submissionId: any(named: 'submissionId')))
-          .thenAnswer((_) async => Right(tReturnedSubmission));
+          .thenAnswer((_) async => Right(MutationResult(entity: tReturnedSubmission, status: SyncStatus.pending)));
 
       final result = await useCase(tSubmissionId);
 
-      expect(result, Right(tReturnedSubmission));
-      expect(result.getOrElse(() => throw Exception()).status, 'returned');
+      expect(result.isRight(), true);
+      result.fold(
+        (failure) => fail('should not be left'),
+        (mutationResult) {
+          expect(mutationResult.entity, tReturnedSubmission);
+          expect(mutationResult.status, SyncStatus.pending);
+        },
+      );
       verify(() => mockRepository.returnSubmission(submissionId: tSubmissionId)).called(1);
     });
 

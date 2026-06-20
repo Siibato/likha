@@ -6,7 +6,7 @@ import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_detail_page.dart';
-import 'package:likha/presentation/pages/mobile/teacher/assignment/create_assignment_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_create_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/empty_assignment_list_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/teacher_assignment_card.dart';
@@ -264,11 +264,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                         MaterialPageRoute(
                           builder: (_) => CreateAssignmentPage(classId: widget.classId),
                         ),
-                      ).then((result) {
-                        if (result == true) {
-                          ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
-                        }
-                      }),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accentCharcoal,
                         foregroundColor: Colors.white,
@@ -338,9 +334,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                                         assignmentId: assignment.id,
                                       ),
                                     ),
-                                  ).then((_) => ref
-                                      .read(assignmentProvider.notifier)
-                                      .loadAssignments(widget.classId)),
+                                  ),
                                 );
                               },
                             ),

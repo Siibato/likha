@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
@@ -67,6 +71,10 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   final GetStudentResults _getStudentResults;
   final GetStudentSubmission _getStudentSubmission;
 
+  String? _currentAssessmentId;
+  String? _currentStudentId;
+  late StreamSubscription<String> _studentSubmissionSub;
+
   StudentAssessmentNotifier(
     this._getAssessments,
     this._getAssessmentDetail,
@@ -75,7 +83,13 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     this._submitAssessment,
     this._getStudentResults,
     this._getStudentSubmission,
-  ) : super(StudentAssessmentState());
+  ) : super(StudentAssessmentState()) {
+    _studentSubmissionSub = sl<DataEventBus>().onStudentSubmissionsChanged.listen((assessmentId) {
+      if (_currentAssessmentId != null && _currentAssessmentId == assessmentId && _currentStudentId != null) {
+        _refreshStudentSubmission(assessmentId, _currentStudentId!);
+      }
+    });
+  }
 
   Future<void> loadAssessments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -104,7 +118,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     String studentName,
     String studentUsername,
   ) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(error: null);
     final result = await _startAssessment(StartAssessmentParams(
       assessmentId: assessmentId,
       studentId: studentId,
@@ -112,8 +126,8 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       studentUsername: studentUsername,
     ));
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (startResult) => state = state.copyWith(isLoading: false, startResult: startResult),
+      (failure) => state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
+      (mutationResult) => state = state.copyWith(startResult: mutationResult.entity),
     );
   }
 
@@ -126,14 +140,95 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   }
 
   Future<void> submitAssessment(String submissionId) async {
-    state = state.copyWith(isLoading: true, error: null, successMessage: null);
+    final previousStartResult = state.startResult;
+    final previousCurrentStudentSubmission = state.currentStudentSubmission;
+    final previousAssessments = state.assessments;
+
+    final assessmentId = state.currentStudentSubmission?.assessmentId
+        ?? state.startResult?.submissionId; // use as fallback hint
+
+    SubmissionSummary? optimisticSubmission;
+    if (state.currentStudentSubmission != null) {
+      final s = state.currentStudentSubmission!;
+      optimisticSubmission = SubmissionSummary(
+        id: s.id,
+        assessmentId: s.assessmentId,
+        studentId: s.studentId,
+        studentName: s.studentName,
+        studentUsername: s.studentUsername,
+        startedAt: s.startedAt,
+        submittedAt: s.submittedAt ?? DateTime.now(),
+        autoScore: s.autoScore,
+        finalScore: s.finalScore,
+        totalPoints: s.totalPoints,
+        isSubmitted: true,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+        cachedAt: s.cachedAt,
+        syncStatus: SyncStatus.pending,
+      );
+    }
+
+    final optimisticAssessments = assessmentId != null
+        ? state.assessments.map((a) {
+            if (a.id == assessmentId) {
+              return Assessment(
+                id: a.id,
+                classId: a.classId,
+                title: a.title,
+                description: a.description,
+                timeLimitMinutes: a.timeLimitMinutes,
+                openAt: a.openAt,
+                closeAt: a.closeAt,
+                showResultsImmediately: a.showResultsImmediately,
+                resultsReleased: a.resultsReleased,
+                isPublished: a.isPublished,
+                orderIndex: a.orderIndex,
+                totalPoints: a.totalPoints,
+                questionCount: a.questionCount,
+                submissionCount: a.submissionCount,
+                isSubmitted: true,
+                tosId: a.tosId,
+                gradingPeriodNumber: a.gradingPeriodNumber,
+                component: a.component,
+                createdAt: a.createdAt,
+                updatedAt: a.updatedAt,
+                cachedAt: a.cachedAt,
+                syncStatus: a.syncStatus,
+              );
+            }
+            return a;
+          }).toList()
+        : state.assessments;
+
+    if (optimisticSubmission != null) {
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        startResult: null,
+        currentStudentSubmission: optimisticSubmission,
+        assessments: optimisticAssessments,
+      );
+    } else {
+      state = state.copyWith(
+        error: null,
+        successMessage: null,
+        startResult: null,
+        assessments: optimisticAssessments,
+      );
+    }
+
     final result = await _submitAssessment(submissionId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
-      (_) => state = state.copyWith(
-        isLoading: false,
+      (failure) => state = state.copyWith(
+        error: AppErrorMapper.fromFailure(failure),
+        startResult: previousStartResult,
+        currentStudentSubmission: previousCurrentStudentSubmission,
+        assessments: previousAssessments,
+      ),
+      (mutationResult) => state = state.copyWith(
         successMessage: 'Assessment submitted',
-        startResult: null,
+        currentStudentSubmission: mutationResult.entity,
       ),
     );
   }
@@ -168,6 +263,8 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   }
 
   Future<void> loadScorePreview(String assessmentId, String studentId) async {
+    _currentAssessmentId = assessmentId;
+    _currentStudentId = studentId;
     ProviderLogger.instance.log('loadScorePreview() START - assessmentId: $assessmentId, studentId: $studentId');
     state = state.copyWith(isLoading: true, error: null);
     ProviderLogger.instance.log('loadScorePreview() - calling _getStudentSubmission...');
@@ -204,6 +301,34 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       },
     );
     ProviderLogger.instance.log('loadScorePreview() END - currentStudentSubmission=${state.currentStudentSubmission?.id}');
+  }
+
+  Future<void> _refreshStudentSubmission(String assessmentId, String studentId) async {
+    final result = await _getStudentSubmission(
+      GetStudentSubmissionParams(
+        assessmentId: assessmentId,
+        studentId: studentId,
+      ),
+    );
+    result.fold(
+      (failure) {}, // silent: background refresh should not show errors
+      (submission) {
+        state = state.copyWith(currentStudentSubmission: submission);
+        if (submission != null && submission.isSubmitted) {
+          loadStudentResults(submission.id).then((_) {
+            if (state.error != null) {
+              state = state.copyWith(error: null);
+            }
+          }).ignore();
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _studentSubmissionSub.cancel();
+    super.dispose();
   }
 
   void clearMessages() {

@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -7,7 +8,7 @@ class OverrideAnswer {
 
   OverrideAnswer(this._repository);
 
-  ResultFuture<SubmissionAnswer> call(OverrideAnswerParams params) {
+  ResultFuture<MutationResult<SubmissionAnswer>> call(OverrideAnswerParams params) {
     return _repository.overrideAnswer(
       answerId: params.answerId,
       isCorrect: params.isCorrect,

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -39,12 +41,13 @@ void main() {
       when(() => mockRepository.gradeEssayAnswer(
         answerId: any(named: 'answerId'),
         points: any(named: 'points'),
-      )).thenAnswer((_) async => const Right(tGradedAnswer));
+      )).thenAnswer((_) async => const Right(MutationResult(entity: tGradedAnswer, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 
-      expect(result, const Right(tGradedAnswer));
-      expect(result.getOrElse(() => throw Exception()).pointsAwarded, 4.5);
+      expect(result.isRight(), true);
+      final mutationResult = result.getOrElse(() => throw Exception());
+      expect(mutationResult.entity.pointsAwarded, 4.5);
       verify(() => mockRepository.gradeEssayAnswer(
         answerId: tAnswerId,
         points: 4.5,

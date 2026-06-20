@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/usecases/reorder_material.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
@@ -35,12 +37,12 @@ void main() {
       when(() => mockRepository.reorderMaterial(
         materialId: any(named: 'materialId'),
         newOrderIndex: any(named: 'newOrderIndex'),
-      )).thenAnswer((_) async => Right(tReordered));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tReordered, status: SyncStatus.pending)));
 
       final result = await useCase(materialId: tMaterialId, newOrderIndex: 3);
 
-      expect(result, Right(tReordered));
-      expect(result.getOrElse(() => throw Exception()).orderIndex, 3);
+      expect(result.isRight(), isTrue);
+      expect(result.getOrElse(() => throw Exception()).entity.orderIndex, 3);
       verify(() => mockRepository.reorderMaterial(
         materialId: tMaterialId,
         newOrderIndex: 3,
@@ -86,7 +88,7 @@ void main() {
       when(() => mockRepository.reorderAllMaterials(
         classId: any(named: 'classId'),
         materialIds: any(named: 'materialIds'),
-      )).thenAnswer((_) async => const Right(null));
+      )).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await reorderAllUseCase(classId: tClassId, materialIds: tMaterialIds);
 

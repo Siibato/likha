@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/tos/repositories/tos_repository.dart';
 
@@ -6,7 +7,7 @@ class DeleteTos {
 
   DeleteTos(this._repository);
 
-  ResultVoid call(String tosId) {
+  ResultFuture<MutationResult<void>> call(String tosId) {
     return _repository.deleteTos(tosId: tosId);
   }
 }

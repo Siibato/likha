@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
 
@@ -6,7 +7,7 @@ class DeleteQuestion {
 
   DeleteQuestion(this._repository);
 
-  ResultVoid call(String questionId) {
+  ResultFuture<MutationResult<void>> call(String questionId) {
     return _repository.deleteQuestion(questionId: questionId);
   }
 }

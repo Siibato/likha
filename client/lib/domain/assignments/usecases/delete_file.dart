@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 
@@ -6,7 +7,7 @@ class DeleteFile {
 
   DeleteFile(this._repository);
 
-  ResultVoid call(String fileId) {
+  ResultFuture<MutationResult<void>> call(String fileId) {
     return _repository.deleteFile(fileId: fileId);
   }
 }

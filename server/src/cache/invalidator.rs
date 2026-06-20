@@ -53,24 +53,29 @@ impl CacheInvalidator {
         self.cache.del_keys(keys).await;
     }
 
+    pub async fn invalidate_class_participants(&self, class_id: Uuid) {
+        self.cache.del(&CacheKey::ClassParticipants(class_id).as_str()).await;
+    }
+
     pub async fn invalidate_class_and_enrolled(&self, class_id: Uuid) {
         self.invalidate_class(class_id).await;
+        self.invalidate_class_participants(class_id).await;
     }
 
     // ─── Grading ──────────────────────────────────────────────────────────────
 
-    pub async fn invalidate_class_grades(&self, class_id: Uuid, quarter: i32) {
+    pub async fn invalidate_class_grades(&self, class_id: Uuid, period: i32) {
         let keys = vec![
-            CacheKey::GradeItems(class_id, quarter).as_str(),
-            CacheKey::QuarterlyGrades(class_id, quarter).as_str(),
-            CacheKey::GradeSummary(class_id, quarter).as_str(),
+            CacheKey::GradeItems(class_id, period).as_str(),
+            CacheKey::PeriodGrades(class_id, period).as_str(),
+            CacheKey::GradeSummary(class_id, period).as_str(),
         ];
         self.cache.del_keys(keys).await;
     }
 
-    pub async fn invalidate_student_grades(&self, class_id: Uuid, student_id: Uuid, quarter: i32) {
+    pub async fn invalidate_student_grades(&self, class_id: Uuid, student_id: Uuid, period: i32) {
         let keys = vec![
-            CacheKey::StudentQuarterlyGrade(class_id, student_id, quarter).as_str(),
+            CacheKey::StudentPeriodGrade(class_id, student_id, period).as_str(),
             CacheKey::StudentAllGrades(class_id, student_id).as_str(),
             CacheKey::FinalGrade(class_id, student_id).as_str(),
             CacheKey::SF9(class_id, student_id).as_str(),
@@ -107,12 +112,12 @@ impl CacheInvalidator {
         self.cache.del(&CacheKey::AssessmentSubmissionDetail(submission_id).as_str()).await;
     }
 
-    pub async fn invalidate_assessment_statistics(&self, assessment_id: Uuid) {
-        self.cache.del(&CacheKey::AssessmentStatistics(assessment_id).as_str()).await;
-    }
-
     pub async fn invalidate_student_results(&self, submission_id: Uuid) {
         self.cache.del(&CacheKey::StudentResults(submission_id).as_str()).await;
+    }
+
+    pub async fn invalidate_assessment_student_submission(&self, assessment_id: Uuid, student_id: Uuid) {
+        self.cache.del(&CacheKey::AssessmentStudentSubmission(assessment_id, student_id).as_str()).await;
     }
 
     pub async fn invalidate_student_assessment_submissions(&self, class_id: Uuid, student_id: Uuid) {

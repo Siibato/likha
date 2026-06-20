@@ -44,12 +44,12 @@ pub fn generate_period_grades(
         }
     }
 
-    // Generate 2 period records per non-deleted class
+    // Generate 4 period records per non-deleted class (Q1-Q4)
     for class in classes {
         if class.deleted_at.is_some() {
             continue;
         }
-        for period in 1..=2 {
+        for period in 1..=4 {
             let enrolled = class_students.get(&class.id).cloned().unwrap_or_default();
 
             for &student_idx in &enrolled {

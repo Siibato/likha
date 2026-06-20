@@ -1,19 +1,19 @@
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assignment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
-import 'package:likha/data/datasources/remote/grading_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
-import 'package:likha/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
-import 'package:likha/data/datasources/remote/class_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
-import 'package:likha/data/datasources/remote/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
-import 'package:likha/data/datasources/remote/tos_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/connectivity_service.dart';

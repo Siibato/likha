@@ -27,7 +27,7 @@ impl crate::modules::assessment::service::AssessmentService {
 
             let (is_correct, points_awarded) = match question.question_type.as_str() {
                 "multiple_choice" => {
-                    multiple_choice::grade_multiple_choice(
+                    let (is_correct, points_awarded, _) = multiple_choice::grade_multiple_choice(
                         answer.id,
                         question.id,
                         question.points,
@@ -35,7 +35,8 @@ impl crate::modules::assessment::service::AssessmentService {
                         &self.assessment_repo,
                         &self.assessment_repo,
                     )
-                    .await?
+                    .await?;
+                    (is_correct, points_awarded)
                 }
                 "identification" => {
                     let items = self.assessment_repo.find_enumeration_answers(answer.id).await?;

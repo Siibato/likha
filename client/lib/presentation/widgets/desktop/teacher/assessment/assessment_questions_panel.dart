@@ -3,7 +3,8 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_add_question_form_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_card_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_edit_form_desktop.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/move_question_dialog.dart';
 
 /// Right panel of the desktop assessment builder showing all question cards.
 class AssessmentQuestionsPanel extends StatelessWidget {
@@ -18,7 +19,7 @@ class AssessmentQuestionsPanel extends StatelessWidget {
   final VoidCallback onCancelAdd;
   final void Function(int) onEditQuestion;
   final void Function(int) onDeleteQuestion;
-  final void Function(int) onMoveQuestion;
+  final void Function(int fromIndex, int toIndex)? onReorderQuestion;
   final void Function(QuestionDraft) onConfirmAdd;
   final void Function(int index, QuestionDraft updated) onSaveEdit;
   final VoidCallback onCancelEdit;
@@ -36,7 +37,7 @@ class AssessmentQuestionsPanel extends StatelessWidget {
     required this.onCancelAdd,
     required this.onEditQuestion,
     required this.onDeleteQuestion,
-    required this.onMoveQuestion,
+    required this.onReorderQuestion,
     required this.onConfirmAdd,
     required this.onSaveEdit,
     required this.onCancelEdit,
@@ -118,7 +119,16 @@ class AssessmentQuestionsPanel extends StatelessWidget {
               isReorderMode: isReorderMode,
               onEdit: onEditQuestion,
               onDelete: onDeleteQuestion,
-              onMove: onMoveQuestion,
+              onMove: onReorderQuestion != null
+                  ? (i) => showDialog(
+                        context: context,
+                        builder: (_) => MoveQuestionDialog(
+                          currentIndex: i,
+                          questionCount: questions.length,
+                          onMove: onReorderQuestion!,
+                        ),
+                      )
+                  : (_) {},
             );
           }),
 

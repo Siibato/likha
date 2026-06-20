@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/entities/material_file.dart';
 
 class MaterialFileModel extends MaterialFile {
@@ -12,7 +13,7 @@ class MaterialFileModel extends MaterialFile {
     required super.uploadedAt,
     super.localPath,
     super.cachedAt,
-    super.needsSync = false,
+    super.syncStatus = SyncStatus.synced,
   });
 
   factory MaterialFileModel.fromJson(Map<String, dynamic> json) {
@@ -38,7 +39,10 @@ class MaterialFileModel extends MaterialFile {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -62,7 +66,7 @@ class MaterialFileModel extends MaterialFile {
       'uploaded_at': uploadedAt.toIso8601String(),
       'local_path': localPath,
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
     };
   }
 }

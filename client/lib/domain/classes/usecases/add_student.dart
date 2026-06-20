@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/repositories/class_repository.dart';
@@ -7,7 +8,7 @@ class AddStudent {
 
   AddStudent(this._repository);
 
-  ResultFuture<Participant> call(AddStudentParams params) {
+  ResultFuture<MutationResult<Participant>> call(AddStudentParams params) {
     return _repository.addStudent(
       classId: params.classId,
       studentId: params.studentId,

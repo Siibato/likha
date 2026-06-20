@@ -7,6 +7,7 @@ class GradeScore extends Equatable {
   final double? score;
   final bool isAutoPopulated;
   final double? overrideScore;
+  final String syncStatus;
 
   const GradeScore({
     required this.id,
@@ -15,6 +16,7 @@ class GradeScore extends Equatable {
     this.score,
     required this.isAutoPopulated,
     this.overrideScore,
+    this.syncStatus = 'synced',
   });
 
   double? get effectiveScore => overrideScore ?? score;
@@ -27,5 +29,6 @@ class GradeScore extends Equatable {
         score,
         isAutoPopulated,
         overrideScore,
+        syncStatus,
       ];
 }

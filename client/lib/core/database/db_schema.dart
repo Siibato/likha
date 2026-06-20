@@ -35,8 +35,14 @@ abstract final class DbTables {
   static const String tableOfSpecifications = 'table_of_specifications';
   static const String tosCompetencies = 'tos_competencies';
   static const String melcs = 'melcs';
-  static const String assessmentStatisticsCache = 'assessment_statistics_cache';
   static const String validationMetadata = 'validation_metadata';
+  static const String schoolSettings = 'school_settings';
+  static const String learnerDetails = 'learner_details';
+  static const String attendanceRecords = 'attendance_records';
+  static const String coreValuesRecords = 'core_values_records';
+  static const String studentSchoolHistory = 'student_school_history';
+  static const String previousSchoolSubjects = 'previous_school_subjects';
+  static const String previousSchoolAttendance = 'previous_school_attendance';
 }
 
 // ─── Common columns ───────────────────────────────────────────────────────────
@@ -44,7 +50,7 @@ abstract final class DbTables {
 abstract final class CommonCols {
   static const String id = 'id';
   static const String cachedAt = 'cached_at';
-  static const String needsSync = 'needs_sync';
+  static const String syncStatus = 'sync_status';
   static const String createdAt = 'created_at';
   static const String updatedAt = 'updated_at';
   static const String deletedAt = 'deleted_at';
@@ -293,11 +299,6 @@ abstract final class StudentResultsCacheCols {
   static const String resultsJson = 'results_json';
 }
 
-abstract final class AssessmentStatisticsCacheCols {
-  static const String assessmentId = 'assessment_id';
-  static const String statisticsJson = 'statistics_json';
-}
-
 abstract final class ValidationMetadataCols {
   static const String entityType = 'entity_type';
   static const String lastModified = 'last_modified';
@@ -351,6 +352,92 @@ abstract final class MelcsCols {
   static const String domain = 'domain';
 }
 
+abstract final class SchoolSettingsCols {
+  static const String schoolName = 'school_name';
+  static const String schoolRegion = 'school_region';
+  static const String schoolDivision = 'school_division';
+  static const String schoolYear = 'school_year';
+  static const String schoolCode = 'school_code';
+  static const String schoolDistrict = 'school_district';
+  static const String schoolHeadName = 'school_head_name';
+  static const String schoolHeadPosition = 'school_head_position';
+}
+
+// ─── Student Records columns ──────────────────────────────────────────────────
+
+abstract final class LearnerDetailsCols {
+  static const String userId = 'user_id';
+  static const String lrn = 'lrn';
+  static const String age = 'age';
+  static const String sex = 'sex';
+  static const String trackStrand = 'track_strand';
+  static const String curriculum = 'curriculum';
+  static const String birthdate = 'birthdate';
+  static const String birthplace = 'birthplace';
+  static const String homeAddress = 'home_address';
+  static const String fatherName = 'father_name';
+  static const String motherName = 'mother_name';
+  static const String guardianName = 'guardian_name';
+  static const String guardianContact = 'guardian_contact';
+  static const String dateAdmitted = 'date_admitted';
+  static const String admittedToGrade = 'admitted_to_grade';
+}
+
+abstract final class AttendanceRecordsCols {
+  static const String studentId = 'student_id';
+  static const String classId = 'class_id';
+  static const String schoolYear = 'school_year';
+  static const String month = 'month';
+  static const String schoolDays = 'school_days';
+  static const String daysPresent = 'days_present';
+  static const String daysAbsent = 'days_absent';
+}
+
+abstract final class CoreValuesRecordsCols {
+  static const String studentId = 'student_id';
+  static const String classId = 'class_id';
+  static const String schoolYear = 'school_year';
+  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String coreValue = 'core_value';
+  static const String behaviorStatement = 'behavior_statement';
+  static const String marking = 'marking';
+}
+
+abstract final class StudentSchoolHistoryCols {
+  static const String studentId = 'student_id';
+  static const String schoolName = 'school_name';
+  static const String schoolId = 'school_id';
+  static const String gradeLevel = 'grade_level';
+  static const String schoolYear = 'school_year';
+  static const String section = 'section';
+  static const String dateFrom = 'date_from';
+  static const String dateTo = 'date_to';
+  static const String recordType = 'record_type';
+}
+
+abstract final class PreviousSchoolSubjectsCols {
+  static const String studentId = 'student_id';
+  static const String schoolHistoryId = 'school_history_id';
+  static const String subjectName = 'subject_name';
+  static const String subjectGroup = 'subject_group';
+  static const String q1Grade = 'q1_grade';
+  static const String q2Grade = 'q2_grade';
+  static const String q3Grade = 'q3_grade';
+  static const String q4Grade = 'q4_grade';
+  static const String finalGrade = 'final_grade';
+  static const String descriptor = 'descriptor';
+}
+
+abstract final class PreviousSchoolAttendanceCols {
+  static const String studentId = 'student_id';
+  static const String schoolHistoryId = 'school_history_id';
+  static const String schoolYear = 'school_year';
+  static const String month = 'month';
+  static const String schoolDays = 'school_days';
+  static const String daysPresent = 'days_present';
+  static const String daysAbsent = 'days_absent';
+}
+
 // ─── Domain value strings ─────────────────────────────────────────────────────
 
 abstract final class DbValues {
@@ -372,7 +459,7 @@ abstract final class DbValues {
   // grade_items.component
   static const String componentWrittenWork = 'written_work';
   static const String componentPerformanceTask = 'performance_task';
-  static const String componentQuarterlyAssessment = 'quarterly_assessment';
+  static const String componentPeriodAssessment = 'period_assessment';
 
   // grade_items.source_type
   static const String sourceManual = 'manual';

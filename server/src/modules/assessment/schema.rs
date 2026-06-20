@@ -360,8 +360,11 @@ pub struct AssessmentStatisticsResponse {
 pub struct ClassStatistics {
     pub mean: f64,
     pub median: f64,
+    pub std_dev: f64,
     pub highest: f64,
     pub lowest: f64,
+    pub pass_rate: f64,
+    pub fail_rate: f64,
     pub score_distribution: Vec<ScoreBucket>,
 }
 
@@ -380,6 +383,8 @@ pub struct QuestionStatistics {
     pub correct_count: usize,
     pub incorrect_count: usize,
     pub correct_percentage: f64,
+    pub average_points: f64,
+    pub average_percentage: f64,
 }
 
 // ===== ITEM ANALYSIS SCHEMAS =====
@@ -419,6 +424,7 @@ pub struct TestSummary {
     pub total_items_analyzed: usize,
     pub upper_group_size: usize,
     pub lower_group_size: usize,
+    pub kr20: Option<f64>,
 }
 
 // ===== STUDENT SUBMISSION STATUS SCHEMAS =====

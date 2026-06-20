@@ -1,0 +1,59 @@
+import 'package:dartz/dartz.dart';
+import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
+import 'package:likha/domain/assignments/entities/assignment_submission.dart';
+import 'package:likha/services/storage_service.dart';
+import 'package:uuid/uuid.dart';
+
+ResultFuture<MutationResult<AssignmentSubmission>> createSubmission(
+  AssignmentLocalDataSource localDataSource,
+  SyncQueue syncQueue,
+  StorageService storageService,
+  {
+  required String assignmentId,
+  String? textContent,
+}) async {
+  try {
+    final studentId = await storageService.getUserId() ?? '';
+    final queueEntryId = const Uuid().v4();
+
+    final submissionId = await localDataSource.createSubmission(
+      assignmentId: assignmentId,
+      studentId: studentId,
+      textContent: textContent,
+      queueEntryId: queueEntryId,
+    );
+
+    final cached = await localDataSource.getCachedSubmission(submissionId);
+    if (cached != null) {
+      return Right(MutationResult(entity: cached, status: SyncStatus.pending));
+    }
+
+    final now = DateTime.now();
+    return Right(MutationResult(
+      entity: AssignmentSubmission(
+        id: submissionId,
+        assignmentId: assignmentId,
+        studentId: studentId,
+        studentName: '',
+        status: 'draft',
+        textContent: textContent,
+        score: null,
+        feedback: null,
+        files: const [],
+        submittedAt: null,
+        gradedAt: null,
+        createdAt: now,
+        updatedAt: now,
+        syncStatus: SyncStatus.pending,
+        cachedAt: now,
+      ),
+      status: SyncStatus.pending,
+    ));
+  } catch (e) {
+    return Left(ServerFailure(e.toString()));
+  }
+}

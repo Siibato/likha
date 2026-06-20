@@ -1,7 +1,6 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
 use crate::modules::assignment::repository::AssignmentRepository;
-use crate::modules::assignment::service::AssignmentService;
 use crate::seed::specs::AssignmentSpec;
 use crate::utils::AppError;
 use ::entity::assignments;
@@ -43,16 +42,7 @@ pub async fn insert_assignment(
     am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     if spec.deleted_at.is_none() {
-        let teacher = ::entity::class_participants::Entity::find()
-            .filter(::entity::class_participants::Column::ClassId.eq(spec.class_id))
-            .one(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
-
-        if let Some(participant) = teacher {
-            let service = AssignmentService::new(db.clone());
-            service.publish_assignment(spec.id, participant.user_id).await?;
-        }
+        repo.publish_assignment(spec.id).await?;
     }
 
     if let Some(deleted_at) = spec.deleted_at {

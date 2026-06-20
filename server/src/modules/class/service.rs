@@ -155,6 +155,21 @@ impl ClassService {
         ops::is_student_enrolled(&self.class_repo, class_id, student_id).await
     }
 
+    pub async fn get_participants(&self, class_id: Uuid) -> AppResult<Vec<EnrollmentResponse>> {
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::ClassParticipants(class_id).as_str();
+            if let Some(cached) = cache.get::<Vec<EnrollmentResponse>>(&key).await {
+                return Ok(cached);
+            }
+        }
+        let result = ops::get_participants(&self.class_repo, class_id).await?;
+        if let Some(ref cache) = self.cache {
+            let key = CacheKey::ClassParticipants(class_id).as_str();
+            cache.set(&key, &result, cache.ttl.list_seconds).await;
+        }
+        Ok(result)
+    }
+
     pub async fn get_classes_metadata(&self, user_id: Uuid, role: &str) -> AppResult<ClassMetadataResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::ClassMetadata(user_id, role.to_string()).as_str();

@@ -18,6 +18,15 @@ import 'package:likha/data/models/learning_materials/material_detail_model.dart'
 import 'package:likha/data/models/learning_materials/material_file_model.dart';
 import 'package:likha/data/models/tos/tos_model.dart';
 import 'package:likha/data/models/tos/melcs_model.dart';
+import 'package:likha/data/models/grading/general_average_model.dart';
+import 'package:likha/data/models/grading/sf9_model.dart';
+import 'package:likha/data/models/student_records/learner_details_model.dart';
+import 'package:likha/data/models/student_records/attendance_record_model.dart';
+import 'package:likha/data/models/student_records/core_values_record_model.dart';
+import 'package:likha/data/models/student_records/school_history_model.dart';
+import 'package:likha/data/models/student_records/previous_subject_model.dart';
+import 'package:likha/data/models/student_records/previous_attendance_model.dart';
+import 'package:likha/data/models/student_records/sf10_response_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
 import 'package:likha/data/models/sync/full_sync_response_model.dart';
@@ -294,6 +303,13 @@ class ApiEndpoints {
     (json) => json as Map<String, dynamic>,
   );
 
+  static ApiEndpoint<SubmissionSummaryModel> assessmentStudentSubmission(
+          String assessmentId, String studentId) =>
+      ApiEndpoint<SubmissionSummaryModel>.fromModel(
+        '/api/v1/assessments/$assessmentId/students/$studentId/submission',
+        SubmissionSummaryModel.fromJson,
+      );
+
   // ===== Assignment Endpoints =====
   static ApiEndpoint<AssignmentModel> classAssignments(String classId) =>
       ApiEndpoint<AssignmentModel>.fromModel(
@@ -517,6 +533,9 @@ class ApiEndpoints {
   static ApiEndpoint<Map<String, dynamic>> gradeScoreOverride(String scoreId) =>
       ApiEndpoint('/api/v1/grade-scores/$scoreId/override', (json) => json as Map<String, dynamic>);
 
+  static ApiEndpoint<Map<String, dynamic>> gradeData(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grade-data', (json) => json as Map<String, dynamic>);
+
   static ApiEndpoint<Map<String, dynamic>> classGrades(String classId) =>
       ApiEndpoint('/api/v1/classes/$classId/grades', (json) => json as Map<String, dynamic>);
 
@@ -539,14 +558,44 @@ class ApiEndpoints {
       '/api/v1/grading/deped-presets', (json) => json as Map<String, dynamic>);
 
   // ===== General Average (GSA) =====
-  static ApiEndpoint<Map<String, dynamic>> generalAverage(String classId) =>
-      ApiEndpoint('/api/v1/classes/$classId/grades/general-average', (json) => json);
+  static ApiEndpoint<GeneralAverageResponseModel> generalAverage(String classId) =>
+      ApiEndpoint('/api/v1/classes/$classId/grades/general-average', (json) => GeneralAverageResponseModel.fromJson(json as Map<String, dynamic>));
 
   // ===== SF9/SF10 =====
-  static ApiEndpoint<Map<String, dynamic>> sf9(String classId, String studentId) =>
-      ApiEndpoint('/api/v1/classes/$classId/sf9/$studentId', (json) => json);
-  static ApiEndpoint<Map<String, dynamic>> sf10(String classId, String studentId) =>
-      ApiEndpoint('/api/v1/classes/$classId/sf10/$studentId', (json) => json);
+  static ApiEndpoint<Sf9ResponseModel> sf9(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/sf9/$studentId', (json) => Sf9ResponseModel.fromJson(json as Map<String, dynamic>));
+  static ApiEndpoint<Sf9ResponseModel> sf10(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/sf10/$studentId', (json) => Sf9ResponseModel.fromJson(json as Map<String, dynamic>));
+
+  // ===== Student Records =====
+  static ApiEndpoint<LearnerDetailsModel> learnerDetails(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/learner-details', LearnerDetailsModel.fromJson);
+  static ApiEndpoint<List<AttendanceRecordModel>> attendance(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/students/$studentId/attendance', (json) => (json as List<dynamic>).map((e) => AttendanceRecordModel.fromJson(e as Map<String, dynamic>)).toList());
+  static ApiEndpoint<AttendanceRecordModel> attendanceUpsert(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/attendance', AttendanceRecordModel.fromJson);
+  static ApiEndpoint<List<CoreValuesRecordModel>> coreValues(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/students/$studentId/core-values', (json) => (json as List<dynamic>).map((e) => CoreValuesRecordModel.fromJson(e as Map<String, dynamic>)).toList());
+  static ApiEndpoint<CoreValuesRecordModel> coreValuesUpsert(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/core-values', CoreValuesRecordModel.fromJson);
+  static ApiEndpoint<List<SchoolHistoryModel>> schoolHistory(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/students/$studentId/school-history', (json) => (json as List<dynamic>).map((e) => SchoolHistoryModel.fromJson(e as Map<String, dynamic>)).toList());
+  static ApiEndpoint<SchoolHistoryModel> schoolHistoryCreate(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/school-history', SchoolHistoryModel.fromJson);
+  static ApiEndpoint<SchoolHistoryModel> schoolHistoryUpdate(String classId, String studentId, String historyId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/school-history/$historyId', SchoolHistoryModel.fromJson);
+  static ApiEndpoint<void> schoolHistoryDelete(String classId, String studentId, String historyId) =>
+      ApiEndpoint('/api/v1/classes/$classId/students/$studentId/school-history/$historyId', (_) {});
+  static ApiEndpoint<List<PreviousSubjectModel>> previousSubjects(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/students/$studentId/previous-subjects', (json) => (json as List<dynamic>).map((e) => PreviousSubjectModel.fromJson(e as Map<String, dynamic>)).toList());
+  static ApiEndpoint<PreviousSubjectModel> previousSubjectUpsert(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/previous-subjects', PreviousSubjectModel.fromJson);
+  static ApiEndpoint<List<PreviousAttendanceModel>> previousAttendance(String classId, String studentId) =>
+      ApiEndpoint('/api/v1/classes/$classId/students/$studentId/previous-attendance', (json) => (json as List<dynamic>).map((e) => PreviousAttendanceModel.fromJson(e as Map<String, dynamic>)).toList());
+  static ApiEndpoint<PreviousAttendanceModel> previousAttendanceUpsert(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/previous-attendance', PreviousAttendanceModel.fromJson);
+  static ApiEndpoint<Sf10ResponseModel> sf10V2(String classId, String studentId) =>
+      ApiEndpoint.fromModel('/api/v1/classes/$classId/students/$studentId/sf10', Sf10ResponseModel.fromJson);
 
   // ===== TOS CRUD =====
   static ApiEndpoint<List<TosModel>> tosList(String classId) =>
@@ -560,8 +609,23 @@ class ApiEndpoints {
         },
       );
 
+  static ApiEndpoint<TosModel> tosCreate(String classId) => ApiEndpoint.fromModel(
+        '/api/v1/classes/$classId/tos',
+        TosModel.fromJson,
+      );
+
   static ApiEndpoint<Map<String, dynamic>> tosDetail(String id) =>
       ApiEndpoint('/api/v1/tos/$id', (json) => json);
+
+  static ApiEndpoint<TosModel> tosUpdate(String tosId) => ApiEndpoint.fromModel(
+        '/api/v1/tos/$tosId',
+        TosModel.fromJson,
+      );
+
+  static ApiEndpoint<CompetencyModel> tosCompetencyCreate(String tosId) => ApiEndpoint.fromModel(
+        '/api/v1/tos/$tosId/competencies',
+        CompetencyModel.fromJson,
+      );
 
   static ApiEndpoint<List<CompetencyModel>> tosCompetencies(String tosId) =>
       ApiEndpoint(
@@ -581,6 +645,29 @@ class ApiEndpoints {
             .map((e) => CompetencyModel.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
+
+  // ===== Document Export =====
+  static String exportGradesPdf(String classId, {int? period}) {
+    final query = period != null ? '?period=$period' : '';
+    return '/api/v1/classes/$classId/export/grades-pdf$query';
+  }
+
+  static String exportGradesExcel(String classId, {int? period}) {
+    final query = period != null ? '?period=$period' : '';
+    return '/api/v1/classes/$classId/export/grades-excel$query';
+  }
+
+  static String exportSf9Pdf(String classId, String studentId) {
+    return '/api/v1/classes/$classId/export/sf9/$studentId';
+  }
+
+  static String exportSf10Pdf(String classId, String studentId) {
+    return '/api/v1/classes/$classId/export/sf10/$studentId/pdf';
+  }
+
+  static String exportSf10Excel(String classId, String studentId) {
+    return '/api/v1/classes/$classId/export/sf10/$studentId/excel';
+  }
 
   // ===== MELCS =====
   static ApiEndpoint<List<MelcEntryModel>> melcsSearch() =>

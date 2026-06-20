@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:likha/presentation/pages/mobile/teacher/tos/create_tos_page.dart';
+import 'package:likha/presentation/pages/mobile/teacher/tos/tos_create_page.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';

@@ -39,7 +39,7 @@ void main() {
       final rows = await db.query(DbTables.classes, where: 'id = ?', whereArgs: ['class-001']);
       expect(rows.length, 1);
       expect(rows.first['title'], 'Math 101');
-      expect(rows.first['needs_sync'], 0);
+      expect(rows.first['sync_status'], 'synced');
     });
 
     test('upsertClasses updates existing class record (no duplicate)', () async {

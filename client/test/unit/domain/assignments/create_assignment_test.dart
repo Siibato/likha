@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
@@ -47,6 +49,7 @@ void main() {
     );
 
     test('should create assignment successfully', () async {
+      final tMutation = MutationResult(entity: tAssignment, status: SyncStatus.pending);
       when(() => mockRepository.createAssignment(
         classId: any(named: 'classId'),
         title: any(named: 'title'),
@@ -61,11 +64,11 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
-      )).thenAnswer((_) async => Right(tAssignment));
+      )).thenAnswer((_) async => Right(tMutation));
 
       final result = await useCase(tParams);
 
-      expect(result, Right(tAssignment));
+      expect(result, Right(tMutation));
       verify(() => mockRepository.createAssignment(
         classId: 'class-1',
         title: 'New Assignment',
@@ -113,6 +116,7 @@ void main() {
         createdAt: DateTime(2024, 1, 1),
         updatedAt: DateTime(2024, 1, 1),
       );
+      final fileMutation = MutationResult(entity: fileAssignment, status: SyncStatus.pending);
 
       when(() => mockRepository.createAssignment(
         classId: any(named: 'classId'),
@@ -128,11 +132,11 @@ void main() {
         gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
-      )).thenAnswer((_) async => Right(fileAssignment));
+      )).thenAnswer((_) async => Right(fileMutation));
 
       final result = await useCase(fileParams);
 
-      expect(result.getOrElse(() => throw Exception()).allowsFileSubmission, true);
+      expect(result.getOrElse(() => throw Exception()).entity.allowsFileSubmission, true);
     });
 
     test('should return ValidationFailure when validation fails', () async {

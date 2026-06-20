@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/datasources/local/classes/impl/class_local_datasource_impl.dart';
+import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/data/models/classes/class_model.dart';
 
@@ -21,6 +21,7 @@ ClassModel _sampleClass({String id = 'class-001'}) {
     teacherFullName: 'Mr. Teacher',
     isArchived: false,
     studentCount: 0,
+    gradingPeriodType: 'quarter',
     createdAt: now,
     updatedAt: now,
   );
@@ -73,15 +74,23 @@ void main() {
       }
     });
 
-    test('createClassLocally inserts class with needsSync=1', () async {
-      final classModel = await datasource.createClassLocally(
+    test('insertClass inserts class with sync_status=pending', () async {
+      final classModel = ClassModel(
+        id: 'class-local-001',
         title: 'Science 101',
         description: 'Basic Science',
         teacherId: _teacherId,
         teacherUsername: 'teacher01',
         teacherFullName: 'Mr. Teacher',
+        isArchived: false,
+        studentCount: 0,
+        gradingPeriodType: 'quarter',
+        createdAt: DateTime(2026, 4, 19),
+        updatedAt: DateTime(2026, 4, 19),
+        syncStatus: SyncStatus.pending,
       );
-      expect(classModel.id, isNotEmpty);
+
+      await datasource.insertClass(classModel);
 
       final db = await LocalDatabase().database;
       final rows = await db.query(
@@ -91,7 +100,7 @@ void main() {
       );
       expect(rows.length, 1);
       expect(rows.first['title'], 'Science 101');
-      expect(rows.first['needs_sync'], 1);
+      expect(rows.first['sync_status'], 'pending');
     });
 
     test('addStudentLocally and getCachedParticipants returns enrolled student', () async {
@@ -108,7 +117,7 @@ void main() {
         'account_status': student.accountStatus,
         'created_at': now,
         'updated_at': now,
-        'needs_sync': 0,
+        'sync_status': SyncStatus.synced.dbValue,
       });
 
       await datasource.addStudentLocally(classId: 'class-001', student: student);

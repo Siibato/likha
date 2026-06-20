@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/datasources/local/assessments/impl/assessment_local_datasource_impl.dart';
+import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 
 import '../../helpers/test_database.dart';
 
@@ -22,8 +22,8 @@ void main() {
   tearDown(() => closeTestDatabase());
 
   group('AssessmentLocalDataSource', () {
-    test('createAssessmentLocally inserts assessment with needsSync=1', () async {
-      final id = await datasource.createAssessmentLocally(
+    test('createAssessment inserts assessment with sync_status=pending', () async {
+      final id = await datasource.createAssessment(
         classId: _classId,
         title: 'Quiz 1',
         timeLimitMinutes: 30,
@@ -41,12 +41,12 @@ void main() {
       );
       expect(rows.length, 1);
       expect(rows.first['title'], 'Quiz 1');
-      expect(rows.first['needs_sync'], 1);
+      expect(rows.first['sync_status'], 'pending');
     });
 
     test('cacheAssessments and getCachedAssessments returns list for class', () async {
       // Create first, then verify retrieval
-      await datasource.createAssessmentLocally(
+      await datasource.createAssessment(
         classId: _classId,
         title: 'Assessment A',
         timeLimitMinutes: 60,
@@ -63,15 +63,15 @@ void main() {
       expect(list, isEmpty);
     });
 
-    test('startAssessmentLocally creates a submission in the DB', () async {
-      final assessmentId = await datasource.createAssessmentLocally(
+    test('startAssessment creates a submission in the DB', () async {
+      final assessmentId = await datasource.createAssessment(
         classId: _classId,
         title: 'Quiz 2',
         timeLimitMinutes: 15,
         openAt: '2026-04-20T08:00:00',
         closeAt: '2026-04-20T09:00:00',
       );
-      final submissionId = await datasource.startAssessmentLocally(
+      final submissionId = await datasource.startAssessment(
         assessmentId: assessmentId,
         studentId: _studentId,
         studentName: 'Alice',
@@ -91,14 +91,14 @@ void main() {
     });
 
     test('getCachedAssessments excludes soft-deleted assessments', () async {
-      final id = await datasource.createAssessmentLocally(
+      final id = await datasource.createAssessment(
         classId: _classId,
         title: 'To Delete',
         timeLimitMinutes: 10,
         openAt: '2026-04-20T08:00:00',
         closeAt: '2026-04-20T09:00:00',
       );
-      await datasource.deleteAssessmentLocally(assessmentId: id);
+      await datasource.deleteAssessment(assessmentId: id);
       final list = await datasource.getCachedAssessments(_classId);
       expect(list, isEmpty);
     });

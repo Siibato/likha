@@ -220,7 +220,7 @@ void setUpMockDi({
     pendingCount: 0,
     failedCount: 0,
   ));
-  when(() => sync.start()).thenReturn(null);
+  when(() => sync.start()).thenAnswer((_) async {});
   when(() => sync.reset()).thenReturn(null);
   when(() => sync.setStateListener(any())).thenReturn(null);
   _register<SyncManager>(getIt, sync);

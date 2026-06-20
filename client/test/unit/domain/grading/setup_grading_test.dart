@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
@@ -32,7 +35,7 @@ void main() {
         subjectGroup: any(named: 'subjectGroup'),
         schoolYear: any(named: 'schoolYear'),
         semester: any(named: 'semester'),
-      )).thenAnswer((_) async => const Right(null));
+      )).thenAnswer((_) async => const Right(MutationResult(entity: <GradeConfig>[], status: SyncStatus.pending)));
 
       final result = await useCase(tParams);
 

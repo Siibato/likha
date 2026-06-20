@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
-import 'package:likha/core/utils/formatters.dart';
+import 'package:likha/core/utils/labels.dart';
 import 'package:likha/presentation/widgets/mobile/student/assessment/assessment_question_input.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_card.dart';
 
@@ -96,7 +96,7 @@ class AssessmentQuestionCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '${question.points} point${question.points != 1 ? 's' : ''} • ${Formatters.questionTypeLabel(question.questionType)}',
+                '${question.points} point${question.points != 1 ? 's' : ''} • ${questionTypeLabel(question.questionType)}',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.foregroundTertiary,

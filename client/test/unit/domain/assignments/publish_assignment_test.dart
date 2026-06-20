@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/usecases/publish_assignment.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -38,12 +40,15 @@ void main() {
 
     test('should publish assignment successfully', () async {
       when(() => mockRepository.publishAssignment(assignmentId: any(named: 'assignmentId')))
-          .thenAnswer((_) async => Right(tPublishedAssignment));
+          .thenAnswer((_) async => Right(MutationResult(entity: tPublishedAssignment, status: SyncStatus.pending)));
 
       final result = await useCase(tAssignmentId);
 
-      expect(result, Right(tPublishedAssignment));
-      expect(result.getOrElse(() => throw Exception()).isPublished, true);
+      expect(result.isRight(), isTrue);
+      final value = result.getOrElse(() => throw Exception('Expected Right'));
+      expect(value.entity, tPublishedAssignment);
+      expect(value.status, SyncStatus.pending);
+      expect(value.entity.isPublished, true);
       verify(() => mockRepository.publishAssignment(assignmentId: tAssignmentId)).called(1);
     });
 

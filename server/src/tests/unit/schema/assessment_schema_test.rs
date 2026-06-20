@@ -46,12 +46,12 @@ fn test_create_assessment_request_with_description_and_component() {
         "open_at": "2024-06-01T08:00:00",
         "close_at": "2024-06-01T10:30:00",
         "grading_period_number": 2,
-        "component": "quarterly_assessment"
+        "component": "period_assessment"
     }"#;
     let req: CreateAssessmentRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.description.as_deref(), Some("Covers chapters 1-5"));
     assert_eq!(req.grading_period_number, Some(2));
-    assert_eq!(req.component.as_deref(), Some("quarterly_assessment"));
+    assert_eq!(req.component.as_deref(), Some("period_assessment"));
 }
 
 // ===== UpdateAssessmentRequest =====

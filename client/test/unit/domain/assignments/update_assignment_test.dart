@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -56,11 +58,14 @@ void main() {
         allowedFileTypes: any(named: 'allowedFileTypes'),
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
-      )).thenAnswer((_) async => Right(tUpdatedAssignment));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tUpdatedAssignment, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 
-      expect(result, Right(tUpdatedAssignment));
+      expect(result.isRight(), isTrue);
+      final value = result.getOrElse(() => throw Exception('Expected Right'));
+      expect(value.entity, tUpdatedAssignment);
+      expect(value.status, SyncStatus.pending);
       verify(() => mockRepository.updateAssignment(
         assignmentId: tAssignmentId,
         title: 'Updated Assignment Title',
@@ -90,7 +95,7 @@ void main() {
         allowedFileTypes: any(named: 'allowedFileTypes'),
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
-      )).thenAnswer((_) async => Right(tUpdatedAssignment));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tUpdatedAssignment, status: SyncStatus.pending)));
 
       final result = await useCase(params);
 

@@ -9,6 +9,7 @@ import 'package:likha/presentation/widgets/mobile/admin/account/student_action_c
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
 import 'package:likha/presentation/widgets/shared/primitives/info_row.dart';
 import 'package:likha/presentation/widgets/shared/tokens/app_text_styles.dart';
+import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminClassDetailPage extends ConsumerStatefulWidget {
@@ -112,7 +113,9 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     });
 
     // Get class and teacher name from classState
-    final classInfo = classState.classes.cast<dynamic>().firstWhere(
+    final classInfo = classState.classes
+        .cast<ClassEntity?>()
+        .firstWhere(
           (c) => c?.id == widget.classId,
           orElse: () => null,
         );

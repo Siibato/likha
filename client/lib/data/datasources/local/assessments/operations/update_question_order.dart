@@ -1,0 +1,38 @@
+import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/errors/exceptions.dart';
+import 'package:likha/core/sync/sync_queue.dart';
+
+Future<void> updateQuestionOrder(
+  LocalDatabase localDatabase,
+  String questionId,
+  int orderIndex, {
+  Transaction? txn,
+}) async {
+  try {
+    final now = DateTime.now();
+    final updateMap = {
+      AssessmentQuestionsCols.orderIndex: orderIndex,
+      CommonCols.updatedAt: now.toIso8601String(),
+      CommonCols.syncStatus: SyncStatus.pending.dbValue,
+    };
+    if (txn != null) {
+      await txn.update(
+        DbTables.assessmentQuestions,
+        updateMap,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [questionId],
+      );
+    } else {
+      final db = await localDatabase.database;
+      await db.update(
+        DbTables.assessmentQuestions,
+        updateMap,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [questionId],
+      );
+    }
+  } catch (e) {
+    throw CacheException('Failed to update question order locally: $e');
+  }
+}

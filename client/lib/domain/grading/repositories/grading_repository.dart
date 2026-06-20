@@ -1,4 +1,6 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
@@ -10,7 +12,7 @@ abstract class GradingRepository {
   // Config
   ResultFuture<List<GradeConfig>> getGradingConfig({required String classId});
 
-  ResultVoid setupGrading({
+  ResultFuture<MutationResult<List<GradeConfig>>> setupGrading({
     required String classId,
     required String gradeLevel,
     required String subjectGroup,
@@ -18,7 +20,7 @@ abstract class GradingRepository {
     int? semester,
   });
 
-  ResultVoid updateGradingConfig({
+  ResultFuture<MutationResult<void>> updateGradingConfig({
     required String classId,
     required List<Map<String, dynamic>> configs,
   });
@@ -30,17 +32,17 @@ abstract class GradingRepository {
     String? component,
   });
 
-  ResultFuture<GradeItem> createGradeItem({
+  ResultFuture<MutationResult<GradeItem>> createGradeItem({
     required String classId,
     required Map<String, dynamic> data,
   });
 
-  ResultVoid updateGradeItem({
+  ResultFuture<MutationResult<void>> updateGradeItem({
     required String id,
     required Map<String, dynamic> data,
   });
 
-  ResultVoid deleteGradeItem({required String id});
+  ResultFuture<MutationResult<void>> deleteGradeItem({required String id});
 
   ResultFuture<GradeItem?> findGradeItemBySourceId(String sourceId);
 
@@ -49,17 +51,17 @@ abstract class GradingRepository {
     required String gradeItemId,
   });
 
-  ResultVoid saveScores({
+  ResultFuture<MutationResult<void>> saveScores({
     required String gradeItemId,
     required List<Map<String, dynamic>> scores,
   });
 
-  ResultVoid setScoreOverride({
+  ResultFuture<MutationResult<void>> setScoreOverride({
     required String scoreId,
     required double overrideScore,
   });
 
-  ResultVoid clearScoreOverride({required String scoreId});
+  ResultFuture<MutationResult<void>> clearScoreOverride({required String scoreId});
 
   // Computed Grades
   ResultFuture<List<PeriodGrade>> getPeriodGrades({
@@ -72,7 +74,7 @@ abstract class GradingRepository {
     required int gradingPeriodNumber,
   });
 
-  ResultVoid updateTransmutedGrade({
+  ResultFuture<MutationResult<void>> updateTransmutedGrade({
     required String classId,
     required String studentId,
     required int gradingPeriodNumber,
@@ -105,16 +107,25 @@ abstract class GradingRepository {
   ResultFuture<Sf9Response> getSf9({
     required String classId,
     required String studentId,
+    bool skipBackgroundRefresh = false,
   });
 
   ResultFuture<Sf9Response> getSf10({
     required String classId,
     required String studentId,
+    bool skipBackgroundRefresh = false,
   });
 
   // Batch Operations
   ResultFuture<Map<String, dynamic>> getGradeDataBatch({
     required String classId,
     required int gradingPeriodNumber,
+  });
+
+  // Unified read
+  ResultFuture<ClassGrades> getClassGrades({
+    required String classId,
+    required int gradingPeriodNumber,
+    bool skipBackgroundRefresh = false,
   });
 }

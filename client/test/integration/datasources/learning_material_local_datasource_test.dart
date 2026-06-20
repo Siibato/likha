@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/datasources/local/learning_materials/impl/learning_material_local_datasource_impl.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 
 import '../../helpers/test_database.dart';
@@ -45,7 +45,7 @@ void main() {
       expect(result.first.title, 'Lesson 1');
     });
 
-    test('createMaterialLocally inserts with needsSync=1', () async {
+    test('createMaterialLocally inserts with sync_status=pending', () async {
       final material = await datasource.createMaterialLocally(
         classId: _classId,
         title: 'New Lesson',
@@ -62,7 +62,7 @@ void main() {
       );
       expect(rows.length, 1);
       expect(rows.first['title'], 'New Lesson');
-      expect(rows.first['needs_sync'], 1);
+      expect(rows.first['sync_status'], 'pending');
     });
 
     test('deleteMaterialLocally soft-deletes the material', () async {

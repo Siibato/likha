@@ -1,3 +1,4 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/repositories/assessment_repository.dart';
@@ -7,7 +8,7 @@ class CreateAssessment {
 
   CreateAssessment(this._repository);
 
-  ResultFuture<Assessment> call(CreateAssessmentParams params) {
+  ResultFuture<MutationResult<Assessment>> call(CreateAssessmentParams params) {
     return _repository.createAssessment(
       classId: params.classId,
       title: params.title,

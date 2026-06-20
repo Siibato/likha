@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateTosRequest {
+    pub id: Option<String>,
     pub title: String,
     pub grading_period_number: i32,
     pub classification_mode: String,
@@ -39,6 +40,7 @@ pub struct UpdateTosRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateCompetencyRequest {
+    pub id: Option<String>,
     pub competency_code: Option<String>,
     pub competency_text: String,
     pub time_units_taught: i32,

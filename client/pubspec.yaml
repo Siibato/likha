@@ -19,7 +19,7 @@ dependencies:
   sqflite_sqlcipher: ^3.4.0
   sqflite_common: ^2.5.0
   sqflite_common_ffi: ^2.3.0
-  sqflite_common_ffi_web: ^0.4.5+2
+  sqflite_common_ffi_web: ^1.0.2
   flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.0.0
 
@@ -51,10 +51,6 @@ dependencies:
   open_file: ^3.3.2
   file_saver: ^0.2.13
 
-  # PDF generation & printing
-  pdf: ^3.11.1
-  printing: ^5.13.3
-
   # Charts
   fl_chart: ^0.69.0
 
@@ -62,6 +58,12 @@ dependencies:
   app_links: ^6.3.2         # Deep link handling (likha://setup?server=cloud)
   mobile_scanner: ^5.2.3    # QR camera scanner
   web: ^1.1.1
+
+  # Excel generation
+  excel: ^4.0.6
+
+  # PDF generation
+  pdf: ^3.10.7
 
 dependency_overrides:
   shared_preferences_android: 2.4.17

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/tos/create_tos_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/tos/tos_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/tos/tos_create_page.dart';
+import 'package:likha/presentation/pages/desktop/teacher/tos/tos_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
@@ -29,7 +29,7 @@ class TosSection extends ConsumerWidget {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => CreateTosDesktop(classId: classId),
+              builder: (_) => CreateTosPage(classId: classId),
             ),
           ).then((result) {
             if (result == true) {
@@ -128,7 +128,7 @@ class TosSection extends ConsumerWidget {
                   onTap: (tos) => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TosDetailDesktop(
+                      builder: (_) => TosDetailPage(
                         tosId: tos.id,
                         classId: classId,
                       ),

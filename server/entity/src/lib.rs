@@ -1,4 +1,9 @@
 pub mod activity_logs;
+pub mod attendance_records;
+pub mod core_values_records;
+pub mod previous_school_attendance;
+pub mod previous_school_subjects;
+pub mod student_school_history;
 pub mod answer_key_acceptable_answers;
 pub mod answer_keys;
 pub mod assessment_questions;
@@ -11,6 +16,7 @@ pub mod classes;
 pub mod grade_items;
 pub mod grade_record;
 pub mod grade_scores;
+pub mod learner_details;
 pub mod learning_materials;
 pub mod login_attempts;
 pub mod material_files;
@@ -26,6 +32,11 @@ pub mod tos_competencies;
 pub mod users;
 
 pub use activity_logs::Entity as ActivityLogs;
+pub use attendance_records::Entity as AttendanceRecords;
+pub use core_values_records::Entity as CoreValuesRecords;
+pub use previous_school_attendance::Entity as PreviousSchoolAttendance;
+pub use previous_school_subjects::Entity as PreviousSchoolSubjects;
+pub use student_school_history::Entity as StudentSchoolHistory;
 pub use answer_key_acceptable_answers::Entity as AnswerKeyAcceptableAnswers;
 pub use answer_keys::Entity as AnswerKeys;
 pub use assessment_questions::Entity as AssessmentQuestions;
@@ -38,6 +49,7 @@ pub use classes::Entity as Classes;
 pub use grade_items::Entity as GradeItems;
 pub use grade_record::Entity as GradeRecord;
 pub use grade_scores::Entity as GradeScores;
+pub use learner_details::Entity as LearnerDetails;
 pub use learning_materials::Entity as LearningMaterials;
 pub use login_attempts::Entity as LoginAttempts;
 pub use material_files::Entity as MaterialFiles;
@@ -54,6 +66,11 @@ pub use users::Entity as Users;
 
 pub mod prelude {
     pub use super::activity_logs::{self, Entity as ActivityLogs};
+    pub use super::attendance_records::{self, Entity as AttendanceRecords};
+    pub use super::core_values_records::{self, Entity as CoreValuesRecords};
+    pub use super::previous_school_attendance::{self, Entity as PreviousSchoolAttendance};
+    pub use super::previous_school_subjects::{self, Entity as PreviousSchoolSubjects};
+    pub use super::student_school_history::{self, Entity as StudentSchoolHistory};
     pub use super::answer_key_acceptable_answers::{self, Entity as AnswerKeyAcceptableAnswers};
     pub use super::answer_keys::{self, Entity as AnswerKeys};
     pub use super::assessment_questions::{self, Entity as AssessmentQuestions};
@@ -66,6 +83,7 @@ pub mod prelude {
     pub use super::grade_items::{self, Entity as GradeItems};
     pub use super::grade_record::{self, Entity as GradeRecord};
     pub use super::grade_scores::{self, Entity as GradeScores};
+    pub use super::learner_details::{self, Entity as LearnerDetails};
     pub use super::learning_materials::{self, Entity as LearningMaterials};
     pub use super::login_attempts::{self, Entity as LoginAttempts};
     pub use super::material_files::{self, Entity as MaterialFiles};

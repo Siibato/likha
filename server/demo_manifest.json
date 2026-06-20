@@ -1,0 +1,540 @@
+{
+  "users": [
+    {
+      "id": "49dbd6bc-df07-4c86-950f-c19c3f08e154",
+      "username": "rodrigo.santos",
+      "role": "teacher",
+      "full_name": "Rodrigo Santos"
+    },
+    {
+      "id": "eff15793-a7a2-4b36-9ef3-5d22f7ce66c6",
+      "username": "juan.delacruz",
+      "role": "student",
+      "full_name": "Juan Dela Cruz"
+    },
+    {
+      "id": "bd2ee33b-0f20-4dad-b90f-e33ec0cd9f82",
+      "username": "maria.santos",
+      "role": "student",
+      "full_name": "Maria Santos"
+    },
+    {
+      "id": "783fdc54-e3a5-4334-bcee-25386102cb8e",
+      "username": "antonio.garcia",
+      "role": "student",
+      "full_name": "Antonio Garcia"
+    },
+    {
+      "id": "57c2bb8a-a70f-43a0-9527-cf0d339852bb",
+      "username": "carmen.bautista",
+      "role": "student",
+      "full_name": "Carmen Bautista"
+    },
+    {
+      "id": "2779fc06-93a3-48a7-84ed-f58acdc4151c",
+      "username": "pedro.lim",
+      "role": "student",
+      "full_name": "Pedro Lim"
+    },
+    {
+      "id": "f401aa90-b7eb-488d-b7f1-2495d5817a6b",
+      "username": "rosa.mendoza",
+      "role": "student",
+      "full_name": "Rosa Mendoza"
+    },
+    {
+      "id": "d2d5ba0a-5d83-485e-a7ed-dbf76abca55b",
+      "username": "miguel.fernandez",
+      "role": "student",
+      "full_name": "Miguel Fernandez"
+    },
+    {
+      "id": "1e34615e-7f41-45a1-902b-c502062c89c6",
+      "username": "lucia.tan",
+      "role": "student",
+      "full_name": "Lucia Tan"
+    },
+    {
+      "id": "ae9b8cdd-bb11-4d47-a1af-99b9c4dad12f",
+      "username": "francisco.ramos",
+      "role": "student",
+      "full_name": "Francisco Ramos"
+    },
+    {
+      "id": "c9961b32-f673-4fd0-8897-4efad2b334b6",
+      "username": "teresa.villanueva",
+      "role": "student",
+      "full_name": "Teresa Villanueva"
+    },
+    {
+      "id": "b5ad689e-28ef-44e6-a64f-f5d45cf9ec12",
+      "username": "carlos.navarro",
+      "role": "student",
+      "full_name": "Carlos Navarro"
+    },
+    {
+      "id": "1994aff6-f491-4436-a4f2-c05630caa412",
+      "username": "dolores.castillo",
+      "role": "student",
+      "full_name": "Dolores Castillo"
+    },
+    {
+      "id": "41363536-612f-4b16-88ad-bf5c60a85e28",
+      "username": "manuel.flores",
+      "role": "student",
+      "full_name": "Manuel Flores"
+    },
+    {
+      "id": "a0345052-66f5-442d-acae-b5d97fdb19ee",
+      "username": "esperanza.morales",
+      "role": "student",
+      "full_name": "Esperanza Morales"
+    },
+    {
+      "id": "d0617536-e7ed-4393-bcba-dda8f6238117",
+      "username": "rafael.santiago",
+      "role": "student",
+      "full_name": "Rafael Santiago"
+    },
+    {
+      "id": "9deb7f3d-9bf6-413b-9d9e-40bbaf2c560f",
+      "username": "consuelo.delrosario",
+      "role": "student",
+      "full_name": "Consuelo Del Rosario"
+    },
+    {
+      "id": "8704eb57-7ec6-4195-b8f9-f6b17a60dc2d",
+      "username": "andres.deleon",
+      "role": "student",
+      "full_name": "Andres De Leon"
+    },
+    {
+      "id": "56047697-e3a2-446a-899d-8b18370ef5a8",
+      "username": "mercedes.reyes",
+      "role": "student",
+      "full_name": "Mercedes Reyes"
+    },
+    {
+      "id": "4f73f09b-0737-4973-b23b-6175ad746617",
+      "username": "gabriel.aguilar",
+      "role": "student",
+      "full_name": "Gabriel Aguilar"
+    },
+    {
+      "id": "6497ef62-b275-4c4b-b557-354676c14923",
+      "username": "remedios.silva",
+      "role": "student",
+      "full_name": "Remedios Silva"
+    },
+    {
+      "id": "1ae5fc4d-c418-4619-b460-31878976a185",
+      "username": "diego.alvarez",
+      "role": "student",
+      "full_name": "Diego Alvarez"
+    },
+    {
+      "id": "cbe73908-6ccd-4f21-9296-764ad9912a72",
+      "username": "milagros.pascual",
+      "role": "student",
+      "full_name": "Milagros Pascual"
+    },
+    {
+      "id": "2df69f4b-ce4c-4762-bbb3-27d4687b7d5b",
+      "username": "lorenzo.gonzalez",
+      "role": "student",
+      "full_name": "Lorenzo Gonzalez"
+    },
+    {
+      "id": "fbabdf59-9856-459e-8af9-af81e4f1aaac",
+      "username": "trinidad.soriano",
+      "role": "student",
+      "full_name": "Trinidad Soriano"
+    },
+    {
+      "id": "f63884e1-3e2e-4308-8eb4-e493a2e0050c",
+      "username": "ramon.rivera",
+      "role": "student",
+      "full_name": "Ramon Rivera"
+    },
+    {
+      "id": "d5c07ad4-f5ec-4837-aee3-a938e748220e",
+      "username": "pilar.delacruz",
+      "role": "student",
+      "full_name": "Pilar Dela Cruz"
+    },
+    {
+      "id": "2cb19c10-4f32-47ba-abe9-ce48655ec4cc",
+      "username": "ernesto.bautista",
+      "role": "student",
+      "full_name": "Ernesto Bautista"
+    },
+    {
+      "id": "4e42a6ba-2368-471a-9137-3c0787820683",
+      "username": "soledad.ortega",
+      "role": "student",
+      "full_name": "Soledad Ortega"
+    },
+    {
+      "id": "bbc904ac-ef38-43a1-a584-293543ac7ce9",
+      "username": "eduardo.martinez",
+      "role": "student",
+      "full_name": "Eduardo Martinez"
+    },
+    {
+      "id": "8d4d5dbe-e34e-4ad8-9aa0-b1be226e28ba",
+      "username": "cristina.domingo",
+      "role": "student",
+      "full_name": "Cristina Domingo"
+    }
+  ],
+  "classes": [
+    {
+      "id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Grade 10 - Science",
+      "grade_level": "10",
+      "is_deleted": false
+    },
+    {
+      "id": "9fbb53ee-2f4b-440e-b60b-eeb50e748d17",
+      "title": "Advisory 10",
+      "grade_level": "10",
+      "is_deleted": false
+    }
+  ],
+  "assessments": [
+    {
+      "id": "aeafd7c4-22ff-41c8-b515-d0d1deb38b97",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q1 Quiz 1: Earth's Structure & Plate Boundaries",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 1,
+      "question_ids": [
+        "981a756e-fe3e-4717-b20d-9393ce0aadab",
+        "dedddd77-2cc3-4e48-bc49-7acd62b31785",
+        "6592dab1-dd74-4ac1-9ee5-e52fe58fac03",
+        "483be6be-0381-4110-80c0-cf486b328349",
+        "511f3b83-c79f-48ae-8cca-3a9a6d3cd900",
+        "665634da-58f5-4ab9-b73a-3a7ab9b610ee",
+        "af4343ae-9ce5-487d-bade-0b74164b26a3",
+        "58f0cd3d-e9e6-4db3-92bc-a6ac274816bf",
+        "70c945ee-bf46-4342-ab04-16fc4bc729fc",
+        "13c39e9c-a615-408a-be56-34dd909f5bc4"
+      ]
+    },
+    {
+      "id": "a9ac8d0a-acd1-4e61-a6fb-22121c76b399",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q1 Quiz 2: Earthquakes & Volcanoes",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 1,
+      "question_ids": [
+        "4884b41d-d22b-44f3-a3a0-c5e4bfa49a80",
+        "bda7f485-2f0c-4151-ab7b-faf67b44dfab",
+        "81a0a428-7a9a-493b-a3cc-3526fafeeba5",
+        "833027ec-382e-4bfc-9f4e-736e4595bfa7",
+        "981a603f-c08b-4486-b5bc-81510efeebbe",
+        "5cb6bbf3-2b01-47f2-9b73-f676e65fb7bc",
+        "3c996fad-36fa-4a53-85f7-f3d0df960a26",
+        "31192b01-894d-4a94-a6e5-93679a2b6c73",
+        "52b540fb-adec-4c69-8d55-396bc151bdb9",
+        "315c3a74-8706-4a5c-bc71-5486c5e2d21d"
+      ]
+    },
+    {
+      "id": "ac683686-32fa-458c-82aa-bbddda0cf437",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q1 Quarter Exam: Earth & Space Science",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 1,
+      "question_ids": [
+        "ea040a3a-1d81-4bae-a4c6-dcdb4226aeff",
+        "b8fab05e-c399-444b-8c34-8dcfb869f617",
+        "4bc00629-3e83-4685-ab60-bd364c9a3231",
+        "a90e687c-77b7-496f-8cc6-6b23a1077a2d",
+        "b5dabccb-0216-4efb-ad58-300e37b9a91f",
+        "d346cba8-7186-4a5b-8ab5-94933de50efc",
+        "1a32e98f-8bbb-42b2-825a-173117300f70",
+        "69e509df-2164-4fe6-b8d0-3d9cb3a88e00",
+        "864dc3d0-9edd-4f4f-a1b8-af18245671c4",
+        "f9b3e78b-5bad-46c3-9840-1ab84dba06f4",
+        "cd506dfe-bd27-4402-bb0b-22bde7b77d0c",
+        "f698e747-a10a-433b-9082-c8143b68eb30",
+        "c47323b4-e011-4771-8ded-e40eba241251",
+        "7eb5144f-0260-4e56-bf3a-eea54f429c2b",
+        "5fd2513a-8892-4c79-aa03-2d1dffa82d9a",
+        "872493d8-cc90-4d6c-bae1-d85c2cdeedb6",
+        "55ab1813-9993-4880-b6bf-c450bd4efadc"
+      ]
+    },
+    {
+      "id": "c137942a-9c93-442b-983b-8005799c44f5",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q2 Quiz 1: DNA, Genes, and Protein Synthesis",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 2,
+      "question_ids": [
+        "2958d9e5-e8c4-4e12-ad25-7d58213fd0b8",
+        "f3e1c88a-67f4-4fa7-9e21-dc4ec81fbdd5",
+        "d482ade8-f51c-4c41-9c19-9f7a5a8ef75d",
+        "37dd3354-2015-4f12-8999-5ff8d83cfc6d",
+        "22e5619f-9cb2-419f-b11b-28274c9a8244",
+        "8a063025-2183-49da-92f4-5a39cdabd3b9",
+        "e73c2cdb-ee9e-4258-b149-cfe0021ca0ad",
+        "45c5b583-4c31-440f-ae4c-92802adb5f77",
+        "0c73209b-0c90-4581-bad7-5f3bfc528225",
+        "601e45d9-e053-49b0-8429-fb19c740e5a1"
+      ]
+    },
+    {
+      "id": "c6f75f60-d498-42cb-ba10-bc1e2547a941",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q2 Quiz 2: Mendelian Genetics and Evolution",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 2,
+      "question_ids": [
+        "58afcc1d-d56e-4277-9aca-e432b08ea0ed",
+        "3936559a-e1ac-4c03-acad-f6103d528d99",
+        "c1c71107-8e36-4bd3-becf-7073d2efe716",
+        "91240f6b-fedb-4e37-b535-e65f6c5cbcde",
+        "50bd0cd6-248b-45a8-ba03-edf34b12787e",
+        "fdcaae4b-b8b7-4d48-a695-bb22b96934c1",
+        "e6b3f3bc-3230-4cd7-a4ce-c367ea4e47bc",
+        "425db0f1-ed39-4c5f-8314-6f279b76ab91",
+        "3f6172cb-2331-4d6a-b5cb-51c5cbda1aac",
+        "745dc568-7372-4494-ba59-19b85860ce4d"
+      ]
+    },
+    {
+      "id": "6d2d17b3-bd99-40d6-8e01-c95091604b56",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q2 Quarter Exam: Genetics and Heredity",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 2,
+      "question_ids": [
+        "3400ec03-9c1f-49ac-84cd-d0e1cfe6db76",
+        "793a7711-b7ac-42ca-8de1-0a378b831144",
+        "a1ba9527-eef2-4e85-97b3-46602cc208c3",
+        "39758f54-74b6-426c-8143-9f9b7cae514f",
+        "5dda21ef-279c-48c4-8f31-c1ae922e8a66",
+        "44cc3b76-cfaf-4a57-a4a7-6260ab6e48e2",
+        "d145957f-12f0-4a96-8c7f-a0c31e2a6d46",
+        "72eca534-ba14-4ea0-97bd-f0afbaca4e55",
+        "d176ae32-5670-4cf9-8fa6-94f6e1c41354",
+        "a63b9da7-833e-49fa-9a27-690111961e1b",
+        "6b1ef2f3-c84a-4405-b39d-5ddf9022277f",
+        "47bb8d6c-a8a9-4580-a17e-0a23e95b61ef",
+        "1607836b-70c5-484c-a8c9-f80444592851",
+        "21c6e010-6f74-44f5-bd46-07d9db7fed83",
+        "bf73165e-3eeb-4f3f-8607-b78459ff690d",
+        "8c1daeae-4695-4d9e-8dee-cc50e888ab39",
+        "9ba3c605-8dd0-437e-9120-8dca6d3ea9bc"
+      ]
+    },
+    {
+      "id": "d5e3bf95-d36d-466a-8bb3-a5b23cd1c7e4",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q3 Quiz 1: Chemical Bonding",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 3,
+      "question_ids": [
+        "592ee6f2-4c3e-49e1-bc88-b0e1b0f16112",
+        "d6ccf626-7855-491a-b0b1-2c130404cb55",
+        "d3a42af3-8a00-4f23-9fc9-bb16269f75ec",
+        "693c9d73-91a6-41e0-948c-b403be9d9989",
+        "159a8054-e876-44c2-932f-b1f12b570fc3",
+        "47a49bc1-645e-401d-a72a-0c2c66dd0c43",
+        "5adbfe51-98ce-4fb3-a6b4-0d16a18918ee",
+        "bbe2dee7-2c15-4219-b69d-39c474d90ea4",
+        "f0bf095f-cc79-4f85-9a80-a0d11018097f",
+        "6358b4c8-28cd-47ca-90e2-d37bd98ab37d"
+      ]
+    },
+    {
+      "id": "57e874d1-9192-4ae5-8e6b-7462c0cf5fa6",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q3 Quiz 2: Chemical Reactions and Equations",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 3,
+      "question_ids": [
+        "c3ca2a36-d2ab-484a-ad12-f59ec42f3434",
+        "4930e4ff-d4ad-48b1-8fa7-ce6feef7ecf6",
+        "cb25445c-97c7-4dc1-8f62-d79cc374800f",
+        "e8899f30-c866-4616-8868-b14049d601f3",
+        "5e6e2e38-975e-4fb0-9bd7-0d761dcdd88c",
+        "34bdb9ff-40c4-4a4e-9247-cbd1c2c0096d",
+        "e09cef56-c2e9-464f-9752-9ccd1f06e62f",
+        "ec20d5d7-183b-4780-837d-cfed40a70212",
+        "3bb84d0c-26cb-48c0-abf9-c8f3ff5c4767",
+        "19746f25-a52e-47de-9a83-f3f55519f6c0"
+      ]
+    },
+    {
+      "id": "12863938-2694-4fb8-9a2e-c65c1fcacd07",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q3 Quarter Exam: Chemistry",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 3,
+      "question_ids": [
+        "58fc0a74-c490-423b-bdb6-8773b2e7cf25",
+        "562ed4c5-5f61-46b9-b12c-7b68711546ea",
+        "6d4c4b07-3235-4e5f-a64c-f683b16b3dc9",
+        "edaa6ef1-b719-4709-b918-46b1227712cc",
+        "12f2cdd4-1548-4c3c-abe0-58d76c79963c",
+        "bac35e29-5ee3-42fa-9b2d-6e79f1ca220b",
+        "039d0189-0888-4a15-bed6-be3af486a6ff",
+        "4b199db1-8275-4912-bdc4-52e9c60fca4b",
+        "6bf4b729-9800-4d74-84ae-d978d9b45539",
+        "36214187-71a8-4bfd-8730-fce4e26df1bb",
+        "abac4b9d-378e-4048-aa45-6f2e5ce4bd8c",
+        "2a3e65e2-78b9-45dd-9d21-3ee10b8eade1",
+        "0b54eaba-418f-4ecb-ad01-00bd6c7f29e7",
+        "854effa3-a38a-45ea-9a06-db5e49c0c7e2",
+        "ca14372c-aab6-4968-bda0-cd22bafadd1a",
+        "a04c8ad4-a55e-45d4-83e2-57710caffd9e",
+        "a01330ee-1f9b-4553-b3a5-667be82902e7"
+      ]
+    },
+    {
+      "id": "2aba4889-6235-4004-ab21-f37f2f34c4c0",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q4 Quiz 1: Force and Motion",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 4,
+      "question_ids": [
+        "a440cf4f-be09-4bad-9b7f-80e6418ebb19",
+        "8c04742d-be8e-43a9-ab14-a795a5630b40",
+        "3780f968-71c8-4f4e-a6de-84ea89f869ba",
+        "8c204779-5d58-487a-8d62-ca20dd421086",
+        "b5fabfc0-1a72-47cf-8cf1-b8c831a0fbae",
+        "f21cc023-3bc3-46b9-90f5-be8a950ea29a",
+        "9b274ebf-2a53-45bb-b3c0-b100c988bbe0",
+        "b09d1ce2-6fa3-46a5-9897-39fd5103455b",
+        "b2f54441-1678-4311-bb5e-f557bc927b54",
+        "0f37d68c-e29c-49e1-8585-32b52c7c4c64"
+      ]
+    },
+    {
+      "id": "31e9d90a-37ef-42aa-9d72-e624be3cb2d8",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q4 Quiz 2: Energy and Simple Machines",
+      "total_points": 10,
+      "is_published": true,
+      "grading_period_number": 4,
+      "question_ids": [
+        "680a8aa6-4c63-4245-8dc1-f99ddee48d05",
+        "a51cc289-e1dc-41e4-9b0f-c9a1d5dfc865",
+        "4d1b0b93-5202-487d-b742-40b79da5ad8f",
+        "6c2af77c-65c7-480e-8c6a-a255896256c4",
+        "d41c2959-6a21-49f5-af17-366a015a8b14",
+        "93ac7060-d9ef-455f-8125-606615baa89f",
+        "bb70f83b-a952-4598-9dd3-e097e576119a",
+        "421676ea-5bc1-4dbe-a231-01d93ee99917",
+        "b7af0ff4-d76a-44a9-be4a-337a88ad1675",
+        "ff5cd041-cd65-4bca-8be9-c790079fa222"
+      ]
+    },
+    {
+      "id": "9a4d897b-af2e-4ec4-adb8-37d0fb8be6de",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Q4 Quarter Exam: Physics",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 4,
+      "question_ids": [
+        "415f2e1b-bd40-4fcc-8a2d-86451ca8d5f9",
+        "35e70800-cb6b-4f62-9ba1-d0218b3a43e1",
+        "80da4368-2400-45c8-b39d-aebabe21b029",
+        "46890c1a-b47c-4d64-b635-dad0abc9c1de",
+        "4ca9d644-1ab2-4898-b0ca-2ccf534b647d",
+        "edede9f4-f871-4526-9bdc-3f4ffa1578f9",
+        "a1c5e355-a751-42a0-a367-0d9e566e649d",
+        "b485cb6e-f6a2-467c-b5cd-1b43b4f28547",
+        "d6c75a45-7fce-43c4-9b4a-bc769dc56b6b",
+        "911faa7e-e60f-42ad-98c5-4a3c40b5ffda",
+        "d8d62097-a409-4ef5-bc40-377b794e1951",
+        "cc264aa1-b27b-4e50-a608-29724cca86de",
+        "318991de-d74a-4d81-9537-8b575de97f2a",
+        "9cc166ed-62f7-4044-9241-e73fc8d70547",
+        "788c26b3-b626-417e-b7e1-27269a3dd5df",
+        "88fce3f6-670a-4bde-b904-8f80c8e82634",
+        "ef416184-a65b-4ed7-ab19-9f4e580c4368"
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "id": "67051b95-a52b-44a7-ae2b-13ac106c93c0",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: Plate Tectonics and Mountain Formation",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 1
+    },
+    {
+      "id": "a3253db1-691c-4edc-abda-dc252cd6b4b0",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: Earth's Interior",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 1
+    },
+    {
+      "id": "22d9ae09-f94d-42fa-816f-5a7b58367c5b",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: The Importance of DNA in Heredity",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 2
+    },
+    {
+      "id": "e3edc4c7-531b-4298-9832-b8dca3150d50",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: Mendel's Laws",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 2
+    },
+    {
+      "id": "87cb469d-f4e9-4c58-a778-b6e41ee80549",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: Ionic vs Covalent Compounds",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 3
+    },
+    {
+      "id": "d0b451b5-943c-4f69-9ce9-aa2de3f88406",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: Balancing Chemical Equations",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 3
+    },
+    {
+      "id": "20550af9-74da-4b1e-8068-6b3e5565f1eb",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: Newton's Laws in Everyday Life",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 4
+    },
+    {
+      "id": "fbeb594f-242c-4abc-9c51-72b7214c8f00",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: Energy and Simple Machines",
+      "total_points": 25,
+      "is_published": true,
+      "grading_period_number": 4
+    }
+  ]
+}

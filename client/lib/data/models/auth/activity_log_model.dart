@@ -1,8 +1,9 @@
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 
 class ActivityLogModel extends ActivityLog {
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const ActivityLogModel({
     required super.id,
@@ -11,7 +12,7 @@ class ActivityLogModel extends ActivityLog {
     super.details,
     required super.createdAt,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   factory ActivityLogModel.fromJson(Map<String, dynamic> json) {
@@ -34,7 +35,10 @@ class ActivityLogModel extends ActivityLog {
       cachedAt: map['cached_at'] != null
           ? DateTime.parse(map['cached_at'] as String)
           : null,
-      needsSync: (map['needs_sync'] as int?) == 1,
+      syncStatus: SyncStatus.values.firstWhere(
+        (e) => e.dbValue == (map['sync_status'] as String?),
+        orElse: () => SyncStatus.synced,
+      ),
     );
   }
 
@@ -46,7 +50,7 @@ class ActivityLogModel extends ActivityLog {
       'details': details,
       'created_at': createdAt.toIso8601String(),
       'cached_at': cachedAt?.toIso8601String(),
-      'needs_sync': needsSync ? 1 : 0,
+      'sync_status': syncStatus.dbValue,
     };
   }
 }

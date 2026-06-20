@@ -12,7 +12,7 @@ class QuestionAnalysisCard extends StatelessWidget {
     required this.stats,
   });
 
-  String _questionTypeLabel(String type) {
+  String _questionTypeShortLabel(String type) {
     switch (type) {
       case 'multiple_choice':
         return 'MC';
@@ -87,7 +87,7 @@ class QuestionAnalysisCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    _questionTypeLabel(stats.questionType),
+                    _questionTypeShortLabel(stats.questionType),
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.foregroundSecondary,
@@ -150,6 +150,15 @@ class QuestionAnalysisCard extends StatelessWidget {
                 color: AppColors.foregroundTertiary,
                 fontWeight: FontWeight.w500,
                 ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Avg: ${stats.averagePoints.toStringAsFixed(1)} pts (${stats.averagePercentage.toStringAsFixed(1)}%)',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.foregroundSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_action_card.dart';
 
 /// Read-only view of one question in the desktop assessment builder.

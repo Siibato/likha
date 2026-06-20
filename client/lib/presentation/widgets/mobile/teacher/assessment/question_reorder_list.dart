@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/labels.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 
 class QuestionReorderList extends StatelessWidget {
@@ -146,7 +147,7 @@ class QuestionReorderList extends StatelessWidget {
                                           ),
                                           const SizedBox(height: 4),
                                           _QuestionTypeChip(
-                                            label: _questionTypeLabel(question.questionType),
+                                            label: questionTypeLabel(question.questionType),
                                             color: _questionTypeColor(question.questionType),
                                           ),
                                         ],
@@ -172,19 +173,6 @@ class QuestionReorderList extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _questionTypeLabel(String type) {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'identification':
-        return 'Identification';
-      case 'enumeration':
-        return 'Enumeration';
-      default:
-        return type;
-    }
   }
 
   Color _questionTypeColor(String type) {

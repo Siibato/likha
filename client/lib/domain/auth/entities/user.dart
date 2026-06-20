@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 class User extends Equatable {
   final String id;
@@ -12,7 +13,7 @@ class User extends Equatable {
   final DateTime? updatedAt;
   final DateTime? deletedAt;
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const User({
     required this.id,
@@ -26,7 +27,7 @@ class User extends Equatable {
     this.updatedAt,
     this.deletedAt,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   bool get isTeacher => role == 'teacher';
@@ -49,6 +50,6 @@ class User extends Equatable {
     updatedAt,
     deletedAt,
     cachedAt,
-    needsSync,
+    syncStatus,
   ];
 }

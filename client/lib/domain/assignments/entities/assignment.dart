@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 
 class Assignment extends Equatable {
   final String id;
@@ -23,7 +24,7 @@ class Assignment extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? cachedAt;
-  final bool needsSync;
+  final SyncStatus syncStatus;
 
   const Assignment({
     required this.id,
@@ -48,7 +49,7 @@ class Assignment extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.cachedAt,
-    this.needsSync = false,
+    this.syncStatus = SyncStatus.synced,
   });
 
   @override
@@ -75,7 +76,7 @@ class Assignment extends Equatable {
         createdAt,
         updatedAt,
         cachedAt,
-        needsSync,
+        syncStatus,
       ];
 
   Assignment copyWith({
@@ -101,7 +102,7 @@ class Assignment extends Equatable {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? cachedAt,
-    bool? needsSync,
+    SyncStatus? syncStatus,
   }) {
     return Assignment(
       id: id ?? this.id,
@@ -126,7 +127,7 @@ class Assignment extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       cachedAt: cachedAt ?? this.cachedAt,
-      needsSync: needsSync ?? this.needsSync,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 }

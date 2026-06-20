@@ -1,10 +1,11 @@
+import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 
 abstract class ClassRepository {
-  ResultFuture<ClassEntity> createClass({
+  ResultFuture<MutationResult<ClassEntity>> createClass({
     required String title,
     String? description,
     String? teacherId,
@@ -19,7 +20,7 @@ abstract class ClassRepository {
 
   ResultFuture<ClassDetail> getClassDetail({required String classId});
 
-  ResultFuture<ClassEntity> updateClass({
+  ResultFuture<MutationResult<ClassEntity>> updateClass({
     required String classId,
     String? title,
     String? description,
@@ -27,7 +28,7 @@ abstract class ClassRepository {
     bool? isAdvisory,
   });
 
-  ResultFuture<Participant> addStudent({
+  ResultFuture<MutationResult<Participant>> addStudent({
     required String classId,
     required String studentId,
   });
@@ -37,9 +38,9 @@ abstract class ClassRepository {
     required String studentId,
   });
 
-  ResultFuture<List<User>> searchStudents({String? query});
+  ResultFuture<List<User>> searchStudents({String? query, bool skipBackgroundRefresh = false});
 
-  ResultFuture<List<User>> getParticipants({required String classId});
+  ResultFuture<List<User>> getParticipants({required String classId, bool skipBackgroundRefresh = false});
 
   ResultVoid deleteClass({required String classId});
 }

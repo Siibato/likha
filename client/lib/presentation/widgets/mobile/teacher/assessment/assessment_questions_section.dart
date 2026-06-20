@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_card.dart';
-import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_draft.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/move_question_dialog.dart';
 
 class AssessmentQuestionsSection extends StatelessWidget {
   final List<QuestionDraft> questions;
@@ -13,7 +14,7 @@ class AssessmentQuestionsSection extends StatelessWidget {
   final VoidCallback? onSaveQuestions;
   final VoidCallback? onEnterReorderMode;
   final VoidCallback? onExitReorderMode;
-  final Function(int)? onReorderQuestion;
+  final void Function(int fromIndex, int toIndex)? onReorderQuestion;
 
   const AssessmentQuestionsSection({
     super.key,
@@ -80,7 +81,16 @@ class AssessmentQuestionsSection extends StatelessWidget {
                   final index = entry.key;
                   final question = entry.value;
                   return GestureDetector(
-                    onTap: onReorderQuestion != null ? () => onReorderQuestion!(index) : null,
+                    onTap: onReorderQuestion != null
+                        ? () => showDialog(
+                              context: context,
+                              builder: (_) => MoveQuestionDialog(
+                                currentIndex: index,
+                                questionCount: questions.length,
+                                onMove: onReorderQuestion!,
+                              ),
+                            )
+                        : null,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
@@ -158,6 +168,15 @@ class AssessmentQuestionsSection extends StatelessWidget {
             ),
           ),
         ] else ...[
+          Text(
+            'Questions (${questions.length})',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.foregroundPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
           if (questions.isEmpty)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 32),

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 
@@ -21,7 +23,7 @@ void main() {
 
     test('should delete file successfully', () async {
       when(() => mockRepository.deleteFile(fileId: any(named: 'fileId')))
-          .thenAnswer((_) async => const Right(null));
+          .thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await useCase(tFileId);
 

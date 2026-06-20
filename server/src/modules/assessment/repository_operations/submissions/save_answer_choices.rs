@@ -7,10 +7,10 @@ use super::save_answer_items::save_answer_items;
 pub async fn save_answer_choices(
     db: &DatabaseConnection,
     submission_answer_id: Uuid,
-    choice_ids: Vec<Uuid>,
+    choices: Vec<(Uuid, bool)>,
 ) -> AppResult<()> {
-    let items = choice_ids.into_iter()
-        .map(|choice_id| (None, Some(choice_id), None, false))
+    let items = choices.into_iter()
+        .map(|(choice_id, is_correct)| (None, Some(choice_id), None, is_correct))
         .collect();
     save_answer_items(db, submission_answer_id, items).await
 }

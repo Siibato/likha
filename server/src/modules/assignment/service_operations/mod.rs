@@ -24,6 +24,7 @@ pub mod delete_file;
 
 // Grading operations
 pub mod get_submissions;
+pub mod get_student_assignment_submission;
 pub mod get_student_assignment_submissions;
 pub mod grade_submission;
 pub mod return_submission;
@@ -53,6 +54,7 @@ pub use download_file::*;
 pub use delete_file::*;
 
 pub use get_submissions::*;
+pub use get_student_assignment_submission::*;
 pub use get_student_assignment_submissions::*;
 pub use grade_submission::*;
 pub use return_submission::*;

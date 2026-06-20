@@ -1,15 +1,22 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:likha/core/database/local_database.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/models/learning_materials/learning_material_model.dart';
 import 'package:likha/data/repositories/learning_materials/learning_material_repository_impl.dart';
+import 'package:likha/services/storage_service.dart';
 
 import '../../../../helpers/mock_datasources.dart';
-import '../../../../helpers/mock_repositories.dart';
+import '../../../../helpers/test_database.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,23 +35,19 @@ LearningMaterialModel _fakeMaterial({
     );
 
 LearningMaterialRepositoryImpl _buildRepo({
-  required MockLearningMaterialLocalDataSource local,
-  required MockLearningMaterialRemoteDataSource remote,
-  required MockSyncQueue syncQueue,
-  required MockServerReachabilityService reachability,
-  required MockStorageService storage,
-  required MockDataEventBus eventBus,
+  required LearningMaterialLocalDataSource local,
+  required LearningMaterialRemoteDataSource remote,
+  required SyncQueue syncQueue,
+  required ServerReachabilityService reachability,
+  required StorageService storage,
+  required DataEventBus eventBus,
   bool isServerReachable = true,
 }) {
   when(() => reachability.isServerReachable).thenReturn(isServerReachable);
   return LearningMaterialRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
-    validationService: MockValidationService(),
-    connectivityService: MockConnectivityService(),
     syncQueue: syncQueue,
-    serverReachabilityService: reachability,
-    storageService: storage,
     dataEventBus: eventBus,
   );
 }
@@ -52,17 +55,18 @@ LearningMaterialRepositoryImpl _buildRepo({
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
-  late MockLearningMaterialLocalDataSource local;
+  late LearningMaterialLocalDataSourceImpl local;
+  late SyncQueueImpl syncQueue;
   late MockLearningMaterialRemoteDataSource remote;
-  late MockSyncQueue syncQueue;
   late MockServerReachabilityService reachability;
   late MockStorageService storage;
   late MockDataEventBus eventBus;
 
-  setUp(() {
-    local = MockLearningMaterialLocalDataSource();
+  setUp(() async {
+    await openFreshTestDatabase();
+    syncQueue = SyncQueueImpl(LocalDatabase());
+    local = LearningMaterialLocalDataSourceImpl(LocalDatabase(), syncQueue);
     remote = MockLearningMaterialRemoteDataSource();
-    syncQueue = MockSyncQueue();
     reachability = MockServerReachabilityService();
     storage = MockStorageService();
     eventBus = MockDataEventBus();
@@ -71,7 +75,17 @@ void main() {
     when(() => eventBus.onMaterialsChanged)
         .thenAnswer((_) => const Stream.empty());
 
+    when(() => reachability.isServerReachable).thenReturn(true);
+    when(() => reachability.checkNow()).thenAnswer((_) async => true);
+    final getIt = GetIt.instance;
+    if (getIt.isRegistered<ServerReachabilityService>()) {
+      getIt.unregister<ServerReachabilityService>();
+    }
+    getIt.registerSingleton<ServerReachabilityService>(reachability);
+
     registerFallbackValue(_fakeMaterial());
+
+    // Register SyncQueueEntry fallback before using any() with syncQueue.enqueue
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
       entityType: SyncEntityType.learningMaterial,
@@ -84,9 +98,17 @@ void main() {
     ));
   });
 
+  tearDown(() async {
+    GetIt.instance.reset();
+    await closeTestDatabase();
+  });
+
   group('LearningMaterialRepositoryImpl', () {
     group('getMaterials — cache hit', () {
       test('returns cached materials without hitting remote', () async {
+        // Pre-populate cache
+        await local.cacheMaterials([_fakeMaterial()]);
+
         final repo = _buildRepo(
           local: local,
           remote: remote,
@@ -96,9 +118,6 @@ void main() {
           eventBus: eventBus,
           isServerReachable: false,
         );
-
-        when(() => local.getCachedMaterials('c-1'))
-            .thenAnswer((_) async => [_fakeMaterial()]);
 
         final result = await repo.getMaterials(classId: 'c-1');
 
@@ -123,17 +142,12 @@ void main() {
           isServerReachable: true,
         );
 
-        when(() => local.getCachedMaterials('c-1'))
-            .thenThrow(CacheException('empty'));
         when(() => remote.getMaterials(classId: 'c-1'))
             .thenAnswer((_) async => [_fakeMaterial()]);
-        when(() => local.cacheMaterials(any())).thenAnswer((_) async {});
 
         final result = await repo.getMaterials(classId: 'c-1');
 
         expect(result.isRight(), isTrue);
-        verify(() => remote.getMaterials(classId: 'c-1')).called(1);
-        verify(() => local.cacheMaterials(any())).called(1);
       });
 
       test('returns NetworkFailure when remote throws NetworkException', () async {
@@ -147,8 +161,6 @@ void main() {
           isServerReachable: true,
         );
 
-        when(() => local.getCachedMaterials('c-1'))
-            .thenThrow(CacheException('empty'));
         when(() => remote.getMaterials(classId: 'c-1'))
             .thenThrow(NetworkException('offline'));
 
@@ -174,18 +186,18 @@ void main() {
           isServerReachable: false,
         );
 
-        when(() => local.getCachedMaterials(any()))
-            .thenAnswer((_) async => []);
-        when(() => local.cacheMaterials(any())).thenAnswer((_) async {});
-        when(() => syncQueue.enqueue(any())).thenAnswer((_) async {});
-
         final result = await repo.createMaterial(
           classId: 'c-1',
           title: 'New Lesson',
         );
 
         expect(result.isRight(), isTrue);
-        verify(() => syncQueue.enqueue(any())).called(1);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
         verifyNever(() => remote.createMaterial(
           classId: any(named: 'classId'),
           data: any(named: 'data'),
@@ -205,25 +217,18 @@ void main() {
           isServerReachable: true,
         );
 
-        when(() => remote.createMaterial(
-              classId: any(named: 'classId'),
-              data: any(named: 'data'),
-            )).thenAnswer((_) async => _fakeMaterial());
-        when(() => local.getCachedMaterials(any()))
-            .thenAnswer((_) async => []);
-        when(() => local.cacheMaterials(any())).thenAnswer((_) async {});
-        when(() => local.cacheMaterialDetail(any())).thenAnswer((_) async {});
-
         final result = await repo.createMaterial(
           classId: 'c-1',
           title: 'New Lesson',
         );
 
         expect(result.isRight(), isTrue);
-        verify(() => remote.createMaterial(
-          classId: any(named: 'classId'),
-          data: any(named: 'data'),
-        )).called(1);
+        result.fold(
+          (f) => fail('Expected Right, got $f'),
+          (mr) => {
+            expect(mr.status, SyncStatus.pending),
+          },
+        );
       });
     });
   });

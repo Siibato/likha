@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/providers/tos_provider.dart';
-import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_type_editors.dart';
+import 'package:likha/core/utils/formatters.dart';
+import 'package:likha/core/utils/validators.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
+import 'package:likha/presentation/utils/date_time_pickers.dart';
+import 'package:likha/presentation/widgets/shared/forms/assessment_switch_tile.dart';
+import 'package:likha/presentation/widgets/shared/forms/form_decorators.dart';
 
 /// Left panel of the desktop assessment builder — assessment metadata form.
 class AssessmentSettingsPanel extends StatelessWidget {
@@ -19,9 +23,9 @@ class AssessmentSettingsPanel extends StatelessWidget {
   final bool isDepartmentalExam;
   final String? linkedTosId;
   final bool isSaving;
-  final TosState tosState;
-  final VoidCallback onPickOpenAt;
-  final VoidCallback onPickCloseAt;
+  final List<TableOfSpecifications> tosList;
+  final ValueChanged<DateTime> onOpenAtChanged;
+  final ValueChanged<DateTime> onCloseAtChanged;
   final void Function(bool) onShowResultsChanged;
   final void Function(bool) onPublishChanged;
   final void Function(int?) onQuarterChanged;
@@ -45,9 +49,9 @@ class AssessmentSettingsPanel extends StatelessWidget {
     required this.isDepartmentalExam,
     required this.linkedTosId,
     required this.isSaving,
-    required this.tosState,
-    required this.onPickOpenAt,
-    required this.onPickCloseAt,
+    required this.tosList,
+    required this.onOpenAtChanged,
+    required this.onCloseAtChanged,
     required this.onShowResultsChanged,
     required this.onPublishChanged,
     required this.onQuarterChanged,
@@ -56,22 +60,6 @@ class AssessmentSettingsPanel extends StatelessWidget {
     required this.onLinkedTosChanged,
     required this.onAutoSave,
   });
-
-  static String formatDateTime(DateTime dt) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    final hour = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
-            ? 12
-            : dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    return '${months[dt.month - 1]} ${dt.day.toString().padLeft(2, '0')}, '
-        '${dt.year} $hour:$minute $period';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +89,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
               controller: titleCtrl,
               decoration: assessmentInputDecoration('Title'),
               enabled: !isSaving,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Title is required';
-                }
-                return null;
-              },
+              validator: (v) => requiredFieldValidator(v, 'Title'),
               onChanged: (_) => onAutoSave(),
             ),
             const SizedBox(height: 16),
@@ -126,16 +109,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               enabled: !isSaving,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Time limit is required';
-                }
-                final parsed = int.tryParse(v.trim());
-                if (parsed == null || parsed <= 0) {
-                  return 'Enter a valid number of minutes';
-                }
-                return null;
-              },
+              validator: (v) => positiveIntValidator(v, 'number of minutes'),
               onChanged: (_) => onAutoSave(),
             ),
             const SizedBox(height: 16),
@@ -144,7 +118,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
               label: 'Open Date',
               dateTime: openAt,
               isSaving: isSaving,
-              onPick: onPickOpenAt,
+              onChanged: onOpenAtChanged,
             ),
             const SizedBox(height: 16),
 
@@ -152,11 +126,11 @@ class AssessmentSettingsPanel extends StatelessWidget {
               label: 'Close Date',
               dateTime: closeAt,
               isSaving: isSaving,
-              onPick: onPickCloseAt,
+              onChanged: onCloseAtChanged,
             ),
             const SizedBox(height: 12),
 
-            _AssessmentSwitchTile(
+            AssessmentSwitchTile(
               title: 'Show results immediately',
               subtitle: 'Students can see results right after submission',
               value: showResultsImmediately,
@@ -164,7 +138,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            _AssessmentSwitchTile(
+            AssessmentSwitchTile(
               title: 'Publish immediately',
               subtitle: 'Students can see this assessment right away',
               value: isPublished,
@@ -209,7 +183,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
 
             if (component == 'qa') ...[
               const SizedBox(height: 8),
-              _AssessmentSwitchTile(
+              AssessmentSwitchTile(
                 title: 'Departmental Exam',
                 subtitle: 'Mark as departmental quarterly exam',
                 value: isDepartmentalExam,
@@ -217,14 +191,14 @@ class AssessmentSettingsPanel extends StatelessWidget {
               ),
             ],
 
-            if (tosState.tosList.isNotEmpty) ...[
+            if (tosList.isNotEmpty) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<String?>(
                 initialValue: linkedTosId,
                 decoration: assessmentInputDecoration('Link to TOS (optional)'),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('None')),
-                  ...tosState.tosList.map(
+                  ...tosList.map(
                     (tos) => DropdownMenuItem(
                       value: tos.id,
                       child: Text(
@@ -247,19 +221,24 @@ class _DateTimeField extends StatelessWidget {
   final String label;
   final DateTime dateTime;
   final bool isSaving;
-  final VoidCallback onPick;
+  final ValueChanged<DateTime> onChanged;
 
   const _DateTimeField({
     required this.label,
     required this.dateTime,
     required this.isSaving,
-    required this.onPick,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: isSaving ? null : onPick,
+      onTap: isSaving
+          ? null
+          : () async {
+              final dt = await pickDateTime(context, current: dateTime);
+              if (dt != null) onChanged(dt);
+            },
       borderRadius: BorderRadius.circular(12),
       child: InputDecorator(
         decoration: assessmentInputDecoration(label).copyWith(
@@ -269,7 +248,7 @@ class _DateTimeField extends StatelessWidget {
           ),
         ),
         child: Text(
-          AssessmentSettingsPanel.formatDateTime(dateTime),
+          Formatters.formatDateTimeFull(dateTime),
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -281,49 +260,3 @@ class _DateTimeField extends StatelessWidget {
   }
 }
 
-class _AssessmentSwitchTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool value;
-  final void Function(bool)? onChanged;
-
-  const _AssessmentSwitchTile({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: SwitchListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.accentCharcoal,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.foregroundTertiary,
-          ),
-        ),
-        value: value,
-        activeThumbColor: AppColors.accentCharcoal,
-        onChanged: onChanged,
-      ),
-    );
-  }
-}

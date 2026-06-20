@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use crate::modules::grading::schema::{GradeItemResponse, CreateGradeItemRequest};
+use crate::modules::grading::schema::{GradeItemResponse, GradeScoreResponse, CreateGradeItemRequest};
 use crate::utils::AppResult;
 
 impl crate::modules::grading::service::GradeComputationService {
@@ -22,16 +22,34 @@ impl crate::modules::grading::service::GradeComputationService {
                 class_id,
                 request.title,
                 request.component,
-                request.grading_period_number,
+                Some(grading_period_number),
                 request.total_points,
                 source_type,
                 source_id,
                 order_index,
             )
             .await?;
+
+        let enrolled = self.repo.get_enrolled_student_ids(class_id).await?;
+        for (student_id, _name) in &enrolled {
+            self.repo.upsert_score(item.id, *student_id, Some(0.0), true).await?;
+        }
+        tracing::info!(
+            "Initialized {} score=0 rows for grade_item {} in class {}",
+            enrolled.len(),
+            item.id,
+            class_id
+        );
+
+        let score_models = self.repo.get_scores_by_item(item.id).await?;
+        let scores: Vec<GradeScoreResponse> =
+            score_models.into_iter().map(GradeScoreResponse::from).collect();
+
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_class_grades(class_id, grading_period_number).await;
         }
-        Ok(GradeItemResponse::from(item))
+        let mut response = GradeItemResponse::from(item);
+        response.scores = scores;
+        Ok(response)
     }
 }

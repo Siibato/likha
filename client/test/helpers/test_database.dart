@@ -22,6 +22,9 @@ Future<Database> openFreshTestDatabase() async {
 }
 
 /// Closes the test database and resets the LocalDatabase singleton.
+/// Drains the microtask queue first so fire-and-forget remote writes
+/// (e.g. [fireRemoteWrite]) finish their callbacks before the DB is closed.
 Future<void> closeTestDatabase() async {
+  await Future.delayed(const Duration(milliseconds: 10));
   await LocalDatabase().close();
 }

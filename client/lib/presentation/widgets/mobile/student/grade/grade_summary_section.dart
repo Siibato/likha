@@ -33,7 +33,7 @@ class GradeSummarySection extends StatelessWidget {
               _SummaryRow(
                 label: 'Initial Grade',
                 value: quarterGrade.initialGrade != null
-                    ? quarterGrade.initialGrade!.toStringAsFixed(1)
+                    ? quarterGrade.initialGrade!.toStringAsFixed(2)
                     : '--',
               ),
               const SizedBox(height: 8),

@@ -91,8 +91,8 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
             get(handler::get_my_grades),
         )
         .route(
-            "/classes/{class_id}/my-grades/{quarter}",
-            get(handler::get_my_quarter_grades),
+            "/classes/{class_id}/my-grades/{period}",
+            get(handler::get_my_period_grades),
         )
         // Utility
         .route(

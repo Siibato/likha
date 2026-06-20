@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assignment/create_assignment_desktop.dart';
-import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_detail_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_create_page.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_data_table.dart';
 import 'package:likha/presentation/providers/assignment_provider.dart';
 
@@ -28,7 +28,7 @@ class AssignmentsSection extends ConsumerWidget {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => CreateAssignmentDesktop(classId: classId),
+              builder: (_) => CreateAssignmentPage(classId: classId),
             ),
           ).then((result) {
             if (result == true) {
@@ -65,7 +65,7 @@ class AssignmentsSection extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      AssignmentDetailDesktop(assignmentId: assignment.id),
+                      AssignmentDetailPage(assignmentId: assignment.id),
                 ),
               ).then((_) => ref
                   .read(assignmentProvider.notifier)

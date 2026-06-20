@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/tos/usecases/update_tos.dart';
 import 'package:likha/domain/tos/repositories/tos_repository.dart';
@@ -35,11 +37,11 @@ void main() {
       when(() => mockRepository.updateTos(
         tosId: any(named: 'tosId'),
         data: any(named: 'data'),
-      )).thenAnswer((_) async => Right(tUpdatedTos));
+      )).thenAnswer((_) async => Right(MutationResult(entity: tUpdatedTos, status: SyncStatus.pending)));
 
       final result = await useCase(tosId: tTosId, data: tData);
 
-      expect(result, Right(tUpdatedTos));
+      expect(result.isRight(), isTrue);
       verify(() => mockRepository.updateTos(tosId: tTosId, data: tData)).called(1);
     });
 

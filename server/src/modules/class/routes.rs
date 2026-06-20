@@ -17,7 +17,7 @@ pub fn routes(class_service: Arc<ClassService>) -> Router {
         .route("/classes/{id}", delete(handler::delete_class))
         .route(
             "/classes/{id}/students",
-            post(handler::add_student),
+            get(handler::get_participants).post(handler::add_student),
         )
         .route(
             "/classes/{id}/students/{student_id}",

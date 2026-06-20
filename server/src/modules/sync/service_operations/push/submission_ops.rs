@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
-use crate::modules::assessment::schema::{SaveAnswersRequest, OverrideAnswerRequest};
+use crate::modules::assessment::schema::{SaveAnswersRequest, OverrideAnswerRequest, GradeEssayRequest};
 use crate::modules::assignment::schema::GradeSubmissionRequest;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
 use super::extract_field;
@@ -61,6 +61,14 @@ impl super::SyncPushService {
                 let is_correct = op.payload.get("is_correct").and_then(|v| v.as_bool()).unwrap_or(false);
                 let points = op.payload.get("points").and_then(|v| v.as_f64());
                 match self.assessment_service.override_answer(answer_id, OverrideAnswerRequest { is_correct, points }, user_id).await {
+                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => self.error_result(op, &e.to_string()),
+                }
+            }
+            "grade_essay" => {
+                let answer_id = extract_field!(self, op, parse_uuid_field, "answer_id");
+                let points = op.payload.get("points").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                match self.assessment_service.grade_essay_answer(answer_id, GradeEssayRequest { points }, user_id).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
                 }

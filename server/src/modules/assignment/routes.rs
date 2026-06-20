@@ -92,6 +92,10 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
             get(handler::download_file),
         )
         .route(
+            "/assignments/{assignment_id}/students/{student_id}/submission",
+            get(handler::get_student_assignment_submission),
+        )
+        .route(
             "/assignments/{assignment_id}/students/{student_id}/submissions",
             get(handler::get_student_assignment_submissions),
         )

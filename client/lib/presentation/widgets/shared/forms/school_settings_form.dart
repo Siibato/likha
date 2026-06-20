@@ -25,6 +25,9 @@ class SchoolSettingsForm extends StatelessWidget {
   final TextEditingController regionController;
   final TextEditingController divisionController;
   final TextEditingController schoolYearController;
+  final TextEditingController? districtController;
+  final TextEditingController? schoolHeadNameController;
+  final TextEditingController? schoolHeadPositionController;
   final TextEditingController? schoolCodeController;
   final bool enabled;
   final ValueChanged<String>? onSchoolNameChanged;
@@ -35,6 +38,9 @@ class SchoolSettingsForm extends StatelessWidget {
     required this.regionController,
     required this.divisionController,
     required this.schoolYearController,
+    this.districtController,
+    this.schoolHeadNameController,
+    this.schoolHeadPositionController,
     this.schoolCodeController,
     this.enabled = true,
     this.onSchoolNameChanged,
@@ -71,6 +77,33 @@ class SchoolSettingsForm extends StatelessWidget {
           hintText: 'e.g., Division of Batangas',
         ),
         const SizedBox(height: 16),
+        if (districtController != null)
+          StyledTextField(
+            controller: districtController!,
+            label: 'District',
+            icon: Icons.place_outlined,
+            enabled: enabled,
+            hintText: 'e.g., District 1',
+          ),
+        if (districtController != null) const SizedBox(height: 16),
+        if (schoolHeadNameController != null)
+          StyledTextField(
+            controller: schoolHeadNameController!,
+            label: 'School Head Name',
+            icon: Icons.person_outlined,
+            enabled: enabled,
+            hintText: 'e.g., Dr. Juan Dela Cruz',
+          ),
+        if (schoolHeadNameController != null) const SizedBox(height: 16),
+        if (schoolHeadPositionController != null)
+          StyledTextField(
+            controller: schoolHeadPositionController!,
+            label: 'School Head Position',
+            icon: Icons.work_outline,
+            enabled: enabled,
+            hintText: 'e.g., Principal II',
+          ),
+        if (schoolHeadPositionController != null) const SizedBox(height: 16),
         StyledTextField(
           controller: schoolYearController,
           label: 'School Year',

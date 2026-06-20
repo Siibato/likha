@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_desktop.dart';
+import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_page.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
 import 'package:likha/presentation/pages/mobile/teacher/grade/grade_summary_page.dart';
+import 'package:likha/presentation/providers/class_grades_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
-import 'package:likha/services/grade_export_service.dart';
+import 'package:likha/presentation/providers/document_export_provider.dart';
 
 /// Grades section widget for TeacherClassDetailDesktop
 /// Displays grading setup and grade spreadsheet functionality
 class GradesSection extends ConsumerStatefulWidget {
   final String classId;
+  final bool isActive;
 
-  const GradesSection({super.key, required this.classId});
+  const GradesSection({
+    super.key,
+    required this.classId,
+    this.isActive = false,
+  });
 
   @override
   ConsumerState<GradesSection> createState() => _GradesSectionState();
@@ -23,71 +29,77 @@ class GradesSection extends ConsumerStatefulWidget {
 
 class _GradesSectionState extends ConsumerState<GradesSection> {
   int _selectedQuarter = 1;
+  bool _hasLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
-      _loadGradeData();
-    });
+    if (widget.isActive) {
+      _hasLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
+        _loadGradeData();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(GradesSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classId != widget.classId) {
+      _hasLoaded = false;
+    }
+    if (!oldWidget.isActive && widget.isActive && !_hasLoaded) {
+      _hasLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
+        _loadGradeData();
+      });
+    }
   }
 
   Future<void> _loadGradeData() async {
-    final itemsNotifier = ref.read(gradeItemsProvider.notifier);
-    itemsNotifier.setQuarter(_selectedQuarter);
-    await itemsNotifier.loadItems(widget.classId);
+    await ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
 
-    // Backfill grade items from assessments/assignments
-    await itemsNotifier.backfillFromActivities(widget.classId, _selectedQuarter);
-
-    // Reload items to pick up any newly created ones
-    await itemsNotifier.loadItems(widget.classId);
-
-    final itemsState = ref.read(gradeItemsProvider);
-    if (itemsState.items.isNotEmpty) {
-      final itemIds = itemsState.items.map((i) => i.id).toList();
-
-      // Load whatever scores already exist so the sheet is not blank while generating
-      await ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
-
-      // Show skeleton cells during score generation
-      ref.read(gradeScoresProvider.notifier).setGenerating(true);
-      // Auto-populate scores from assessment/assignment submissions
-      await itemsNotifier.generateScoresForItems(widget.classId);
-
-      // Reload scores to reflect newly generated values
-      final refreshedIds = ref.read(gradeItemsProvider).items.map((i) => i.id).toList();
-      if (refreshedIds.isNotEmpty) {
-        await ref.read(gradeScoresProvider.notifier).loadScoresForItems(refreshedIds);
-      }
-      ref.read(gradeScoresProvider.notifier).setGenerating(false);
+    final configState = ref.read(gradingConfigProvider);
+    if (configState.isConfigured) {
+      ref.read(classGradesProvider.notifier).loadClassGrades(
+        classId: widget.classId,
+        gradingPeriodNumber: _selectedQuarter,
+      );
     }
+  }
 
-    // Load quarterly grades summary
-    ref
-        .read(quarterlyGradesProvider.notifier)
-        .loadSummary(widget.classId, _selectedQuarter);
+  void _reloadGrades() {
+    ref.read(classGradesProvider.notifier).loadClassGrades(
+      classId: widget.classId,
+      gradingPeriodNumber: _selectedQuarter,
+      skipBackgroundRefresh: true,
+    );
   }
 
   void _onQuarterChanged(int quarter) {
     setState(() => _selectedQuarter = quarter);
-    _loadGradeData();
+    ref.read(classGradesProvider.notifier).loadClassGrades(
+      classId: widget.classId,
+      gradingPeriodNumber: quarter,
+    );
   }
 
-  void _handleScoreChanged(
+  Future<void> _handleScoreChanged(
     String studentId,
     String itemId,
     dynamic existingScore,
     double newScore,
-  ) {
-    ref.read(gradeScoresProvider.notifier).saveScores(itemId, [
+  ) async {
+    await ref.read(gradeScoresProvider.notifier).saveScores(itemId, [
       {
         'student_id': studentId,
         'score': newScore,
         if (existingScore != null) 'id': existingScore.id,
       },
     ]);
+    _reloadGrades();
   }
 
   void _showAddGradeItemDialog() {
@@ -97,17 +109,6 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       selectedQuarter: _selectedQuarter,
       ref: ref,
     );
-
-    // Reload items and scores after dialog closes
-    Future.delayed(Duration.zero, () {
-      ref.read(gradeItemsProvider.notifier).loadItems(widget.classId).then((_) {
-        final itemsState = ref.read(gradeItemsProvider);
-        if (itemsState.items.isNotEmpty) {
-          final itemIds = itemsState.items.map((i) => i.id).toList();
-          ref.read(gradeScoresProvider.notifier).loadScoresForItems(itemIds);
-        }
-      });
-    });
   }
 
   void _handleAddColumn(String component) {
@@ -115,190 +116,40 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     _showAddGradeItemDialog();
   }
 
-  void _showExportDialog(BuildContext context, {required bool isDownload}) {
+  void _showExportDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(isDownload ? 'Export Grades' : 'Print Grades'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Choose export format:'),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('PDF'),
-                subtitle: const Text('DepEd-style class record'),
-                leading: const Icon(Icons.picture_as_pdf),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (isDownload) {
-                    _exportToPdf();
-                  } else {
-                    _printGrades();
-                  }
-                },
-              ),
-              ListTile(
-                title: const Text('Excel'),
-                subtitle: const Text('Editable spreadsheet'),
-                leading: const Icon(Icons.table_chart),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (isDownload) {
-                    _exportToExcel();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Excel export only available for download')),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
+      builder: (dialogContext) {
+        return _DesktopExportDialog(
+          classId: widget.classId,
+          quarter: _selectedQuarter,
+          parentContext: context,
         );
       },
     );
   }
 
-  void _exportToPdf() async {
-    try {
-      final configState = ref.read(gradingConfigProvider);
-      final itemsState = ref.read(gradeItemsProvider);
-      final scoresState = ref.read(gradeScoresProvider);
-      final gradesState = ref.read(quarterlyGradesProvider);
-      final classState = ref.read(classProvider);
-      
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      
-      await ref.read(gradeExportServiceProvider).exportToPdf(
-        classId: widget.classId,
-        className: classState.currentClassDetail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: itemsState.items,
-        scoresByItem: scoresState.scoresByItem,
-        config: config,
-        summary: gradesState.summary,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF exported successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export PDF: $e')),
-        );
-      }
-    }
-  }
-
-  void _exportToExcel() async {
-    try {
-      final configState = ref.read(gradingConfigProvider);
-      final itemsState = ref.read(gradeItemsProvider);
-      final scoresState = ref.read(gradeScoresProvider);
-      final gradesState = ref.read(quarterlyGradesProvider);
-      final classState = ref.read(classProvider);
-      
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      
-      await ref.read(gradeExportServiceProvider).exportToExcel(
-        classId: widget.classId,
-        className: classState.currentClassDetail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: itemsState.items,
-        scoresByItem: scoresState.scoresByItem,
-        config: config,
-        summary: gradesState.summary,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Excel exported successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export Excel: $e')),
-        );
-      }
-    }
-  }
-
-  void _printGrades() async {
-    try {
-      final configState = ref.read(gradingConfigProvider);
-      final itemsState = ref.read(gradeItemsProvider);
-      final scoresState = ref.read(gradeScoresProvider);
-      final gradesState = ref.read(quarterlyGradesProvider);
-      final classState = ref.read(classProvider);
-      
-      final students = classState.currentClassDetail?.students ?? [];
-      final config = configState.configs.isNotEmpty ? configState.configs.first : null;
-      
-      await ref.read(gradeExportServiceProvider).printGrades(
-        classId: widget.classId,
-        className: classState.currentClassDetail?.title ?? 'Unknown Class',
-        quarter: _selectedQuarter,
-        students: students,
-        gradeItems: itemsState.items,
-        scoresByItem: scoresState.scoresByItem,
-        config: config,
-        summary: gradesState.summary,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Print dialog opened!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to print: $e')),
-        );
-      }
-    }
-  }
-
   void _handleQgChanged(String studentId, int? newQg) {
     if (newQg == null) return;
     ref
-        .read(quarterlyGradesProvider.notifier)
+        .read(periodGradesProvider.notifier)
         .updatePeriodGrade(
           classId: widget.classId,
           studentId: studentId,
           quarter: _selectedQuarter,
           transmutedGrade: newQg,
         );
+    _reloadGrades();
   }
 
   @override
   Widget build(BuildContext context) {
     final configState = ref.watch(gradingConfigProvider);
-    final itemsState = ref.watch(gradeItemsProvider);
-    final scoresState = ref.watch(gradeScoresProvider);
-    final gradesState = ref.watch(quarterlyGradesProvider);
+    final gradesState = ref.watch(classGradesProvider);
     final classState = ref.watch(classProvider);
     final students = classState.currentClassDetail?.students ?? [];
-    final config = configState.configs.isNotEmpty
-        ? configState.configs.first
-        : null;
+    final grades = gradesState.grades;
+    final isLoading = gradesState.isLoading && grades == null;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -314,7 +165,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
 
           // Content area
           Expanded(
-            child: configState.isLoading || itemsState.isLoading
+            child: isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: AppColors.foregroundPrimary,
@@ -353,7 +204,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ClassGradingSetupDesktop(
+                              builder: (_) => ClassGradingSetupPage(
                                 classId: widget.classId,
                               ),
                             ),
@@ -375,13 +226,8 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                       ],
                     ),
                   )
-                : gradesState.isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.foregroundPrimary,
-                      strokeWidth: 2.5,
-                    ),
-                  )
+                : grades == null
+                ? const SizedBox.shrink()
                 : students.isEmpty
                 ? const Center(
                     child: Text(
@@ -396,12 +242,12 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                     children: [
                       GradeSpreadsheet(
                         students: students,
-                        allItems: itemsState.items,
-                        scoresByItem: scoresState.scoresByItem,
-                        config: config,
-                        summary: gradesState.summary,
+                        allItems: grades.items,
+                        scoresByItem: grades.scoresByItem,
+                        config: grades.config,
+                        summary: grades.summary ?? const [],
                         dimensions: const GradeSpreadsheetDimensions.standard(),
-                        isLoadingScores: scoresState.isGeneratingScores,
+                        isLoadingScores: false,
                         onScoreChanged: _handleScoreChanged,
                         onQgChanged: _handleQgChanged,
                         onAddColumn: _handleAddColumn,
@@ -521,11 +367,11 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               await ref
-                  .read(quarterlyGradesProvider.notifier)
+                  .read(periodGradesProvider.notifier)
                   .computeGrades(widget.classId, _selectedQuarter);
               if (!mounted) return;
               ref
-                  .read(quarterlyGradesProvider.notifier)
+                  .read(periodGradesProvider.notifier)
                   .loadSummary(widget.classId, _selectedQuarter);
               messenger.showSnackBar(
                 const SnackBar(content: Text('Grades computed')),
@@ -555,31 +401,123 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        ClassGradingSetupDesktop(classId: widget.classId),
+                        ClassGradingSetupPage(classId: widget.classId),
                   ),
                 ).then((_) {
                   ref
                       .read(gradingConfigProvider.notifier)
                       .loadConfig(widget.classId);
-                  ref
-                      .read(gradeItemsProvider.notifier)
-                      .loadItems(widget.classId);
+                  _reloadGrades();
                 }),
           ),
           IconButton(
             icon: const Icon(Icons.download_outlined, size: 20),
             color: AppColors.foregroundSecondary,
             tooltip: 'Download Grades',
-            onPressed: () => _showExportDialog(context, isDownload: true),
-          ),
-          IconButton(
-            icon: const Icon(Icons.print_outlined, size: 20),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Print Grades',
-            onPressed: () => _showExportDialog(context, isDownload: false),
+            onPressed: () => _showExportDialog(context),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DesktopExportDialog extends ConsumerWidget {
+  final String classId;
+  final int quarter;
+  final BuildContext parentContext;
+
+  const _DesktopExportDialog({
+    required this.classId,
+    required this.quarter,
+    required this.parentContext,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exportState = ref.watch(documentExportProvider);
+
+    ref.listen<DocumentExportState>(documentExportProvider, (previous, next) {
+      if (previous?.isExporting == true && !next.isExporting && next.error == null) {
+        Navigator.of(context).pop();
+        if (parentContext.mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            const SnackBar(content: Text('Document exported successfully!')),
+          );
+        }
+      }
+    });
+
+    return AlertDialog(
+      title: const Text('Export Grades'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Choose export format:'),
+          const SizedBox(height: 16),
+          if (exportState.isExporting) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                    SizedBox(height: 12),
+                    Text('Preparing document…'),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            ListTile(
+              title: const Text('Excel'),
+              subtitle: const Text('Editable spreadsheet (.xlsx)'),
+              leading: const Icon(Icons.table_chart),
+              onTap: () {
+                ref.read(documentExportProvider.notifier).exportClassGrades(
+                  classId: classId,
+                  period: quarter,
+                  isPdf: false,
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('PDF'),
+              subtitle: const Text('Printable document (.pdf)'),
+              leading: const Icon(Icons.picture_as_pdf),
+              onTap: () {
+                ref.read(documentExportProvider.notifier).exportClassGrades(
+                  classId: classId,
+                  period: quarter,
+                  isPdf: true,
+                );
+              },
+            ),
+            if (exportState.error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                exportState.error!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.semanticError,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: exportState.isExporting
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: Text(exportState.isExporting ? 'Exporting…' : 'Cancel'),
+        ),
+      ],
     );
   }
 }

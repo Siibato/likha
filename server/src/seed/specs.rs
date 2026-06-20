@@ -185,6 +185,9 @@ pub struct SchoolSettingsSpec {
     pub school_region: Option<String>,
     pub school_division: Option<String>,
     pub school_year: Option<String>,
+    pub school_district: Option<String>,
+    pub school_head_name: Option<String>,
+    pub school_head_position: Option<String>,
     pub updated_at: NaiveDateTime,
 }
 
@@ -217,6 +220,8 @@ pub struct GradeScoreSpec {
     pub score: Option<f64>,
     pub is_auto_populated: bool,
     pub override_score: Option<f64>,
+    pub component: String,
+    pub grading_period_number: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -237,4 +242,15 @@ pub struct ActivityLogSpec {
     pub action: String,
     pub details: Option<String>,
     pub created_at: NaiveDateTime,
+}
+
+#[derive(Debug, Clone)]
+pub struct LearnerDetailsSpec {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub lrn: Option<String>,
+    pub age: Option<i32>,
+    pub sex: Option<String>,
+    pub track_strand: Option<String>,
+    pub curriculum: Option<String>,
 }

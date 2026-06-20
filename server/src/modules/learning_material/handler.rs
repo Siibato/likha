@@ -150,7 +150,16 @@ pub async fn upload_file(
         return r;
     }
 
-    while let Ok(Some(field)) = multipart.next_field().await {
+    loop {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                return AppError::BadRequest(format!("Failed to parse multipart: {}", e))
+                    .into_response();
+            }
+        };
+
         let file_name = match field.file_name() {
             Some(name) => name.to_string(),
             None => continue,

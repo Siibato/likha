@@ -18,7 +18,7 @@ class GradeDataRow extends StatelessWidget {
   final List<GradeItem> ptItems;
   final List<GradeItem> qaItems;
   final Map<String, Map<String, GradeScore>> scoreLookup;
-  final Map<String, int?> qgLookup;
+  final Map<String, int?> tgLookup;
   final double wwWeight;
   final double ptWeight;
   final double qaWeight;
@@ -29,8 +29,8 @@ class GradeDataRow extends StatelessWidget {
   final String? editingQgStudentId;
   final TextEditingController scoreCtrl;
   final FocusNode scoreFocus;
-  final TextEditingController qgCtrl;
-  final FocusNode qgFocus;
+  final TextEditingController tgCtrl;
+  final FocusNode tgFocus;
 
   final void Function(String studentId, String itemId, GradeScore? existing)
       onStartScore;
@@ -48,7 +48,7 @@ class GradeDataRow extends StatelessWidget {
     required this.ptItems,
     required this.qaItems,
     required this.scoreLookup,
-    required this.qgLookup,
+    required this.tgLookup,
     required this.wwWeight,
     required this.ptWeight,
     required this.qaWeight,
@@ -58,8 +58,8 @@ class GradeDataRow extends StatelessWidget {
     required this.editingQgStudentId,
     required this.scoreCtrl,
     required this.scoreFocus,
-    required this.qgCtrl,
-    required this.qgFocus,
+    required this.tgCtrl,
+    required this.tgFocus,
     required this.onStartScore,
     required this.onCommitScore,
     required this.onClearScore,
@@ -85,11 +85,11 @@ class GradeDataRow extends StatelessWidget {
         ? available.fold<double>(0.0, (sum, v) => sum + v)
         : null;
 
-    final storedQg = qgLookup[sid];
+    final storedTg = tgLookup[sid];
     final computedQg = initialGrade != null
         ? TransmutationUtil.transmute(initialGrade).round()
         : null;
-    final displayQg = storedQg ?? computedQg;
+    final displayQg = storedTg ?? computedQg;
     final remarks =
         displayQg != null ? (displayQg >= 75 ? 'Passed' : 'Failed') : null;
     final isEditingQg = editingQgStudentId == sid;
@@ -109,8 +109,8 @@ class GradeDataRow extends StatelessWidget {
           ),
           if (isEditingQg)
             GradeInlineEditCell(
-              ctrl: qgCtrl,
-              focus: qgFocus,
+              ctrl: tgCtrl,
+              focus: tgFocus,
               onCommit: onCommitQg,
               onCancel: onCancelQg,
               width: dimensions.qgColW,
@@ -125,7 +125,7 @@ class GradeDataRow extends StatelessWidget {
                 width: dimensions.qgColW,
                 height: dimensions.rowH,
                 bold: true,
-                color: storedQg != null
+                color: storedTg != null
                     ? AppColors.accentCharcoal
                     : (displayQg != null ? AppColors.foregroundPrimary : null),
               ),
@@ -178,7 +178,7 @@ class GradeDataRow extends StatelessWidget {
             )
           : GradeComputedCell(
               text: stats.pct != null
-                  ? '${stats.pct!.toStringAsFixed(1)}%'
+                  ? '${stats.pct!.toStringAsFixed(2)}%'
                   : '--',
               width: dimensions.pctColW,
               height: dimensions.rowH,
@@ -212,6 +212,7 @@ class GradeDataRow extends StatelessWidget {
     final gs = studentScores[item.id];
     final cellKey = '${sid}_${item.id}';
     final isEditing = editingKey == cellKey;
+    final isAutoPopulatedZero = gs?.effectiveScore == 0 && gs?.isAutoPopulated == true;
 
     if (isEditing) {
       return GradeInlineEditCell(
@@ -233,6 +234,8 @@ class GradeDataRow extends StatelessWidget {
         bgColor: bgColor,
         isOverride: gs?.overrideScore != null,
         empty: gs?.effectiveScore == null,
+        color: isAutoPopulatedZero ? AppColors.foregroundTertiary : null,
+        syncStatus: gs?.syncStatus,
       ),
     );
   }
@@ -261,6 +264,6 @@ class GradeDataRow extends StatelessWidget {
 
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toInt().toString();
-    return v.toStringAsFixed(1);
+    return v.toStringAsFixed(2);
   }
 }

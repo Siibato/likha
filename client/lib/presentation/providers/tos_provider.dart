@@ -88,7 +88,7 @@ class TosNotifier extends StateNotifier<TosState> {
   TosNotifier() : super(TosState());
 
   Future<void> loadTosList(String classId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: state.tosList.isEmpty, clearError: true);
     final result = await sl<GetTosList>().call(classId);
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
@@ -110,111 +110,91 @@ class TosNotifier extends StateNotifier<TosState> {
   }
 
   Future<TableOfSpecifications?> createTos(String classId, Map<String, dynamic> data) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<CreateTos>().call(classId: classId, data: data);
     TableOfSpecifications? created;
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (tos) {
-        created = tos;
-        state = state.copyWith(
-          isLoading: false,
-          tosList: [tos, ...state.tosList],
-          successMessage: 'TOS created',
-        );
+      (failure) => state = state.copyWith(error: failure.message),
+      (mutationResult) {
+        created = mutationResult.entity;
+        if (created != null) {
+          state = state.copyWith(
+            tosList: [created!, ...state.tosList],
+            successMessage: 'TOS created',
+          );
+        } else {
+          state = state.copyWith(successMessage: 'TOS created');
+        }
       },
     );
     return created;
   }
 
   Future<void> updateTos(String tosId, Map<String, dynamic> data) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<UpdateTos>().call(tosId: tosId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (tos) {
-        final updated = state.tosList.map((t) => t.id == tosId ? tos : t).toList();
-        state = state.copyWith(
-          isLoading: false,
-          tosList: updated,
-          currentTos: tos,
-          successMessage: 'TOS updated',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(successMessage: 'TOS updated'),
     );
   }
 
   Future<void> deleteTos(String tosId) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<DeleteTos>().call(tosId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (_) {
-        final filtered = state.tosList.where((t) => t.id != tosId).toList();
-        state = state.copyWith(
-          isLoading: false,
-          tosList: filtered,
-          clearTos: true,
-          successMessage: 'TOS deleted',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(
+        tosList: state.tosList.where((t) => t.id != tosId).toList(),
+        successMessage: 'TOS deleted',
+      ),
     );
   }
 
   Future<void> addCompetency(String tosId, Map<String, dynamic> data) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<AddCompetency>().call(tosId: tosId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (comp) => state = state.copyWith(
-        isLoading: false,
-        competencies: [...state.competencies, comp],
+      (failure) => state = state.copyWith(error: failure.message),
+      (mutationResult) => state = state.copyWith(
+        competencies: [...state.competencies, mutationResult.entity],
         successMessage: 'Competency added',
       ),
     );
   }
 
   Future<void> updateCompetency(String competencyId, Map<String, dynamic> data) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<UpdateCompetency>().call(competencyId: competencyId, data: data);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (comp) {
-        final updated = state.competencies.map((c) => c.id == competencyId ? comp : c).toList();
-        state = state.copyWith(
-          isLoading: false,
-          competencies: updated,
-          successMessage: 'Competency updated',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (mutationResult) => state = state.copyWith(
+        competencies: state.competencies.map((c) => c.id == competencyId ? mutationResult.entity : c).toList(),
+        successMessage: 'Competency updated',
+      ),
     );
   }
 
   Future<void> deleteCompetency(String competencyId) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<DeleteCompetency>().call(competencyId);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (_) {
-        final filtered = state.competencies.where((c) => c.id != competencyId).toList();
-        state = state.copyWith(
-          isLoading: false,
-          competencies: filtered,
-          successMessage: 'Competency deleted',
-        );
-      },
+      (failure) => state = state.copyWith(error: failure.message),
+      (_) => state = state.copyWith(
+        competencies: state.competencies.where((c) => c.id != competencyId).toList(),
+        successMessage: 'Competency deleted',
+      ),
     );
   }
 
   Future<void> bulkAddCompetencies(String tosId, List<Map<String, dynamic>> competencies) async {
-    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(clearError: true, clearSuccess: true);
     final result = await sl<BulkAddCompetencies>().call(tosId: tosId, competencies: competencies);
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (added) => state = state.copyWith(
-        isLoading: false,
-        competencies: [...state.competencies, ...added],
-        successMessage: '${added.length} competencies added',
+      (failure) => state = state.copyWith(error: failure.message),
+      (mutationResult) => state = state.copyWith(
+        competencies: [...state.competencies, ...mutationResult.entity],
+        successMessage: '${mutationResult.entity.length} competencies added',
       ),
     );
   }

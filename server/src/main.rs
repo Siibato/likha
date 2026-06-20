@@ -20,6 +20,8 @@ use server::modules::learning_material::service::LearningMaterialService;
 use server::modules::tos::service::TosService;
 use server::modules::grading::service::GradeComputationService;
 use server::modules::setup::service::SetupService;
+use server::modules::document_export::service::DocumentExportService;
+use server::modules::student_records::service::StudentRecordsService;
 use server::modules::entitlement::EntitlementService;
 use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
 use server::utils::file_encryption::parse_key;
@@ -154,6 +156,26 @@ async fn main() {
 
                 return;
             }
+            "seed-realistic" => {
+                println!("Seeding realistic demo world...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+                activate_admin(&db).await.expect("Failed to activate admin account");
+                server::seed::scenarios::realistic::seed_realistic_world(&db).await.expect("Realistic seed failed");
+                println!("Realistic seed complete.");
+                return;
+            }
+            "seed-demo" => {
+                println!("Seeding focused demo world...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+                activate_admin(&db).await.expect("Failed to activate admin account");
+                server::seed::scenarios::demo::seed_demo_world(&db).await.expect("Demo seed failed");
+                println!("Demo seed complete.");
+                return;
+            }
             "deseed" => {
                 use sea_orm::ConnectionTrait;
                 println!("Clearing all seeded data and re-initializing...");
@@ -169,6 +191,8 @@ async fn main() {
                     "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
                     "grade_scores", "period_grades", "activity_logs", "advisory_class_students",
                     "sync_manifest", "sync_processed_operations",
+                    "student_school_history", "previous_school_subjects", "previous_school_attendance",
+                    "attendance_records", "core_values_records", "learner_details",
                 ];
 
                 for table in tables {
@@ -194,6 +218,8 @@ async fn main() {
                 eprintln!("  seed-e2e                Seed deterministic E2E world data");
                 eprintln!("  seed-manual             Seed manual testing world data");
                 eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
+                eprintln!("  seed-realistic          Seed realistic demo world data");
+                eprintln!("  seed-demo               Seed focused demo world data");
                 eprintln!("  deseed                  Clear all seeded data and reset admin");
                 std::process::exit(1);
             }
@@ -290,6 +316,18 @@ async fn main() {
         db.clone(),
     ));
 
+    let student_records_service = Arc::new(
+        StudentRecordsService::new(db.clone(), grade_computation_service.clone()),
+    );
+
+    let document_export_service = Arc::new(
+        DocumentExportService::new(
+            grade_computation_service.clone(),
+            setup_service.clone(),
+            student_records_service.clone(),
+        ),
+    );
+
     let app = create_app(
         &config,
         auth_service,
@@ -301,6 +339,8 @@ async fn main() {
         grade_computation_service,
         tos_service,
         setup_service,
+        document_export_service,
+        student_records_service,
         sync_push_service,
         sync_conflict_service,
         sync_full_service,
@@ -331,6 +371,8 @@ fn create_app(
     grade_computation_service: Arc<GradeComputationService>,
     tos_service: Arc<TosService>,
     setup_service: Arc<server::modules::setup::service::SetupService>,
+    document_export_service: Arc<DocumentExportService>,
+    student_records_service: Arc<StudentRecordsService>,
     sync_push_service: Arc<SyncPushService>,
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
@@ -350,6 +392,8 @@ fn create_app(
         .merge(server::modules::grading::routes::routes(grade_computation_service))
         .merge(server::modules::tos::routes::routes(tos_service))
         .merge(server::modules::setup::routes::routes(setup_service))
+        .merge(server::modules::document_export::routes::routes(document_export_service))
+        .merge(server::modules::student_records::routes::routes(student_records_service))
         .merge(server::modules::tasks::routes::routes(assignment_service, assessment_service))
         .merge(server::modules::sync::routes::routes(
             sync_push_service,
@@ -378,10 +422,12 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
         Method::OPTIONS,
     ];
 
-    let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id];
+    let idempotency_key: HeaderName = "idempotency-key".parse().expect("valid header name");
+    let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id, idempotency_key];
 
     if config.allowed_origins.is_empty() {
         return CorsLayer::new()
+            .allow_origin(tower_http::cors::AllowOrigin::mirror_request())
             .allow_methods(allowed_methods)
             .allow_headers(allowed_headers)
             .max_age(Duration::from_secs(3600));

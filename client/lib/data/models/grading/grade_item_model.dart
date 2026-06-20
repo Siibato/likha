@@ -12,6 +12,7 @@ class GradeItemModel {
   final int orderIndex;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<Map<String, dynamic>>? rawScores;
 
   const GradeItemModel({
     required this.id,
@@ -25,6 +26,7 @@ class GradeItemModel {
     required this.orderIndex,
     required this.createdAt,
     required this.updatedAt,
+    this.rawScores,
   });
 
   factory GradeItemModel.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,9 @@ class GradeItemModel {
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : now,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : 
                   (json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : now),
+      rawScores: json['scores'] != null
+          ? (json['scores'] as List<dynamic>).cast<Map<String, dynamic>>()
+          : null,
     );
   }
 
@@ -89,6 +94,6 @@ class GradeItemModel {
     CommonCols.createdAt: createdAt.toIso8601String(),
     CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),
-    CommonCols.needsSync: 0,
+    CommonCols.syncStatus: 'synced',
   };
 }

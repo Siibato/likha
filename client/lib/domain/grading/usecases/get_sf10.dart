@@ -11,6 +11,7 @@ class GetSf10 {
     return _repository.getSf10(
       classId: params.classId,
       studentId: params.studentId,
+      skipBackgroundRefresh: params.skipBackgroundRefresh,
     );
   }
 }
@@ -18,6 +19,7 @@ class GetSf10 {
 class GetSf10Params {
   final String classId;
   final String studentId;
+  final bool skipBackgroundRefresh;
 
-  GetSf10Params({required this.classId, required this.studentId});
+  GetSf10Params({required this.classId, required this.studentId, this.skipBackgroundRefresh = false});
 }

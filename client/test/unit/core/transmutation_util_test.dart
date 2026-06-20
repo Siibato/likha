@@ -109,23 +109,23 @@ void main() {
 
     group('getDescriptorColor', () {
       test('returns red for grades below 75', () {
-        expect(TransmutationUtil.getDescriptorColor(60), equals(0xFFE57373));
-        expect(TransmutationUtil.getDescriptorColor(74), equals(0xFFE57373));
+        expect(TransmutationUtil.getDescriptorColor(60), equals(0xFFEA4335));
+        expect(TransmutationUtil.getDescriptorColor(74), equals(0xFFEA4335));
       });
 
       test('returns amber for grades 75-79', () {
-        expect(TransmutationUtil.getDescriptorColor(75), equals(0xFFFFC107));
-        expect(TransmutationUtil.getDescriptorColor(79), equals(0xFFFFC107));
+        expect(TransmutationUtil.getDescriptorColor(75), equals(0xFFFFB703));
+        expect(TransmutationUtil.getDescriptorColor(79), equals(0xFFFFB703));
       });
 
-      test('returns blue for grades 80-84', () {
-        expect(TransmutationUtil.getDescriptorColor(80), equals(0xFF4A90D9));
-        expect(TransmutationUtil.getDescriptorColor(84), equals(0xFF4A90D9));
+      test('returns charcoal for grades 80-84', () {
+        expect(TransmutationUtil.getDescriptorColor(80), equals(0xFF333333));
+        expect(TransmutationUtil.getDescriptorColor(84), equals(0xFF333333));
       });
 
-      test('returns blue for grades 85-89', () {
-        expect(TransmutationUtil.getDescriptorColor(85), equals(0xFF2196F3));
-        expect(TransmutationUtil.getDescriptorColor(89), equals(0xFF2196F3));
+      test('returns charcoal for grades 85-89', () {
+        expect(TransmutationUtil.getDescriptorColor(85), equals(0xFF333333));
+        expect(TransmutationUtil.getDescriptorColor(89), equals(0xFF333333));
       });
 
       test('returns green for grades 90-100', () {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/theme/app_colors.dart';
@@ -229,7 +230,7 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
               ),
             ],
           ),
-          if (material.needsSync) ...[
+          if (material.syncStatus != SyncStatus.synced) ...[
             const SizedBox(height: 12),
             const StatusBadge(
               label: 'Pending sync',

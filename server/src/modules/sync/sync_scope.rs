@@ -9,6 +9,7 @@ pub struct SyncScope {
     pub include_submissions: bool,
     pub include_files: bool,
     pub include_statistics: bool,
+    pub include_student_records: bool,
 }
 
 impl SyncScope {
@@ -25,6 +26,7 @@ impl SyncScope {
                 include_submissions: false,
                 include_files: false,
                 include_statistics: false,
+                include_student_records: false,
             },
             "teacher" => Self {
                 include_assessments: true,
@@ -37,6 +39,7 @@ impl SyncScope {
                 include_submissions: true,
                 include_files: true,
                 include_statistics: true,
+                include_student_records: true,
             },
             "student" => Self {
                 include_assessments: true,
@@ -49,6 +52,7 @@ impl SyncScope {
                 include_submissions: true,
                 include_files: true,
                 include_statistics: false,
+                include_student_records: true,
             },
             _ => Self {
                 include_assessments: false,
@@ -61,6 +65,7 @@ impl SyncScope {
                 include_submissions: false,
                 include_files: false,
                 include_statistics: false,
+                include_student_records: false,
             },
         }
     }

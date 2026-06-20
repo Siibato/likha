@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -28,15 +30,17 @@ void main() {
       createdAt: DateTime(2024, 1, 1),
     );
 
+    final tMutationResult = MutationResult(entity: tResetUser, status: SyncStatus.pending);
+
     test('should return reset User when reset succeeds', () async {
       when(() => mockRepository.resetAccount(userId: any(named: 'userId')))
-          .thenAnswer((_) async => Right(tResetUser));
+          .thenAnswer((_) async => Right(tMutationResult));
 
       final result = await useCase('user-1');
 
-      expect(result, Right(tResetUser));
-      expect(result.getOrElse(() => throw Exception()).isPendingActivation, true);
-      expect(result.getOrElse(() => throw Exception()).isActive, false);
+      expect(result, Right(tMutationResult));
+      expect(result.getOrElse(() => throw Exception()).entity.isPendingActivation, true);
+      expect(result.getOrElse(() => throw Exception()).entity.isActive, false);
       verify(() => mockRepository.resetAccount(userId: 'user-1')).called(1);
     });
 

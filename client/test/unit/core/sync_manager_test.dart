@@ -3,13 +3,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_manager.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
-import 'package:likha/data/datasources/remote/assessment_remote_datasource.dart';
-import 'package:likha/data/datasources/remote/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
+import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
+import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
+import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
+import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 
 class MockServerReachabilityService extends Mock implements ServerReachabilityService {}
@@ -18,8 +33,23 @@ class MockSyncRemoteDataSource extends Mock implements SyncRemoteDataSource {}
 class MockLocalDatabase extends Mock implements LocalDatabase {}
 class MockAssessmentRemoteDataSource extends Mock implements AssessmentRemoteDataSource {}
 class MockAssessmentLocalDataSource extends Mock implements AssessmentLocalDataSource {}
+class MockAssignmentRemoteDataSource extends Mock implements AssignmentRemoteDataSource {}
+class MockAssignmentLocalDataSource extends Mock implements AssignmentLocalDataSource {}
+class MockAuthRemoteDataSource extends Mock implements AuthRemoteDataSource {}
+class MockAuthLocalDataSource extends Mock implements AuthLocalDataSource {}
+class MockClassRemoteDataSource extends Mock implements ClassRemoteDataSource {}
+class MockClassLocalDataSource extends Mock implements ClassLocalDataSource {}
+class MockGradingRemoteDataSource extends Mock implements GradingRemoteDataSource {}
+class MockGradingLocalDataSource extends Mock implements GradingLocalDataSource {}
+class MockLearningMaterialRemoteDataSource extends Mock implements LearningMaterialRemoteDataSource {}
+class MockLearningMaterialLocalDataSource extends Mock implements LearningMaterialLocalDataSource {}
+class MockSetupRemoteDataSource extends Mock implements SetupRemoteDataSource {}
+class MockStudentRecordsRemoteDataSource extends Mock implements StudentRecordsRemoteDataSource {}
+class MockTosRemoteDataSource extends Mock implements TosRemoteDataSource {}
+class MockTosLocalDataSource extends Mock implements TosLocalDataSource {}
 class MockSyncLogger extends Mock implements SyncLogger {}
 class MockStorageService extends Mock implements StorageService {}
+class MockDataEventBus extends Mock implements DataEventBus {}
 
 void main() {
   late SyncManager syncManager;
@@ -29,8 +59,23 @@ void main() {
   late MockLocalDatabase mockLocalDatabase;
   late MockAssessmentRemoteDataSource mockAssessmentRemote;
   late MockAssessmentLocalDataSource mockAssessmentLocal;
+  late MockAssignmentRemoteDataSource mockAssignmentRemote;
+  late MockAssignmentLocalDataSource mockAssignmentLocal;
+  late MockAuthRemoteDataSource mockAuthRemote;
+  late MockAuthLocalDataSource mockAuthLocal;
+  late MockClassRemoteDataSource mockClassRemote;
+  late MockClassLocalDataSource mockClassLocal;
+  late MockGradingRemoteDataSource mockGradingRemote;
+  late MockGradingLocalDataSource mockGradingLocal;
+  late MockLearningMaterialRemoteDataSource mockLearningMaterialRemote;
+  late MockLearningMaterialLocalDataSource mockLearningMaterialLocal;
+  late MockSetupRemoteDataSource mockSetupRemote;
+  late MockStudentRecordsRemoteDataSource mockStudentRecordsRemote;
+  late MockTosRemoteDataSource mockTosRemote;
+  late MockTosLocalDataSource mockTosLocal;
   late MockSyncLogger mockSyncLogger;
   late MockStorageService mockStorageService;
+  late MockDataEventBus mockDataEventBus;
   late ServerClockService serverClockService;
 
   setUp(() {
@@ -40,8 +85,23 @@ void main() {
     mockLocalDatabase = MockLocalDatabase();
     mockAssessmentRemote = MockAssessmentRemoteDataSource();
     mockAssessmentLocal = MockAssessmentLocalDataSource();
+    mockAssignmentRemote = MockAssignmentRemoteDataSource();
+    mockAssignmentLocal = MockAssignmentLocalDataSource();
+    mockAuthRemote = MockAuthRemoteDataSource();
+    mockAuthLocal = MockAuthLocalDataSource();
+    mockClassRemote = MockClassRemoteDataSource();
+    mockClassLocal = MockClassLocalDataSource();
+    mockGradingRemote = MockGradingRemoteDataSource();
+    mockGradingLocal = MockGradingLocalDataSource();
+    mockLearningMaterialRemote = MockLearningMaterialRemoteDataSource();
+    mockLearningMaterialLocal = MockLearningMaterialLocalDataSource();
+    mockSetupRemote = MockSetupRemoteDataSource();
+    mockStudentRecordsRemote = MockStudentRecordsRemoteDataSource();
+    mockTosRemote = MockTosRemoteDataSource();
+    mockTosLocal = MockTosLocalDataSource();
     mockSyncLogger = MockSyncLogger();
     mockStorageService = MockStorageService();
+    mockDataEventBus = MockDataEventBus();
     serverClockService = ServerClockService();
 
     when(() => mockReachabilityService.onServerReachabilityChanged)
@@ -55,9 +115,24 @@ void main() {
       mockLocalDatabase,
       mockAssessmentRemote,
       mockAssessmentLocal,
+      mockAssignmentRemote,
+      mockAssignmentLocal,
+      mockAuthRemote,
+      mockAuthLocal,
+      mockClassRemote,
+      mockClassLocal,
+      mockGradingRemote,
+      mockGradingLocal,
+      mockLearningMaterialRemote,
+      mockLearningMaterialLocal,
+      mockSetupRemote,
+      mockStudentRecordsRemote,
+      mockTosRemote,
+      mockTosLocal,
       mockSyncLogger,
       mockStorageService,
       serverClockService,
+      mockDataEventBus,
     );
   });
 

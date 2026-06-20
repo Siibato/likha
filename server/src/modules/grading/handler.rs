@@ -79,13 +79,13 @@ pub async fn get_grade_items(
     State(service): State<Arc<GradeComputationService>>,
     auth_user: AuthUser,
     Path(class_id): Path<Uuid>,
-    Query(query): Query<QuarterQuery>,
+    Query(query): Query<PeriodQuery>,
 ) -> impl IntoResponse {
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.grading_period_number.unwrap_or(1);
-    match service.get_grade_items(class_id, quarter).await {
+    let period = query.grading_period_number.unwrap_or(1);
+    match service.get_grade_items(class_id, period).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -162,14 +162,24 @@ pub async fn update_item_scores(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
+    tracing::info!(
+        "update_item_scores: item_id={} scores_count={} teacher_id={}",
+        item_id, request.scores.len(), auth_user.user_id
+    );
     let scores: Vec<(Uuid, f64)> = request
         .scores
         .into_iter()
         .map(|s| (s.student_id, s.score))
         .collect();
     match service.save_scores(item_id, scores).await {
-        Ok(response) => success_response(response, StatusCode::OK).into_response(),
-        Err(e) => e.into_response(),
+        Ok(response) => {
+            tracing::info!("update_item_scores: saved {} scores for item_id={}", response.len(), item_id);
+            success_response(response, StatusCode::OK).into_response()
+        }
+        Err(e) => {
+            tracing::error!("update_item_scores: failed for item_id={}: {}", item_id, e);
+            e.into_response()
+        }
     }
 }
 
@@ -208,20 +218,20 @@ pub async fn get_grades(
     State(service): State<Arc<GradeComputationService>>,
     auth_user: AuthUser,
     Path(class_id): Path<Uuid>,
-    Query(query): Query<QuarterQuery>,
+    Query(query): Query<PeriodQuery>,
 ) -> impl IntoResponse {
-    let quarter = query.grading_period_number.unwrap_or(1);
+    let period = query.grading_period_number.unwrap_or(1);
     if auth_user.role == "student" {
         // Student can only see their own grades
         match service
-            .get_student_quarterly_grade(class_id, auth_user.user_id, quarter)
+            .get_student_period_grade(class_id, auth_user.user_id, period)
             .await
         {
             Ok(response) => success_response(response, StatusCode::OK).into_response(),
             Err(e) => e.into_response(),
         }
     } else if auth_user.role == "teacher" {
-        match service.get_quarterly_grades(class_id, quarter).await {
+        match service.get_period_grades(class_id, period).await {
             Ok(response) => success_response(response, StatusCode::OK).into_response(),
             Err(e) => e.into_response(),
         }
@@ -234,13 +244,13 @@ pub async fn compute_grades(
     State(service): State<Arc<GradeComputationService>>,
     auth_user: AuthUser,
     Path(class_id): Path<Uuid>,
-    Query(query): Query<QuarterQuery>,
+    Query(query): Query<PeriodQuery>,
 ) -> impl IntoResponse {
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.grading_period_number.unwrap_or(1);
-    match service.compute_class_quarterly(class_id, quarter).await {
+    let period = query.grading_period_number.unwrap_or(1);
+    match service.compute_class_period(class_id, period).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -262,10 +272,10 @@ pub async fn get_final_grades(
     } else if auth_user.role == "teacher" {
         // Get final grades for all students
         match service.repo.get_enrolled_student_ids(class_id).await {
-            Ok(student_ids) => {
-                let futures = student_ids
+            Ok(students) => {
+                let futures = students
                     .iter()
-                    .map(|&sid| service.compute_final_grade(class_id, sid));
+                    .map(|(sid, _)| service.compute_final_grade(class_id, *sid));
                 match try_join_all(futures).await {
                     Ok(results) => success_response(results, StatusCode::OK).into_response(),
                     Err(e) => e.into_response(),
@@ -282,13 +292,13 @@ pub async fn get_grade_summary(
     State(service): State<Arc<GradeComputationService>>,
     auth_user: AuthUser,
     Path(class_id): Path<Uuid>,
-    Query(query): Query<QuarterQuery>,
+    Query(query): Query<PeriodQuery>,
 ) -> impl IntoResponse {
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.grading_period_number.unwrap_or(1);
-    match service.get_grade_summary(class_id, quarter).await {
+    let period = query.grading_period_number.unwrap_or(1);
+    match service.get_grade_summary(class_id, period).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -302,7 +312,7 @@ pub async fn get_my_grades(
     Path(class_id): Path<Uuid>,
 ) -> impl IntoResponse {
     match service
-        .get_student_all_quarters(class_id, auth_user.user_id)
+        .get_student_all_periods(class_id, auth_user.user_id)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
@@ -310,13 +320,13 @@ pub async fn get_my_grades(
     }
 }
 
-pub async fn get_my_quarter_grades(
+pub async fn get_my_period_grades(
     State(service): State<Arc<GradeComputationService>>,
     auth_user: AuthUser,
-    Path((class_id, quarter)): Path<(Uuid, i32)>,
+    Path((class_id, period)): Path<(Uuid, i32)>,
 ) -> impl IntoResponse {
     match service
-        .get_student_quarterly_grade(class_id, auth_user.user_id, quarter)
+        .get_student_period_grade(class_id, auth_user.user_id, period)
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
@@ -442,26 +452,14 @@ pub async fn get_all_grade_data(
     State(service): State<Arc<GradeComputationService>>,
     auth_user: AuthUser,
     Path(class_id): Path<Uuid>,
-    Query(query): Query<QuarterQuery>,
+    Query(query): Query<PeriodQuery>,
 ) -> impl IntoResponse {
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let quarter = query.grading_period_number.unwrap_or(1);
-    
-    // Fetch all grade-related data in parallel
-    let grade_items_result = service.get_grade_items(class_id, quarter).await;
-    let grade_summary_result = service.get_grade_summary(class_id, quarter).await;
-    
-    match (grade_items_result, grade_summary_result) {
-        (Ok(items), Ok(summary)) => {
-            let response = AllGradeDataResponse {
-                grade_items: items,
-                grade_summary: summary,
-                quarter,
-            };
-            success_response(response, StatusCode::OK).into_response()
-        }
-        (Err(e), _) | (_, Err(e)) => e.into_response(),
+    let period = query.grading_period_number.unwrap_or(1);
+    match service.get_all_grade_data(class_id, period).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
     }
 }

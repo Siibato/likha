@@ -5,6 +5,7 @@ pub enum CacheKey {
     ClassListStudent(Uuid),
     ClassListTeacher(Uuid),
     ClassDetail(Uuid),
+    ClassParticipants(Uuid),
     ClassMetadata(Uuid, String),
 
     // Assignment
@@ -18,15 +19,15 @@ pub enum CacheKey {
     AssessmentList(Uuid, Uuid),
     AssessmentDetail(Uuid, String),
     AssessmentSubmissions(Uuid),
+    AssessmentStudentSubmission(Uuid, Uuid),
     AssessmentSubmissionDetail(Uuid),
-    AssessmentStatistics(Uuid),
     StudentResults(Uuid),
     StudentAssessmentSubmissions(Uuid, Uuid),
 
     // Grading
     GradeItems(Uuid, i32),
-    QuarterlyGrades(Uuid, i32),
-    StudentQuarterlyGrade(Uuid, Uuid, i32),
+    PeriodGrades(Uuid, i32),
+    StudentPeriodGrade(Uuid, Uuid, i32),
     StudentAllGrades(Uuid, Uuid),
     GradeSummary(Uuid, i32),
     ItemScores(Uuid),
@@ -61,6 +62,7 @@ impl CacheKey {
             CacheKey::ClassListStudent(id) => format!("class:list:student:{}", id),
             CacheKey::ClassListTeacher(id) => format!("class:list:teacher:{}", id),
             CacheKey::ClassDetail(id) => format!("class:detail:{}", id),
+            CacheKey::ClassParticipants(id) => format!("class:participants:{}", id),
             CacheKey::ClassMetadata(id, role) => format!("metadata:classes:{}:{}", id, role),
 
             // Assignment
@@ -74,17 +76,17 @@ impl CacheKey {
             CacheKey::AssessmentList(user_id, class_id) => format!("assessment:list:{}:{}", user_id, class_id),
             CacheKey::AssessmentDetail(id, role) => format!("assessment:detail:{}:{}", id, role),
             CacheKey::AssessmentSubmissions(id) => format!("assessment:submissions:{}", id),
+            CacheKey::AssessmentStudentSubmission(assessment_id, student_id) => format!("assessment:student_submission:{}:{}", assessment_id, student_id),
             CacheKey::AssessmentSubmissionDetail(id) => format!("assessment:submission:{}", id),
-            CacheKey::AssessmentStatistics(id) => format!("assessment:statistics:{}", id),
             CacheKey::StudentResults(id) => format!("assessment:results:{}", id),
             CacheKey::StudentAssessmentSubmissions(class_id, student_id) => format!("assessment:student_submissions:{}:{}", class_id, student_id),
 
             // Grading
-            CacheKey::GradeItems(class_id, quarter) => format!("grade:items:{}:{}", class_id, quarter),
-            CacheKey::QuarterlyGrades(class_id, quarter) => format!("grade:quarterly:{}:{}", class_id, quarter),
-            CacheKey::StudentQuarterlyGrade(class_id, student_id, quarter) => format!("grade:student:{}:{}:{}", class_id, student_id, quarter),
+            CacheKey::GradeItems(class_id, period) => format!("grade:items:{}:{}", class_id, period),
+            CacheKey::PeriodGrades(class_id, period) => format!("grade:period:{}:{}", class_id, period),
+            CacheKey::StudentPeriodGrade(class_id, student_id, period) => format!("grade:student:{}:{}:{}", class_id, student_id, period),
             CacheKey::StudentAllGrades(class_id, student_id) => format!("grade:student_all:{}:{}", class_id, student_id),
-            CacheKey::GradeSummary(class_id, quarter) => format!("grade:summary:{}:{}", class_id, quarter),
+            CacheKey::GradeSummary(class_id, period) => format!("grade:summary:{}:{}", class_id, period),
             CacheKey::ItemScores(item_id) => format!("grade:item_scores:{}", item_id),
             CacheKey::FinalGrade(class_id, student_id) => format!("grade:final:{}:{}", class_id, student_id),
             CacheKey::GeneralAverages(class_id) => format!("grade:general_averages:{}", class_id),

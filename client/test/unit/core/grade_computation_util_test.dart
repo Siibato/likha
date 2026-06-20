@@ -63,7 +63,7 @@ void main() {
         final items = [
           createItem(id: 'ww1', component: 'written_work', totalPoints: 100),
           createItem(id: 'pt1', component: 'performance_task', totalPoints: 100),
-          createItem(id: 'qa1', component: 'quarterly_assessment', totalPoints: 100),
+          createItem(id: 'qa1', component: 'period_assessment', totalPoints: 100),
         ];
         final scoresByItem = {
           'ww1': [createScore(itemId: 'ww1', score: 80)], // 80%
@@ -204,7 +204,7 @@ void main() {
         final items = [
           createItem(id: 'ww1', component: 'written_work'),
           createItem(id: 'pt1', component: 'performance_task'),
-          createItem(id: 'qa1', component: 'quarterly_assessment'),
+          createItem(id: 'qa1', component: 'period_assessment'),
         ];
         final scoresByItem = {
           'ww1': [createScore(itemId: 'ww1', score: 80)], // 80 * 0.40 = 32

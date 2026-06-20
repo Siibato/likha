@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
+import 'package:likha/core/sync/mutation_result.dart';
+import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/domain/assignments/usecases/unpublish_assignment.dart';
 import 'package:likha/domain/assignments/repositories/assignment_repository.dart';
@@ -38,12 +40,15 @@ void main() {
 
     test('should unpublish assignment successfully', () async {
       when(() => mockRepository.unpublishAssignment(assignmentId: any(named: 'assignmentId')))
-          .thenAnswer((_) async => Right(tUnpublishedAssignment));
+          .thenAnswer((_) async => Right(MutationResult(entity: tUnpublishedAssignment, status: SyncStatus.pending)));
 
       final result = await useCase(tAssignmentId);
 
-      expect(result, Right(tUnpublishedAssignment));
-      expect(result.getOrElse(() => throw Exception()).isPublished, false);
+      expect(result.isRight(), isTrue);
+      final value = result.getOrElse(() => throw Exception('Expected Right'));
+      expect(value.entity, tUnpublishedAssignment);
+      expect(value.status, SyncStatus.pending);
+      expect(value.entity.isPublished, false);
       verify(() => mockRepository.unpublishAssignment(assignmentId: tAssignmentId)).called(1);
     });
 
