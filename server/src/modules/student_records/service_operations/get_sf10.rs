@@ -50,7 +50,7 @@ impl StudentRecordsService {
             subjects: sf9.subjects.iter().map(|s| Sf10SubjectRow {
                 class_title: s.class_title.clone(),
                 subject_group: s.subject_group.clone(),
-                period_grades: s.period_grades.clone(),
+                term_grades: s.term_grades.clone(),
                 final_grade: s.final_grade,
                 descriptor: s.descriptor.clone(),
             }).collect(),
@@ -72,7 +72,6 @@ impl StudentRecordsService {
                 month: a.month.clone(),
                 school_days: a.school_days,
                 days_present: a.days_present,
-                days_absent: a.days_absent,
             })
             .collect();
 
@@ -89,22 +88,23 @@ impl StudentRecordsService {
             let subjects = self.repo.get_previous_subjects(student_id, Some(h.id)).await?;
             let attendance = self.repo.get_previous_attendance(student_id, Some(h.id)).await?;
 
-            let subject_rows: Vec<Sf10PreviousSubject> = subjects.iter().map(|s| Sf10PreviousSubject {
-                subject_name: s.subject_name.clone(),
-                subject_group: s.subject_group.clone(),
-                q1_grade: s.q1_grade,
-                q2_grade: s.q2_grade,
-                q3_grade: s.q3_grade,
-                q4_grade: s.q4_grade,
-                final_grade: s.final_grade,
-                descriptor: s.descriptor.clone(),
-            }).collect();
+            let mut subject_rows: Vec<Sf10PreviousSubject> = Vec::new();
+            for s in &subjects {
+                let term_grades = self.repo.get_term_grades_for_subject(s.id).await.unwrap_or_default();
+                subject_rows.push(Sf10PreviousSubject {
+                    subject_name: s.subject_name.clone(),
+                    subject_group: s.subject_group.clone(),
+                    term_type: s.term_type.clone(),
+                    term_grades,
+                    final_grade: s.final_grade,
+                    descriptor: s.descriptor.clone(),
+                });
+            }
 
             let attendance_months: Vec<Sf10AttendanceMonth> = attendance.iter().map(|a| Sf10AttendanceMonth {
                 month: a.month.clone(),
                 school_days: a.school_days,
                 days_present: a.days_present,
-                days_absent: a.days_absent,
             }).collect();
 
             school_history_entries.push(Sf10SchoolHistory {
@@ -127,23 +127,24 @@ impl StudentRecordsService {
             let prev_subjects = self.repo.get_previous_subjects(student_id, Some(h.id)).await?;
             let prev_attendance = self.repo.get_previous_attendance(student_id, Some(h.id)).await?;
 
-            let subject_rows: Vec<Sf10SubjectRow> = prev_subjects.iter().map(|s| {
+            let mut subject_rows: Vec<Sf10SubjectRow> = Vec::new();
+            for s in &prev_subjects {
                 let final_grade = s.final_grade;
                 let descriptor = final_grade.map(|fg| deped_weights::get_descriptor(fg).to_string());
-                Sf10SubjectRow {
+                let term_grades = self.repo.get_term_grades_for_subject(s.id).await.unwrap_or_default();
+                subject_rows.push(Sf10SubjectRow {
                     class_title: s.subject_name.clone(),
                     subject_group: s.subject_group.clone(),
-                    period_grades: vec![s.q1_grade, s.q2_grade, s.q3_grade, s.q4_grade],
+                    term_grades,
                     final_grade,
                     descriptor,
-                }
-            }).collect();
+                });
+            }
 
             let attendance_months: Vec<Sf10AttendanceMonth> = prev_attendance.iter().map(|a| Sf10AttendanceMonth {
                 month: a.month.clone(),
                 school_days: a.school_days,
                 days_present: a.days_present,
-                days_absent: a.days_absent,
             }).collect();
 
             let final_avg = {

@@ -6,7 +6,7 @@ Future<List<MelcEntryModel>> searchMelcs(
   LocalDatabase localDatabase, {
   String? subject,
   String? gradeLevel,
-  int? gradingPeriodNumber,
+  int? termNumber,
   String? query,
   int limit = 30,
   int offset = 0,
@@ -24,9 +24,9 @@ Future<List<MelcEntryModel>> searchMelcs(
     conditions.add('${MelcsCols.gradeLevel} = ?');
     args.add(gradeLevel);
   }
-  if (gradingPeriodNumber != null) {
+  if (termNumber != null) {
     conditions.add('(quarter = ? OR quarter IS NULL)');
-    args.add(gradingPeriodNumber);
+    args.add(termNumber);
   }
   if (query != null && query.isNotEmpty) {
     conditions.add(

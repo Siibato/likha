@@ -3,33 +3,33 @@ import 'package:likha/core/theme/app_colors.dart';
 
 /// Inline grading settings card for AssessmentDetailPage.
 ///
-/// Shows the current quarter and grade component in view mode, and exposes
+/// Shows the current term and grade component in view mode, and exposes
 /// dropdowns to edit them. The parent page manages the editing state.
 class GradingSettingsCard extends StatelessWidget {
-  final int? gradingPeriodNumber;
+  final int? termNumber;
   final String? component;
   final bool isEditing;
 
-  final int? editingGradingPeriod;
+  final int? editingTermNumber;
   final String? editingComponent;
 
   final VoidCallback onEdit;
-  final void Function(int? period, String? component) onSave;
+  final void Function(int? term, String? component) onSave;
   final VoidCallback onCancel;
-  final void Function(int?) onPeriodChanged;
+  final void Function(int?) onTermChanged;
   final void Function(String?) onComponentChanged;
 
   const GradingSettingsCard({
     super.key,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.component,
     required this.isEditing,
-    required this.editingGradingPeriod,
+    required this.editingTermNumber,
     required this.editingComponent,
     required this.onEdit,
     required this.onSave,
     required this.onCancel,
-    required this.onPeriodChanged,
+    required this.onTermChanged,
     required this.onComponentChanged,
   });
 
@@ -39,8 +39,8 @@ class GradingSettingsCard extends StatelessWidget {
         return 'Written Work';
       case 'performance_task':
         return 'Performance Task';
-      case 'period_assessment':
-        return 'Quarterly Assessment';
+      case 'term_assessment':
+        return 'Term Assessment';
       default:
         return c;
     }
@@ -89,18 +89,18 @@ class GradingSettingsCard extends StatelessWidget {
                 Icon(
                   Icons.grain_rounded,
                   size: 16,
-                  color: gradingPeriodNumber != null
+                  color: termNumber != null
                       ? AppColors.foregroundPrimary
                       : AppColors.foregroundTertiary,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  gradingPeriodNumber != null
-                      ? 'Quarter $gradingPeriodNumber'
-                      : 'No quarter assigned',
+                  termNumber != null
+                      ? 'Term $termNumber'
+                      : 'No term assigned',
                   style: TextStyle(
                     fontSize: 14,
-                    color: gradingPeriodNumber != null
+                    color: termNumber != null
                         ? AppColors.foregroundPrimary
                         : AppColors.foregroundTertiary,
                   ),
@@ -120,9 +120,9 @@ class GradingSettingsCard extends StatelessWidget {
             ),
           ] else ...[
             DropdownButtonFormField<int?>(
-              initialValue: editingGradingPeriod,
+              initialValue: editingTermNumber,
               decoration: const InputDecoration(
-                labelText: 'Quarter (for grading)',
+                labelText: 'Term (for grading)',
                 labelStyle: TextStyle(
                     fontSize: 14, color: AppColors.foregroundTertiary),
                 border: OutlineInputBorder(),
@@ -131,12 +131,12 @@ class GradingSettingsCard extends StatelessWidget {
               ),
               items: const [
                 DropdownMenuItem(value: null, child: Text('None')),
-                DropdownMenuItem(value: 1, child: Text('Quarter 1')),
-                DropdownMenuItem(value: 2, child: Text('Quarter 2')),
-                DropdownMenuItem(value: 3, child: Text('Quarter 3')),
-                DropdownMenuItem(value: 4, child: Text('Quarter 4')),
+                DropdownMenuItem(value: 1, child: Text('Term 1')),
+                DropdownMenuItem(value: 2, child: Text('Term 2')),
+                DropdownMenuItem(value: 3, child: Text('Term 3')),
+                DropdownMenuItem(value: 4, child: Text('Term 4')),
               ],
-              onChanged: onPeriodChanged,
+              onChanged: onTermChanged,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
@@ -157,8 +157,8 @@ class GradingSettingsCard extends StatelessWidget {
                     value: 'performance_task',
                     child: Text('Performance Task')),
                 DropdownMenuItem(
-                    value: 'period_assessment',
-                    child: Text('Quarterly Assessment')),
+                    value: 'term_assessment',
+                    child: Text('Term Assessment')),
               ],
               onChanged: onComponentChanged,
             ),
@@ -172,7 +172,7 @@ class GradingSettingsCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => onSave(editingGradingPeriod, editingComponent),
+                    onPressed: () => onSave(editingTermNumber, editingComponent),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accentCharcoal,
                       foregroundColor: Colors.white,

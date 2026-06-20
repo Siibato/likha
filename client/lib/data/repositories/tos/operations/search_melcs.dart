@@ -21,7 +21,7 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
   DataEventBus dataEventBus, {
   String? subject,
   String? gradeLevel,
-  int? gradingPeriodNumber,
+  int? termNumber,
   String? query,
   int limit = 30,
   int offset = 0,
@@ -32,7 +32,7 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
       final cached = await localDataSource.searchMelcs(
         subject: subject,
         gradeLevel: gradeLevel,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         query: query,
         limit: limit,
         offset: offset,
@@ -40,11 +40,11 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
 
       if (!skipBackgroundRefresh) {
         fireRemoteFetch(
-          dedupKey: 'tos/searchMelcs/${subject ?? 'all'}/${gradeLevel ?? 'all'}/${gradingPeriodNumber ?? 'all'}/${query ?? 'all'}/bg',
+          dedupKey: 'tos/searchMelcs/${subject ?? 'all'}/${gradeLevel ?? 'all'}/${termNumber ?? 'all'}/${query ?? 'all'}/bg',
           remote: () => remoteDataSource.searchMelcs(
             subject: subject,
             gradeLevel: gradeLevel,
-            quarter: gradingPeriodNumber,
+            termNumber: termNumber,
             query: query,
             limit: limit,
             offset: offset,
@@ -53,7 +53,7 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
             final current = await localDataSource.searchMelcs(
               subject: subject,
               gradeLevel: gradeLevel,
-              gradingPeriodNumber: gradingPeriodNumber,
+              termNumber: termNumber,
               query: query,
               limit: limit,
               offset: offset,
@@ -68,11 +68,11 @@ ResultFuture<List<MelcEntryModel>> searchMelcs(
       return Right(cached);
     } on CacheException {
       final fresh = await remoteFetch(
-        dedupKey: 'tos/searchMelcs/${subject ?? 'all'}/${gradeLevel ?? 'all'}/${gradingPeriodNumber ?? 'all'}/${query ?? 'all'}',
+        dedupKey: 'tos/searchMelcs/${subject ?? 'all'}/${gradeLevel ?? 'all'}/${termNumber ?? 'all'}/${query ?? 'all'}',
         remote: () => remoteDataSource.searchMelcs(
           subject: subject,
           gradeLevel: gradeLevel,
-          quarter: gradingPeriodNumber,
+          termNumber: termNumber,
           query: query,
           limit: limit,
           offset: offset,

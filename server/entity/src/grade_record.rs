@@ -7,7 +7,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub class_id: Uuid,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,

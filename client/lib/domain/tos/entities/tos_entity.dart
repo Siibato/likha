@@ -4,7 +4,7 @@ import 'package:likha/core/sync/sync_queue.dart';
 class TableOfSpecifications extends Equatable {
   final String id;
   final String classId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final String title;
   final String classificationMode;
   final int totalItems;
@@ -26,7 +26,7 @@ class TableOfSpecifications extends Equatable {
   const TableOfSpecifications({
     required this.id,
     required this.classId,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.title,
     required this.classificationMode,
     required this.totalItems,
@@ -47,7 +47,7 @@ class TableOfSpecifications extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, classId, gradingPeriodNumber, createdAt, updatedAt, cachedAt, syncStatus];
+  List<Object?> get props => [id, classId, termNumber, createdAt, updatedAt, cachedAt, syncStatus];
 }
 
 class TosCompetency extends Equatable {

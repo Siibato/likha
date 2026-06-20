@@ -29,7 +29,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       classId: classId,
       title: data['title'] as String,
       component: data['component'] as String,
-      gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num?)?.toInt() ?? 1,
+      termNumber: (data['term_number'] as num?)?.toInt() ?? 1,
       totalPoints: (data['total_points'] as num).toDouble(),
       sourceType: (data['source_type'] as String?) ?? 'manual',
       sourceId: data['source_id'] as String?,
@@ -49,7 +49,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
           payload: {
             'id': id,
             'class_id': classId,
-            'grading_period_number': model.gradingPeriodNumber,
+            'term_number': model.termNumber,
             ...data,
           },
           status: SyncStatus.pending,

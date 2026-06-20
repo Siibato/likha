@@ -1,27 +1,27 @@
 //! Unit tests for GradeComputationService pure logic:
 //! - `From` conversions for response schemas
 //! - `effective_score` override logic (override_score takes precedence over score)
-//! - `PeriodGradeResponse` descriptor lookup via `From`
+//! - `TermGradeResponse` descriptor lookup via `From`
 //!
 //! Note: Mock-based tests for GradeComputationService CRUD require
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
 use uuid::Uuid;
 use crate::modules::grading::schema::{
-    GradingConfigResponse, GradeItemResponse, GradeScoreResponse, PeriodGradeResponse,
+    GradingConfigResponse, GradeItemResponse, GradeScoreResponse, TermGradeResponse,
 };
 
 fn make_grade_record(
     ww: f64,
     pt: f64,
     qa: f64,
-    period: Option<i32>,
+    term_number: Option<i32>,
 ) -> ::entity::grade_record::Model {
     let now = chrono::Utc::now().naive_utc();
     ::entity::grade_record::Model {
         id: Uuid::new_v4(),
         class_id: Uuid::new_v4(),
-        grading_period_number: period,
+        term_number,
         ww_weight: ww,
         pt_weight: pt,
         qa_weight: qa,
@@ -38,7 +38,7 @@ fn make_grade_item() -> ::entity::grade_items::Model {
         class_id: Uuid::new_v4(),
         title: "Long Quiz 1".to_string(),
         component: "written_work".to_string(),
-        grading_period_number: Some(1),
+        term_number: Some(1),
         total_points: 50.0,
         source_type: "manual".to_string(),
         source_id: None,
@@ -67,20 +67,19 @@ fn make_grade_score(
     }
 }
 
-fn make_period_grade(
+fn make_term_grade(
     initial_grade: Option<f64>,
     transmuted_grade: Option<i32>,
-) -> ::entity::period_grades::Model {
+) -> ::entity::term_grades::Model {
     let now = chrono::Utc::now().naive_utc();
-    ::entity::period_grades::Model {
+    ::entity::term_grades::Model {
         id: Uuid::new_v4(),
         class_id: Uuid::new_v4(),
         student_id: Uuid::new_v4(),
-        grading_period_number: 1,
+        term_number: 1,
         initial_grade,
         transmuted_grade,
         is_locked: false,
-        computed_at: None,
         created_at: now,
         updated_at: now,
         deleted_at: None,
@@ -97,14 +96,14 @@ fn test_grading_config_response_from_grade_record_maps_weights() {
     assert_eq!(response.ww_weight, 30.0);
     assert_eq!(response.pt_weight, 50.0);
     assert_eq!(response.qa_weight, 20.0);
-    assert_eq!(response.grading_period_number, Some(1));
+    assert_eq!(response.term_number, Some(1));
 }
 
 #[test]
 fn test_grading_config_response_null_period_maps_to_none() {
     let model = make_grade_record(40.0, 40.0, 20.0, None);
     let response = GradingConfigResponse::from(model);
-    assert!(response.grading_period_number.is_none());
+    assert!(response.term_number.is_none());
 }
 
 // ── GradeItemResponse::from ──────────────────────────────────────────────────
@@ -147,47 +146,47 @@ fn test_grade_score_effective_score_is_none_when_both_absent() {
     assert!(response.effective_score.is_none());
 }
 
-// ── PeriodGradeResponse::from — descriptor lookup ───────────────────────────
+// ── TermGradeResponse::from — descriptor lookup ───────────────────────────
 
 #[test]
-fn test_period_grade_descriptor_outstanding_for_transmuted_90() {
-    let model = make_period_grade(Some(80.0), Some(90));
-    let response = PeriodGradeResponse::from(model);
+fn test_term_grade_descriptor_outstanding_for_transmuted_90() {
+    let model = make_term_grade(Some(80.0), Some(90));
+    let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Outstanding"));
 }
 
 #[test]
-fn test_period_grade_descriptor_did_not_meet_for_transmuted_74() {
-    let model = make_period_grade(Some(55.0), Some(74));
-    let response = PeriodGradeResponse::from(model);
+fn test_term_grade_descriptor_did_not_meet_for_transmuted_74() {
+    let model = make_term_grade(Some(55.0), Some(74));
+    let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Did Not Meet Expectations"));
 }
 
 #[test]
-fn test_period_grade_descriptor_none_when_no_transmuted_grade() {
-    let model = make_period_grade(None, None);
-    let response = PeriodGradeResponse::from(model);
+fn test_term_grade_descriptor_none_when_no_transmuted_grade() {
+    let model = make_term_grade(None, None);
+    let response = TermGradeResponse::from(model);
     assert!(response.descriptor.is_none());
 }
 
 #[test]
-fn test_period_grade_descriptor_very_satisfactory_for_87() {
-    let model = make_period_grade(Some(75.0), Some(87));
-    let response = PeriodGradeResponse::from(model);
+fn test_term_grade_descriptor_very_satisfactory_for_87() {
+    let model = make_term_grade(Some(75.0), Some(87));
+    let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Very Satisfactory"));
 }
 
 #[test]
-fn test_period_grade_descriptor_fairly_satisfactory_for_75() {
-    let model = make_period_grade(Some(60.0), Some(75));
-    let response = PeriodGradeResponse::from(model);
+fn test_term_grade_descriptor_fairly_satisfactory_for_75() {
+    let model = make_term_grade(Some(60.0), Some(75));
+    let response = TermGradeResponse::from(model);
     assert_eq!(response.descriptor.as_deref(), Some("Fairly Satisfactory"));
 }
 
 #[test]
-fn test_period_grade_response_is_locked_maps_correctly() {
-    let mut model = make_period_grade(Some(70.0), Some(80));
+fn test_term_grade_response_is_locked_maps_correctly() {
+    let mut model = make_term_grade(Some(70.0), Some(80));
     model.is_locked = true;
-    let response = PeriodGradeResponse::from(model);
+    let response = TermGradeResponse::from(model);
     assert!(response.is_locked);
 }

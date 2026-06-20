@@ -126,9 +126,9 @@ class InboundSyncHandler {
       await _upsertHelpers.recalculateClassStudentCounts(txn);
       await _upsertHelpers.upsertActivityLogs(txn, baseResponse.activityLogs);
 
-      // Upsert school settings from sync response (if present)
-      if (baseResponse.schoolSettings != null) {
-        await _upsertHelpers.upsertSchoolSettings(txn, [baseResponse.schoolSettings!]);
+      // Upsert school details from sync response (if present)
+      if (baseResponse.schoolDetails != null) {
+        await _upsertHelpers.upsertSchoolDetails(txn, [baseResponse.schoolDetails!]);
       }
     });
 
@@ -264,7 +264,7 @@ class InboundSyncHandler {
         final gradeConfigs = batchResponse.gradeConfigs;
         final gradeItems = batchResponse.gradeItems;
         final gradeScores = batchResponse.gradeScores;
-        final periodGrades = batchResponse.periodGrades;
+        final termGrades = batchResponse.termGrades;
         final tableOfSpecifications = batchResponse.tableOfSpecifications;
         final tosCompetencies = batchResponse.tosCompetencies;
         final activityLogs = batchResponse.activityLogs;
@@ -287,7 +287,7 @@ class InboundSyncHandler {
           'grade_configs': gradeConfigs.length,
           'grade_items': gradeItems.length,
           'grade_scores': gradeScores.length,
-          'period_grades': periodGrades.length,
+          'term_grades': termGrades.length,
           'table_of_specifications': tableOfSpecifications.length,
           'tos_competencies': tosCompetencies.length,
           'activity_logs': activityLogs.length,
@@ -361,7 +361,7 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertGradeConfigs(txn, gradeConfigs);
           await _upsertHelpers.upsertGradeItems(txn, gradeItems);
           await _upsertHelpers.upsertGradeScores(txn, gradeScores);
-          await _upsertHelpers.upsertPeriodGrades(txn, periodGrades);
+          await _upsertHelpers.upsertTermGrades(txn, termGrades);
 
           await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
           await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);
@@ -372,6 +372,7 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertCoreValuesRecords(txn, batchResponse.coreValuesRecords);
           await _upsertHelpers.upsertStudentSchoolHistory(txn, batchResponse.studentSchoolHistory);
           await _upsertHelpers.upsertPreviousSchoolSubjects(txn, batchResponse.previousSchoolSubjects);
+          await _upsertHelpers.upsertPreviousSchoolTermGrades(txn, batchResponse.previousSchoolTermGrades);
           await _upsertHelpers.upsertPreviousSchoolAttendance(txn, batchResponse.previousSchoolAttendance);
         });
       }

@@ -52,7 +52,7 @@ class SyncUpsertHelpers {
           ClassesCols.studentCount: record['student_count'] ?? 0,
           ClassesCols.gradeLevel: record['grade_level'],
           ClassesCols.schoolYear: record['school_year'],
-          ClassesCols.gradingPeriodType: record['grading_period_type'] ?? 'quarter',
+          ClassesCols.termType: record['term_type'] ?? 'term',
           CommonCols.createdAt: record['created_at'],
           CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -232,6 +232,13 @@ class SyncUpsertHelpers {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
       final assessmentId = data['id'];
+
+      final tosId = data['tos_id']?.toString();
+      if (tosId != null && tosId.isNotEmpty && !await _fkExists(db, DbTables.tableOfSpecifications, tosId)) {
+        _log.warn('Skipping assessment $assessmentId: tos $tosId not found locally');
+        continue;
+      }
+
       final map = {
         CommonCols.id: assessmentId,
         AssessmentsCols.classId: data['class_id'],
@@ -248,7 +255,7 @@ class SyncUpsertHelpers {
         AssessmentsCols.questionCount: data['question_count'] ?? 0,
         AssessmentsCols.submissionCount: data['submission_count'] ?? 0,
         AssessmentsCols.tosId: data['tos_id'],
-        AssessmentsCols.gradingPeriodNumber: data['grading_period_number'],
+        AssessmentsCols.termNumber: data['term_number'],
         AssessmentsCols.component: data['component'],
         CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
@@ -277,6 +284,13 @@ class SyncUpsertHelpers {
       if (assessmentId.isEmpty || !await _fkExists(db, DbTables.assessments, assessmentId)) {
         _log.warn('Skipping question ${data['id']}: assessment $assessmentId not found locally');
         continue;
+      }
+
+      // DEFENSE: Nullify tos_competency_id if the referenced competency doesn't exist locally
+      final tosCompetencyId = data['tos_competency_id']?.toString();
+      if (tosCompetencyId != null && tosCompetencyId.isNotEmpty && !await _fkExists(db, DbTables.tosCompetencies, tosCompetencyId)) {
+        _log.warn('Question ${data['id']}: tos_competency $tosCompetencyId not found locally, setting to null');
+        data['tos_competency_id'] = null;
       }
 
       await db.insert(
@@ -433,7 +447,7 @@ class SyncUpsertHelpers {
         AssignmentsCols.submissionCount: data['submission_count'] ?? 0,
         AssignmentsCols.gradedCount: data['graded_count'] ?? 0,
         AssignmentsCols.orderIndex: data['order_index'] ?? 0,
-        AssignmentsCols.gradingPeriodNumber: data['grading_period_number'],
+        AssignmentsCols.termNumber: data['term_number'],
         AssignmentsCols.component: data['component'],
         CommonCols.createdAt: data['created_at'] ?? DateTime.now().toIso8601String(),
         CommonCols.updatedAt: data['updated_at'] ?? DateTime.now().toIso8601String(),
@@ -784,7 +798,7 @@ class SyncUpsertHelpers {
           {
             CommonCols.id: record['id'],
             GradeRecordCols.classId: record['class_id'],
-            GradeRecordCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
+            GradeRecordCols.termNumber: (record['term_number'] as num?)?.toInt(),
             GradeRecordCols.wwWeight: (record['ww_weight'] as num).toDouble(),
             GradeRecordCols.ptWeight: (record['pt_weight'] as num).toDouble(),
             GradeRecordCols.qaWeight: (record['qa_weight'] as num).toDouble(),
@@ -828,7 +842,7 @@ class SyncUpsertHelpers {
             GradeItemsCols.classId: record['class_id'],
             GradeItemsCols.title: record['title'],
             GradeItemsCols.component: record['component'],
-            GradeItemsCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
+            GradeItemsCols.termNumber: (record['term_number'] as num?)?.toInt(),
             GradeItemsCols.totalPoints: (record['total_points'] as num).toDouble(),
             GradeItemsCols.sourceType: record['source_type'] ?? 'manual',
             GradeItemsCols.sourceId: record['source_id'],
@@ -988,7 +1002,7 @@ class SyncUpsertHelpers {
   }
 
   /// Upsert period grades
-  Future<void> upsertPeriodGrades(
+  Future<void> upsertTermGrades(
     DatabaseExecutor db,
     List<dynamic> records,
   ) async {
@@ -1000,16 +1014,15 @@ class SyncUpsertHelpers {
         if (record is! Map<String, dynamic>) continue;
 
         await db.insert(
-          DbTables.periodGrades,
+          DbTables.termGrades,
           {
             CommonCols.id: record['id'],
-            PeriodGradesCols.classId: record['class_id'],
-            PeriodGradesCols.studentId: record['student_id'],
-            PeriodGradesCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
-            PeriodGradesCols.initialGrade: record['initial_grade'] != null ? (record['initial_grade'] as num).toDouble() : null,
-            PeriodGradesCols.transmutedGrade: record['transmuted_grade'] != null ? (record['transmuted_grade'] as num).toInt() : null,
-            PeriodGradesCols.isLocked: (record['is_locked'] == true) ? 1 : 0,
-            PeriodGradesCols.computedAt: record['computed_at'],
+            TermGradesCols.classId: record['class_id'],
+            TermGradesCols.studentId: record['student_id'],
+            TermGradesCols.termNumber: (record['term_number'] as num?)?.toInt(),
+            TermGradesCols.initialGrade: record['initial_grade'] != null ? (record['initial_grade'] as num).toDouble() : null,
+            TermGradesCols.transmutedGrade: record['transmuted_grade'] != null ? (record['transmuted_grade'] as num).toInt() : null,
+            TermGradesCols.isLocked: (record['is_locked'] == true) ? 1 : 0,
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -1025,7 +1038,7 @@ class SyncUpsertHelpers {
       }
     }
 
-    _log.upsertSummary('period_grades', successCount);
+    _log.upsertSummary('term_grades', successCount);
     if (failedCount > 0) {
       _log.warn('Failed to upsert period grades', failedCount);
     }
@@ -1048,7 +1061,7 @@ class SyncUpsertHelpers {
           {
             CommonCols.id: record['id'],
             TosCols.classId: record['class_id'],
-            TosCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
+            TosCols.termNumber: (record['term_number'] as num?)?.toInt(),
             TosCols.title: record['title'],
             TosCols.classificationMode: record['classification_mode'],
             TosCols.totalItems: (record['total_items'] as num).toInt(),
@@ -1183,7 +1196,7 @@ class SyncUpsertHelpers {
     }
   }
 
-  Future<void> upsertSchoolSettings(
+  Future<void> upsertSchoolDetails(
     DatabaseExecutor db,
     List<dynamic> records,
   ) async {
@@ -1197,30 +1210,30 @@ class SyncUpsertHelpers {
         final id = record['id']?.toString() ?? '1';
         final data = {
           CommonCols.id: id,
-          SchoolSettingsCols.schoolName: record['school_name'],
-          SchoolSettingsCols.schoolRegion: record['school_region'],
-          SchoolSettingsCols.schoolDivision: record['school_division'],
-          SchoolSettingsCols.schoolYear: record['school_year'],
-          SchoolSettingsCols.schoolCode: record['school_code'],
-          SchoolSettingsCols.schoolDistrict: record['school_district'],
-          SchoolSettingsCols.schoolHeadName: record['school_head_name'],
-          SchoolSettingsCols.schoolHeadPosition: record['school_head_position'],
+          SchoolDetailsCols.schoolName: record['school_name'],
+          SchoolDetailsCols.schoolRegion: record['school_region'],
+          SchoolDetailsCols.schoolDivision: record['school_division'],
+          SchoolDetailsCols.schoolYear: record['school_year'],
+          SchoolDetailsCols.schoolCode: record['school_code'],
+          SchoolDetailsCols.schoolDistrict: record['school_district'],
+          SchoolDetailsCols.schoolHeadName: record['school_head_name'],
+          SchoolDetailsCols.schoolHeadPosition: record['school_head_position'],
           CommonCols.updatedAt: record['updated_at'],
           CommonCols.cachedAt: DateTime.now().toIso8601String(),
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
         };
 
         final existing = await db.query(
-          DbTables.schoolSettings,
+          DbTables.schoolDetails,
           where: '${CommonCols.id} = ?',
           whereArgs: [id],
           limit: 1,
         );
         if (existing.isEmpty) {
-          await db.insert(DbTables.schoolSettings, data);
+          await db.insert(DbTables.schoolDetails, data);
         } else {
           await db.update(
-            DbTables.schoolSettings,
+            DbTables.schoolDetails,
             data,
             where: '${CommonCols.id} = ?',
             whereArgs: [id],
@@ -1229,13 +1242,13 @@ class SyncUpsertHelpers {
         successCount++;
       } catch (e) {
         failedCount++;
-        _log.error('Failed to upsert school_settings', e);
+        _log.error('Failed to upsert school_details', e);
       }
     }
 
-    _log.upsertSummary('school_settings', successCount);
+    _log.upsertSummary('school_details', successCount);
     if (failedCount > 0) {
-      _log.warn('Failed to upsert school_settings', failedCount);
+      _log.warn('Failed to upsert school_details', failedCount);
     }
   }
 
@@ -1265,11 +1278,12 @@ class SyncUpsertHelpers {
             LearnerDetailsCols.birthplace: record['birthplace'],
             LearnerDetailsCols.homeAddress: record['home_address'],
             LearnerDetailsCols.fatherName: record['father_name'],
+            LearnerDetailsCols.fatherContact: record['father_contact'],
             LearnerDetailsCols.motherName: record['mother_name'],
+            LearnerDetailsCols.motherContact: record['mother_contact'],
             LearnerDetailsCols.guardianName: record['guardian_name'],
             LearnerDetailsCols.guardianContact: record['guardian_contact'],
             LearnerDetailsCols.dateAdmitted: record['date_admitted'],
-            LearnerDetailsCols.admittedToGrade: record['admitted_to_grade'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.deletedAt: record['deleted_at'],
@@ -1311,7 +1325,7 @@ class SyncUpsertHelpers {
             AttendanceRecordsCols.month: record['month'],
             AttendanceRecordsCols.schoolDays: record['school_days'] != null ? (record['school_days'] as num).toInt() : null,
             AttendanceRecordsCols.daysPresent: record['days_present'] != null ? (record['days_present'] as num).toInt() : null,
-            AttendanceRecordsCols.daysAbsent: record['days_absent'] != null ? (record['days_absent'] as num).toInt() : null,
+            CommonCols.deletedAt: record['deleted_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -1349,9 +1363,8 @@ class SyncUpsertHelpers {
             CoreValuesRecordsCols.studentId: record['student_id'],
             CoreValuesRecordsCols.classId: record['class_id'],
             CoreValuesRecordsCols.schoolYear: record['school_year'],
-            CoreValuesRecordsCols.gradingPeriodNumber: (record['grading_period_number'] as num?)?.toInt(),
-            CoreValuesRecordsCols.coreValue: record['core_value'],
-            CoreValuesRecordsCols.behaviorStatement: record['behavior_statement'],
+            CoreValuesRecordsCols.termNumber: (record['term_number'] as num?)?.toInt(),
+            CoreValuesRecordsCols.coreValueId: record['core_value_id'],
             CoreValuesRecordsCols.marking: record['marking'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
@@ -1434,12 +1447,10 @@ class SyncUpsertHelpers {
             PreviousSchoolSubjectsCols.schoolHistoryId: record['school_history_id'],
             PreviousSchoolSubjectsCols.subjectName: record['subject_name'],
             PreviousSchoolSubjectsCols.subjectGroup: record['subject_group'],
-            PreviousSchoolSubjectsCols.q1Grade: record['q1_grade'] != null ? (record['q1_grade'] as num).toDouble() : null,
-            PreviousSchoolSubjectsCols.q2Grade: record['q2_grade'] != null ? (record['q2_grade'] as num).toDouble() : null,
-            PreviousSchoolSubjectsCols.q3Grade: record['q3_grade'] != null ? (record['q3_grade'] as num).toDouble() : null,
-            PreviousSchoolSubjectsCols.q4Grade: record['q4_grade'] != null ? (record['q4_grade'] as num).toDouble() : null,
+            PreviousSchoolSubjectsCols.termType: record['term_type'] ?? 'term',
             PreviousSchoolSubjectsCols.finalGrade: record['final_grade'] != null ? (record['final_grade'] as num).toDouble() : null,
             PreviousSchoolSubjectsCols.descriptor: record['descriptor'],
+            CommonCols.deletedAt: record['deleted_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -1457,6 +1468,44 @@ class SyncUpsertHelpers {
     _log.upsertSummary('previous_school_subjects', successCount);
     if (failedCount > 0) {
       _log.warn('Failed to upsert previous_school_subjects', failedCount);
+    }
+  }
+
+  Future<void> upsertPreviousSchoolTermGrades(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.previousSchoolTermGrades,
+          {
+            CommonCols.id: record['id'],
+            PreviousSchoolTermGradesCols.subjectId: record['subject_id'],
+            PreviousSchoolTermGradesCols.termNumber: record['term_number'] != null ? (record['term_number'] as num).toInt() : null,
+            PreviousSchoolTermGradesCols.grade: record['grade'] != null ? (record['grade'] as num).toInt() : null,
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert previous_school_term_grades', e);
+      }
+    }
+
+    _log.upsertSummary('previous_school_term_grades', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert previous_school_term_grades', failedCount);
     }
   }
 
@@ -1480,7 +1529,7 @@ class SyncUpsertHelpers {
             PreviousSchoolAttendanceCols.month: record['month'],
             PreviousSchoolAttendanceCols.schoolDays: record['school_days'] != null ? (record['school_days'] as num).toInt() : null,
             PreviousSchoolAttendanceCols.daysPresent: record['days_present'] != null ? (record['days_present'] as num).toInt() : null,
-            PreviousSchoolAttendanceCols.daysAbsent: record['days_absent'] != null ? (record['days_absent'] as num).toInt() : null,
+            CommonCols.deletedAt: record['deleted_at'],
             CommonCols.createdAt: record['created_at'],
             CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
             CommonCols.cachedAt: DateTime.now().toIso8601String(),
@@ -1831,17 +1880,17 @@ class SyncUpsertHelpers {
     }
 
     // Handle period grades delta
-    final periodGradesDeltas = deltas['period_grades'];
-    if (periodGradesDeltas != null) {
-      final updated = periodGradesDeltas.updated;
-      updatedCounts['period_grades'] = updated.length;
-      await upsertPeriodGrades(db, updated);
+    final termGradesDeltas = deltas['term_grades'];
+    if (termGradesDeltas != null) {
+      final updated = termGradesDeltas.updated;
+      updatedCounts['term_grades'] = updated.length;
+      await upsertTermGrades(db, updated);
 
-      final deleted = periodGradesDeltas.deleted;
-      deletedCounts['period_grades'] = deleted.length;
+      final deleted = termGradesDeltas.deleted;
+      deletedCounts['term_grades'] = deleted.length;
       for (final id in deleted) {
         await db.update(
-          DbTables.periodGrades,
+          DbTables.termGrades,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id],
@@ -1915,14 +1964,14 @@ class SyncUpsertHelpers {
       // (current user, enrolled students, search results)
     }
 
-    // Handle school_settings delta
-    final schoolSettingsDeltas = deltas['school_settings'];
-    if (schoolSettingsDeltas != null) {
-      final updated = schoolSettingsDeltas.updated;
-      updatedCounts['school_settings'] = updated.length;
-      await upsertSchoolSettings(db, updated);
+    // Handle school_details delta
+    final schoolDetailsDeltas = deltas['school_details'];
+    if (schoolDetailsDeltas != null) {
+      final updated = schoolDetailsDeltas.updated;
+      updatedCounts['school_details'] = updated.length;
+      await upsertSchoolDetails(db, updated);
 
-      // Note: We don't soft-delete school_settings - it's a singleton
+      // Note: We don't soft-delete school_details - it's a singleton
     }
 
     // Handle learner_details delta
@@ -2010,6 +2059,24 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.delete(
           DbTables.previousSchoolSubjects,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle previous_school_term_grades delta
+    final previousSchoolTermGradesDeltas = deltas['previous_school_term_grades'];
+    if (previousSchoolTermGradesDeltas != null) {
+      final updated = previousSchoolTermGradesDeltas.updated;
+      updatedCounts['previous_school_term_grades'] = updated.length;
+      await upsertPreviousSchoolTermGrades(db, updated);
+
+      final deleted = previousSchoolTermGradesDeltas.deleted;
+      deletedCounts['previous_school_term_grades'] = deleted.length;
+      for (final id in deleted) {
+        await db.delete(
+          DbTables.previousSchoolTermGrades,
           where: '${CommonCols.id} = ?',
           whereArgs: [id],
         );

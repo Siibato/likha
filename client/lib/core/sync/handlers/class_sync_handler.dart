@@ -110,7 +110,7 @@ class ClassSyncHandler {
           ClassesCols.teacherUsername: model.teacherUsername,
           ClassesCols.teacherFullName: model.teacherFullName,
           ClassesCols.isAdvisory: model.isAdvisory ? 1 : 0,
-          ClassesCols.gradingPeriodType: model.gradingPeriodType,
+          ClassesCols.termType: model.termType,
           CommonCols.updatedAt: model.updatedAt.toIso8601String(),
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },

@@ -7,11 +7,11 @@ import 'package:likha/data/models/grading/grade_item_model.dart';
 Future<List<GradeItemModel>> getGradeItems(
   DioClient dioClient, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
   String? component,
 }) async {
   try {
-    final queryParams = <String, dynamic>{'grading_period_number': gradingPeriodNumber};
+    final queryParams = <String, dynamic>{'term_number': termNumber};
     if (component != null) queryParams['component'] = component;
 
     final response = await dioClient.dio.get(

@@ -14,8 +14,8 @@ pub struct Model {
     pub deleted_at: Option<chrono::NaiveDateTime>,
     pub grade_level: Option<String>,
     pub school_year: Option<String>,
-    /// quarter | semester | trimester — determines the number of grading periods
-    pub grading_period_type: String,
+    /// term | semester | trimester — determines the number of terms
+    pub term_type: String,
     pub is_advisory: bool,
 }
 

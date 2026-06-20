@@ -19,8 +19,9 @@ pub async fn setup_defaults(
         })?;
 
     let mut configs = Vec::new();
-    for period in 1..=4 {
-        let config = upsert_config(db, class_id, period, preset.ww, preset.pt, preset.qa).await?;
+    let num_terms = crate::modules::grading::helpers::term_count::term_count("term") as i32;
+    for term in 1..=num_terms {
+        let config = upsert_config(db, class_id, term, preset.ww, preset.pt, preset.qa).await?;
         configs.push(config);
     }
 

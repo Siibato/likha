@@ -16,16 +16,16 @@ pub mod save_scores;
 pub mod set_override;
 
 // grades
-pub mod get_period_grades;
-pub mod get_student_all_periods;
-pub mod get_student_period_grade;
+pub mod get_term_grades;
+pub mod get_student_all_terms;
+pub mod get_student_term_grade;
 
 // compute
-pub mod compute_class_period;
+pub mod compute_class_term;
 pub mod compute_final_grade;
 pub mod compute_general_averages;
 pub mod compute_sf9;
-pub mod compute_student_period;
+pub mod compute_student_term;
 pub mod get_grade_summary;
 
 // aggregate

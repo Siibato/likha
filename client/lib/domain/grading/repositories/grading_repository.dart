@@ -4,7 +4,7 @@ import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
@@ -28,7 +28,7 @@ abstract class GradingRepository {
   // Grade Items
   ResultFuture<List<GradeItem>> getGradeItems({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     String? component,
   });
 
@@ -64,26 +64,26 @@ abstract class GradingRepository {
   ResultFuture<MutationResult<void>> clearScoreOverride({required String scoreId});
 
   // Computed Grades
-  ResultFuture<List<PeriodGrade>> getPeriodGrades({
+  ResultFuture<List<TermGrade>> getTermGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   ResultVoid computeGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   ResultFuture<MutationResult<void>> updateTransmutedGrade({
     required String classId,
     required String studentId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     required int transmutedGrade,
   });
 
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   ResultFuture<List<Map<String, dynamic>>> getFinalGrades({
@@ -91,11 +91,11 @@ abstract class GradingRepository {
   });
 
   // Student
-  ResultFuture<List<PeriodGrade>> getMyGrades({required String classId});
+  ResultFuture<List<TermGrade>> getMyGrades({required String classId});
 
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   // General Average
@@ -119,13 +119,13 @@ abstract class GradingRepository {
   // Batch Operations
   ResultFuture<Map<String, dynamic>> getGradeDataBatch({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   // Unified read
   ResultFuture<ClassGrades> getClassGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     bool skipBackgroundRefresh = false,
   });
 }

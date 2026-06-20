@@ -26,7 +26,7 @@ pub struct DeltaPayload {
     pub grade_configs: EntityDeltas,
     pub grade_items: EntityDeltas,
     pub grade_scores: EntityDeltas,
-    pub period_grades: EntityDeltas,
+    pub term_grades: EntityDeltas,
     pub table_of_specifications: EntityDeltas,
     pub tos_competencies: EntityDeltas,
     pub learner_details: EntityDeltas,
@@ -34,6 +34,7 @@ pub struct DeltaPayload {
     pub core_values_records: EntityDeltas,
     pub student_school_history: EntityDeltas,
     pub previous_school_subjects: EntityDeltas,
+    pub previous_school_term_grades: EntityDeltas,
     pub previous_school_attendance: EntityDeltas,
 }
 

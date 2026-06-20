@@ -32,6 +32,7 @@ pub async fn create_school_history(
         record_type: sea_orm::ActiveValue::Set(record_type),
         created_at: sea_orm::ActiveValue::Set(now),
         updated_at: sea_orm::ActiveValue::Set(now),
+        deleted_at: sea_orm::ActiveValue::Set(None),
     };
     am.insert(db)
         .await

@@ -93,7 +93,7 @@ pw.Widget buildDepEdHeader(GradeExportContext ctx,
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: pw.Text(
-              ctx.quarterLabel,
+              ctx.termLabel,
               style: pw.TextStyle(
                 fontSize: 8,
                 fontWeight: pw.FontWeight.bold,
@@ -128,7 +128,7 @@ pw.Widget buildDepEdHeader(GradeExportContext ctx,
             ),
             child: pw.Center(
               child: pw.Text(
-                ctx.quarterLabel,
+                ctx.termLabel,
                 style: pw.TextStyle(
                   fontSize: 9,
                   fontWeight: pw.FontWeight.bold,

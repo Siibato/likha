@@ -78,10 +78,10 @@ class MigrationRunner {
   static List<Migration> get allMigrations => [
     Migration(
       version: 1,
-      description: 'Add school_district to school_settings',
+      description: 'Add school_district to school_details',
       up: (db) async {
         await db.execute(
-          'ALTER TABLE school_settings ADD COLUMN school_district TEXT',
+          'ALTER TABLE school_details ADD COLUMN school_district TEXT',
         );
       },
     ),

@@ -9,7 +9,6 @@ class AttendanceRecordModel extends AttendanceRecord {
     required super.month,
     required super.schoolDays,
     required super.daysPresent,
-    required super.daysAbsent,
   });
 
   factory AttendanceRecordModel.fromJson(Map<String, dynamic> json) {
@@ -21,7 +20,6 @@ class AttendanceRecordModel extends AttendanceRecord {
       month: json['month'] as String,
       schoolDays: json['school_days'] as int,
       daysPresent: json['days_present'] as int,
-      daysAbsent: json['days_absent'] as int,
     );
   }
 
@@ -33,6 +31,5 @@ class AttendanceRecordModel extends AttendanceRecord {
     'month': month,
     'school_days': schoolDays,
     'days_present': daysPresent,
-    'days_absent': daysAbsent,
   };
 }

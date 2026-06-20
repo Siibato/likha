@@ -5,12 +5,12 @@ import 'package:likha/core/network/dio_client.dart';
 abstract class DocumentExportRemoteDataSource {
   Future<List<int>> exportClassGradesPdf({
     required String classId,
-    required int period,
+    required int termNumber,
   });
 
   Future<List<int>> exportClassGradesExcel({
     required String classId,
-    required int period,
+    required int termNumber,
   });
 
   Future<List<int>> exportSf9Pdf({
@@ -37,10 +37,10 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   @override
   Future<List<int>> exportClassGradesPdf({
     required String classId,
-    required int period,
+    required int termNumber,
   }) async {
     final response = await _dioClient.dio.get(
-      ApiEndpoints.exportGradesPdf(classId, period: period),
+      ApiEndpoints.exportGradesPdf(classId, termNumber: termNumber),
       options: Options(responseType: ResponseType.bytes),
     );
     return (response.data as List<dynamic>).cast<int>();
@@ -49,10 +49,10 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   @override
   Future<List<int>> exportClassGradesExcel({
     required String classId,
-    required int period,
+    required int termNumber,
   }) async {
     final response = await _dioClient.dio.get(
-      ApiEndpoints.exportGradesExcel(classId, period: period),
+      ApiEndpoints.exportGradesExcel(classId, termNumber: termNumber),
       options: Options(responseType: ResponseType.bytes),
     );
     return (response.data as List<dynamic>).cast<int>();

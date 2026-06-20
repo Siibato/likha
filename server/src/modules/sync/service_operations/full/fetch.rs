@@ -8,7 +8,7 @@ use crate::utils::AppResult;
 use crate::modules::sync::helpers::enrich_questions;
 use crate::modules::sync::sync_scope::SyncScope;
 use crate::modules::setup::repository::SetupRepository;
-use crate::modules::setup::schema::SchoolSettingsResponse;
+use crate::modules::setup::schema::SchoolDetailsResponse;
 
 use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 use super::enrich_submissions::enrich_assessment_submissions;
@@ -159,11 +159,11 @@ impl super::SyncFullService {
                 Vec::new()
             };
 
-            // Fetch school settings for all authenticated users
-            let school_settings = {
+            // Fetch school details for all authenticated users
+            let school_details = {
                 let setup_repo = SetupRepository::new(self.db.clone());
                 match setup_repo.get_settings().await {
-                    Ok(row) => Some(SchoolSettingsResponse {
+                    Ok(row) => Some(SchoolDetailsResponse {
                         school_code: row.school_code,
                         school_name: row.school_name,
                         school_region: row.school_region,
@@ -174,7 +174,7 @@ impl super::SyncFullService {
                         school_head_position: row.school_head_position,
                     }),
                     Err(e) => {
-                        tracing::warn!("Failed to fetch school settings for sync: {}", e);
+                        tracing::warn!("Failed to fetch school details for sync: {}", e);
                         None
                     }
                 }
@@ -200,7 +200,7 @@ impl super::SyncFullService {
                 grade_configs: vec![],
                 grade_items: vec![],
                 grade_scores: vec![],
-                period_grades: vec![],
+                term_grades: vec![],
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
                 activity_logs,
@@ -208,12 +208,13 @@ impl super::SyncFullService {
                     needs_entity_batches,
                     total_classes,
                 }),
-                school_settings,
+                school_details,
                 learner_details: vec![],
                 attendance_records: vec![],
                 core_values_records: vec![],
                 student_school_history: vec![],
                 previous_school_subjects: vec![],
+                previous_school_term_grades: vec![],
                 previous_school_attendance: vec![],
             });
         }
@@ -253,17 +254,18 @@ impl super::SyncFullService {
                 grade_configs: vec![],
                 grade_items: vec![],
                 grade_scores: vec![],
-                period_grades: vec![],
+                term_grades: vec![],
                 table_of_specifications: vec![],
                 tos_competencies: vec![],
                 activity_logs: vec![],
                 sync_plan: None,
-                school_settings: None,
+                school_details: None,
                 learner_details: vec![],
                 attendance_records: vec![],
                 core_values_records: vec![],
                 student_school_history: vec![],
                 previous_school_subjects: vec![],
+                previous_school_term_grades: vec![],
                 previous_school_attendance: vec![],
             });
         }
@@ -290,7 +292,7 @@ impl super::SyncFullService {
         let mut grade_configs: Vec<Value> = Vec::new();
         let mut grade_items_data: Vec<Value> = Vec::new();
         let mut grade_scores_data: Vec<Value> = Vec::new();
-        let mut period_grades_data: Vec<Value> = Vec::new();
+        let mut term_grades_data: Vec<Value> = Vec::new();
         let mut table_of_specifications: Vec<Value> = Vec::new();
         let mut tos_competencies: Vec<Value> = Vec::new();
 
@@ -511,21 +513,21 @@ impl super::SyncFullService {
                 }
             };
 
-            period_grades_data = match user_role {
+            term_grades_data = match user_role {
                 "student" => {
                     self.manifest_repo
-                        .get_student_period_grades(user_id, batch_class_ids.clone())
+                        .get_student_term_grades(user_id, batch_class_ids.clone())
                         .await?
                 }
                 _ => {
                     self.manifest_repo
-                        .get_all_period_grades(batch_class_ids.clone())
+                        .get_all_term_grades(batch_class_ids.clone())
                         .await?
                 }
             };
 
-            tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, period_grades={}",
-                grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), period_grades_data.len());
+            tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, term_grades={}",
+                grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), term_grades_data.len());
         }
 
         if scope.include_tos {
@@ -560,6 +562,7 @@ impl super::SyncFullService {
         let mut core_values_records: Vec<Value> = Vec::new();
         let mut student_school_history: Vec<Value> = Vec::new();
         let mut previous_school_subjects: Vec<Value> = Vec::new();
+        let mut previous_school_term_grades: Vec<Value> = Vec::new();
         let mut previous_school_attendance: Vec<Value> = Vec::new();
 
         if scope.include_student_records {
@@ -610,6 +613,18 @@ impl super::SyncFullService {
                 .await?
                 .records;
 
+            // Fetch term grades for those subjects
+            let subject_ids: Vec<Uuid> = previous_school_subjects.iter()
+                .filter_map(|s| s.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .collect();
+            previous_school_term_grades = if subject_ids.is_empty() {
+                Vec::new()
+            } else {
+                self.manifest_repo
+                    .get_previous_school_term_grades_since(subject_ids, chrono::NaiveDateTime::MIN)
+                    .await?
+            };
+
             previous_school_attendance = self
                 .manifest_repo
                 .get_previous_attendance_for_students(student_ids, 10000)
@@ -617,12 +632,13 @@ impl super::SyncFullService {
                 .records;
 
             tracing::debug!(
-                "Fetched student records: learner_details={}, attendance={}, core_values={}, school_history={}, prev_subjects={}, prev_attendance={}",
+                "Fetched student records: learner_details={}, attendance={}, core_values={}, school_history={}, prev_subjects={}, prev_term_grades={}, prev_attendance={}",
                 learner_details.len(),
                 attendance_records.len(),
                 core_values_records.len(),
                 student_school_history.len(),
                 previous_school_subjects.len(),
+                previous_school_term_grades.len(),
                 previous_school_attendance.len()
             );
         }
@@ -669,17 +685,18 @@ impl super::SyncFullService {
             grade_configs,
             grade_items: grade_items_data,
             grade_scores: grade_scores_data,
-            period_grades: period_grades_data,
+            term_grades: term_grades_data,
             table_of_specifications,
             tos_competencies,
             activity_logs: vec![],
             sync_plan: None,
-            school_settings: None,
+            school_details: None,
             learner_details,
             attendance_records,
             core_values_records,
             student_school_history,
             previous_school_subjects,
+            previous_school_term_grades,
             previous_school_attendance,
         })
     }

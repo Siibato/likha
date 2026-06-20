@@ -5,7 +5,7 @@ class GradeItem extends Equatable {
   final String classId;
   final String title;
   final String component;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final double totalPoints;
   final String sourceType;
   final String? sourceId;
@@ -18,7 +18,7 @@ class GradeItem extends Equatable {
     required this.classId,
     required this.title,
     required this.component,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.totalPoints,
     required this.sourceType,
     this.sourceId,
@@ -33,7 +33,7 @@ class GradeItem extends Equatable {
         classId,
         title,
         component,
-        gradingPeriodNumber,
+        termNumber,
         totalPoints,
         sourceType,
         sourceId,
@@ -48,7 +48,7 @@ class GradeItem extends Equatable {
       'class_id': classId,
       'title': title,
       'component': component,
-      'grading_period_number': gradingPeriodNumber,
+      'term_number': termNumber,
       'total_points': totalPoints,
       'source_type': sourceType,
       'source_id': sourceId,

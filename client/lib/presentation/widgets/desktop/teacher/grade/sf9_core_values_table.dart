@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 
 class Sf9CoreValuesTable extends StatelessWidget {
   const Sf9CoreValuesTable({super.key});
@@ -80,10 +81,9 @@ class Sf9CoreValuesTable extends StatelessWidget {
             children: [
               _cell('Core Values', nameWidth, cellHeight, bold: true),
               _cell('Behavior Statements', stmtWidth, cellHeight, bold: true, align: Alignment.centerLeft),
-              _cell('Q1', qWidth, cellHeight, bold: true),
-              _cell('Q2', qWidth, cellHeight, bold: true),
-              _cell('Q3', qWidth, cellHeight, bold: true),
-              _cell('Q4', qWidth, cellHeight, bold: true),
+              ...List.generate(termCountFromType(null), (i) =>
+                _cell('T${i + 1}', qWidth, cellHeight, bold: true),
+              ),
             ],
           ),
           const Divider(height: 1, color: AppColors.borderLight),
@@ -99,10 +99,9 @@ class Sf9CoreValuesTable extends StatelessWidget {
                     else
                       _cell('', nameWidth, cellHeight),
                     _cell(stmt, stmtWidth, cellHeight, align: Alignment.centerLeft, size: 10),
-                    _cell('', qWidth, cellHeight),
-                    _cell('', qWidth, cellHeight),
-                    _cell('', qWidth, cellHeight),
-                    _cell('', qWidth, cellHeight),
+                    ...List.generate(termCountFromType(null), (i) =>
+                      _cell('', qWidth, cellHeight),
+                    ),
                   ],
                 );
               }).toList(),

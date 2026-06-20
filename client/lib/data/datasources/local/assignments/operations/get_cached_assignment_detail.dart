@@ -46,7 +46,7 @@ Future<AssignmentModel> getCachedAssignmentDetail(
       submissionStatus: base.submissionStatus,
       submissionId: base.submissionId,
       score: base.score,
-      gradingPeriodNumber: base.gradingPeriodNumber,
+      termNumber: base.termNumber,
       component: base.component,
       createdAt: base.createdAt,
       updatedAt: base.updatedAt,

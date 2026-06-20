@@ -62,7 +62,7 @@ void main() {
 
   setUpAll(() async {
     dotenv.testLoad(fileInput: '');
-    registerFallbackValue(GetGradeItemsParams(classId: 'c-1', gradingPeriodNumber: 1));
+    registerFallbackValue(GetGradeItemsParams(classId: 'c-1', termNumber: 1));
     registerFallbackValue(SetupGradingParams(
       classId: 'c-1',
       gradeLevel: '7',
@@ -119,7 +119,7 @@ void main() {
           'title': 'LQ 1',
           'component': 'written_work',
           'total_points': 50,
-          'grading_period_number': 1,
+          'term_number': 1,
         });
 
         expect(notifier.state.successMessage, isNotNull);
@@ -137,7 +137,7 @@ void main() {
           'title': 'LQ 1',
           'component': 'written_work',
           'total_points': 50,
-          'grading_period_number': 1,
+          'term_number': 1,
         });
 
         expect(notifier.state.error, isNotNull);

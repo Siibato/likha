@@ -14,10 +14,19 @@ pub async fn update_assessment(
     open_at: Option<chrono::NaiveDateTime>,
     close_at: Option<chrono::NaiveDateTime>,
     show_results_immediately: Option<bool>,
-    grading_period_number: Option<Option<i32>>,
+    term_number: Option<Option<i32>>,
     component: Option<Option<String>>,
     tos_id: Option<Option<String>>,
 ) -> AppResult<assessments::Model> {
+    let tos_id = match tos_id {
+        Some(Some(s)) if !s.is_empty() => Some(Some(
+            Uuid::parse_str(&s)
+                .map_err(|e| AppError::BadRequest(format!("Invalid tos_id UUID: {}", e)))?,
+        )),
+        Some(Some(_)) => Some(None),
+        Some(None) => Some(None),
+        None => None,
+    };
     let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
         .one(db)
         .await
@@ -43,8 +52,8 @@ pub async fn update_assessment(
     if let Some(show) = show_results_immediately {
         assessment.show_results_immediately = Set(show);
     }
-    if let Some(q) = grading_period_number {
-        assessment.grading_period_number = Set(q);
+    if let Some(q) = term_number {
+        assessment.term_number = Set(q);
     }
     if let Some(c) = component {
         assessment.component = Set(c);

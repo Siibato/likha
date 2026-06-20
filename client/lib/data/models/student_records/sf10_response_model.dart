@@ -175,7 +175,7 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
   const Sf10SubjectRowModel({
     required super.classTitle,
     super.subjectGroup,
-    super.periodGrades = const [],
+    super.termGrades = const [],
     super.finalGrade,
     super.descriptor,
   });
@@ -184,7 +184,7 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
     return Sf10SubjectRowModel(
       classTitle: json['class_title'] as String,
       subjectGroup: json['subject_group'] as String?,
-      periodGrades: (json['period_grades'] as List<dynamic>?)
+      termGrades: (json['term_grades'] as List<dynamic>?)
           ?.map((e) => e as int?)
           .toList() ??
           const [],
@@ -196,7 +196,7 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
   Map<String, dynamic> toJson() => {
     'class_title': classTitle,
     'subject_group': subjectGroup,
-    'period_grades': periodGrades,
+    'term_grades': termGrades,
     'final_grade': finalGrade,
     'descriptor': descriptor,
   };
@@ -206,10 +206,8 @@ class Sf10PreviousSubjectModel extends Sf10PreviousSubject {
   const Sf10PreviousSubjectModel({
     required super.subjectName,
     super.subjectGroup,
-    super.q1Grade,
-    super.q2Grade,
-    super.q3Grade,
-    super.q4Grade,
+    super.termType,
+    super.termGrades = const [],
     super.finalGrade,
     super.descriptor,
   });
@@ -218,10 +216,11 @@ class Sf10PreviousSubjectModel extends Sf10PreviousSubject {
     return Sf10PreviousSubjectModel(
       subjectName: json['subject_name'] as String,
       subjectGroup: json['subject_group'] as String?,
-      q1Grade: json['q1_grade'] as int?,
-      q2Grade: json['q2_grade'] as int?,
-      q3Grade: json['q3_grade'] as int?,
-      q4Grade: json['q4_grade'] as int?,
+      termType: json['term_type'] as String?,
+      termGrades: (json['term_grades'] as List<dynamic>?)
+          ?.map((e) => e as int?)
+          .toList() ??
+          const [],
       finalGrade: json['final_grade'] as int?,
       descriptor: json['descriptor'] as String?,
     );
@@ -230,10 +229,8 @@ class Sf10PreviousSubjectModel extends Sf10PreviousSubject {
   Map<String, dynamic> toJson() => {
     'subject_name': subjectName,
     'subject_group': subjectGroup,
-    'q1_grade': q1Grade,
-    'q2_grade': q2Grade,
-    'q3_grade': q3Grade,
-    'q4_grade': q4Grade,
+    'term_type': termType,
+    'term_grades': termGrades,
     'final_grade': finalGrade,
     'descriptor': descriptor,
   };
@@ -244,7 +241,6 @@ class Sf10AttendanceMonthModel extends Sf10AttendanceMonth {
     required super.month,
     required super.schoolDays,
     required super.daysPresent,
-    required super.daysAbsent,
   });
 
   factory Sf10AttendanceMonthModel.fromJson(Map<String, dynamic> json) {
@@ -252,7 +248,6 @@ class Sf10AttendanceMonthModel extends Sf10AttendanceMonth {
       month: json['month'] as String,
       schoolDays: json['school_days'] as int,
       daysPresent: json['days_present'] as int,
-      daysAbsent: json['days_absent'] as int,
     );
   }
 
@@ -260,6 +255,5 @@ class Sf10AttendanceMonthModel extends Sf10AttendanceMonth {
     'month': month,
     'school_days': schoolDays,
     'days_present': daysPresent,
-    'days_absent': daysAbsent,
   };
 }

@@ -93,7 +93,7 @@ pw.Widget _buildSectionHeaderStrip(GradeExportContext ctx) {
   for (final entry in [
     (ctx.ww, 'WRITTEN WORKS'),
     (ctx.pt, 'PERFORMANCE TASKS'),
-    (ctx.qa, 'QUARTERLY ASSESSMENT'),
+    (ctx.qa, 'TERM ASSESSMENT'),
   ]) {
     final section = entry.$1;
     final label = entry.$2;

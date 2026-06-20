@@ -19,7 +19,7 @@ class CreateAssessment {
       showResultsImmediately: params.showResultsImmediately,
       isPublished: params.isPublished,
       questions: params.questions,
-      gradingPeriodNumber: params.gradingPeriodNumber,
+      termNumber: params.termNumber,
       component: params.component,
       tosId: params.tosId,
     );
@@ -36,7 +36,7 @@ class CreateAssessmentParams {
   final bool? showResultsImmediately;
   final bool isPublished;
   final List<Map<String, dynamic>>? questions;
-  final int? gradingPeriodNumber;
+  final int? termNumber;
   final String? component;
   final String? tosId;
 
@@ -50,7 +50,7 @@ class CreateAssessmentParams {
     this.showResultsImmediately,
     this.isPublished = true,
     this.questions,
-    this.gradingPeriodNumber,
+    this.termNumber,
     this.component,
     this.tosId,
   });

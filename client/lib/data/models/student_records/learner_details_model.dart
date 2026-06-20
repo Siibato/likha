@@ -13,11 +13,12 @@ class LearnerDetailsModel extends LearnerDetails {
     super.birthplace,
     super.homeAddress,
     super.fatherName,
+    super.fatherContact,
     super.motherName,
+    super.motherContact,
     super.guardianName,
     super.guardianContact,
     super.dateAdmitted,
-    super.admittedToGrade,
   });
 
   factory LearnerDetailsModel.fromJson(Map<String, dynamic> json) {
@@ -33,11 +34,12 @@ class LearnerDetailsModel extends LearnerDetails {
       birthplace: json['birthplace'] as String?,
       homeAddress: json['home_address'] as String?,
       fatherName: json['father_name'] as String?,
+      fatherContact: json['father_contact'] as String?,
       motherName: json['mother_name'] as String?,
+      motherContact: json['mother_contact'] as String?,
       guardianName: json['guardian_name'] as String?,
       guardianContact: json['guardian_contact'] as String?,
       dateAdmitted: json['date_admitted'] as String?,
-      admittedToGrade: json['admitted_to_grade'] as String?,
     );
   }
 
@@ -54,11 +56,12 @@ class LearnerDetailsModel extends LearnerDetails {
       'birthplace': birthplace,
       'home_address': homeAddress,
       'father_name': fatherName,
+      'father_contact': fatherContact,
       'mother_name': motherName,
+      'mother_contact': motherContact,
       'guardian_name': guardianName,
       'guardian_contact': guardianContact,
       'date_admitted': dateAdmitted,
-      'admitted_to_grade': admittedToGrade,
     };
   }
 }

@@ -12,27 +12,27 @@ ResultFuture<List<Map<String, dynamic>>> getGradeSummary(
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     try {
-      final cached = await localDataSource.getCachedGradeSummary(classId, gradingPeriodNumber);
+      final cached = await localDataSource.getCachedGradeSummary(classId, termNumber);
 
       fireRemoteFetch(
-        dedupKey: 'grading/summary/$classId/$gradingPeriodNumber/bg',
+        dedupKey: 'grading/summary/$classId/$termNumber/bg',
         remote: () => remoteDataSource.getGradeSummary(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
         onSuccess: (fresh) async {
           try {
-            final current = await localDataSource.getCachedGradeSummary(classId, gradingPeriodNumber);
+            final current = await localDataSource.getCachedGradeSummary(classId, termNumber);
             if (!_summariesEqual(current, fresh)) {
-              await localDataSource.cacheGradeSummary(classId, gradingPeriodNumber, fresh);
+              await localDataSource.cacheGradeSummary(classId, termNumber, fresh);
               dataEventBus.notifyGradeSummaryChanged(classId);
             }
           } catch (_) {
-            await localDataSource.cacheGradeSummary(classId, gradingPeriodNumber, fresh);
+            await localDataSource.cacheGradeSummary(classId, termNumber, fresh);
             dataEventBus.notifyGradeSummaryChanged(classId);
           }
         },
@@ -41,13 +41,13 @@ ResultFuture<List<Map<String, dynamic>>> getGradeSummary(
       return Right(cached);
     } on CacheException {
       final fresh = await remoteFetch(
-        dedupKey: 'grading/summary/$classId/$gradingPeriodNumber',
+        dedupKey: 'grading/summary/$classId/$termNumber',
         remote: () => remoteDataSource.getGradeSummary(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
       );
-      await localDataSource.cacheGradeSummary(classId, gradingPeriodNumber, fresh);
+      await localDataSource.cacheGradeSummary(classId, termNumber, fresh);
       return Right(fresh);
     }
   } on ServerException catch (e) {

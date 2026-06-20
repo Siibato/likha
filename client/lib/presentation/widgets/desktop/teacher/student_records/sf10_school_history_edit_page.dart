@@ -301,18 +301,21 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
               },
               children: [
                 TableRow(children: [
-                  _th('Subject'), _th('Group'), _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'), _th('Final'), _th('Descriptor'),
+                  _th('Subject'), _th('Group'), _th('T1'), _th('T2'), _th('T3'), _th('T4'), _th('Final'), _th('Descriptor'),
                 ]),
-                ...state.records.map((s) => TableRow(children: [
-                  _td(s.subjectName),
-                  _td(s.subjectGroup ?? '-'),
-                  _td(s.q1Grade?.toString() ?? '-'),
-                  _td(s.q2Grade?.toString() ?? '-'),
-                  _td(s.q3Grade?.toString() ?? '-'),
-                  _td(s.q4Grade?.toString() ?? '-'),
-                  _td(s.finalGrade?.toString() ?? '-'),
-                  _td(s.descriptor ?? '-'),
-                ])),
+                ...state.records.map((s) {
+                  final tg = s.termGrades;
+                  return TableRow(children: [
+                    _td(s.subjectName),
+                    _td(s.subjectGroup ?? '-'),
+                    _td(tg.isNotEmpty ? tg[0]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 1 ? tg[1]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 2 ? tg[2]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 3 ? tg[3]?.toString() ?? '-' : '-'),
+                    _td(s.finalGrade?.toString() ?? '-'),
+                    _td(s.descriptor ?? '-'),
+                  ]);
+                }),
               ],
             ),
         ],
@@ -352,15 +355,13 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
                 0: FlexColumnWidth(2),
                 1: FlexColumnWidth(1),
                 2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
               },
               children: [
-                TableRow(children: [_th('Month'), _th('School Days'), _th('Days Present'), _th('Days Absent')]),
+                TableRow(children: [_th('Month'), _th('School Days'), _th('Days Present')]),
                 ...state.records.map((a) => TableRow(children: [
                   _td(a.month),
                   _td(a.schoolDays.toString()),
                   _td(a.daysPresent.toString()),
-                  _td(a.daysAbsent.toString()),
                 ])),
               ],
             ),
@@ -372,10 +373,10 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
   void _showAddSubjectDialog() {
     final nameCtrl = TextEditingController();
     final groupCtrl = TextEditingController();
-    final q1Ctrl = TextEditingController();
-    final q2Ctrl = TextEditingController();
-    final q3Ctrl = TextEditingController();
-    final q4Ctrl = TextEditingController();
+    final t1Ctrl = TextEditingController();
+    final t2Ctrl = TextEditingController();
+    final t3Ctrl = TextEditingController();
+    final t4Ctrl = TextEditingController();
     final finalCtrl = TextEditingController();
     final descriptorCtrl = TextEditingController();
 
@@ -394,13 +395,13 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _dialogField(q1Ctrl, 'Q1', numeric: true)),
+                  Expanded(child: _dialogField(t1Ctrl, 'T1', numeric: true)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(q2Ctrl, 'Q2', numeric: true)),
+                  Expanded(child: _dialogField(t2Ctrl, 'T2', numeric: true)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(q3Ctrl, 'Q3', numeric: true)),
+                  Expanded(child: _dialogField(t3Ctrl, 'T3', numeric: true)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(q4Ctrl, 'Q4', numeric: true)),
+                  Expanded(child: _dialogField(t4Ctrl, 'T4', numeric: true)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -424,10 +425,13 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
                 'school_history_id': widget.schoolHistory!.id,
                 'subject_name': nameCtrl.text,
                 'subject_group': groupCtrl.text.isEmpty ? null : groupCtrl.text,
-                'q1_grade': int.tryParse(q1Ctrl.text),
-                'q2_grade': int.tryParse(q2Ctrl.text),
-                'q3_grade': int.tryParse(q3Ctrl.text),
-                'q4_grade': int.tryParse(q4Ctrl.text),
+                'term_type': 'quarterly',
+                'term_grades': [
+                  int.tryParse(t1Ctrl.text),
+                  int.tryParse(t2Ctrl.text),
+                  int.tryParse(t3Ctrl.text),
+                  int.tryParse(t4Ctrl.text),
+                ],
                 'final_grade': int.tryParse(finalCtrl.text),
                 'descriptor': descriptorCtrl.text.isEmpty ? null : descriptorCtrl.text,
               };
@@ -452,7 +456,6 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     final monthCtrl = TextEditingController();
     final schoolDaysCtrl = TextEditingController();
     final daysPresentCtrl = TextEditingController();
-    final daysAbsentCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -468,8 +471,6 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
               _dialogField(schoolDaysCtrl, 'School Days', numeric: true),
               const SizedBox(height: 12),
               _dialogField(daysPresentCtrl, 'Days Present', numeric: true),
-              const SizedBox(height: 12),
-              _dialogField(daysAbsentCtrl, 'Days Absent', numeric: true),
             ],
           ),
         ),
@@ -485,7 +486,6 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
                 'month': monthCtrl.text,
                 'school_days': int.tryParse(schoolDaysCtrl.text) ?? 0,
                 'days_present': int.tryParse(daysPresentCtrl.text) ?? 0,
-                'days_absent': int.tryParse(daysAbsentCtrl.text) ?? 0,
               };
               final success = await ref.read(previousAttendanceProvider.notifier).save(widget.classId, widget.studentId, data);
               if (mounted) {

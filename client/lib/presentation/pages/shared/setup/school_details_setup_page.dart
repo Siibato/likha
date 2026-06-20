@@ -9,7 +9,7 @@ import 'package:likha/core/utils/platform_detector.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
-import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_details_form.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 /// Shown after admin's first login when school_name is null.
@@ -137,7 +137,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           const SizedBox(height: 32),
           if (_error != null)
             FormMessage(message: _error, severity: MessageSeverity.error),
-          SchoolSettingsForm(
+          SchoolDetailsForm(
             schoolNameController: _schoolNameController,
             regionController: _regionController,
             divisionController: _divisionController,

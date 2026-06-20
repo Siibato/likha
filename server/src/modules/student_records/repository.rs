@@ -36,16 +36,18 @@ impl StudentRecordsRepository {
         birthplace: Option<String>,
         home_address: Option<String>,
         father_name: Option<String>,
+        father_contact: Option<String>,
         mother_name: Option<String>,
+        mother_contact: Option<String>,
         guardian_name: Option<String>,
         guardian_contact: Option<String>,
         date_admitted: Option<NaiveDate>,
-        admitted_to_grade: Option<String>,
     ) -> AppResult<learner_details::Model> {
         ops::upsert_learner_details(
             &self.db, user_id, lrn, age, sex, track_strand, curriculum,
-            birthdate, birthplace, home_address, father_name, mother_name,
-            guardian_name, guardian_contact, date_admitted, admitted_to_grade,
+            birthdate, birthplace, home_address, father_name, father_contact,
+            mother_name, mother_contact,
+            guardian_name, guardian_contact, date_admitted,
         ).await
     }
 
@@ -67,11 +69,10 @@ impl StudentRecordsRepository {
         month: String,
         school_days: i32,
         days_present: i32,
-        days_absent: i32,
     ) -> AppResult<attendance_records::Model> {
         ops::upsert_attendance(
             &self.db, student_id, class_id, school_year, month,
-            school_days, days_present, days_absent,
+            school_days, days_present,
         ).await
     }
 
@@ -90,14 +91,13 @@ impl StudentRecordsRepository {
         student_id: Uuid,
         class_id: Uuid,
         school_year: String,
-        grading_period_number: i32,
-        core_value: String,
-        behavior_statement: String,
+        term_number: i32,
+        core_value_id: i32,
         marking: String,
     ) -> AppResult<core_values_records::Model> {
         ops::upsert_core_values(
-            &self.db, student_id, class_id, school_year, grading_period_number,
-            core_value, behavior_statement, marking,
+            &self.db, student_id, class_id, school_year, term_number,
+            core_value_id, marking,
         ).await
     }
 
@@ -161,17 +161,22 @@ impl StudentRecordsRepository {
         school_history_id: Uuid,
         subject_name: String,
         subject_group: Option<String>,
-        q1_grade: Option<i32>,
-        q2_grade: Option<i32>,
-        q3_grade: Option<i32>,
-        q4_grade: Option<i32>,
+        term_type: String,
+        term_grades: Vec<Option<i32>>,
         final_grade: Option<i32>,
         descriptor: Option<String>,
     ) -> AppResult<previous_school_subjects::Model> {
         ops::upsert_previous_subject(
             &self.db, student_id, school_history_id, subject_name, subject_group,
-            q1_grade, q2_grade, q3_grade, q4_grade, final_grade, descriptor,
+            term_type, term_grades, final_grade, descriptor,
         ).await
+    }
+
+    pub async fn get_term_grades_for_subject(
+        &self,
+        subject_id: Uuid,
+    ) -> AppResult<Vec<Option<i32>>> {
+        ops::get_term_grades_for_subject(&self.db, subject_id).await
     }
 
     // ── Previous Attendance ──
@@ -191,11 +196,10 @@ impl StudentRecordsRepository {
         month: String,
         school_days: i32,
         days_present: i32,
-        days_absent: i32,
     ) -> AppResult<previous_school_attendance::Model> {
         ops::upsert_previous_attendance(
             &self.db, student_id, school_history_id, school_year, month,
-            school_days, days_present, days_absent,
+            school_days, days_present,
         ).await
     }
 }

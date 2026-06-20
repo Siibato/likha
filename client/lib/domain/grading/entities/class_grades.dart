@@ -4,7 +4,7 @@ import 'package:likha/domain/grading/entities/grade_score.dart';
 
 class ClassGrades {
   final String classId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final List<GradeItem> items;
   final Map<String, List<GradeScore>> scoresByItem;
   final GradeConfig? config;
@@ -12,7 +12,7 @@ class ClassGrades {
 
   const ClassGrades({
     required this.classId,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.items,
     required this.scoresByItem,
     this.config,

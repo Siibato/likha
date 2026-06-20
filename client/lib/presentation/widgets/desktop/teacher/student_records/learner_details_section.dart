@@ -28,10 +28,10 @@ class _LearnerDetailsSectionState extends ConsumerState<LearnerDetailsSection> {
   @override
   Widget build(BuildContext context) {
     if (widget.students.isEmpty) {
-      return DesktopPageScaffold(
+      return const DesktopPageScaffold(
         title: 'Learner Details',
         subtitle: 'Edit student personal information for SF10',
-        body: const EmptyState.generic(
+        body: EmptyState.generic(
           title: 'No students enrolled',
           subtitle: 'Students will appear here once they join the advisory class',
         ),
@@ -149,11 +149,12 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
   late TextEditingController _birthplaceCtrl;
   late TextEditingController _homeAddressCtrl;
   late TextEditingController _fatherNameCtrl;
+  late TextEditingController _fatherContactCtrl;
   late TextEditingController _motherNameCtrl;
+  late TextEditingController _motherContactCtrl;
   late TextEditingController _guardianNameCtrl;
   late TextEditingController _guardianContactCtrl;
   late TextEditingController _dateAdmittedCtrl;
-  late TextEditingController _admittedToGradeCtrl;
   bool _initialized = false;
 
   @override
@@ -174,11 +175,12 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       _birthplaceCtrl.text = d?.birthplace ?? '';
       _homeAddressCtrl.text = d?.homeAddress ?? '';
       _fatherNameCtrl.text = d?.fatherName ?? '';
+      _fatherContactCtrl.text = d?.fatherContact ?? '';
       _motherNameCtrl.text = d?.motherName ?? '';
+      _motherContactCtrl.text = d?.motherContact ?? '';
       _guardianNameCtrl.text = d?.guardianName ?? '';
       _guardianContactCtrl.text = d?.guardianContact ?? '';
       _dateAdmittedCtrl.text = d?.dateAdmitted ?? '';
-      _admittedToGradeCtrl.text = d?.admittedToGrade ?? '';
       _initialized = true;
     }
   }
@@ -195,11 +197,12 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     _birthplaceCtrl = TextEditingController();
     _homeAddressCtrl = TextEditingController();
     _fatherNameCtrl = TextEditingController();
+    _fatherContactCtrl = TextEditingController();
     _motherNameCtrl = TextEditingController();
+    _motherContactCtrl = TextEditingController();
     _guardianNameCtrl = TextEditingController();
     _guardianContactCtrl = TextEditingController();
     _dateAdmittedCtrl = TextEditingController();
-    _admittedToGradeCtrl = TextEditingController();
     _syncControllers();
   }
 
@@ -214,11 +217,12 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     _birthplaceCtrl.dispose();
     _homeAddressCtrl.dispose();
     _fatherNameCtrl.dispose();
+    _fatherContactCtrl.dispose();
     _motherNameCtrl.dispose();
+    _motherContactCtrl.dispose();
     _guardianNameCtrl.dispose();
     _guardianContactCtrl.dispose();
     _dateAdmittedCtrl.dispose();
-    _admittedToGradeCtrl.dispose();
     super.dispose();
   }
 
@@ -233,11 +237,12 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       'birthplace': _birthplaceCtrl.text.isEmpty ? null : _birthplaceCtrl.text,
       'home_address': _homeAddressCtrl.text.isEmpty ? null : _homeAddressCtrl.text,
       'father_name': _fatherNameCtrl.text.isEmpty ? null : _fatherNameCtrl.text,
+      'father_contact': _fatherContactCtrl.text.isEmpty ? null : _fatherContactCtrl.text,
       'mother_name': _motherNameCtrl.text.isEmpty ? null : _motherNameCtrl.text,
+      'mother_contact': _motherContactCtrl.text.isEmpty ? null : _motherContactCtrl.text,
       'guardian_name': _guardianNameCtrl.text.isEmpty ? null : _guardianNameCtrl.text,
       'guardian_contact': _guardianContactCtrl.text.isEmpty ? null : _guardianContactCtrl.text,
       'date_admitted': _dateAdmittedCtrl.text.isEmpty ? null : _dateAdmittedCtrl.text,
-      'admitted_to_grade': _admittedToGradeCtrl.text.isEmpty ? null : _admittedToGradeCtrl.text,
     };
 
     final success = await widget.ref.read(learnerDetailsProvider.notifier).save(widget.classId, widget.studentId, data);
@@ -323,11 +328,12 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
               SizedBox(width: 220, child: _field('Birthplace', _birthplaceCtrl)),
               SizedBox(width: 300, child: _field('Home Address', _homeAddressCtrl, maxLines: 2)),
               SizedBox(width: 220, child: _field('Father\'s Name', _fatherNameCtrl)),
+              SizedBox(width: 180, child: _field('Father\'s Contact', _fatherContactCtrl)),
               SizedBox(width: 220, child: _field('Mother\'s Name', _motherNameCtrl)),
+              SizedBox(width: 180, child: _field('Mother\'s Contact', _motherContactCtrl)),
               SizedBox(width: 220, child: _field('Guardian Name', _guardianNameCtrl)),
               SizedBox(width: 180, child: _field('Guardian Contact', _guardianContactCtrl)),
               SizedBox(width: 180, child: _field('Date Admitted', _dateAdmittedCtrl)),
-              SizedBox(width: 180, child: _field('Admitted to Grade', _admittedToGradeCtrl)),
             ],
           ),
         ],

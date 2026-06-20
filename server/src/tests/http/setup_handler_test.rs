@@ -165,10 +165,10 @@ async fn update_school_code_as_student_returns_403() {
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);
 }
 
-// ── get_school_settings (admin) ───────────────────────────────────────────────
+// ── get_school_details (admin) ───────────────────────────────────────────────
 
 #[tokio::test]
-async fn get_school_settings_as_admin_returns_200() {
+async fn get_school_details_as_admin_returns_200() {
     let db = test_db().await;
     let admin = seed_admin(&db).await;
     let app = build_test_app(db).await;
@@ -179,7 +179,7 @@ async fn get_school_settings_as_admin_returns_200() {
 }
 
 #[tokio::test]
-async fn get_school_settings_unauthenticated_returns_401() {
+async fn get_school_details_unauthenticated_returns_401() {
     let db = test_db().await;
     let app = build_test_app(db).await;
 
@@ -188,10 +188,10 @@ async fn get_school_settings_unauthenticated_returns_401() {
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
 }
 
-// ── update_school_settings (admin) ────────────────────────────────────────────
+// ── update_school_details (admin) ────────────────────────────────────────────
 
 #[tokio::test]
-async fn update_school_settings_as_admin_returns_200() {
+async fn update_school_details_as_admin_returns_200() {
     let db = test_db().await;
     let admin = seed_admin(&db).await;
     let app = build_test_app(db).await;
@@ -212,7 +212,7 @@ async fn update_school_settings_as_admin_returns_200() {
 }
 
 #[tokio::test]
-async fn update_school_settings_missing_required_field_returns_error() {
+async fn update_school_details_missing_required_field_returns_error() {
     let db = test_db().await;
     let admin = seed_admin(&db).await;
     let app = build_test_app(db).await;
@@ -229,7 +229,7 @@ async fn update_school_settings_missing_required_field_returns_error() {
 }
 
 #[tokio::test]
-async fn update_school_settings_unauthenticated_returns_401() {
+async fn update_school_details_unauthenticated_returns_401() {
     let db = test_db().await;
     let app = build_test_app(db).await;
 
@@ -243,7 +243,7 @@ async fn update_school_settings_unauthenticated_returns_401() {
 }
 
 #[tokio::test]
-async fn update_school_settings_as_student_returns_403() {
+async fn update_school_details_as_student_returns_403() {
     let db = test_db().await;
     let student = seed_student(&db).await;
     let app = build_test_app(db).await;

@@ -92,7 +92,7 @@ class _AdminDashboardPageState
                 width: 380,
                 child: NavigationCard(
                   icon: Icons.settings_outlined,
-                  title: 'School Settings',
+                  title: 'School Details',
                   subtitle: 'Configure school info for printed reports',
                   onTap: () => widget.onNavigate?.call(3),
                 ),

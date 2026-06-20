@@ -1,11 +1,11 @@
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 
 /// DepEd weight presets — mirrors class_grading_setup_page.dart
 const weightPresets = {
@@ -22,7 +22,7 @@ const weightPresets = {
 GradeConfig configToEntity(GradeConfigModel m) => GradeConfig(
       id: m.id,
       classId: m.classId,
-      gradingPeriodNumber: m.gradingPeriodNumber,
+      termNumber: m.termNumber,
       wwWeight: m.wwWeight,
       ptWeight: m.ptWeight,
       qaWeight: m.qaWeight,
@@ -33,7 +33,7 @@ GradeItem itemToEntity(GradeItemModel m) => GradeItem(
       classId: m.classId,
       title: m.title,
       component: m.component,
-      gradingPeriodNumber: m.gradingPeriodNumber,
+      termNumber: m.termNumber,
       totalPoints: m.totalPoints,
       sourceType: m.sourceType,
       sourceId: m.sourceId,
@@ -63,13 +63,12 @@ bool gradeItemsHaveChanged(List<GradeItem> local, List<GradeItem> remote) {
   return false;
 }
 
-PeriodGrade periodToEntity(PeriodGradeModel m) => PeriodGrade(
+TermGrade periodToEntity(TermGradeModel m) => TermGrade(
       id: m.id,
       classId: m.classId,
       studentId: m.studentId,
-      gradingPeriodNumber: m.gradingPeriodNumber,
+      termNumber: m.termNumber,
       initialGrade: m.initialGrade,
       transmutedGrade: m.transmutedGrade,
       isLocked: m.isLocked,
-      computedAt: m.computedAt,
     );

@@ -67,7 +67,7 @@ class TosSection extends ConsumerWidget {
                     DataColumn(
                         label: Text('Title', style: dataTableHeaderStyle)),
                     DataColumn(
-                        label: Text('Quarter', style: dataTableHeaderStyle)),
+                        label: Text('Term', style: dataTableHeaderStyle)),
                     DataColumn(
                         label: Text('Mode', style: dataTableHeaderStyle)),
                     DataColumn(
@@ -92,7 +92,7 @@ class TosSection extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              'Q${tos.gradingPeriodNumber}',
+                              'T${tos.termNumber}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.foregroundSecondary,

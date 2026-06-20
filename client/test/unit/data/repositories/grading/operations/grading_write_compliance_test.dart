@@ -13,7 +13,7 @@ import 'package:likha/data/datasources/local/grading/grading_local_datasource.da
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 import 'package:likha/data/repositories/grading/operations/clear_score_override.dart';
 import 'package:likha/data/repositories/grading/operations/create_grade_item.dart';
 import 'package:likha/data/repositories/grading/operations/delete_grade_item.dart';
@@ -31,13 +31,13 @@ import '../../../../../helpers/test_database.dart';
 GradeConfigModel _fakeConfig({
   String id = 'config-1',
   String classId = 'class-1',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
 }) {
   final now = DateTime.now().toIso8601String();
   return GradeConfigModel(
     id: id,
     classId: classId,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     wwWeight: 30.0,
     ptWeight: 50.0,
     qaWeight: 20.0,
@@ -51,7 +51,7 @@ GradeItemModel _fakeItem({
   String classId = 'class-1',
   String title = 'Test Item',
   String component = 'ww',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
   double totalPoints = 100.0,
 }) {
   final now = DateTime.now();
@@ -60,7 +60,7 @@ GradeItemModel _fakeItem({
     classId: classId,
     title: title,
     component: component,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     totalPoints: totalPoints,
     sourceType: 'manual',
     orderIndex: 0,
@@ -89,22 +89,21 @@ GradeScoreModel _fakeScore({
   );
 }
 
-PeriodGradeModel _fakePeriodGrade({
+TermGradeModel _fakeTermGrade({
   String id = 'pg-1',
   String classId = 'class-1',
   String studentId = 'student-1',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
 }) {
   final now = DateTime.now();
-  return PeriodGradeModel(
+  return TermGradeModel(
     id: id,
     classId: classId,
     studentId: studentId,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     initialGrade: 85.0,
     transmutedGrade: 85,
     isLocked: false,
-    computedAt: now,
     createdAt: now,
     updatedAt: now,
   );
@@ -122,8 +121,8 @@ Future<void> _seedScore(GradingLocalDataSource local, GradeScoreModel score) asy
   await local.saveScores([score]);
 }
 
-Future<void> _seedPeriodGrade(GradingLocalDataSource local, PeriodGradeModel pg) async {
-  await local.savePeriodGrades([pg]);
+Future<void> _seedTermGrade(GradingLocalDataSource local, TermGradeModel pg) async {
+  await local.saveTermGrades([pg]);
 }
 
 Future<void> _seedStudent(String id, {String fullName = 'Student'}) async {
@@ -184,10 +183,10 @@ Future<Map<String, dynamic>?> _getScoreRow(String id) async {
   return rows.isEmpty ? null : rows.first;
 }
 
-Future<Map<String, dynamic>?> _getPeriodGradeRow(String id) async {
+Future<Map<String, dynamic>?> _getTermGradeRow(String id) async {
   final db = await LocalDatabase().database;
   final rows = await db.query(
-    DbTables.periodGrades,
+    DbTables.termGrades,
     where: '${CommonCols.id} = ?',
     whereArgs: [id],
   );
@@ -271,7 +270,7 @@ void main() {
         syncQueue,
         classId: 'class-1',
         configs: [
-          {'id': 'c1', 'quarter': 1, 'ww_weight': 35.0, 'pt_weight': 45.0, 'qa_weight': 20.0},
+          {'id': 'c1', 'term_number': 1, 'ww_weight': 35.0, 'pt_weight': 45.0, 'qa_weight': 20.0},
         ],
       );
 
@@ -297,7 +296,7 @@ void main() {
         data: {
           'title': 'New Item',
           'component': 'ww',
-          'grading_period_number': 1,
+          'term_number': 1,
           'total_points': 50.0,
           'order_index': 0,
         },
@@ -446,21 +445,21 @@ void main() {
 
   group('updateTransmutedGrade', () {
     test('returns MutationResult<void> with pending and enqueues update op', () async {
-      await _seedPeriodGrade(local, _fakePeriodGrade(id: 'pg1'));
+      await _seedTermGrade(local, _fakeTermGrade(id: 'pg1'));
 
       final result = await updateTransmutedGrade(
         local,
         syncQueue,
         classId: 'class-1',
         studentId: 'student-1',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         transmutedGrade: 90,
       );
 
       _assertMutationResult(result);
 
-      final row = await _getPeriodGradeRow('pg1');
-      expect(row![PeriodGradesCols.transmutedGrade], 90);
+      final row = await _getTermGradeRow('pg1');
+      expect(row![TermGradesCols.transmutedGrade], 90);
       expect(row[CommonCols.syncStatus], SyncStatus.pending.dbValue);
 
       final queue = await _getSyncQueueRows();

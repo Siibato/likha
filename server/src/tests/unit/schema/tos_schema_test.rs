@@ -7,14 +7,14 @@ use crate::modules::tos::schema::{
 #[test]
 fn test_create_tos_request_required_fields() {
     let json = r#"{
-        "title": "Q1 TOS",
-        "grading_period_number": 1,
+        "title": "T1 TOS",
+        "term_number": 1,
         "classification_mode": "difficulty",
         "total_items": 40
     }"#;
     let req: CreateTosRequest = serde_json::from_str(json).unwrap();
-    assert_eq!(req.title, "Q1 TOS");
-    assert_eq!(req.grading_period_number, 1);
+    assert_eq!(req.title, "T1 TOS");
+    assert_eq!(req.term_number, 1);
     assert_eq!(req.classification_mode, "difficulty");
     assert_eq!(req.total_items, 40);
 }
@@ -22,8 +22,8 @@ fn test_create_tos_request_required_fields() {
 #[test]
 fn test_create_tos_request_optional_fields_default_to_none() {
     let json = r#"{
-        "title": "Q2 TOS",
-        "grading_period_number": 2,
+        "title": "T2 TOS",
+        "term_number": 2,
         "classification_mode": "bloom",
         "total_items": 60
     }"#;
@@ -39,8 +39,8 @@ fn test_create_tos_request_optional_fields_default_to_none() {
 #[test]
 fn test_create_tos_request_with_all_optional_fields() {
     let json = r#"{
-        "title": "Q3 TOS",
-        "grading_period_number": 3,
+        "title": "T3 TOS",
+        "term_number": 3,
         "classification_mode": "difficulty",
         "total_items": 50,
         "time_unit": "weeks",
@@ -57,7 +57,7 @@ fn test_create_tos_request_with_all_optional_fields() {
 #[test]
 fn test_create_tos_request_rejects_missing_required_field() {
     let json = r#"{
-        "grading_period_number": 1,
+        "term_number": 1,
         "classification_mode": "difficulty",
         "total_items": 40
     }"#;

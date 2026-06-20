@@ -12,7 +12,7 @@ export 'get_grade_summary.dart';
 export 'get_grading_config.dart';
 export 'get_my_grade_detail.dart';
 export 'get_my_grades.dart';
-export 'get_period_grades.dart';
+export 'get_term_grades.dart';
 export 'get_scores_by_item.dart';
 export 'get_sf10.dart';
 export 'get_sf9.dart';

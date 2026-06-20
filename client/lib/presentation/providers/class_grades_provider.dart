@@ -10,14 +10,14 @@ import 'package:likha/injection_container.dart';
 class ClassGradesState {
   final ClassGrades? grades;
   final String classId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final bool isLoading;
   final String? error;
 
   const ClassGradesState({
     this.grades,
     this.classId = '',
-    this.gradingPeriodNumber = 1,
+    this.termNumber = 1,
     this.isLoading = false,
     this.error,
   });
@@ -25,7 +25,7 @@ class ClassGradesState {
   ClassGradesState copyWith({
     ClassGrades? grades,
     String? classId,
-    int? gradingPeriodNumber,
+    int? termNumber,
     bool? isLoading,
     String? error,
     bool clearError = false,
@@ -33,7 +33,7 @@ class ClassGradesState {
     return ClassGradesState(
       grades: grades ?? this.grades,
       classId: classId ?? this.classId,
-      gradingPeriodNumber: gradingPeriodNumber ?? this.gradingPeriodNumber,
+      termNumber: termNumber ?? this.termNumber,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
     );
@@ -50,7 +50,7 @@ class ClassGradesNotifier extends StateNotifier<ClassGradesState> {
       if (state.classId == classId && state.grades != null) {
         loadClassGrades(
           classId: classId,
-          gradingPeriodNumber: state.gradingPeriodNumber,
+          termNumber: state.termNumber,
           skipBackgroundRefresh: true,
         );
       }
@@ -59,22 +59,22 @@ class ClassGradesNotifier extends StateNotifier<ClassGradesState> {
 
   Future<void> loadClassGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     bool skipBackgroundRefresh = false,
   }) async {
     final hasCached = state.grades != null &&
         state.classId == classId &&
-        state.gradingPeriodNumber == gradingPeriodNumber;
+        state.termNumber == termNumber;
     state = state.copyWith(
       isLoading: !hasCached,
       clearError: true,
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
     );
 
     final result = await _getClassGrades(
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       skipBackgroundRefresh: skipBackgroundRefresh,
     );
 

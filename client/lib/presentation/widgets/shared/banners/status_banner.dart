@@ -31,7 +31,7 @@ enum BannerSeverity {
 /// ```dart
 /// StatusBanner(
 ///   severity: BannerSeverity.warning,
-///   message: 'Grading period is not yet configured.',
+///   message: 'Term is not yet configured.',
 /// )
 ///
 /// StatusBanner(

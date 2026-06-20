@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/presentation/providers/general_average_provider.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/descriptor_badge.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/grade_table_cells.dart';
 
-/// Scrollable final grade table showing Q1–Q4, Final Grade, General Average,
+/// Scrollable final grade table showing T1–T4, Final Grade, General Average,
 /// and descriptor badge for each student.
 ///
 /// Reads [generalAverageProvider] internally for the GA column.
@@ -14,6 +15,15 @@ class FinalGradeTable extends ConsumerWidget {
   final List<Map<String, dynamic>> data;
 
   const FinalGradeTable({super.key, required this.data});
+
+  int get _termCount {
+    for (final row in data) {
+      for (int i = 4; i >= 1; i--) {
+        if (row['t$i'] != null) return i;
+      }
+    }
+    return termCountFromType(null);
+  }
 
   static int? _intOrNull(dynamic v) {
     if (v == null) return null;
@@ -61,10 +71,9 @@ class FinalGradeTable extends ConsumerWidget {
                   children: [
                     GradeTableCells.headerCell('Student', nameWidth,
                         align: Alignment.centerLeft),
-                    GradeTableCells.headerCell('Q1', cellWidth),
-                    GradeTableCells.headerCell('Q2', cellWidth),
-                    GradeTableCells.headerCell('Q3', cellWidth),
-                    GradeTableCells.headerCell('Q4', cellWidth),
+                    ...List.generate(_termCount, (i) =>
+                      GradeTableCells.headerCell('T${i + 1}', cellWidth),
+                    ),
                     GradeTableCells.headerCell('Final', fgWidth),
                     GradeTableCells.headerCell('GA', gaWidth),
                     GradeTableCells.headerCell('Descriptor', descriptorWidth),
@@ -80,16 +89,12 @@ class FinalGradeTable extends ConsumerWidget {
                 final studentId = row['student_id'] as String?;
                 final studentName = row['student_name'] as String? ?? 'Unknown';
 
-                final q1 = _intOrNull(row['q1']);
-                final q2 = _intOrNull(row['q2']);
-                final q3 = _intOrNull(row['q3']);
-                final q4 = _intOrNull(row['q4']);
-
-                final quarterGrades =
-                    [q1, q2, q3, q4].whereType<int>().toList();
-                final finalGrade = quarterGrades.isNotEmpty
-                    ? (quarterGrades.reduce((a, b) => a + b) /
-                            quarterGrades.length)
+                final termGrades = List.generate(_termCount, (i) =>
+                    _intOrNull(row['t${i + 1}']))
+                    .whereType<int>().toList();
+                final finalGrade = termGrades.isNotEmpty
+                    ? (termGrades.reduce((a, b) => a + b) /
+                            termGrades.length)
                         .round()
                     : null;
 
@@ -122,14 +127,11 @@ class FinalGradeTable extends ConsumerWidget {
                           color: AppColors.foregroundPrimary,
                         ),
                       ),
-                      GradeTableCells.dataCell(
-                          q1?.toString() ?? '--', cellWidth, cellHeight),
-                      GradeTableCells.dataCell(
-                          q2?.toString() ?? '--', cellWidth, cellHeight),
-                      GradeTableCells.dataCell(
-                          q3?.toString() ?? '--', cellWidth, cellHeight),
-                      GradeTableCells.dataCell(
-                          q4?.toString() ?? '--', cellWidth, cellHeight),
+                      ...List.generate(_termCount, (i) {
+                        final grade = _intOrNull(row['t${i + 1}']);
+                        return GradeTableCells.dataCell(
+                            grade?.toString() ?? '--', cellWidth, cellHeight);
+                      }),
                       GradeTableCells.dataCell(
                         finalGrade?.toString() ?? '--',
                         fgWidth,

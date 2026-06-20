@@ -30,7 +30,7 @@ impl super::SyncPushService {
                     show_results_immediately: None,
                     is_published: op.payload.get("is_published").and_then(|v| v.as_bool()),
                     questions: None,
-                    grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    term_number: op.payload.get("term_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     tos_id: op.payload.get("tos_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
@@ -49,7 +49,7 @@ impl super::SyncPushService {
                     open_at: op.payload.get("open_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     close_at: op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     show_results_immediately: None,
-                    grading_period_number: op.payload.get("grading_period_number").and_then(|v| v.as_i64()).map(|v| v as i32),
+                    term_number: op.payload.get("term_number").and_then(|v| v.as_i64()).map(|v| v as i32),
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     tos_id: op.payload.get("tos_id").map(|v| v.as_str().map(|s| s.to_string())),
                 };

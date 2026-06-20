@@ -10,14 +10,14 @@ String _getDescriptor(int grade) {
   return 'Did Not Meet Expectations';
 }
 
-int _periodCount(String gradingPeriodType) {
-  switch (gradingPeriodType) {
+int _termCount(String termType) {
+  switch (termType) {
     case 'semester':
       return 2;
     case 'trimester':
       return 3;
     default:
-      return 4;
+      return 3;
   }
 }
 
@@ -44,10 +44,10 @@ Future<Sf9ResponseModel?> assembleSf9Local(
   final schoolYear = classRow[ClassesCols.schoolYear] as String?;
   final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
   final section = classRow[ClassesCols.title] as String?;
-  final gradingPeriodType =
-      classRow[ClassesCols.gradingPeriodType] as String? ?? 'quarter';
+  final termType =
+      classRow[ClassesCols.termType] as String? ?? 'term';
   final teacherName = classRow[ClassesCols.teacherFullName] as String?;
-  final numPeriods = _periodCount(gradingPeriodType);
+  final numTerms = _termCount(termType);
 
   // 2. Get student name from users table
   final userRows = await db.query(
@@ -97,9 +97,9 @@ Future<Sf9ResponseModel?> assembleSf9Local(
 
   if (classMatches.isEmpty) return null;
 
-  // 6. For each enrolled class, get period_grades
+  // 6. For each enrolled class, get term_grades
   final subjects = <Sf9SubjectRowModel>[];
-  final periodSums = List<List<int>>.generate(numPeriods, (_) => []);
+  final termSums = List<List<int>>.generate(numTerms, (_) => []);
   final finalGrades = <int>[];
 
   for (final classMatch in classMatches) {
@@ -107,26 +107,26 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     final ctitle = classMatch[ClassesCols.title] as String? ?? '';
 
     final pgRows = await db.query(
-      DbTables.periodGrades,
+      DbTables.termGrades,
       where:
-          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
+          '${TermGradesCols.classId} = ? AND ${TermGradesCols.studentId} = ?',
       whereArgs: [cid, studentId],
     );
 
-    final periodVals = List<int?>.filled(numPeriods, null);
+    final termVals = List<int?>.filled(numTerms, null);
     for (final pg in pgRows) {
-      final periodNum = pg[PeriodGradesCols.gradingPeriodNumber] as int?;
-      final transmuted = pg[PeriodGradesCols.transmutedGrade] as int?;
-      if (periodNum != null && transmuted != null) {
-        final idx = periodNum - 1;
-        if (idx >= 0 && idx < numPeriods) {
-          periodVals[idx] = transmuted;
-          periodSums[idx].add(transmuted);
+      final termNum = pg[TermGradesCols.termNumber] as int?;
+      final transmuted = pg[TermGradesCols.transmutedGrade] as int?;
+      if (termNum != null && transmuted != null) {
+        final idx = termNum - 1;
+        if (idx >= 0 && idx < numTerms) {
+          termVals[idx] = transmuted;
+          termSums[idx].add(transmuted);
         }
       }
     }
 
-    final transmuted = periodVals.whereType<int>().toList();
+    final transmuted = termVals.whereType<int>().toList();
     final int? finalGrade;
     if (transmuted.isEmpty) {
       finalGrade = null;
@@ -143,7 +143,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
 
     subjects.add(Sf9SubjectRowModel(
       classTitle: ctitle,
-      periodGrades: periodVals,
+      termGrades: termVals,
       finalGrade: finalGrade,
       descriptor: descriptor,
     ));
@@ -160,8 +160,8 @@ Future<Sf9ResponseModel?> assembleSf9Local(
   final gaDescriptor =
       finalAverage != null ? _getDescriptor(finalAverage) : null;
 
-  final generalAverage = Sf9PeriodAveragesModel(
-    periodGrades: periodSums.map((s) => computeAvg(s)).toList(),
+  final generalAverage = Sf9TermAveragesModel(
+    termGrades: termSums.map((s) => computeAvg(s)).toList(),
     finalAverage: finalAverage,
     descriptor: gaDescriptor,
   );
@@ -178,7 +178,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     trackStrand: learner?[LearnerDetailsCols.trackStrand] as String?,
     curriculum: learner?[LearnerDetailsCols.curriculum] as String?,
     teacherName: teacherName,
-    gradingPeriodType: gradingPeriodType,
+    termType: termType,
     subjects: subjects,
     generalAverage: generalAverage,
   );

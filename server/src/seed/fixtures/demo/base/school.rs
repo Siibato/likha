@@ -1,10 +1,10 @@
-//! Demo school settings.
+//! Demo school details.
 
-use crate::seed::specs::SchoolSettingsSpec;
+use crate::seed::specs::SchoolDetailsSpec;
 use crate::seed::tools::SeedContext;
 
-pub fn demo_school_settings(ctx: &SeedContext) -> SchoolSettingsSpec {
-    SchoolSettingsSpec {
+pub fn demo_school_details(ctx: &SeedContext) -> SchoolDetailsSpec {
+    SchoolDetailsSpec {
         id: 1,
         school_code: "LIKHA1".into(),
         school_name: Some("Likha National High School".into()),

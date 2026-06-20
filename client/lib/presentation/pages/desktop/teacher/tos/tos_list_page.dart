@@ -77,7 +77,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                         ),
                         columns: const [
                           DataColumn(label: Text('Title')),
-                          DataColumn(label: Text('Quarter')),
+                          DataColumn(label: Text('Term')),
                           DataColumn(label: Text('Mode')),
                           DataColumn(label: Text('Total Items'), numeric: true),
                           DataColumn(label: Text('Created')),
@@ -106,7 +106,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                   color: AppColors.foregroundPrimary,
                                 ),
                               )),
-                              DataCell(Text('Q${tos.gradingPeriodNumber}')),
+                              DataCell(Text('T${tos.termNumber}')),
                               DataCell(Text(modeLabel)),
                               DataCell(Text('${tos.totalItems}')),
                               DataCell(Text(

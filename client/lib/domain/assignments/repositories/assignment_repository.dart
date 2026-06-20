@@ -17,7 +17,7 @@ abstract class AssignmentRepository {
     int? maxFileSizeMb,
     required String dueAt,
     bool isPublished = true,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
     bool? noSubmissionRequired,
   });

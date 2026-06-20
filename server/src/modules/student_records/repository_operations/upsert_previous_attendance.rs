@@ -13,7 +13,6 @@ pub async fn upsert_previous_attendance(
     month: String,
     school_days: i32,
     days_present: i32,
-    days_absent: i32,
 ) -> AppResult<previous_school_attendance::Model> {
     let now = Utc::now().naive_utc();
 
@@ -30,7 +29,6 @@ pub async fn upsert_previous_attendance(
         let mut am: previous_school_attendance::ActiveModel = model.into();
         am.school_days = sea_orm::ActiveValue::Set(school_days);
         am.days_present = sea_orm::ActiveValue::Set(days_present);
-        am.days_absent = sea_orm::ActiveValue::Set(days_absent);
         am.updated_at = sea_orm::ActiveValue::Set(now);
         am.update(db)
             .await
@@ -44,9 +42,9 @@ pub async fn upsert_previous_attendance(
             month: sea_orm::ActiveValue::Set(month),
             school_days: sea_orm::ActiveValue::Set(school_days),
             days_present: sea_orm::ActiveValue::Set(days_present),
-            days_absent: sea_orm::ActiveValue::Set(days_absent),
             created_at: sea_orm::ActiveValue::Set(now),
             updated_at: sea_orm::ActiveValue::Set(now),
+            deleted_at: sea_orm::ActiveValue::Set(None),
         };
         am.insert(db)
             .await

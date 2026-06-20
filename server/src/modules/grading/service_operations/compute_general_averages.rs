@@ -63,11 +63,11 @@ impl crate::modules::grading::service::GradeComputationService {
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
-            let period_grades = self.repo.get_period_grades_for_student_class(
+            let term_grades = self.repo.get_term_grades_for_student_class(
                 student_id, ec.class_id,
             ).await?;
 
-            let transmuted: Vec<i32> = period_grades
+            let transmuted: Vec<i32> = term_grades
                 .iter()
                 .filter_map(|qg| qg.transmuted_grade)
                 .collect();

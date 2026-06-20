@@ -20,7 +20,7 @@ import '../../../../helpers/test_database.dart';
 TosModel _fakeTos({String id = 'tos-1', String classId = 'c-1'}) => TosModel(
       id: id,
       classId: classId,
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       title: 'Q1 TOS',
       classificationMode: 'difficulty',
       totalItems: 40,
@@ -175,7 +175,7 @@ void main() {
           classId: 'c-1',
           data: {
             'title': 'Q1 TOS',
-            'grading_period_number': 1,
+            'term_number': 1,
             'classification_mode': 'difficulty',
             'total_items': 40,
           },

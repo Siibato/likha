@@ -2,26 +2,26 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
+import 'package:likha/data/models/setup/school_details_model.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
-Future<SchoolSettingsModel> getCachedSchoolSettings(LocalDatabase db) async {
+Future<SchoolDetailsModel> getCachedSchoolDetails(LocalDatabase db) async {
   final database = await db.database;
   final rows = await database.query(
-    DbTables.schoolSettings,
+    DbTables.schoolDetails,
     limit: 1,
   );
-  if (rows.isEmpty) throw CacheException('School settings not cached');
-  return SchoolSettingsModel.fromMap(rows.first);
+  if (rows.isEmpty) throw CacheException('School details not cached');
+  return SchoolDetailsModel.fromMap(rows.first);
 }
 
-Future<void> cacheSchoolSettings(
+Future<void> cacheSchoolDetails(
   LocalDatabase db,
-  SchoolSettingsModel settings,
+  SchoolDetailsModel settings,
 ) async {
   final database = await db.database;
   await database.insert(
-    DbTables.schoolSettings,
+    DbTables.schoolDetails,
     settings
         .copyWith(cachedAt: DateTime.now())
         .toMap(),
@@ -29,7 +29,7 @@ Future<void> cacheSchoolSettings(
   );
 }
 
-Future<void> updateSchoolSettingsLocally(
+Future<void> updateSchoolDetailsLocally(
   LocalDatabase db, {
   required String schoolName,
   required String schoolRegion,
@@ -45,17 +45,17 @@ Future<void> updateSchoolSettingsLocally(
   final database = await db.database;
   final executor = txn ?? database;
   await executor.insert(
-    DbTables.schoolSettings,
+    DbTables.schoolDetails,
     {
       'id': '1',
-      SchoolSettingsCols.schoolName: schoolName,
-      SchoolSettingsCols.schoolRegion: schoolRegion,
-      SchoolSettingsCols.schoolDivision: schoolDivision,
-      SchoolSettingsCols.schoolYear: schoolYear,
-      SchoolSettingsCols.schoolCode: schoolCode,
-      SchoolSettingsCols.schoolDistrict: schoolDistrict,
-      SchoolSettingsCols.schoolHeadName: schoolHeadName,
-      SchoolSettingsCols.schoolHeadPosition: schoolHeadPosition,
+      SchoolDetailsCols.schoolName: schoolName,
+      SchoolDetailsCols.schoolRegion: schoolRegion,
+      SchoolDetailsCols.schoolDivision: schoolDivision,
+      SchoolDetailsCols.schoolYear: schoolYear,
+      SchoolDetailsCols.schoolCode: schoolCode,
+      SchoolDetailsCols.schoolDistrict: schoolDistrict,
+      SchoolDetailsCols.schoolHeadName: schoolHeadName,
+      SchoolDetailsCols.schoolHeadPosition: schoolHeadPosition,
       CommonCols.cachedAt: DateTime.now().toIso8601String(),
       CommonCols.syncStatus: syncStatus.dbValue,
     },

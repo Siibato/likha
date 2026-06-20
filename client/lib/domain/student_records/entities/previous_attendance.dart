@@ -8,7 +8,6 @@ class PreviousAttendance extends Equatable {
   final String month;
   final int schoolDays;
   final int daysPresent;
-  final int daysAbsent;
 
   const PreviousAttendance({
     required this.id,
@@ -18,7 +17,6 @@ class PreviousAttendance extends Equatable {
     required this.month,
     required this.schoolDays,
     required this.daysPresent,
-    required this.daysAbsent,
   });
 
   @override

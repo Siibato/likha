@@ -25,10 +25,11 @@ ResultFuture<PreviousSubject> upsertPreviousSubject(
       schoolHistoryId: data['school_history_id'] as String,
       subjectName: data['subject_name'] as String,
       subjectGroup: data['subject_group'] as String?,
-      q1Grade: data['q1_grade'] as int?,
-      q2Grade: data['q2_grade'] as int?,
-      q3Grade: data['q3_grade'] as int?,
-      q4Grade: data['q4_grade'] as int?,
+      termType: data['term_type'] as String? ?? 'quarterly',
+      termGrades: (data['term_grades'] as List<dynamic>?)
+          ?.map((e) => e as int?)
+          .toList() ??
+          const [],
       finalGrade: data['final_grade'] as int?,
       descriptor: data['descriptor'] as String?,
     );

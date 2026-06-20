@@ -17,7 +17,7 @@ pub struct CreateAssignmentRequest {
     pub due_at: String,
     #[serde(default)]
     pub is_published: Option<bool>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
 }
 
@@ -31,7 +31,7 @@ pub struct UpdateAssignmentRequest {
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: Option<String>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
 }
 
@@ -69,7 +69,7 @@ pub struct AssignmentResponse {
     pub order_index: i32,
     pub submission_count: usize,
     pub graded_count: usize,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
     pub submission_status: Option<String>,
     pub submission_id: Option<Uuid>,

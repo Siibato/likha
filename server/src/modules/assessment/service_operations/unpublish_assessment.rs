@@ -53,9 +53,9 @@ impl crate::modules::assessment::service::AssessmentService {
             total_points: unpublished.total_points,
             question_count,
             submission_count,
-            grading_period_number: unpublished.grading_period_number,
+            term_number: unpublished.term_number,
             component: unpublished.component.clone(),
-            tos_id: unpublished.tos_id.clone(),
+            tos_id: unpublished.tos_id.map(|u| u.to_string()),
             created_at: fmt_utc(unpublished.created_at),
             updated_at: fmt_utc(unpublished.updated_at),
         })

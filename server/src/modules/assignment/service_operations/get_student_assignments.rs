@@ -50,7 +50,7 @@ pub async fn get_student_assignments(
             order_index: a.order_index,
             submission_count,
             graded_count,
-            grading_period_number: a.grading_period_number,
+            term_number: a.term_number,
             component: a.component,
             submission_status: submission.map(|s| s.status.clone()),
             submission_id: submission.map(|s| s.id),

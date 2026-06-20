@@ -11,7 +11,7 @@ ResultFuture<MutationResult<void>> updateTransmutedGrade(
   SyncQueue syncQueue, {
   required String classId,
   required String studentId,
-  required int gradingPeriodNumber,
+  required int termNumber,
   required int transmutedGrade,
 }) async {
   try {
@@ -23,7 +23,7 @@ ResultFuture<MutationResult<void>> updateTransmutedGrade(
       await localDataSource.updateTransmutedGrade(
         classId,
         studentId,
-        gradingPeriodNumber,
+        termNumber,
         transmutedGrade,
         txn: txn,
       );
@@ -35,7 +35,7 @@ ResultFuture<MutationResult<void>> updateTransmutedGrade(
           payload: {
             'class_id': classId,
             'student_id': studentId,
-            'grading_period_number': gradingPeriodNumber,
+            'term_number': termNumber,
             'transmuted_grade': transmutedGrade,
           },
           status: SyncStatus.pending,

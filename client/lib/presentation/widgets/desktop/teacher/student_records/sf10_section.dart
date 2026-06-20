@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
@@ -266,7 +267,7 @@ class _Sf10Content extends StatelessWidget {
               ]),
               const SizedBox(height: 24),
               // Scholastic records
-              Text('Scholastic Records', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+              const Text('Scholastic Records', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
               const SizedBox(height: 12),
               ...data.scholasticRecords.map((yr) => _yearCard(yr)),
               const SizedBox(height: 24),
@@ -274,7 +275,7 @@ class _Sf10Content extends StatelessWidget {
               if (data.schoolHistory.isNotEmpty) ...[
                 Row(
                   children: [
-                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Text('School History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => Navigator.push(
@@ -298,7 +299,7 @@ class _Sf10Content extends StatelessWidget {
               ] else ...[
                 Row(
                   children: [
-                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Text('School History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => Navigator.push(
@@ -407,16 +408,15 @@ class _Sf10Content extends StatelessWidget {
             children: [
               TableRow(children: [
                 _th('Subject'),
-                _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'),
+                ...List.generate(termCountFromType(null), (i) => _th('T${i + 1}')),
                 _th('Final'),
                 _th('Descriptor'),
               ]),
               ...yr.subjects.map((s) => TableRow(children: [
                 _td(s.classTitle),
-                _td(s.periodGrades.isNotEmpty ? s.periodGrades[0]?.toString() ?? '-' : '-'),
-                _td(s.periodGrades.length > 1 ? s.periodGrades[1]?.toString() ?? '-' : '-'),
-                _td(s.periodGrades.length > 2 ? s.periodGrades[2]?.toString() ?? '-' : '-'),
-                _td(s.periodGrades.length > 3 ? s.periodGrades[3]?.toString() ?? '-' : '-'),
+                ...List.generate(termCountFromType(null), (i) =>
+                  _td(s.termGrades.length > i ? s.termGrades[i]?.toString() ?? '-' : '-'),
+                ),
                 _td(s.finalGrade?.toString() ?? '-'),
                 _td(s.descriptor ?? '-'),
               ])),
@@ -496,15 +496,18 @@ class _Sf10Content extends StatelessWidget {
                 5: FlexColumnWidth(1),
               },
               children: [
-                TableRow(children: [_th('Subject'), _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'), _th('Final')]),
-                ...h.subjects.map((s) => TableRow(children: [
-                  _td(s.subjectName),
-                  _td(s.q1Grade?.toString() ?? '-'),
-                  _td(s.q2Grade?.toString() ?? '-'),
-                  _td(s.q3Grade?.toString() ?? '-'),
-                  _td(s.q4Grade?.toString() ?? '-'),
-                  _td(s.finalGrade?.toString() ?? '-'),
-                ])),
+                TableRow(children: [_th('Subject'), _th('T1'), _th('T2'), _th('T3'), _th('T4'), _th('Final')]),
+                ...h.subjects.map((s) {
+                  final tg = s.termGrades;
+                  return TableRow(children: [
+                    _td(s.subjectName),
+                    _td(tg.isNotEmpty ? tg[0]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 1 ? tg[1]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 2 ? tg[2]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 3 ? tg[3]?.toString() ?? '-' : '-'),
+                    _td(s.finalGrade?.toString() ?? '-'),
+                  ]);
+                }),
               ],
             ),
           ],

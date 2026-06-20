@@ -242,9 +242,8 @@ class CoreValuesNotifier extends StateNotifier<CoreValuesState> {
       (record) {
         final updated = [
           ...state.records.where((r) =>
-              r.coreValue != record.coreValue ||
-              r.behaviorStatement != record.behaviorStatement ||
-              r.gradingPeriodNumber != record.gradingPeriodNumber),
+              r.coreValueId != record.coreValueId ||
+              r.termNumber != record.termNumber),
           record,
         ];
         state = state.copyWith(isSaving: false, records: updated);

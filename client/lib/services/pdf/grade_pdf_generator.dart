@@ -74,7 +74,7 @@ class GradePdfGenerator {
     ServiceLogger.instance.log('generatePdf: Saving PDF to file');
     final bytes = await pdf.save();
     final fileName =
-        '${ctx.className}_Q${ctx.quarter}_Grades_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        '${ctx.className}_T${ctx.termNumber}_Grades_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
     await FileSaver.instance.saveFile(
       name: fileName,

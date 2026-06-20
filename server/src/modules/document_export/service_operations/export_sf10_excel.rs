@@ -36,7 +36,7 @@ pub async fn run(
     let sf10 = student_records_service
         .get_sf10(class_id, student_id, teacher_id)
         .await?;
-    let settings = setup_service.get_school_settings().await?;
+    let settings = setup_service.get_school_details().await?;
 
     let mut engine = ExcelEngine::new();
     let sheet = engine.worksheet();
@@ -69,7 +69,7 @@ pub async fn run(
             .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
         row += 1;
 
-        let headers = ["Subject", "Q1", "Q2", "Q3", "Q4", "Final", "Descriptor", "School"];
+        let headers = ["Subject", "T1", "T2", "T3", "T4", "Final", "Descriptor", "School"];
         for (col, h) in headers.iter().enumerate() {
             sheet.write_with_format(row, col as u16, *h, &header_fmt())
                 .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
@@ -79,7 +79,7 @@ pub async fn run(
         for subject in &record.subjects {
             sheet.write_with_format(row, 0, &subject.class_title, &data_fmt())
                 .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
-            for (i, grade) in subject.period_grades.iter().enumerate() {
+            for (i, grade) in subject.term_grades.iter().enumerate() {
                 if let Some(g) = grade {
                     sheet.write_with_format(row, (i + 1) as u16, *g, &data_fmt())
                         .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;

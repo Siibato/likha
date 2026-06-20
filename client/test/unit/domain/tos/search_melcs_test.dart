@@ -18,13 +18,13 @@ void main() {
   });
 
   group('SearchMelcs', () {
-    final tParams = SearchMelcsParams(subject: 'Math', gradeLevel: 'Grade 7', quarter: 1);
+    final tParams = SearchMelcsParams(subject: 'Math', gradeLevel: 'Grade 7', termNumber: 1);
     final tMelcs = [
       const MelcEntryModel(
         id: 1,
         subject: 'Math',
         gradeLevel: 'Grade 7',
-        quarter: 1,
+        termNumber: 1,
         competencyCode: 'M7NS-Ia-1',
         competencyText: 'Describes well-defined sets',
       ),
@@ -34,7 +34,7 @@ void main() {
       when(() => mockRepository.searchMelcs(
         subject: any(named: 'subject'),
         gradeLevel: any(named: 'gradeLevel'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         query: any(named: 'query'),
       )).thenAnswer((_) async => Right(tMelcs));
 
@@ -44,7 +44,7 @@ void main() {
       verify(() => mockRepository.searchMelcs(
         subject: 'Math',
         gradeLevel: 'Grade 7',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         query: null,
       )).called(1);
     });
@@ -53,7 +53,7 @@ void main() {
       when(() => mockRepository.searchMelcs(
         subject: any(named: 'subject'),
         gradeLevel: any(named: 'gradeLevel'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         query: any(named: 'query'),
       )).thenAnswer((_) async => const Right(<MelcEntryModel>[]));
 
@@ -67,7 +67,7 @@ void main() {
       when(() => mockRepository.searchMelcs(
         subject: any(named: 'subject'),
         gradeLevel: any(named: 'gradeLevel'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         query: any(named: 'query'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 

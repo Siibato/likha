@@ -28,7 +28,7 @@ class GradeExcelGenerator {
     if (bytes == null) throw Exception('Failed to encode Excel file');
 
     final fileName =
-        '${ctx.className}_Q${ctx.quarter}_Grades_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        '${ctx.className}_T${ctx.termNumber}_Grades_${DateTime.now().millisecondsSinceEpoch}.xlsx';
     await FileSaver.instance.saveFile(
       name: fileName,
       bytes: Uint8List.fromList(bytes),
@@ -58,7 +58,7 @@ class GradeExcelGenerator {
       sheet.setColumnWidth(col++, i < qa.items.length ? 5 : 7);
     }
     sheet.setColumnWidth(col++, 9);  // Initial Grade
-    sheet.setColumnWidth(col++, 10); // Quarterly Grade
+    sheet.setColumnWidth(col++, 10); // Term Grade
   }
 }
 

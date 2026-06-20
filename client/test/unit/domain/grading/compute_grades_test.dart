@@ -23,25 +23,25 @@ void main() {
     test('should compute grades successfully', () async {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Right(null));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result.isRight(), true);
       verify(() => mockRepository.computeGrades(
         classId: tClassId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
       )).called(1);
     });
 
     test('should return ServerFailure when class not found', () async {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
-      final result = await useCase(classId: 'nonexistent-id', gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: 'nonexistent-id', termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(
@@ -53,10 +53,10 @@ void main() {
     test('should return UnauthorizedFailure when not authorized', () async {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const  Left(UnauthorizedFailure('Unauthorized')));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(
@@ -68,10 +68,10 @@ void main() {
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.computeGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const  Left(ServerFailure('Server error')));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(

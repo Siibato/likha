@@ -27,12 +27,13 @@ enum SyncEntityType {
   gradeScore('grade_score'),
   tableOfSpecifications('table_of_specifications'),
   tosCompetency('tos_competency'),
-  schoolSettings('school_settings'),
+  schoolDetails('school_details'),
   learnerDetails('learner_details'),
   attendanceRecords('attendance_records'),
   coreValuesRecords('core_values_records'),
   schoolHistory('school_history'),
   previousSchoolSubjects('previous_school_subjects'),
+  previousSchoolTermGrades('previous_school_term_grades'),
   previousSchoolAttendance('previous_school_attendance');
 
   const SyncEntityType(this.serverValue);

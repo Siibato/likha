@@ -7,7 +7,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
-use crate::modules::setup::schema::{UpdateCodeRequest, UpdateSchoolSettingsRequest, VerifyQuery};
+use crate::modules::setup::schema::{UpdateCodeRequest, UpdateSchoolDetailsRequest, VerifyQuery};
 use crate::modules::setup::service::SetupService;
 use crate::utils::response::success_response;
 use crate::utils::auth_guards::{require_admin, require_teacher_or_admin};
@@ -76,30 +76,30 @@ pub async fn update_school_code(
     }
 }
 
-/// TEACHER/ADMIN — returns all school settings.
-pub async fn get_school_settings(
+/// TEACHER/ADMIN — returns all school details.
+pub async fn get_school_details(
     State(setup_service): State<Arc<SetupService>>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
     if let Err(e) = require_teacher_or_admin(&auth_user) {
         return e.into_response();
     }
-    match setup_service.get_school_settings().await {
+    match setup_service.get_school_details().await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
 }
 
 /// ADMIN — updates school details (name, region, division, year).
-pub async fn update_school_settings(
+pub async fn update_school_details(
     State(setup_service): State<Arc<SetupService>>,
     auth_user: AuthUser,
-    Json(request): Json<UpdateSchoolSettingsRequest>,
+    Json(request): Json<UpdateSchoolDetailsRequest>,
 ) -> impl IntoResponse {
     if let Err(e) = require_admin(&auth_user) {
         return e.into_response();
     }
-    match setup_service.update_school_settings(request).await {
+    match setup_service.update_school_details(request).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

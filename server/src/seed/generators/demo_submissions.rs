@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
 use crate::seed::tools::seed_id;
-use crate::seed::fixtures::demo::QuarterAnswers;
+use crate::seed::fixtures::demo::TermAnswers;
 
 /// Determine student tier based on index for consistent grade distribution.
 /// - Students 0–4: Tier 0 (Excellent)
@@ -65,23 +65,23 @@ fn assignment_feedback(tier: usize) -> &'static str {
     }
 }
 
-/// Build a map from assessment ID to quarter key ("q1", "q2", "q3", "q4").
-fn assessment_quarter_map() -> HashMap<Uuid, &'static str> {
+/// Build a map from assessment ID to term key ("t1", "t2", "t3", "t4").
+fn assessment_term_map() -> HashMap<Uuid, &'static str> {
     let mut map = HashMap::new();
-    for q in ["q1", "q2", "q3", "q4"] {
-        map.insert(seed_id("assessments", &format!("{q}_quiz1")), q);
-        map.insert(seed_id("assessments", &format!("{q}_quiz2")), q);
-        map.insert(seed_id("assessments", &format!("{q}_exam")), q);
+    for t in ["t1", "t2", "t3", "t4"] {
+        map.insert(seed_id("assessments", &format!("{t}_quiz1")), t);
+        map.insert(seed_id("assessments", &format!("{t}_quiz2")), t);
+        map.insert(seed_id("assessments", &format!("{t}_exam")), t);
     }
     map
 }
 
-/// Build a map from assignment ID to (quarter key, assignment number).
-fn assignment_quarter_map() -> HashMap<Uuid, (&'static str, usize)> {
+/// Build a map from assignment ID to (term key, assignment number).
+fn assignment_term_map() -> HashMap<Uuid, (&'static str, usize)> {
     let mut map = HashMap::new();
-    for q in ["q1", "q2", "q3", "q4"] {
-        map.insert(seed_id("assignments", &format!("{q}_assign1")), (q, 0));
-        map.insert(seed_id("assignments", &format!("{q}_assign2")), (q, 1));
+    for t in ["t1", "t2", "t3", "t4"] {
+        map.insert(seed_id("assignments", &format!("{t}_assign1")), (t, 0));
+        map.insert(seed_id("assignments", &format!("{t}_assign2")), (t, 1));
     }
     map
 }
@@ -92,7 +92,7 @@ pub fn generate_assessment_submissions(
     assessments: &[AssessmentSpec],
     students: &[UserSpec],
     enrollments: &[EnrollmentSpec],
-    answers: &HashMap<String, QuarterAnswers>,
+    answers: &HashMap<String, TermAnswers>,
 ) -> Vec<AssessmentSubmissionSpec> {
     let mut submissions = Vec::with_capacity(360);
 
@@ -110,7 +110,7 @@ pub fn generate_assessment_submissions(
         }
     }
 
-    let aq_map = assessment_quarter_map();
+    let aq_map = assessment_term_map();
     let started_base = ctx.days_ago(10);
 
     for (assess_idx, assessment) in assessments.iter().enumerate() {
@@ -119,7 +119,7 @@ pub fn generate_assessment_submissions(
         }
 
         let enrolled = class_students.get(&assessment.class_id).cloned().unwrap_or_default();
-        let quarter_key = aq_map.get(&assessment.id).copied();
+        let term_key = aq_map.get(&assessment.id).copied();
 
         // Identify essay questions for answer bank lookup
         let essay_q_indices: Vec<usize> = assessment.questions.iter()
@@ -169,10 +169,10 @@ pub fn generate_assessment_submissions(
                     "essay" => {
                         // Map essay question index to answer bank field
                         let essay_num = essay_q_indices.iter().position(|&i| i == q_idx).unwrap_or(0);
-                        let answer_text = if let Some(q_answers) = quarter_key.and_then(|qk| answers.get(qk)) {
+                        let answer_text = if let Some(t_answers) = term_key.and_then(|tk| answers.get(tk)) {
                             match essay_num {
-                                0 => q_answers.exam_essay_1[tier].clone(),
-                                1 => q_answers.exam_essay_2[tier].clone(),
+                                0 => t_answers.exam_essay_1[tier].clone(),
+                                1 => t_answers.exam_essay_2[tier].clone(),
                                 _ => "Essay answer".into(),
                             }
                         } else {
@@ -218,7 +218,7 @@ pub fn generate_assignment_submissions(
     students: &[UserSpec],
     teachers: &[UserSpec],
     enrollments: &[EnrollmentSpec],
-    answers: &HashMap<String, QuarterAnswers>,
+    answers: &HashMap<String, TermAnswers>,
 ) -> Vec<AssignmentSubmissionSpec> {
     let mut submissions = Vec::with_capacity(240);
 
@@ -236,7 +236,7 @@ pub fn generate_assignment_submissions(
         }
     }
 
-    let asq_map = assignment_quarter_map();
+    let asq_map = assignment_term_map();
     let submitted_at_base = ctx.days_ago(4);
     let teacher_id = teachers.first().map(|t| t.id);
 
@@ -246,7 +246,7 @@ pub fn generate_assignment_submissions(
         }
 
         let enrolled = class_students.get(&assignment.class_id).cloned().unwrap_or_default();
-        let quarter_info = asq_map.get(&assignment.id).copied();
+        let term_info = asq_map.get(&assignment.id).copied();
 
         for student_id in &enrolled {
             let Some(&global_student_idx) = student_indices.get(student_id) else {
@@ -258,8 +258,8 @@ pub fn generate_assignment_submissions(
             let points = assignment_points(tier, assignment.total_points);
             let feedback = assignment_feedback(tier);
 
-            let text = if let Some((q_key, assign_num)) = quarter_info {
-                answers.get(q_key).map(|qa| match assign_num {
+            let text = if let Some((t_key, assign_num)) = term_info {
+                answers.get(t_key).map(|qa| match assign_num {
                     0 => qa.assignment_1[tier].clone(),
                     1 => qa.assignment_2[tier].clone(),
                     _ => "Assignment submission.".into(),

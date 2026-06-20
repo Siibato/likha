@@ -138,10 +138,10 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                     ),
                     const SizedBox(height: 16),
                     AssignmentGradeSettings(
-                      quarter: _controller.quarter,
+                      termNumber: _controller.termNumber,
                       component: _controller.component,
                       enabled: !_controller.isSaving,
-                      onQuarterChanged: _controller.setQuarter,
+                      onTermChanged: _controller.setTermNumber,
                       onComponentChanged: _controller.setComponent,
                     ),
                     const SizedBox(height: 8),

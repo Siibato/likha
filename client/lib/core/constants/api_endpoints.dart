@@ -551,8 +551,8 @@ class ApiEndpoints {
   static ApiEndpoint<Map<String, dynamic>> myGrades(String classId) =>
       ApiEndpoint('/api/v1/classes/$classId/my-grades', (json) => json as Map<String, dynamic>);
 
-  static ApiEndpoint<Map<String, dynamic>> myGradeDetail(String classId, int quarter) =>
-      ApiEndpoint('/api/v1/classes/$classId/my-grades/$quarter', (json) => json as Map<String, dynamic>);
+  static ApiEndpoint<Map<String, dynamic>> myGradeDetail(String classId, int termNumber) =>
+      ApiEndpoint('/api/v1/classes/$classId/my-grades/$termNumber', (json) => json as Map<String, dynamic>);
 
   static final depEdPresets = ApiEndpoint<Map<String, dynamic>>(
       '/api/v1/grading/deped-presets', (json) => json as Map<String, dynamic>);
@@ -647,13 +647,13 @@ class ApiEndpoints {
       );
 
   // ===== Document Export =====
-  static String exportGradesPdf(String classId, {int? period}) {
-    final query = period != null ? '?period=$period' : '';
+  static String exportGradesPdf(String classId, {int? termNumber}) {
+    final query = termNumber != null ? '?term_number=$termNumber' : '';
     return '/api/v1/classes/$classId/export/grades-pdf$query';
   }
 
-  static String exportGradesExcel(String classId, {int? period}) {
-    final query = period != null ? '?period=$period' : '';
+  static String exportGradesExcel(String classId, {int? termNumber}) {
+    final query = termNumber != null ? '?term_number=$termNumber' : '';
     return '/api/v1/classes/$classId/export/grades-excel$query';
   }
 

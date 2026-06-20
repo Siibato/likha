@@ -275,7 +275,7 @@ class _ClassGradingSetupPageState
                       ),
                       const SizedBox(height: 10),
                       _WeightRow(
-                        label: 'Quarterly Assessment',
+                        label: 'Term Assessment',
                         percentage: weights.qa,
                       ),
                     ],

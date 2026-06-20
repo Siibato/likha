@@ -25,17 +25,17 @@ class ScoreGenerationService {
        _assessmentRepository = assessmentRepository,
        _assignmentRepository = assignmentRepository;
 
-  /// Generate scores for all grade items in a class for a specific grading period.
+  /// Generate scores for all grade items in a class for a specific term.
   ///
   /// [items] — when supplied, use these directly instead of fetching from the
   /// repository. Pass `state.items` from the provider to include locally-created
   /// items that have not yet synced to the server.
   ResultFuture<void> generateScoresForClass({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     List<GradeItem>? items,
   }) async {
-    _logger.log('generateScoresForClass() - START: classId=$classId, period=$gradingPeriodNumber, providedItems=${items?.length}');
+    _logger.log('generateScoresForClass() - START: classId=$classId, term=$termNumber, providedItems=${items?.length}');
 
     try {
       List<GradeItem> gradeItems;
@@ -47,7 +47,7 @@ class ScoreGenerationService {
         _logger.log('generateScoresForClass() - Fetching grade items from repository...');
         final gradeItemsResult = await _gradingRepository.getGradeItems(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         );
         List<GradeItem>? fetched;
         Failure? fetchFailure;
@@ -109,7 +109,7 @@ class ScoreGenerationService {
       // Get the grade item first
       final gradeItemsResult = await _gradingRepository.getGradeItems(
         classId: '', // We'll need to get the classId from the grade item
-        gradingPeriodNumber: 1, // We'll need to get this from the grade item
+        termNumber: 1, // We'll need to get this from the grade item
       );
 
       return gradeItemsResult.fold(

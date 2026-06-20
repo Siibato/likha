@@ -43,7 +43,7 @@ pub async fn get_assignment_detail(
         order_index: assignment.order_index,
         submission_count,
         graded_count,
-        grading_period_number: assignment.grading_period_number,
+        term_number: assignment.term_number,
         component: assignment.component.clone(),
         submission_status: None,
         submission_id: None,

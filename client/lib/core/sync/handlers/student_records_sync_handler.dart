@@ -9,6 +9,7 @@ import 'package:likha/data/datasources/remote/student_records/student_records_re
 class StudentRecordsSyncHandler {
   final StudentRecordsRemoteDataSource _remote;
   final LocalDatabase _localDatabase;
+  // ignore: unused_field
   final SyncLogger _log;
 
   StudentRecordsSyncHandler(
@@ -30,6 +31,8 @@ class StudentRecordsSyncHandler {
           return await _handleSchoolHistory(entry);
         case SyncEntityType.previousSchoolSubjects:
           return await _handlePreviousSchoolSubjects(entry);
+        case SyncEntityType.previousSchoolTermGrades:
+          return await _handlePreviousSchoolTermGrades(entry);
         case SyncEntityType.previousSchoolAttendance:
           return await _handlePreviousSchoolAttendance(entry);
         default:
@@ -167,6 +170,26 @@ class StudentRecordsSyncHandler {
       default:
         return SyncResult.permanentFailure(
           'Unsupported operation for previousSchoolSubjects: ${entry.operation}',
+        );
+    }
+  }
+
+  Future<SyncResult> _handlePreviousSchoolTermGrades(SyncQueueEntry entry) async {
+    final payload = entry.payload;
+    final subjectId = payload['subject_id'] as String?;
+
+    switch (entry.operation) {
+      case SyncOperation.create:
+      case SyncOperation.update:
+        // Term grades are upserted as part of the previous subject payload.
+        // Mark as synced — the parent subject upsert handles server-side term grades.
+        if (subjectId != null) {
+          await _markSynced(DbTables.previousSchoolTermGrades, payload['id'] as String);
+        }
+        return const SyncResult.success();
+      default:
+        return SyncResult.permanentFailure(
+          'Unsupported operation for previousSchoolTermGrades: ${entry.operation}',
         );
     }
   }

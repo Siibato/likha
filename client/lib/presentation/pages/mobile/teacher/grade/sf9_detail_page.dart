@@ -49,7 +49,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             gradeLevel: sf9.gradeLevel,
             schoolYear: sf9.schoolYear,
             section: sf9.section,
-            gradingPeriodType: sf9.gradingPeriodType,
+            termType: sf9.termType,
             subjects: sf9.subjects,
             generalAverage: sf9.generalAverage,
           )
@@ -142,7 +142,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                                   Sf9GradeTable(
                                     subjects: displaySf9.subjects,
                                     generalAverage: displaySf9.generalAverage,
-                                    gradingPeriodType: displaySf9.gradingPeriodType,
+                                    termType: displaySf9.termType,
                                   ),
                                   const SizedBox(height: 32),
                                 ],

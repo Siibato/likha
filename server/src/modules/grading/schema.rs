@@ -16,7 +16,7 @@ pub struct SetupGradingConfigRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateGradingConfigRequest {
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -26,7 +26,7 @@ pub struct UpdateGradingConfigRequest {
 pub struct CreateGradeItemRequest {
     pub title: String,
     pub component: String,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub total_points: f64,
     pub source_type: Option<String>,
     pub source_id: Option<String>,
@@ -61,8 +61,8 @@ pub struct OverrideScoreRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PeriodQuery {
-    pub grading_period_number: Option<i32>,
+pub struct TermQuery {
+    pub term_number: Option<i32>,
 }
 
 // ===== RESPONSE SCHEMAS =====
@@ -71,7 +71,7 @@ pub struct PeriodQuery {
 pub struct GradingConfigResponse {
     pub id: String,
     pub class_id: String,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -83,7 +83,7 @@ pub struct GradeItemResponse {
     pub class_id: String,
     pub title: String,
     pub component: String,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub total_points: f64,
     pub source_type: String,
     pub source_id: Option<String>,
@@ -104,11 +104,11 @@ pub struct GradeScoreResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PeriodGradeResponse {
+pub struct TermGradeResponse {
     pub id: String,
     pub class_id: String,
     pub student_id: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub initial_grade: Option<f64>,
     pub transmuted_grade: Option<i32>,
     pub descriptor: Option<String>,
@@ -118,7 +118,7 @@ pub struct PeriodGradeResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FinalGradeResponse {
     pub student_id: String,
-    pub period_grades: Vec<PeriodGradeResponse>,
+    pub term_grades: Vec<TermGradeResponse>,
     pub final_grade: Option<f64>,
 }
 
@@ -135,7 +135,7 @@ pub struct GradeSummaryRow {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GradeSummaryResponse {
     pub class_id: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -161,7 +161,7 @@ pub struct ClassGradingSetupResponse {
     pub class_id: String,
     pub grade_level: String,
     pub school_year: String,
-    pub grading_period_type: String,
+    pub term_type: String,
     pub configs: Vec<GradingConfigResponse>,
 }
 
@@ -204,23 +204,23 @@ pub struct Sf9Response {
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,
     pub teacher_name: Option<String>,
-    pub grading_period_type: Option<String>,
+    pub term_type: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
-    pub general_average: Option<Sf9PeriodAverages>,
+    pub general_average: Option<Sf9TermAverages>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9SubjectRow {
     pub class_title: String,
     pub subject_group: Option<String>,
-    pub period_grades: Vec<Option<i32>>,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Sf9PeriodAverages {
-    pub period_grades: Vec<Option<i32>>,
+pub struct Sf9TermAverages {
+    pub term_grades: Vec<Option<i32>>,
     pub final_average: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -232,7 +232,7 @@ impl From<::entity::grade_record::Model> for GradingConfigResponse {
         Self {
             id: m.id.to_string(),
             class_id: m.class_id.to_string(),
-            grading_period_number: m.grading_period_number,
+            term_number: m.term_number,
             ww_weight: m.ww_weight,
             pt_weight: m.pt_weight,
             qa_weight: m.qa_weight,
@@ -247,7 +247,7 @@ impl From<::entity::grade_items::Model> for GradeItemResponse {
             class_id: m.class_id.to_string(),
             title: m.title,
             component: m.component,
-            grading_period_number: m.grading_period_number,
+            term_number: m.term_number,
             total_points: m.total_points,
             source_type: m.source_type,
             source_id: m.source_id,
@@ -272,14 +272,14 @@ impl From<::entity::grade_scores::Model> for GradeScoreResponse {
     }
 }
 
-impl From<::entity::period_grades::Model> for PeriodGradeResponse {
-    fn from(m: ::entity::period_grades::Model) -> Self {
+impl From<::entity::term_grades::Model> for TermGradeResponse {
+    fn from(m: ::entity::term_grades::Model) -> Self {
         let descriptor = m.transmuted_grade.map(|t| get_descriptor(t).to_string());
         Self {
             id: m.id.to_string(),
             class_id: m.class_id.to_string(),
             student_id: m.student_id.to_string(),
-            grading_period_number: m.grading_period_number,
+            term_number: m.term_number,
             initial_grade: m.initial_grade,
             transmuted_grade: m.transmuted_grade,
             descriptor,
@@ -294,7 +294,7 @@ impl From<::entity::period_grades::Model> for PeriodGradeResponse {
 pub struct AllGradeDataResponse {
     pub grade_items: Vec<GradeItemResponse>,
     pub grade_summary: GradeSummaryResponse,
-    pub period: i32,
+    pub term_number: i32,
     pub scores_by_item: HashMap<String, Vec<GradeScoreResponse>>,
     pub config: Option<GradingConfigResponse>,
 }

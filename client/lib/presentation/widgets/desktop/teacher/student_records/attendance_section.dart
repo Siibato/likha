@@ -35,10 +35,10 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
   @override
   Widget build(BuildContext context) {
     if (widget.students.isEmpty) {
-      return DesktopPageScaffold(
+      return const DesktopPageScaffold(
         title: 'Attendance',
         subtitle: 'Monthly attendance records for SF10',
-        body: const EmptyState.generic(title: 'No students enrolled'),
+        body: EmptyState.generic(title: 'No students enrolled'),
       );
     }
 
@@ -135,7 +135,6 @@ class _AttendanceGrid extends StatefulWidget {
 class _AttendanceGridState extends State<_AttendanceGrid> {
   final Map<String, TextEditingController> _schoolDaysCtrls = {};
   final Map<String, TextEditingController> _presentCtrls = {};
-  final Map<String, TextEditingController> _absentCtrls = {};
   bool _synced = false;
 
   @override
@@ -150,7 +149,6 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
         final rec = widget.state.records.where((r) => r.month == m).firstOrNull;
         _schoolDaysCtrls[m]?.text = rec?.schoolDays.toString() ?? '';
         _presentCtrls[m]?.text = rec?.daysPresent.toString() ?? '';
-        _absentCtrls[m]?.text = rec?.daysAbsent.toString() ?? '';
       }
       _synced = true;
     }
@@ -162,30 +160,30 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
     for (final m in _months) {
       _schoolDaysCtrls[m] = TextEditingController();
       _presentCtrls[m] = TextEditingController();
-      _absentCtrls[m] = TextEditingController();
     }
     _syncFromState();
   }
 
   @override
   void dispose() {
-    for (final c in _schoolDaysCtrls.values) c.dispose();
-    for (final c in _presentCtrls.values) c.dispose();
-    for (final c in _absentCtrls.values) c.dispose();
+    for (final c in _schoolDaysCtrls.values) {
+      c.dispose();
+    }
+    for (final c in _presentCtrls.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _saveMonth(String month) async {
     final sd = int.tryParse(_schoolDaysCtrls[month]!.text) ?? 0;
     final dp = int.tryParse(_presentCtrls[month]!.text) ?? 0;
-    final da = int.tryParse(_absentCtrls[month]!.text) ?? 0;
     final success = await widget.ref.read(attendanceProvider.notifier).save(widget.classId, widget.studentId, {
       'class_id': widget.classId,
       'school_year': widget.schoolYear,
       'month': month,
       'school_days': sd,
       'days_present': dp,
-      'days_absent': da,
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -225,7 +223,6 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
                 1: FlexColumnWidth(1),
                 2: FlexColumnWidth(1),
                 3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
               },
               children: [
                 TableRow(
@@ -233,7 +230,6 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
                     _header('Month'),
                     _header('School Days'),
                     _header('Days Present'),
-                    _header('Days Absent'),
                     _header(''),
                   ],
                 ),
@@ -242,7 +238,6 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
                     Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(m, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.foregroundDark))),
                     _cell(_schoolDaysCtrls[m]!),
                     _cell(_presentCtrls[m]!),
-                    _cell(_absentCtrls[m]!),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: TextButton(

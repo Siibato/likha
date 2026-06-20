@@ -37,13 +37,13 @@ fn test_setup_grading_config_request_with_semester() {
 #[test]
 fn test_update_grading_config_request_deserializes() {
     let json = r#"{
-        "grading_period_number": 1,
+        "term_number": 1,
         "ww_weight": 30.0,
         "pt_weight": 50.0,
         "qa_weight": 20.0
     }"#;
     let req: UpdateGradingConfigRequest = serde_json::from_str(json).unwrap();
-    assert_eq!(req.grading_period_number, 1);
+    assert_eq!(req.term_number, 1);
     assert!((req.ww_weight - 30.0).abs() < 0.001);
     assert!((req.pt_weight - 50.0).abs() < 0.001);
     assert!((req.qa_weight - 20.0).abs() < 0.001);
@@ -52,7 +52,7 @@ fn test_update_grading_config_request_deserializes() {
 #[test]
 fn test_update_grading_config_weights_sum_to_100() {
     let json = r#"{
-        "grading_period_number": 2,
+        "term_number": 2,
         "ww_weight": 40.0,
         "pt_weight": 40.0,
         "qa_weight": 20.0
@@ -75,7 +75,7 @@ fn test_create_grade_item_request_deserializes() {
     assert_eq!(req.title, "Long Quiz 1");
     assert_eq!(req.component, "written_work");
     assert!((req.total_points - 50.0).abs() < 0.001);
-    assert!(req.grading_period_number.is_none());
+    assert!(req.term_number.is_none());
 }
 
 #[test]
@@ -83,11 +83,11 @@ fn test_create_grade_item_request_with_period() {
     let json = r#"{
         "title": "Performance Task",
         "component": "performance_task",
-        "grading_period_number": 3,
+        "term_number": 3,
         "total_points": 100.0
     }"#;
     let req: CreateGradeItemRequest = serde_json::from_str(json).unwrap();
-    assert_eq!(req.grading_period_number, Some(3));
+    assert_eq!(req.term_number, Some(3));
     assert_eq!(req.component, "performance_task");
 }
 

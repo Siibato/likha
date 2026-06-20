@@ -46,7 +46,7 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
 
   Future<void> exportClassGrades({
     required String classId,
-    required int period,
+    required int termNumber,
     required bool isPdf,
   }) async {
     if (state.isExporting) return;
@@ -60,7 +60,7 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
 
     state = state.copyWith(isExporting: true, clearError: true);
 
-    final result = await _exportClassGrades(classId: classId, period: period, isPdf: isPdf);
+    final result = await _exportClassGrades(classId: classId, termNumber: termNumber, isPdf: isPdf);
 
     result.fold(
       (failure) {

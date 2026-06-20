@@ -48,7 +48,7 @@ pub async fn create_assignment(
         order_index,
         client_id,
         request.is_published.unwrap_or(false),
-        request.grading_period_number,
+        request.term_number,
         request.component.clone(),
     ).await?;
 
@@ -73,7 +73,7 @@ pub async fn create_assignment(
         order_index: assignment.order_index,
         submission_count: 0,
         graded_count: 0,
-        grading_period_number: assignment.grading_period_number,
+        term_number: assignment.term_number,
         component: assignment.component.clone(),
         submission_status: None,
         submission_id: None,

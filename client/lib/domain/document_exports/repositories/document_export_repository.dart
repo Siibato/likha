@@ -3,12 +3,12 @@ import 'package:likha/core/utils/typedef.dart';
 abstract class DocumentExportRepository {
   ResultFuture<List<int>> exportClassGradesPdf({
     required String classId,
-    required int period,
+    required int termNumber,
   });
 
   ResultFuture<List<int>> exportClassGradesExcel({
     required String classId,
-    required int period,
+    required int termNumber,
   });
 
   ResultFuture<List<int>> exportSf9Pdf({

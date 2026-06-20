@@ -37,7 +37,7 @@ pub struct EnrollmentSpec {
 pub struct TosSpec {
     pub id: Uuid,
     pub class_id: Uuid,
-    pub period: i32,
+    pub term_number: i32,
     pub title: String,
     pub template_type: String,
     pub total_items: i32,
@@ -83,7 +83,7 @@ pub struct AssessmentSpec {
     pub deleted_at: Option<NaiveDateTime>,
     pub is_published: bool,
     pub results_released: bool,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub questions: Vec<QuestionSpec>,
 }
 
@@ -129,7 +129,7 @@ pub struct AssignmentSpec {
     pub created_at: NaiveDateTime,
     pub deleted_at: Option<NaiveDateTime>,
     pub is_published: bool,
-    pub grading_period_number: i32,
+    pub term_number: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -178,7 +178,7 @@ pub struct MaterialSpec {
 }
 
 #[derive(Debug, Clone)]
-pub struct SchoolSettingsSpec {
+pub struct SchoolDetailsSpec {
     pub id: i32,
     pub school_code: String,
     pub school_name: Option<String>,
@@ -194,7 +194,7 @@ pub struct SchoolSettingsSpec {
 #[derive(Debug, Clone)]
 pub struct GradeRecordSpec {
     pub class_id: Uuid,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -206,7 +206,7 @@ pub struct GradeItemSpec {
     pub class_id: Uuid,
     pub title: String,
     pub component: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub total_points: f64,
     pub source_type: String,
     pub source_id: Option<String>,
@@ -221,18 +221,17 @@ pub struct GradeScoreSpec {
     pub is_auto_populated: bool,
     pub override_score: Option<f64>,
     pub component: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
 }
 
 #[derive(Debug, Clone)]
-pub struct PeriodGradeSpec {
+pub struct TermGradeSpec {
     pub class_id: Uuid,
     pub student_id: Uuid,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub initial_grade: Option<f64>,
     pub transmuted_grade: Option<i32>,
     pub is_locked: bool,
-    pub computed_at: Option<NaiveDateTime>,
 }
 
 #[derive(Debug, Clone)]
@@ -253,4 +252,74 @@ pub struct LearnerDetailsSpec {
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,
+    pub birthdate: Option<chrono::NaiveDate>,
+    pub birthplace: Option<String>,
+    pub home_address: Option<String>,
+    pub father_name: Option<String>,
+    pub father_contact: Option<String>,
+    pub mother_name: Option<String>,
+    pub mother_contact: Option<String>,
+    pub guardian_name: Option<String>,
+    pub guardian_contact: Option<String>,
+    pub date_admitted: Option<chrono::NaiveDate>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AttendanceSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub class_id: Uuid,
+    pub school_year: String,
+    pub month: String,
+    pub school_days: i32,
+    pub days_present: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct CoreValuesSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub class_id: Uuid,
+    pub school_year: String,
+    pub term_number: i32,
+    pub core_value_id: i32,
+    pub marking: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct SchoolHistorySpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub school_name: String,
+    pub school_id: Option<String>,
+    pub grade_level: String,
+    pub school_year: String,
+    pub section: Option<String>,
+    pub date_from: Option<chrono::NaiveDate>,
+    pub date_to: Option<chrono::NaiveDate>,
+    pub record_type: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PreviousSubjectSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub school_history_id: Uuid,
+    pub subject_name: String,
+    pub subject_group: Option<String>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
+    pub final_grade: Option<i32>,
+    pub descriptor: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PreviousAttendanceSpec {
+    pub id: Uuid,
+    pub student_id: Uuid,
+    pub school_history_id: Uuid,
+    pub school_year: String,
+    pub month: String,
+    pub school_days: i32,
+    pub days_present: i32,
 }

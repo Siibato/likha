@@ -44,7 +44,7 @@ pub async fn run(
     let sf9 = grade_service
         .compute_sf9(class_id, student_id, teacher_id)
         .await?;
-    let settings = setup_service.get_school_settings().await?;
+    let settings = setup_service.get_school_details().await?;
 
     let engine = PdfEngine::new_with_size("SF9", Mm(PAGE_W), Mm(PAGE_H))
         .map_err(|e| AppError::InternalServerError(format!("PDF init: {}", e)))?;
@@ -507,29 +507,29 @@ fn draw_learning_progress_table(
     y: f32,
     avail_w: f32,
 ) -> f32 {
-    // Proportional widths: [Learning Areas, Q1, Q2, Q3, Q4, Final Rating, Remarks]
+    // Proportional widths: [Learning Areas, T1, T2, T3, T4, Final Rating, Remarks]
     let ratios = [38.0_f32, 10.0, 10.0, 10.0, 10.0, 14.0, 14.0];
     let ratio_sum: f32 = ratios.iter().sum();
     let cw: Vec<f32> = ratios.iter().map(|r| r / ratio_sum * avail_w).collect();
 
-    let sub_hdr_h = 6.0; // "Quarter" super-header row height
+    let sub_hdr_h = 6.0; // "Term" super-header row height
     let hdr_h = 8.0;     // main header row height
     let row_h = 9.0;
     let mut cy = y;
 
-    // ── Row 0: "Quarter" spanning Q1-Q4 ──
+    // ── Row 0: "Term" spanning T1-T4 ──
     let q_x = x + cw[0];
     let q_w = cw[1] + cw[2] + cw[3] + cw[4];
     // Empty cells for Learning Areas, Final Rating, Remarks columns (top row)
     engine.draw_rect(layer, Mm(x), Mm(cy - sub_hdr_h), Mm(cw[0]), Mm(sub_hdr_h), Some(grey300()), true);
     engine.draw_rect(layer, Mm(q_x), Mm(cy - sub_hdr_h), Mm(q_w), Mm(sub_hdr_h), Some(grey300()), true);
-    engine.draw_text(layer, "Quarter", 5.5, Mm(q_x + q_w / 2.0 - 5.5), Mm(cy - sub_hdr_h + 1.5), true);
+    engine.draw_text(layer, "Term", 5.5, Mm(q_x + q_w / 2.0 - 5.5), Mm(cy - sub_hdr_h + 1.5), true);
     engine.draw_rect(layer, Mm(x + cw[0] + q_w), Mm(cy - sub_hdr_h), Mm(cw[5]), Mm(sub_hdr_h), Some(grey300()), true);
     engine.draw_rect(layer, Mm(x + cw[0] + q_w + cw[5]), Mm(cy - sub_hdr_h), Mm(cw[6]), Mm(sub_hdr_h), Some(grey300()), true);
     cy -= sub_hdr_h;
 
     // ── Row 1: column headers ──
-    let col_labels = ["Learning Areas", "Q1", "Q2", "Q3", "Q4", "Final Rating", "Remarks"];
+    let col_labels = ["Learning Areas", "T1", "T2", "T3", "T4", "Final Rating", "Remarks"];
     let mut cx = x;
     for (i, label) in col_labels.iter().enumerate() {
         engine.draw_rect(layer, Mm(cx), Mm(cy - hdr_h), Mm(cw[i]), Mm(hdr_h), Some(grey300()), true);
@@ -542,7 +542,7 @@ fn draw_learning_progress_table(
     // ── Subject rows ──
     for subject in &sf9.subjects {
         let pg: Vec<String> = subject
-            .period_grades
+            .term_grades
             .iter()
             .map(|g| g.map(|v| v.to_string()).unwrap_or_default())
             .collect();
@@ -577,7 +577,7 @@ fn draw_learning_progress_table(
     // ── General Average row ──
     if let Some(ref ga) = sf9.general_average {
         let pg: Vec<String> = ga
-            .period_grades
+            .term_grades
             .iter()
             .map(|g| g.map(|v| v.to_string()).unwrap_or_default())
             .collect();
@@ -689,7 +689,7 @@ fn draw_core_values_table(
         ),
     ];
 
-    // [Core Values, Behavior Statements, Q1, Q2, Q3, Q4]
+    // [Core Values, Behavior Statements, T1, T2, T3, T4]
     let ratios = [20.0_f32, 50.0, 7.5, 7.5, 7.5, 7.5];
     let ratio_sum: f32 = ratios.iter().sum();
     let cw: Vec<f32> = ratios.iter().map(|r| r / ratio_sum * avail_w).collect();
@@ -699,13 +699,13 @@ fn draw_core_values_table(
     let row_h = 14.0; // tall enough for 3 lines of behavior text at 4.5pt
     let mut cy = y;
 
-    // ── "Quarter" super-header spanning Q1-Q4 ──
+    // ── "Term" super-header spanning T1-T4 ──
     let q_x = x + cw[0] + cw[1];
     let q_w = cw[2] + cw[3] + cw[4] + cw[5];
     engine.draw_rect(layer, Mm(x), Mm(cy - sub_hdr_h), Mm(cw[0]), Mm(sub_hdr_h), Some(grey300()), true);
     engine.draw_rect(layer, Mm(x + cw[0]), Mm(cy - sub_hdr_h), Mm(cw[1]), Mm(sub_hdr_h), Some(grey300()), true);
     engine.draw_rect(layer, Mm(q_x), Mm(cy - sub_hdr_h), Mm(q_w), Mm(sub_hdr_h), Some(grey300()), true);
-    engine.draw_text(layer, "Quarter", 5.5, Mm(q_x + q_w / 2.0 - 5.5), Mm(cy - sub_hdr_h + 1.5), true);
+    engine.draw_text(layer, "Term", 5.5, Mm(q_x + q_w / 2.0 - 5.5), Mm(cy - sub_hdr_h + 1.5), true);
     cy -= sub_hdr_h;
 
     // ── Column header row ──
@@ -749,7 +749,7 @@ fn draw_core_values_table(
                 4.5,
             );
 
-            // Q1-Q4 cells
+            // T1-Q4 cells
             let mut qx = x + cw[0] + cw[1];
             for j in 2..=5 {
                 engine.draw_rect(layer, Mm(qx), Mm(row_bottom), Mm(cw[j]), Mm(row_h), None, true);

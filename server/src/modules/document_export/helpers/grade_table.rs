@@ -36,30 +36,30 @@ pub struct GradeTableData {
 
 impl GradeTableData {
     pub fn build(data: &AllGradeDataResponse) -> Self {
-        let period = data.period;
+        let term_number = data.term_number;
 
-        let quarter_items: Vec<&GradeItemResponse> = data
+        let term_items: Vec<&GradeItemResponse> = data
             .grade_items
             .iter()
             .filter(|i| {
-                i.grading_period_number == Some(period)
-                    || i.grading_period_number.is_none()
+                i.term_number == Some(term_number)
+                    || i.term_number.is_none()
             })
             .collect();
 
-        let ww_items: Vec<GradeItemResponse> = quarter_items
+        let ww_items: Vec<GradeItemResponse> = term_items
             .iter()
             .filter(|i| i.component == "ww" || i.component == "written_work")
             .map(|i| (*i).clone())
             .collect();
-        let pt_items: Vec<GradeItemResponse> = quarter_items
+        let pt_items: Vec<GradeItemResponse> = term_items
             .iter()
             .filter(|i| i.component == "pt" || i.component == "performance_task")
             .map(|i| (*i).clone())
             .collect();
-        let qa_items: Vec<GradeItemResponse> = quarter_items
+        let qa_items: Vec<GradeItemResponse> = term_items
             .iter()
-            .filter(|i| i.component == "qa" || i.component == "period_assessment")
+            .filter(|i| i.component == "qa" || i.component == "term_assessment")
             .map(|i| (*i).clone())
             .collect();
 

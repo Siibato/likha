@@ -1,7 +1,7 @@
 //! Demo seeding scenario.
 //!
 //! Creates a focused dataset: 1 teacher, 30 students, 2 classes,
-//! 4 quarters of assessments, assignments, and learning modules,
+//! 4 terms of assessments, assignments, and learning modules,
 //! with tiered student submissions and derived grades.
 
 use sea_orm::DatabaseConnection;
@@ -17,7 +17,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let ctx = SeedContext::new();
 
     // Build all fixture specs
-    let school = fixtures::demo_school_settings(&ctx);
+    let school = fixtures::demo_school_details(&ctx);
     let users = fixtures::demo_users(&ctx);
     let classes = fixtures::demo_classes(&ctx);
     let enrollments = fixtures::demo_enrollments();
@@ -46,14 +46,14 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let grade_scores = generators::demo_grades::generate_grade_scores(
         &grade_items, &students, &assessment_submissions, &assignment_submissions, &enrollments,
     );
-    let period_grades = generators::demo_grades::generate_period_grades(
+    let term_grades = generators::demo_grades::generate_term_grades(
         &grade_records, &grade_scores, &grade_items, &students, &enrollments, &ctx,
     );
 
     // Insert everything in FK-safe order
     disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
-    inserters::school::insert_school_settings(db, &school).await?;
+    inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
     inserters::learner_details::insert_learner_details(db, &learner_details).await?;
     inserters::classes::insert_classes(db, &classes).await?;
@@ -77,7 +77,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
     inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
-    inserters::grading::insert_period_grades(db, &period_grades, ctx.now()).await?;
+    inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
@@ -88,11 +88,11 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     }
 
     println!(
-        "Demo seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} period grades",
+        "Demo seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
         users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),
-        period_grades.len()
+        term_grades.len()
     );
 
     Ok(())

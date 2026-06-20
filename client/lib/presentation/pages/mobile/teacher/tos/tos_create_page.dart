@@ -32,7 +32,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
   final _analyzingPctController = TextEditingController(text: '16.67');
   final _evaluatingPctController = TextEditingController(text: '16.67');
   final _creatingPctController = TextEditingController(text: '16.67');
-  int? _selectedQuarter;
+  int? _selectedTerm;
   String _classificationMode = 'blooms';
   String _timeUnit = 'days';
 
@@ -54,13 +54,13 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
 
   Future<void> _handleCreate() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedQuarter == null) return;
+    if (_selectedTerm == null) return;
 
     final tos = await ref.read(tosProvider.notifier).createTos(
       widget.classId,
       {
         'title': _titleController.text.trim(),
-        'quarter': _selectedQuarter!,
+        'term_number': _selectedTerm!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
         'time_unit': _timeUnit,
@@ -122,7 +122,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                             v == null || v.trim().isEmpty ? 'Title is required' : null,
                       ),
                       const SizedBox(height: 16),
-                      // Quarter dropdown
+                      // Term dropdown
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -130,9 +130,9 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                           border: Border.all(color: AppColors.borderLight),
                         ),
                         child: DropdownButtonFormField<int>(
-                          initialValue: _selectedQuarter,
+                          initialValue: _selectedTerm,
                           decoration: const InputDecoration(
-                            labelText: 'Quarter',
+                            labelText: 'Term',
                             prefixIcon: Icon(Icons.calendar_month_outlined,
                                 color: AppColors.foregroundTertiary, size: 20),
                             border: InputBorder.none,
@@ -143,11 +143,11 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
                           items: [1, 2, 3, 4]
                               .map((q) => DropdownMenuItem(
                                     value: q,
-                                    child: Text('Quarter $q'),
+                                    child: Text('Term $q'),
                                   ))
                               .toList(),
-                          onChanged: (v) => setState(() => _selectedQuarter = v),
-                          validator: (v) => v == null ? 'Select a quarter' : null,
+                          onChanged: (v) => setState(() => _selectedTerm = v),
+                          validator: (v) => v == null ? 'Select a term' : null,
                         ),
                       ),
                       const SizedBox(height: 16),

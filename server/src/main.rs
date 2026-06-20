@@ -166,6 +166,16 @@ async fn main() {
                 println!("Realistic seed complete.");
                 return;
             }
+            "seed-advisory" => {
+                println!("Seeding advisory world...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+                activate_admin(&db).await.expect("Failed to activate admin account");
+                server::seed::scenarios::advisory::seed_advisory_world(&db).await.expect("Advisory seed failed");
+                println!("Advisory seed complete.");
+                return;
+            }
             "seed-demo" => {
                 println!("Seeding focused demo world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -183,16 +193,15 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
 
-                // Get all table names to clear (excluding migrations)
                 let tables = vec![
                     "users", "classes", "enrollments", "assessments", "assessment_questions",
                     "question_choices", "answer_keys", "tos_competencies", "table_of_specifications",
                     "assignments", "learning_materials", "assessment_submissions", "submission_answers",
                     "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
-                    "grade_scores", "period_grades", "activity_logs", "advisory_class_students",
+                    "grade_scores", "term_grades", "activity_logs", "advisory_class_students",
                     "sync_manifest", "sync_processed_operations",
                     "student_school_history", "previous_school_subjects", "previous_school_attendance",
-                    "attendance_records", "core_values_records", "learner_details",
+                    "attendance_records", "core_values_records", "core_values", "learner_details",
                 ];
 
                 for table in tables {
@@ -219,6 +228,7 @@ async fn main() {
                 eprintln!("  seed-manual             Seed manual testing world data");
                 eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
                 eprintln!("  seed-realistic          Seed realistic demo world data");
+                eprintln!("  seed-advisory           Seed advisory world data (full SF10)");
                 eprintln!("  seed-demo               Seed focused demo world data");
                 eprintln!("  deseed                  Clear all seeded data and reset admin");
                 std::process::exit(1);

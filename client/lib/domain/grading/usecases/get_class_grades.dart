@@ -9,12 +9,12 @@ class GetClassGrades {
 
   ResultFuture<ClassGrades> call({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     bool skipBackgroundRefresh = false,
   }) {
     return _repository.getClassGrades(
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       skipBackgroundRefresh: skipBackgroundRefresh,
     );
   }

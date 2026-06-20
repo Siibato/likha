@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 class GradeConfig extends Equatable {
   final String id;
   final String classId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final double wwWeight;
   final double ptWeight;
   final double qaWeight;
@@ -11,7 +11,7 @@ class GradeConfig extends Equatable {
   const GradeConfig({
     required this.id,
     required this.classId,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.wwWeight,
     required this.ptWeight,
     required this.qaWeight,
@@ -21,7 +21,7 @@ class GradeConfig extends Equatable {
   List<Object?> get props => [
         id,
         classId,
-        gradingPeriodNumber,
+        termNumber,
         wwWeight,
         ptWeight,
         qaWeight,

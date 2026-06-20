@@ -16,13 +16,13 @@ import 'package:likha/presentation/widgets/desktop/teacher/grade/grade_spreadshe
 class GradeSpreadsheet extends StatefulWidget {
   final List<Participant> students;
 
-  /// All grade items for the selected quarter (all components combined).
+  /// All grade items for the selected term (all components combined).
   final List<GradeItem> allItems;
 
   final Map<String, List<GradeScore>> scoresByItem;
   final GradeConfig? config;
 
-  /// Per-student quarterly grade summary rows from the server.
+  /// Per-student term grade summary rows from the server.
   /// Each map contains at minimum: 'student_id' and 'transmuted_grade'.
   final List<Map<String, dynamic>>? summary;
 
@@ -204,7 +204,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
     final ptItems = widget.allItems.where((i) => i.component == 'pt' || i.component == 'performance_task').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-    final qaItems = widget.allItems.where((i) => i.component == 'qa' || i.component == 'period_assessment').toList()
+    final qaItems = widget.allItems.where((i) => i.component == 'qa' || i.component == 'term_assessment').toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     final wwW = widget.config?.wwWeight ?? 40.0;
@@ -315,7 +315,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                           ),
                           GradeGroupHeaderCell(
                             label:
-                                'QUARTERLY ASSESSMENT (${qaW.toStringAsFixed(0)}%)',
+                                'TERM ASSESSMENT (${qaW.toStringAsFixed(0)}%)',
                             width: qaSecW,
                             color: AppColors.accentAmber.withValues(alpha: 0.1),
                           ),
@@ -341,7 +341,7 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                             height: GradeSpreadsheetDimensions.hdrH2,
                           ),
                           const GradeColumnHeaderCell(
-                            text: 'QG',
+                            text: 'TG',
                             width: GradeSpreadsheetDimensions.qgColW,
                             height: GradeSpreadsheetDimensions.hdrH2,
                           ),

@@ -17,7 +17,7 @@ pub struct ShortCodeResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SchoolSettingsResponse {
+pub struct SchoolDetailsResponse {
     pub school_code: String,
     pub school_name: Option<String>,
     pub school_region: Option<String>,
@@ -34,7 +34,7 @@ pub struct UpdateCodeRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateSchoolSettingsRequest {
+pub struct UpdateSchoolDetailsRequest {
     pub school_name: String,
     pub school_region: Option<String>,
     pub school_division: Option<String>,

@@ -18,7 +18,7 @@ Future<void> cacheMelcs(
         'id': melc.id,
         MelcsCols.subject: melc.subject,
         MelcsCols.gradeLevel: melc.gradeLevel,
-        'quarter': melc.quarter,
+        'quarter': melc.termNumber,
         MelcsCols.competencyCode: melc.competencyCode,
         MelcsCols.competencyText: melc.competencyText,
         MelcsCols.domain: melc.domain,

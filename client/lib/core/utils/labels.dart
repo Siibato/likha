@@ -17,7 +17,7 @@ String componentLabel(String value) {
     case 'pt':
       return 'Performance Task';
     case 'qa':
-      return 'Quarterly Assessment';
+      return 'Term Assessment';
     default:
       return value;
   }

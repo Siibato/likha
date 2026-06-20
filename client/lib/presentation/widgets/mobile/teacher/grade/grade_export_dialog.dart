@@ -8,14 +8,14 @@ void showGradeExportDialog(
   BuildContext context,
   WidgetRef ref, {
   required String classId,
-  required int quarter,
+  required int termNumber,
 }) {
   showDialog(
     context: context,
     builder: (dialogContext) {
       return _GradeExportDialogContent(
         classId: classId,
-        quarter: quarter,
+        termNumber: termNumber,
         parentContext: context,
       );
     },
@@ -24,12 +24,12 @@ void showGradeExportDialog(
 
 class _GradeExportDialogContent extends ConsumerWidget {
   final String classId;
-  final int quarter;
+  final int termNumber;
   final BuildContext parentContext;
 
   const _GradeExportDialogContent({
     required this.classId,
-    required this.quarter,
+    required this.termNumber,
     required this.parentContext,
   });
 
@@ -80,7 +80,7 @@ class _GradeExportDialogContent extends ConsumerWidget {
               onTap: () {
                 ref.read(documentExportProvider.notifier).exportClassGrades(
                   classId: classId,
-                  period: quarter,
+                  termNumber: termNumber,
                   isPdf: false,
                 );
               },
@@ -92,7 +92,7 @@ class _GradeExportDialogContent extends ConsumerWidget {
               onTap: () {
                 ref.read(documentExportProvider.notifier).exportClassGrades(
                   classId: classId,
-                  period: quarter,
+                  termNumber: termNumber,
                   isPdf: true,
                 );
               },

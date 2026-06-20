@@ -14,7 +14,7 @@ TosModel _sampleTos({String id = _tosId}) {
   return TosModel(
     id: id,
     classId: _classId,
-    gradingPeriodNumber: 1,
+    termNumber: 1,
     title: 'TOS Q1',
     classificationMode: 'difficulty',
     totalItems: 30,
