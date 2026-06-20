@@ -9,7 +9,7 @@ pub struct Model {
     pub class_id: Uuid,
     pub title: String,
     pub component: String,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub total_points: f64,
     pub source_type: String,
     pub source_id: Option<String>,

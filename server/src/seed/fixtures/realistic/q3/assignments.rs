@@ -14,7 +14,7 @@ pub fn realistic_assignments_q3(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             instructions: "Write a 300-word research paper on how social media affects students' academic performance. Include at least two credible sources and proper citations in MLA format.".into(),
             total_points: 50, allows_text_submission: true, allows_file_submission: false,
             due_at: now - chrono::Duration::days(78), component: "written_work".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 3,
+            created_at: created, deleted_at: None, is_published: true, term_number: 3,
         },
         AssignmentSpec {
             id: asid("eng_q3_assign2"), class_id: cid("english_9a"),
@@ -22,7 +22,7 @@ pub fn realistic_assignments_q3(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             instructions: "Create a multimedia presentation (slides with text and images) promoting media literacy among teenagers. Include at least 5 slides with persuasive techniques and call-to-action.".into(),
             total_points: 50, allows_text_submission: true, allows_file_submission: false,
             due_at: now - chrono::Duration::days(75), component: "performance_task".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 3,
+            created_at: created, deleted_at: None, is_published: true, term_number: 3,
         },
         AssignmentSpec {
             id: asid("sci_q3_assign1"), class_id: cid("science_9a"),
@@ -30,7 +30,7 @@ pub fn realistic_assignments_q3(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             instructions: "Solve 5 word problems applying Newton's three laws of motion. Show your calculations and explain the physical principles involved in each problem.".into(),
             total_points: 50, allows_text_submission: true, allows_file_submission: false,
             due_at: now - chrono::Duration::days(76), component: "written_work".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 3,
+            created_at: created, deleted_at: None, is_published: true, term_number: 3,
         },
         AssignmentSpec {
             id: asid("sci_q3_assign2"), class_id: cid("science_9a"),
@@ -38,7 +38,7 @@ pub fn realistic_assignments_q3(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             instructions: "Conduct an experiment with a simple pendulum. Record measurements of height and speed at different points. Calculate kinetic and potential energy at each point and write a 200-word analysis of energy conservation.".into(),
             total_points: 50, allows_text_submission: true, allows_file_submission: false,
             due_at: now - chrono::Duration::days(73), component: "performance_task".into(),
-            created_at: created, deleted_at: None, is_published: true, grading_period_number: 3,
+            created_at: created, deleted_at: None, is_published: true, term_number: 3,
         },
     ]
 }

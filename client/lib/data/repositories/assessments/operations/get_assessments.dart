@@ -45,7 +45,7 @@ ResultFuture<List<Assessment>> getAssessments(
       }
 
       for (final a in cachedAssessments) {
-        RepoLogger.instance.log('${a.title} | totalPoints=${a.totalPoints} | gradingPeriod=${a.gradingPeriodNumber} | component=${a.component}');
+        RepoLogger.instance.log('${a.title} | totalPoints=${a.totalPoints} | gradingPeriod=${a.termNumber} | component=${a.component}');
       }
       return Right(cachedAssessments.cast<Assessment>());
     } on CacheException {
@@ -78,7 +78,7 @@ bool _assessmentsHaveChanged(
     if (l == null) return true;
     if (l.updatedAt.isBefore(r.updatedAt)) return true;
     if (l.submissionCount != r.submissionCount) return true;
-    if (l.gradingPeriodNumber != r.gradingPeriodNumber) return true;
+    if (l.termNumber != r.termNumber) return true;
     if (l.component != r.component) return true;
   }
   return false;

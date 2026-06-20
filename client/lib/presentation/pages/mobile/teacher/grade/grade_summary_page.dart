@@ -55,7 +55,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   void _loadQuarterlySummary() {
     ref
-        .read(periodGradesProvider.notifier)
+        .read(termGradesProvider.notifier)
         .loadSummary(widget.classId, _selectedQuarter);
   }
 
@@ -94,7 +94,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   @override
   Widget build(BuildContext context) {
-    final gradesState = ref.watch(periodGradesProvider);
+    final gradesState = ref.watch(termGradesProvider);
     final configState = ref.watch(gradingConfigProvider);
 
     return Scaffold(
@@ -196,7 +196,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   // ---------------------------------------------------------------------------
 
   Widget _buildQuarterlyTab(
-    PeriodGradesState gradesState,
+    TermGradesState gradesState,
     GradingConfigState configState,
   ) {
     if (gradesState.isLoading) {
@@ -257,7 +257,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
             ptWeight: ptWeight,
             qaWeight: qaWeight,
             onQgChanged: (studentId, grade) {
-              ref.read(periodGradesProvider.notifier).updatePeriodGrade(
+              ref.read(termGradesProvider.notifier).updatePeriodGrade(
                     classId: widget.classId,
                     studentId: studentId,
                     quarter: _selectedQuarter,

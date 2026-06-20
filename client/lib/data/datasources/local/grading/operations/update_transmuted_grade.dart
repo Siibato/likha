@@ -10,7 +10,7 @@ Future<void> updateTransmutedGrade(
   SyncQueue syncQueue,
   String classId,
   String studentId,
-  int gradingPeriodNumber,
+  int termNumber,
   int transmutedGrade, {
   Transaction? txn,
 }) async {
@@ -18,17 +18,17 @@ Future<void> updateTransmutedGrade(
 
   Future<void> doWrite(DatabaseExecutor executor) async {
     await executor.update(
-      DbTables.periodGrades,
+      DbTables.termGrades,
       {
-        PeriodGradesCols.transmutedGrade: transmutedGrade,
+        TermGradesCols.transmutedGrade: transmutedGrade,
         CommonCols.updatedAt: now.toIso8601String(),
         CommonCols.syncStatus: 'pending',
         CommonCols.cachedAt: now.toIso8601String(),
       },
-      where: '${PeriodGradesCols.classId} = ? AND '
-          '${PeriodGradesCols.studentId} = ? AND '
-          '${PeriodGradesCols.gradingPeriodNumber} = ?',
-      whereArgs: [classId, studentId, gradingPeriodNumber],
+      where: '${TermGradesCols.classId} = ? AND '
+          '${TermGradesCols.studentId} = ? AND '
+          '${TermGradesCols.termNumber} = ?',
+      whereArgs: [classId, studentId, termNumber],
     );
   }
 
@@ -45,7 +45,7 @@ Future<void> updateTransmutedGrade(
         payload: {
           'class_id': classId,
           'student_id': studentId,
-          'grading_period_number': gradingPeriodNumber,
+          'term_number': termNumber,
           'transmuted_grade': transmutedGrade,
         },
         status: SyncStatus.pending,

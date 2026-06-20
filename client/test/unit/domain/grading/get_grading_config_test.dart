@@ -23,7 +23,7 @@ void main() {
       const  GradeConfig(
         id: 'config-1',
         classId: tClassId,
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         wwWeight: 30.0,
         ptWeight: 50.0,
         qaWeight: 20.0,
@@ -31,7 +31,7 @@ void main() {
       const  GradeConfig(
         id: 'config-2',
         classId: tClassId,
-        gradingPeriodNumber: 2,
+        termNumber: 2,
         wwWeight: 30.0,
         ptWeight: 50.0,
         qaWeight: 20.0,

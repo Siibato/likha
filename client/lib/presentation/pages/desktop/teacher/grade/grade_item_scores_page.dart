@@ -248,7 +248,7 @@ class _GradeItemScoresPageState
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    'Quarter ${widget.gradeItem.gradingPeriodNumber}',
+                                    'Quarter ${widget.gradeItem.termNumber}',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: AppColors.foregroundSecondary,

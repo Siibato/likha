@@ -86,8 +86,8 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
 
     // Generate and insert period grades
-    let period_grades = generate_period_grades(&students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx);
-    inserters::grading::insert_period_grades(db, &period_grades, ctx.now()).await?;
+    let term_grades = generate_term_grades(&students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx);
+    inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
@@ -108,7 +108,7 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
         grade_records.len(),
         grade_items.len(),
         grade_scores.len(),
-        period_grades.len()
+        term_grades.len()
     );
     println!("{}", summary);
 
@@ -126,7 +126,7 @@ fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crat
         for period in 1..=4 {
             records.push(crate::seed::specs::GradeRecordSpec {
                 class_id: class.id,
-                grading_period_number: period,
+                term_number: period,
                 ww_weight: 40.0,
                 pt_weight: 40.0,
                 qa_weight: 20.0,
@@ -151,13 +151,13 @@ fn generate_grade_items(
             continue;
         }
 
-        let id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.grading_period_number));
+        let id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.term_number));
         items.push(crate::seed::specs::GradeItemSpec {
             id,
             class_id: assessment.class_id,
             title: assessment.title.clone(),
             component: assessment.component.clone(),
-            grading_period_number: assessment.grading_period_number,
+            term_number: assessment.term_number,
             total_points: assessment.total_points as f64,
             source_type: "assessment".to_string(),
             source_id: Some(assessment.id.to_string()),
@@ -170,13 +170,13 @@ fn generate_grade_items(
             continue;
         }
 
-        let id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.grading_period_number));
+        let id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.term_number));
         items.push(crate::seed::specs::GradeItemSpec {
             id,
             class_id: assignment.class_id,
             title: assignment.title.clone(),
             component: assignment.component.clone(),
-            grading_period_number: assignment.grading_period_number,
+            term_number: assignment.term_number,
             total_points: assignment.total_points as f64,
             source_type: "assignment".to_string(),
             source_id: Some(assignment.id.to_string()),
@@ -234,7 +234,7 @@ fn generate_grade_scores(
             };
 
             // Generate deterministic grade_item_id
-            let grade_item_id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.grading_period_number));
+            let grade_item_id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.term_number));
 
             scores.push(crate::seed::specs::GradeScoreSpec {
                 grade_item_id,
@@ -243,7 +243,7 @@ fn generate_grade_scores(
                 is_auto_populated: true,
                 override_score,
                 component: assessment.component.clone(),
-                grading_period_number: assessment.grading_period_number,
+                term_number: assessment.term_number,
             });
         }
     }
@@ -267,7 +267,7 @@ fn generate_grade_scores(
                 None
             };
 
-            let grade_item_id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.grading_period_number));
+            let grade_item_id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.term_number));
 
             scores.push(crate::seed::specs::GradeScoreSpec {
                 grade_item_id,
@@ -276,7 +276,7 @@ fn generate_grade_scores(
                 is_auto_populated: true,
                 override_score,
                 component: assignment.component.clone(),
-                grading_period_number: assignment.grading_period_number,
+                term_number: assignment.term_number,
             });
         }
     }
@@ -284,18 +284,18 @@ fn generate_grade_scores(
     scores
 }
 
-fn generate_period_grades(
+fn generate_term_grades(
     students: &[crate::seed::specs::UserSpec],
     grade_records: &[crate::seed::specs::GradeRecordSpec],
     grade_scores: &[crate::seed::specs::GradeScoreSpec],
     grade_items: &[crate::seed::specs::GradeItemSpec],
     enrollments: &[crate::seed::specs::EnrollmentSpec],
     ctx: &SeedContext,
-) -> Vec<crate::seed::specs::PeriodGradeSpec> {
+) -> Vec<crate::seed::specs::TermGradeSpec> {
     use crate::modules::grading::helpers::deped_weights::transmute_grade;
     use uuid::Uuid;
 
-    let mut period_grades = Vec::new();
+    let mut term_grades = Vec::new();
 
     let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
     for (idx, student) in students.iter().enumerate() {
@@ -320,7 +320,7 @@ fn generate_period_grades(
             let student_id = students[student_idx].id;
 
             let student_scores: Vec<_> = grade_scores.iter()
-                .filter(|s| s.student_id == student_id && s.grading_period_number == record.grading_period_number)
+                .filter(|s| s.student_id == student_id && s.term_number == record.term_number)
                 .collect();
 
             let mut ww_sum = 0.0;
@@ -352,17 +352,16 @@ fn generate_period_grades(
 
             let transmuted = transmute_grade(initial_grade);
 
-            period_grades.push(crate::seed::specs::PeriodGradeSpec {
+            term_grades.push(crate::seed::specs::TermGradeSpec {
                 class_id: record.class_id,
                 student_id,
-                grading_period_number: record.grading_period_number,
+                term_number: record.term_number,
                 initial_grade: Some(initial_grade),
                 transmuted_grade: Some(transmuted),
                 is_locked: false,
-                computed_at: Some(ctx.days_ago(1 + student_idx as i64)),
             });
         }
     }
 
-    period_grades
+    term_grades
 }

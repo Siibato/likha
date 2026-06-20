@@ -20,15 +20,15 @@ ResultFuture<ClassGrades> getClassGrades(
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
   bool skipBackgroundRefresh = false,
 }) async {
   try {
     // 1. Cache-first: read config, items, scores in parallel
     final configFuture = _safeGetConfig(localDataSource, classId);
-    final itemsFuture = localDataSource.getItemsByClassQuarter(classId, gradingPeriodNumber, component: null);
-    final scoresFuture = localDataSource.getScoresForClassQuarter(classId, gradingPeriodNumber);
-    final summaryFuture = _safeGetSummary(localDataSource, classId, gradingPeriodNumber);
+    final itemsFuture = localDataSource.getItemsByClassQuarter(classId, termNumber, component: null);
+    final scoresFuture = localDataSource.getScoresForClassQuarter(classId, termNumber);
+    final summaryFuture = _safeGetSummary(localDataSource, classId, termNumber);
 
     final rawConfigs = await configFuture;
     final items = await itemsFuture;
@@ -37,7 +37,7 @@ ResultFuture<ClassGrades> getClassGrades(
 
     final config = _configForQuarter(
       rawConfigs.map((c) => helpers.configToEntity(c as GradeConfigModel)).toList(),
-      gradingPeriodNumber,
+      termNumber,
     );
 
     if (items.isEmpty) {
@@ -50,10 +50,10 @@ ResultFuture<ClassGrades> getClassGrades(
     // 2. Fire non-blocking background refresh
     if (!skipBackgroundRefresh) {
       fireRemoteFetch(
-        dedupKey: 'grading/classGrades/$classId/$gradingPeriodNumber/bg',
+        dedupKey: 'grading/classGrades/$classId/$termNumber/bg',
         remote: () => remoteDataSource.getClassGrades(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
         onSuccess: (raw) async {
           final freshItems = remote_parsers.parseGradeItems(raw);
@@ -61,7 +61,7 @@ ResultFuture<ClassGrades> getClassGrades(
           final freshConfig = remote_parsers.parseConfig(raw);
           final freshSummary = remote_parsers.parseGradeSummary(raw);
 
-          if (await _hasChanged(localDataSource, classId, gradingPeriodNumber, freshItems, freshScoresByItem, freshConfig, freshSummary)) {
+          if (await _hasChanged(localDataSource, classId, termNumber, freshItems, freshScoresByItem, freshConfig, freshSummary)) {
             // Save fresh data to local DB
             await localDataSource.saveItems(freshItems);
             for (final entry in freshScoresByItem.entries) {
@@ -89,7 +89,7 @@ ResultFuture<ClassGrades> getClassGrades(
               await localDataSource.saveConfigs(updatedConfigs.map((c) => c as GradeConfigModel).toList());
             }
             if (freshSummary.isNotEmpty) {
-              await localDataSource.cacheGradeSummary(classId, gradingPeriodNumber, freshSummary);
+              await localDataSource.cacheGradeSummary(classId, termNumber, freshSummary);
             }
             dataEventBus.notifyGradesChanged(classId);
           }
@@ -99,7 +99,7 @@ ResultFuture<ClassGrades> getClassGrades(
 
     return Right(ClassGrades(
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       items: entities,
       scoresByItem: scoresByItem,
       config: config,
@@ -108,10 +108,10 @@ ResultFuture<ClassGrades> getClassGrades(
   } on CacheException {
     // Cache miss → blocking remote fetch, then save and return
     final raw = await remoteFetch(
-      dedupKey: 'grading/classGrades/$classId/$gradingPeriodNumber',
+      dedupKey: 'grading/classGrades/$classId/$termNumber',
       remote: () => remoteDataSource.getClassGrades(
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       ),
     );
 
@@ -130,7 +130,7 @@ ResultFuture<ClassGrades> getClassGrades(
       await localDataSource.saveConfigs(updatedConfigs.map((c) => c as GradeConfigModel).toList());
     }
     if (freshSummary.isNotEmpty) {
-      await localDataSource.cacheGradeSummary(classId, gradingPeriodNumber, freshSummary);
+      await localDataSource.cacheGradeSummary(classId, termNumber, freshSummary);
     }
 
     final entities = freshItems.map(helpers.itemToEntity).toList();
@@ -141,7 +141,7 @@ ResultFuture<ClassGrades> getClassGrades(
 
     return Right(ClassGrades(
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       items: entities,
       scoresByItem: scoresByItem,
       config: freshConfig != null ? helpers.configToEntity(freshConfig) : null,
@@ -178,7 +178,7 @@ Future<List<Map<String, dynamic>>?> _safeGetSummary(GradingLocalDataSource local
 
 GradeConfig? _configForQuarter(List<GradeConfig> configs, int quarter) {
   try {
-    return configs.firstWhere((c) => c.gradingPeriodNumber == quarter);
+    return configs.firstWhere((c) => c.termNumber == quarter);
   } catch (_) {
     return configs.isNotEmpty ? configs.first : null;
   }
@@ -222,7 +222,7 @@ Future<bool> _hasChanged(
     if (freshConfig != null) {
       bool found = false;
       for (final c in currentConfigs) {
-        if (c.id == freshConfig.id && c.gradingPeriodNumber == freshConfig.gradingPeriodNumber) {
+        if (c.id == freshConfig.id && c.termNumber == freshConfig.termNumber) {
           found = true;
           break;
         }
@@ -240,7 +240,7 @@ List<dynamic> _mergeConfig(List<dynamic> current, dynamic fresh) {
   final updated = <dynamic>[];
   var replaced = false;
   for (final c in current) {
-    if (c.gradingPeriodNumber == fresh.gradingPeriodNumber) {
+    if (c.termNumber == fresh.termNumber) {
       updated.add(fresh);
       replaced = true;
     } else {

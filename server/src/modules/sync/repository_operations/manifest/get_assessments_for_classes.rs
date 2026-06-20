@@ -26,7 +26,7 @@ pub async fn get_assessments_for_classes(
             "results_released": r.results_released,
             "order_index": r.order_index,
             "total_points": r.total_points,
-            "grading_period_number": r.grading_period_number,
+            "term_number": r.term_number,
             "component": r.component,
             "tos_id": r.tos_id,
             "created_at": r.created_at.to_string(),

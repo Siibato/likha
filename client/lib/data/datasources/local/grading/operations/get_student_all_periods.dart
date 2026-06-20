@@ -9,11 +9,11 @@ Future<List<PeriodGradeModel>> getStudentAllPeriods(
 ) async {
   final db = await localDatabase.database;
   final results = await db.query(
-    DbTables.periodGrades,
+    DbTables.termGrades,
     where:
-        '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
+        '${TermGradesCols.classId} = ? AND ${TermGradesCols.studentId} = ?',
     whereArgs: [classId, studentId],
-    orderBy: '${PeriodGradesCols.gradingPeriodNumber} ASC',
+    orderBy: '${TermGradesCols.termNumber} ASC',
   );
   return results.map((row) => PeriodGradeModel.fromMap(row)).toList();
 }

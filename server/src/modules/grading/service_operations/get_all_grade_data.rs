@@ -15,7 +15,7 @@ impl crate::modules::grading::service::GradeComputationService {
         class_id: Uuid,
         period: i32,
     ) -> AppResult<AllGradeDataResponse> {
-        let (items_raw, config_opt, participants, period_grades_data) = tokio::try_join!(
+        let (items_raw, config_opt, participants, term_grades_data) = tokio::try_join!(
             self.repo.get_items(class_id, period),
             self.repo.get_config(class_id, period),
             self.class_repo.find_participants_by_class_id(class_id, None),
@@ -47,7 +47,7 @@ impl crate::modules::grading::service::GradeComputationService {
         let student_name_map: HashMap<Uuid, String> =
             name_pairs.into_iter().collect();
 
-        let students = period_grades_data
+        let students = term_grades_data
             .into_iter()
             .map(|qg| {
                 let descriptor = qg
@@ -69,7 +69,7 @@ impl crate::modules::grading::service::GradeComputationService {
 
         let summary = GradeSummaryResponse {
             class_id: class_id.to_string(),
-            grading_period_number: period,
+            term_number: period,
             ww_weight: config.ww_weight,
             pt_weight: config.pt_weight,
             qa_weight: config.qa_weight,

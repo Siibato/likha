@@ -542,7 +542,7 @@ fn draw_learning_progress_table(
     // ── Subject rows ──
     for subject in &sf9.subjects {
         let pg: Vec<String> = subject
-            .period_grades
+            .term_grades
             .iter()
             .map(|g| g.map(|v| v.to_string()).unwrap_or_default())
             .collect();
@@ -577,7 +577,7 @@ fn draw_learning_progress_table(
     // ── General Average row ──
     if let Some(ref ga) = sf9.general_average {
         let pg: Vec<String> = ga
-            .period_grades
+            .term_grades
             .iter()
             .map(|g| g.map(|v| v.to_string()).unwrap_or_default())
             .collect();

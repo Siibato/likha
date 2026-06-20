@@ -12,13 +12,13 @@ ResultFuture<Map<String, dynamic>> getMyGradeDetail(
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     try {
       final cached = await localDataSource.getCachedMyGradeDetail(
         classId,
-        gradingPeriodNumber,
+        termNumber,
       );
 
       // Treat empty map as cache miss
@@ -27,21 +27,21 @@ ResultFuture<Map<String, dynamic>> getMyGradeDetail(
       }
 
       fireRemoteFetch(
-        dedupKey: 'grading/myGradeDetail/$classId/$gradingPeriodNumber/bg',
+        dedupKey: 'grading/myGradeDetail/$classId/$termNumber/bg',
         remote: () => remoteDataSource.getMyGradeDetail(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
         onSuccess: (fresh) async {
           try {
             final current = await localDataSource.getCachedMyGradeDetail(
               classId,
-              gradingPeriodNumber,
+              termNumber,
             );
             if (_myGradeDetailHasChanged(current, fresh)) {
               await localDataSource.cacheMyGradeDetail(
                 classId,
-                gradingPeriodNumber,
+                termNumber,
                 fresh,
               );
               dataEventBus.notifyMyGradeDetailChanged(classId);
@@ -49,7 +49,7 @@ ResultFuture<Map<String, dynamic>> getMyGradeDetail(
           } catch (_) {
             await localDataSource.cacheMyGradeDetail(
               classId,
-              gradingPeriodNumber,
+              termNumber,
               fresh,
             );
             dataEventBus.notifyMyGradeDetailChanged(classId);
@@ -60,15 +60,15 @@ ResultFuture<Map<String, dynamic>> getMyGradeDetail(
       return Right(cached);
     } on CacheException {
       final fresh = await remoteFetch(
-        dedupKey: 'grading/myGradeDetail/$classId/$gradingPeriodNumber',
+        dedupKey: 'grading/myGradeDetail/$classId/$termNumber',
         remote: () => remoteDataSource.getMyGradeDetail(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
       );
       await localDataSource.cacheMyGradeDetail(
         classId,
-        gradingPeriodNumber,
+        termNumber,
         fresh,
       );
       return Right(fresh);

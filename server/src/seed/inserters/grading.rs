@@ -1,9 +1,9 @@
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use uuid::Uuid;
 
-use crate::seed::specs::{GradeItemSpec, GradeRecordSpec, GradeScoreSpec, PeriodGradeSpec};
+use crate::seed::specs::{GradeItemSpec, GradeRecordSpec, GradeScoreSpec, TermGradeSpec};
 use crate::utils::AppError;
-use ::entity::{grade_items, grade_record, grade_scores, period_grades};
+use ::entity::{grade_items, grade_record, grade_scores, term_grades};
 
 pub async fn insert_grade_items(
     db: &DatabaseConnection,
@@ -16,7 +16,7 @@ pub async fn insert_grade_items(
             class_id: Set(spec.class_id),
             title: Set(spec.title.clone()),
             component: Set(spec.component.clone()),
-            grading_period_number: Set(Some(spec.grading_period_number)),
+            term_number: Set(Some(spec.term_number)),
             total_points: Set(spec.total_points),
             source_type: Set(spec.source_type.clone()),
             source_id: Set(spec.source_id.clone()),
@@ -40,7 +40,7 @@ pub async fn insert_grade_records(
         let record = grade_record::ActiveModel {
             id: Set(Uuid::new_v4()),
             class_id: Set(spec.class_id),
-            grading_period_number: Set(Some(spec.grading_period_number)),
+            term_number: Set(Some(spec.term_number)),
             ww_weight: Set(spec.ww_weight),
             pt_weight: Set(spec.pt_weight),
             qa_weight: Set(spec.qa_weight),
@@ -77,21 +77,20 @@ pub async fn insert_grade_scores(
     Ok(())
 }
 
-pub async fn insert_period_grades(
+pub async fn insert_term_grades(
     db: &DatabaseConnection,
-    specs: &[PeriodGradeSpec],
+    specs: &[TermGradeSpec],
     now: chrono::NaiveDateTime,
 ) -> Result<(), AppError> {
     for spec in specs {
-        let grade = period_grades::ActiveModel {
+        let grade = term_grades::ActiveModel {
             id: Set(Uuid::new_v4()),
             class_id: Set(spec.class_id),
             student_id: Set(spec.student_id),
-            grading_period_number: Set(spec.grading_period_number),
+            term_number: Set(spec.term_number),
             initial_grade: Set(spec.initial_grade),
             transmuted_grade: Set(spec.transmuted_grade),
             is_locked: Set(spec.is_locked),
-            computed_at: Set(spec.computed_at),
             created_at: Set(now),
             updated_at: Set(now),
             deleted_at: Set(None),

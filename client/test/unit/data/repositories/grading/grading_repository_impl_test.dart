@@ -27,7 +27,7 @@ GradeItemModel _fakeItem({String id = 'gi-1', String classId = 'c-1'}) =>
       classId: classId,
       title: 'Long Quiz 1',
       component: 'written_work',
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       totalPoints: 50.0,
       sourceType: 'manual',
       orderIndex: 0,
@@ -39,7 +39,7 @@ GradeConfigModel _fakeConfig({String id = 'cfg-1', String classId = 'c-1'}) =>
     GradeConfigModel(
       id: id,
       classId: classId,
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       wwWeight: 30.0,
       ptWeight: 50.0,
       qaWeight: 20.0,
@@ -118,11 +118,11 @@ void main() {
 
         when(() => remote.getGradeItems(
           classId: any(named: 'classId'),
-          gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+          termNumber: any(named: 'termNumber'),
           component: any(named: 'component'),
         )).thenAnswer((_) async => [_fakeItem()]);
 
-        final result = await repo.getGradeItems(classId: 'c-1', gradingPeriodNumber: 1);
+        final result = await repo.getGradeItems(classId: 'c-1', termNumber: 1);
 
         expect(result.isRight(), isTrue);
         result.fold((f) => fail('Expected Right'), (list) => expect(list.length, 1));
@@ -139,12 +139,12 @@ void main() {
 
         );
 
-        final result = await repo.getGradeItems(classId: 'c-1', gradingPeriodNumber: 1);
+        final result = await repo.getGradeItems(classId: 'c-1', termNumber: 1);
 
         expect(result.isRight(), isTrue);
         verifyNever(() => remote.getGradeItems(
           classId: any(named: 'classId'),
-          gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+          termNumber: any(named: 'termNumber'),
           component: any(named: 'component'),
         ));
       });
@@ -214,7 +214,7 @@ void main() {
             'title': 'LQ 1',
             'component': 'written_work',
             'total_points': 50.0,
-            'grading_period_number': 1,
+            'term_number': 1,
           },
         );
 
@@ -370,10 +370,10 @@ void main() {
 
         when(() => remote.getMyGradeDetail(
           classId: any(named: 'classId'),
-          gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+          termNumber: any(named: 'termNumber'),
         )).thenAnswer((_) async => {'initial_grade': 88.5});
 
-        final result = await repo.getMyGradeDetail(classId: 'c-1', gradingPeriodNumber: 1);
+        final result = await repo.getMyGradeDetail(classId: 'c-1', termNumber: 1);
 
         expect(result.isRight(), isTrue);
       });

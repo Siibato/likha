@@ -26,8 +26,8 @@ pub enum CacheKey {
 
     // Grading
     GradeItems(Uuid, i32),
-    PeriodGrades(Uuid, i32),
-    StudentPeriodGrade(Uuid, Uuid, i32),
+    TermGrades(Uuid, i32),
+    StudentTermGrade(Uuid, Uuid, i32),
     StudentAllGrades(Uuid, Uuid),
     GradeSummary(Uuid, i32),
     ItemScores(Uuid),
@@ -83,8 +83,8 @@ impl CacheKey {
 
             // Grading
             CacheKey::GradeItems(class_id, period) => format!("grade:items:{}:{}", class_id, period),
-            CacheKey::PeriodGrades(class_id, period) => format!("grade:period:{}:{}", class_id, period),
-            CacheKey::StudentPeriodGrade(class_id, student_id, period) => format!("grade:student:{}:{}:{}", class_id, student_id, period),
+            CacheKey::TermGrades(class_id, period) => format!("grade:period:{}:{}", class_id, period),
+            CacheKey::StudentTermGrade(class_id, student_id, period) => format!("grade:student:{}:{}:{}", class_id, student_id, period),
             CacheKey::StudentAllGrades(class_id, student_id) => format!("grade:student_all:{}:{}", class_id, student_id),
             CacheKey::GradeSummary(class_id, period) => format!("grade:summary:{}:{}", class_id, period),
             CacheKey::ItemScores(item_id) => format!("grade:item_scores:{}", item_id),

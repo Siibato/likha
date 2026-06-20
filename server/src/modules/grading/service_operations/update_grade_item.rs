@@ -16,7 +16,7 @@ impl crate::modules::grading::service::GradeComputationService {
         if let Some(ref inv) = self.invalidator {
             if let Some(ref existing) = existing {
                 let class_id = existing.class_id;
-                let period = existing.grading_period_number.unwrap_or(1);
+                let period = existing.term_number.unwrap_or(1);
                 inv.invalidate_class_grades(class_id, period).await;
             }
         }

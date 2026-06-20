@@ -42,8 +42,8 @@ impl GradeTableData {
             .grade_items
             .iter()
             .filter(|i| {
-                i.grading_period_number == Some(period)
-                    || i.grading_period_number.is_none()
+                i.term_number == Some(period)
+                    || i.term_number.is_none()
             })
             .collect();
 

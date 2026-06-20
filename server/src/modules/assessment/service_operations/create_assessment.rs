@@ -41,7 +41,7 @@ impl crate::modules::assessment::service::AssessmentService {
             order_index,
             client_id,
             request.is_published.unwrap_or(false),
-            request.grading_period_number,
+            request.term_number,
             request.component.clone(),
             request.tos_id,
         ).await?;
@@ -77,7 +77,7 @@ impl crate::modules::assessment::service::AssessmentService {
             total_points: assessment.total_points,
             question_count,
             submission_count: 0,
-            grading_period_number: assessment.grading_period_number,
+            term_number: assessment.term_number,
             component: assessment.component.clone(),
             tos_id: assessment.tos_id.clone(),
             created_at: fmt_utc(assessment.created_at),

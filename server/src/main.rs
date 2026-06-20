@@ -199,7 +199,7 @@ async fn main() {
                     "question_choices", "answer_keys", "tos_competencies", "table_of_specifications",
                     "assignments", "learning_materials", "assessment_submissions", "submission_answers",
                     "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
-                    "grade_scores", "period_grades", "activity_logs", "advisory_class_students",
+                    "grade_scores", "term_grades", "activity_logs", "advisory_class_students",
                     "sync_manifest", "sync_processed_operations",
                     "student_school_history", "previous_school_subjects", "previous_school_attendance",
                     "attendance_records", "core_values_records", "learner_details",

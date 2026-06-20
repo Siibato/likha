@@ -20,7 +20,7 @@ class CreateAssignment {
       maxFileSizeMb: params.maxFileSizeMb,
       dueAt: params.dueAt,
       isPublished: params.isPublished,
-      gradingPeriodNumber: params.gradingPeriodNumber,
+      termNumber: params.termNumber,
       component: params.component,
       noSubmissionRequired: params.noSubmissionRequired,
     );
@@ -38,7 +38,7 @@ class CreateAssignmentParams {
   final int? maxFileSizeMb;
   final String dueAt;
   final bool isPublished;
-  final int? gradingPeriodNumber;
+  final int? termNumber;
   final String? component;
   final bool? noSubmissionRequired;
 
@@ -53,7 +53,7 @@ class CreateAssignmentParams {
     this.maxFileSizeMb,
     required this.dueAt,
     this.isPublished = true,
-    this.gradingPeriodNumber,
+    this.termNumber,
     this.component,
     this.noSubmissionRequired,
   });

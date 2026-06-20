@@ -396,7 +396,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             deleted_at: None,
             is_published: true,
             results_released: true,
-            grading_period_number: 1,
+            term_number: 1,
             questions: vec![
                 // Q1: multiple choice, easy, remembering
                 QuestionSpec {
@@ -496,7 +496,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             deleted_at: None,
             is_published: true,
             results_released: false,
-            grading_period_number: 1,
+            term_number: 1,
             questions: vec![
                 QuestionSpec { id: Q_MATH_Q2_1, question_type: "multiple_choice".into(), text: "Open quiz Q1".into(), points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(COMP_MATH_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B (correct)".into(), is_correct: true, order: 1 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] } },
                 QuestionSpec { id: Q_MATH_Q2_2, question_type: "multiple_choice".into(), text: "Open quiz Q2".into(), points: 2, order: 1, is_multi_select: false, tos_competency_id: Some(COMP_MATH_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B".into(), is_correct: false, order: 1 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "C (correct)".into(), is_correct: true, order: 2 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] } },
@@ -521,7 +521,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             deleted_at: None,
             is_published: true,
             results_released: true,
-            grading_period_number: 1,
+            term_number: 1,
             questions: vec![
                 QuestionSpec { id: Q_SCI_T1_1, question_type: "multiple_choice".into(), text: "Science Q1".into(), points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(COMP_SCI_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B (correct)".into(), is_correct: true, order: 1 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] } },
                 QuestionSpec { id: Q_SCI_T1_2, question_type: "multiple_choice".into(), text: "Science Q2".into(), points: 2, order: 1, is_multi_select: false, tos_competency_id: Some(COMP_SCI_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B".into(), is_correct: false, order: 1 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "C (correct)".into(), is_correct: true, order: 2 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] } },
@@ -546,7 +546,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             deleted_at: None,
             is_published: true,
             results_released: false,
-            grading_period_number: 1,
+            term_number: 1,
             questions: vec![
                 QuestionSpec { id: Q_SCI_T2_1, question_type: "multiple_choice".into(), text: "Future Q1".into(), points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(COMP_SCI_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B (correct)".into(), is_correct: true, order: 1 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["B".into()] } },
                 QuestionSpec { id: Q_SCI_T2_2, question_type: "multiple_choice".into(), text: "Future Q2".into(), points: 2, order: 1, is_multi_select: false, tos_competency_id: Some(COMP_SCI_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()), choices: vec![ ChoiceSpec { id: uuid::Uuid::new_v4(), text: "A".into(), is_correct: false, order: 0 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "B".into(), is_correct: false, order: 1 }, ChoiceSpec { id: uuid::Uuid::new_v4(), text: "C (correct)".into(), is_correct: true, order: 2 }, ], answer_key: AnswerKeySpec { acceptable_answers: vec!["C".into()] } },
@@ -571,7 +571,7 @@ pub fn e2e_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             deleted_at: Some(ctx.days_ago(4)),
             is_published: false,
             results_released: false,
-            grading_period_number: 1,
+            term_number: 1,
             questions: vec![
                 QuestionSpec { id: Q_DELETED_1, question_type: "multiple_choice".into(), text: "Deleted Q1".into(), points: 1, order: 0, is_multi_select: false, tos_competency_id: Some(COMP_MATH_1_ID), difficulty: Some("easy".into()), cognitive_level: Some("remembering".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec![] } },
                 QuestionSpec { id: Q_DELETED_2, question_type: "multiple_choice".into(), text: "Deleted Q2".into(), points: 2, order: 1, is_multi_select: false, tos_competency_id: Some(COMP_MATH_2_ID), difficulty: Some("medium".into()), cognitive_level: Some("understanding".into()), choices: vec![], answer_key: AnswerKeySpec { acceptable_answers: vec![] } },
@@ -635,7 +635,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
         // Math 8A - Period 1
         GradeRecordSpec {
             class_id: CLASS_MATH_8A_ID,
-            grading_period_number: 1,
+            term_number: 1,
             ww_weight: 30.0,
             pt_weight: 50.0,
             qa_weight: 20.0,
@@ -643,7 +643,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
         // Math 8A - Period 2
         GradeRecordSpec {
             class_id: CLASS_MATH_8A_ID,
-            grading_period_number: 2,
+            term_number: 2,
             ww_weight: 30.0,
             pt_weight: 50.0,
             qa_weight: 20.0,
@@ -651,7 +651,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
         // Science 8A - Period 1
         GradeRecordSpec {
             class_id: CLASS_SCI_8A_ID,
-            grading_period_number: 1,
+            term_number: 1,
             ww_weight: 30.0,
             pt_weight: 50.0,
             qa_weight: 20.0,
@@ -659,7 +659,7 @@ pub fn e2e_grade_records() -> Vec<GradeRecordSpec> {
         // Science 8A - Period 2
         GradeRecordSpec {
             class_id: CLASS_SCI_8A_ID,
-            grading_period_number: 2,
+            term_number: 2,
             ww_weight: 30.0,
             pt_weight: 50.0,
             qa_weight: 20.0,
@@ -685,7 +685,7 @@ pub fn e2e_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             created_at: created,
             deleted_at: None,
             is_published: true,
-            grading_period_number: 1,
+            term_number: 1,
         },
         AssignmentSpec {
             id: ASSIGN_SCI_LAB_ID,
@@ -700,7 +700,7 @@ pub fn e2e_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             created_at: created,
             deleted_at: None,
             is_published: true,
-            grading_period_number: 1,
+            term_number: 1,
         },
         AssignmentSpec {
             id: ASSIGN_MATH_PROJECT_ID,
@@ -715,7 +715,7 @@ pub fn e2e_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             created_at: created,
             deleted_at: None,
             is_published: true,
-            grading_period_number: 1,
+            term_number: 1,
         },
         AssignmentSpec {
             id: ASSIGN_DELETED_ID,
@@ -730,7 +730,7 @@ pub fn e2e_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
             created_at: created,
             deleted_at: Some(ctx.days_ago(3)),
             is_published: false,
-            grading_period_number: 1,
+            term_number: 1,
         },
     ]
 }

@@ -19,7 +19,7 @@ async fn test_upsert_config_and_get_config() {
         .expect("upsert_config failed");
 
     assert_eq!(config.class_id, class_id);
-    assert_eq!(config.grading_period_number, Some(1));
+    assert_eq!(config.term_number, Some(1));
     assert!((config.ww_weight - 30.0).abs() < f64::EPSILON);
 
     let found = repo.get_config(class_id, 1).await.expect("get_config failed");

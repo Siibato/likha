@@ -15,7 +15,7 @@ Future<List<GradeScoreModel>> getScoresForClassQuarter(
     INNER JOIN ${DbTables.gradeItems} gi
       ON gs.${GradeScoresCols.gradeItemId} = gi.${CommonCols.id}
     WHERE gi.${GradeItemsCols.classId} = ?
-      AND gi.${GradeItemsCols.gradingPeriodNumber} = ?
+      AND gi.${GradeItemsCols.termNumber} = ?
     ''',
     [classId, quarter],
   );

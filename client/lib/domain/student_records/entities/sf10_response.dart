@@ -106,14 +106,14 @@ class Sf10YearRecord extends Equatable {
 class Sf10SubjectRow extends Equatable {
   final String classTitle;
   final String? subjectGroup;
-  final List<int?> periodGrades;
+  final List<int?> termGrades;
   final int? finalGrade;
   final String? descriptor;
 
   const Sf10SubjectRow({
     required this.classTitle,
     this.subjectGroup,
-    this.periodGrades = const [],
+    this.termGrades = const [],
     this.finalGrade,
     this.descriptor,
   });

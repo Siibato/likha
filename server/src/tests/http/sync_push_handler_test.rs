@@ -105,7 +105,7 @@ async fn sync_push_create_assignment_op_returns_success() {
                         "allows_file_submission": false,
                         "due_at": "2030-12-31T23:59:59Z",
                         "is_published": false,
-                        "grading_period_number": 1,
+                        "term_number": 1,
                         "component": "WW"
                     },
                     "timestamp": "2024-01-01T00:00:00Z"

@@ -15,14 +15,14 @@ use crate::modules::tos::schema::{
 fn test_create_tos_request_deserializes_from_json() {
     let json = serde_json::json!({
         "title": "Q1 TOS",
-        "grading_period_number": 1,
+        "term_number": 1,
         "classification_mode": "blooms",
         "total_items": 30
     });
 
     let req: CreateTosRequest = serde_json::from_value(json).unwrap();
     assert_eq!(req.title, "Q1 TOS");
-    assert_eq!(req.grading_period_number, 1);
+    assert_eq!(req.term_number, 1);
     assert_eq!(req.classification_mode, "blooms");
 }
 
@@ -30,7 +30,7 @@ fn test_create_tos_request_deserializes_from_json() {
 fn test_create_tos_request_with_total_items() {
     let json = serde_json::json!({
         "title": "Q2 TOS",
-        "grading_period_number": 2,
+        "term_number": 2,
         "classification_mode": "custom",
         "total_items": 40
     });

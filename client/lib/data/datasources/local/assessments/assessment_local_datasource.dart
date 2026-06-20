@@ -93,7 +93,7 @@ abstract class AssessmentLocalDataSource {
     bool? showResultsImmediately,
     bool isPublished = true,
     String? tosId,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
     Transaction? txn,
   });
@@ -337,7 +337,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
     bool? showResultsImmediately,
     bool isPublished = true,
     String? tosId,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
     Transaction? txn,
   }) =>
@@ -352,7 +352,7 @@ class AssessmentLocalDataSourceImpl implements AssessmentLocalDataSource {
         showResultsImmediately,
         isPublished,
         tosId,
-        gradingPeriodNumber,
+        termNumber,
         component,
         id: id,
         txn: txn,

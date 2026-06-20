@@ -55,7 +55,7 @@ pub async fn get_assignments(
             order_index: a.order_index,
             submission_count,
             graded_count,
-            grading_period_number: a.grading_period_number,
+            term_number: a.term_number,
             component: a.component.clone(),
             submission_status,
             submission_id,

@@ -46,8 +46,8 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   gradeScores: EntityDeltas.fromJson(
     json['grade_scores'] as Map<String, dynamic>,
   ),
-  periodGrades: EntityDeltas.fromJson(
-    json['period_grades'] as Map<String, dynamic>,
+  termGrades: EntityDeltas.fromJson(
+    json['term_grades'] as Map<String, dynamic>,
   ),
   tableOfSpecifications: EntityDeltas.fromJson(
     json['table_of_specifications'] as Map<String, dynamic>,
@@ -94,7 +94,7 @@ Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
       'grade_configs': instance.gradeConfigs,
       'grade_items': instance.gradeItems,
       'grade_scores': instance.gradeScores,
-      'period_grades': instance.periodGrades,
+      'term_grades': instance.termGrades,
       'table_of_specifications': instance.tableOfSpecifications,
       'tos_competencies': instance.tosCompetencies,
       'activity_logs': instance.activityLogs,

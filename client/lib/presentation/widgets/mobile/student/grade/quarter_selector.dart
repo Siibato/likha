@@ -5,13 +5,13 @@ import 'package:likha/domain/grading/entities/period_grade.dart';
 /// Row of Q1–Q4 choice chips for switching the active grading period.
 class QuarterSelector extends StatelessWidget {
   final int selectedQuarter;
-  final List<PeriodGrade> periodGrades;
+  final List<PeriodGrade> termGrades;
   final void Function(int quarter) onChanged;
 
   const QuarterSelector({
     super.key,
     required this.selectedQuarter,
-    required this.periodGrades,
+    required this.termGrades,
     required this.onChanged,
   });
 
@@ -22,8 +22,8 @@ class QuarterSelector extends StatelessWidget {
       children: List.generate(4, (index) {
         final quarter = index + 1;
         final isSelected = selectedQuarter == quarter;
-        final hasData = periodGrades.any(
-          (g) => g.gradingPeriodNumber == quarter && g.transmutedGrade != null,
+        final hasData = termGrades.any(
+          (g) => g.termNumber == quarter && g.transmutedGrade != null,
         );
 
         return ChoiceChip(

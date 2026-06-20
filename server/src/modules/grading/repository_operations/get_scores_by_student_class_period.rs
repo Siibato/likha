@@ -8,7 +8,7 @@ pub async fn get_scores_by_student_class_period(
     db: &DatabaseConnection,
     student_id: Uuid,
     class_id: Uuid,
-    grading_period_number: i32,
+    term_number: i32,
 ) -> AppResult<Vec<grade_scores::Model>> {
     let sql = r#"
         SELECT gs.id, gs.grade_item_id, gs.student_id, gs.score,
@@ -18,7 +18,7 @@ pub async fn get_scores_by_student_class_period(
         INNER JOIN grade_items gi ON gs.grade_item_id = gi.id
         WHERE gs.student_id = ?
           AND gi.class_id = ?
-          AND gi.grading_period_number = ?
+          AND gi.term_number = ?
           AND gs.deleted_at IS NULL
           AND gi.deleted_at IS NULL
     "#;
@@ -29,7 +29,7 @@ pub async fn get_scores_by_student_class_period(
         vec![
             student_id.to_string().into(),
             class_id.to_string().into(),
-            grading_period_number.into(),
+            term_number.into(),
         ],
     );
 

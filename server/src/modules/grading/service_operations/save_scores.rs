@@ -18,7 +18,7 @@ impl crate::modules::grading::service::GradeComputationService {
         if let Some(ref inv) = self.invalidator {
             if let Some(ref item) = item {
                 let class_id = item.class_id;
-                let period = item.grading_period_number.unwrap_or(1);
+                let period = item.term_number.unwrap_or(1);
                 tracing::debug!("save_scores: invalidating cache for class_id={} period={}", class_id, period);
                 inv.invalidate_item_scores(grade_item_id).await;
                 inv.invalidate_class_grades(class_id, period).await;

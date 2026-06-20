@@ -35,7 +35,7 @@ class _StudentClassGradeDetailPageState
   bool _isLoading = false;
   String? _error;
 
-  List<PeriodGrade> _periodGrades = [];
+  List<PeriodGrade> _termGrades = [];
   PeriodGrade? _currentQuarterGrade;
   List<GradeItemDetail> _items = [];
   GradingConfig? _config;
@@ -43,10 +43,10 @@ class _StudentClassGradeDetailPageState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPeriodGrades());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadTermGrades());
   }
 
-  Future<void> _loadPeriodGrades() async {
+  Future<void> _loadTermGrades() async {
     setState(() {
       _isLoading = true;
       _error = null;
@@ -64,14 +64,14 @@ class _StudentClassGradeDetailPageState
       },
       (grades) {
         if (mounted) {
-          _periodGrades = grades;
+          _termGrades = grades;
           if (grades.isNotEmpty) {
             final withGrades =
                 grades.where((g) => g.transmutedGrade != null).toList();
             if (withGrades.isNotEmpty) {
               withGrades.sort(
-                  (a, b) => b.gradingPeriodNumber.compareTo(a.gradingPeriodNumber));
-              _selectedQuarter = withGrades.first.gradingPeriodNumber;
+                  (a, b) => b.termNumber.compareTo(a.termNumber));
+              _selectedQuarter = withGrades.first.termNumber;
             }
           }
           _loadQuarterDetail();
@@ -89,14 +89,14 @@ class _StudentClassGradeDetailPageState
       _currentQuarterGrade = null;
     });
 
-    final qg = _periodGrades
-        .where((g) => g.gradingPeriodNumber == _selectedQuarter)
+    final qg = _termGrades
+        .where((g) => g.termNumber == _selectedQuarter)
         .toList();
     if (qg.isNotEmpty) _currentQuarterGrade = qg.first;
 
     final result = await sl<GetMyGradeDetail>()(
       classId: widget.classId,
-      gradingPeriodNumber: _selectedQuarter,
+      termNumber: _selectedQuarter,
     );
 
     result.fold(
@@ -124,14 +124,11 @@ class _StudentClassGradeDetailPageState
         id: qgMap['id']?.toString() ?? '',
         classId: qgMap['class_id']?.toString() ?? widget.classId,
         studentId: qgMap['student_id']?.toString() ?? '',
-        gradingPeriodNumber:
+        termNumber:
             (qgMap['quarter'] as num?)?.toInt() ?? _selectedQuarter,
         initialGrade: (qgMap['initial_grade'] as num?)?.toDouble(),
         transmutedGrade: (qgMap['transmuted_grade'] as num?)?.toInt(),
         isLocked: qgMap['is_locked'] == true || qgMap['is_locked'] == 1,
-        computedAt: qgMap['computed_at'] != null
-            ? DateTime.parse(qgMap['computed_at'] as String)
-            : null,
         isPreview: false,
       );
     }
@@ -170,7 +167,7 @@ class _StudentClassGradeDetailPageState
             ClassSectionHeader(title: widget.className, showBackButton: true),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () async => _loadPeriodGrades(),
+                onRefresh: () async => _loadTermGrades(),
                 color: AppColors.accentCharcoal,
                 child: _isLoading
                     ? const Center(
@@ -202,7 +199,7 @@ class _StudentClassGradeDetailPageState
         const SizedBox(height: 20),
         QuarterSelector(
           selectedQuarter: _selectedQuarter,
-          periodGrades: _periodGrades,
+          termGrades: _termGrades,
           onChanged: (quarter) {
             setState(() => _selectedQuarter = quarter);
             _loadQuarterDetail();
@@ -235,7 +232,7 @@ class _StudentClassGradeDetailPageState
         ] else if (!hasGrade) ...[
           _buildEmptyQuarterState(),
         ],
-        FinalGradeSection(periodGrades: _periodGrades),
+        FinalGradeSection(termGrades: _termGrades),
         const SizedBox(height: 32),
       ],
     );
@@ -257,7 +254,7 @@ class _StudentClassGradeDetailPageState
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: _loadPeriodGrades,
+              onPressed: _loadTermGrades,
               child: const Text(
                 'Retry',
                 style: TextStyle(

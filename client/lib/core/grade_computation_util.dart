@@ -14,7 +14,7 @@ class GradeComputationUtil {
     required Map<String, List<GradeScore>> scoresByItem,
     required String classId,
     required String studentId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) {
     // 1. Group items by component
     final wwItems =
@@ -50,18 +50,17 @@ class GradeComputationUtil {
       id: '', // preview, no real ID
       classId: classId,
       studentId: studentId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       initialGrade: initialGrade,
       transmutedGrade: transmutedGrade,
       isLocked: isComplete,
-      computedAt: DateTime.now(),
       isPreview: true,
     );
   }
 
   /// Compute final grade as average of completed period transmuted grades.
-  static double? computeFinalGrade(List<PeriodGrade> periodGrades) {
-    final complete = periodGrades
+  static double? computeFinalGrade(List<PeriodGrade> termGrades) {
+    final complete = termGrades
         .where((g) => g.isLocked && g.transmutedGrade != null)
         .toList();
     if (complete.isEmpty) return null;

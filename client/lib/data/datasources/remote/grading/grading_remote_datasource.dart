@@ -24,13 +24,13 @@ abstract class GradingRemoteDataSource {
   // Unified
   Future<Map<String, dynamic>> getClassGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   // Grade Items
   Future<List<GradeItemModel>> getGradeItems({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     String? component,
   });
   Future<GradeItemModel> createGradeItem({
@@ -60,17 +60,17 @@ abstract class GradingRemoteDataSource {
   Future<void> clearScoreOverride({required String scoreId, String? idempotencyKey});
 
   // Computed Grades
-  Future<List<PeriodGradeModel>> getPeriodGrades({
+  Future<List<PeriodGradeModel>> getTermGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
   Future<void> computeGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
   Future<List<Map<String, dynamic>>> getFinalGrades({required String classId});
 
@@ -78,7 +78,7 @@ abstract class GradingRemoteDataSource {
   Future<List<PeriodGradeModel>> getMyGrades({required String classId});
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   });
 
   // Presets
@@ -147,12 +147,12 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<Map<String, dynamic>> getClassGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.getClassGrades(
         _dioClient,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   // ===== Grade Items =====
@@ -160,13 +160,13 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<List<GradeItemModel>> getGradeItems({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     String? component,
   }) =>
       ops.getGradeItems(
         _dioClient,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         component: component,
       );
 
@@ -252,36 +252,36 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   // ===== Computed Grades =====
 
   @override
-  Future<List<PeriodGradeModel>> getPeriodGrades({
+  Future<List<PeriodGradeModel>> getTermGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
-      ops.getPeriodGrades(
+      ops.getTermGrades(
         _dioClient,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   @override
   Future<void> computeGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.computeGrades(
         _dioClient,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   @override
   Future<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.getGradeSummary(
         _dioClient,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   @override
@@ -307,12 +307,12 @@ class GradingRemoteDataSourceImpl implements GradingRemoteDataSource {
   @override
   Future<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.getMyGradeDetail(
         _dioClient,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   // ===== Presets =====

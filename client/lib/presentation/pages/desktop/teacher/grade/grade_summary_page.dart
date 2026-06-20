@@ -55,7 +55,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
   }
 
   void _loadQuarterlyData() {
-    ref.read(periodGradesProvider.notifier).loadSummary(widget.classId, _selectedQuarter);
+    ref.read(termGradesProvider.notifier).loadSummary(widget.classId, _selectedQuarter);
   }
 
   Future<void> _loadFinalGradesIfNeeded() async {
@@ -84,7 +84,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
 
   @override
   Widget build(BuildContext context) {
-    final quarterlyState = ref.watch(periodGradesProvider);
+    final quarterlyState = ref.watch(termGradesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -156,7 +156,7 @@ class _GradeSummaryPageState extends ConsumerState<GradeSummaryPage>
     return DesktopPeriodGradeTable(
       summary: summary,
       onQgChanged: (studentId, grade) {
-        ref.read(periodGradesProvider.notifier).updatePeriodGrade(
+        ref.read(termGradesProvider.notifier).updatePeriodGrade(
           classId: widget.classId,
           studentId: studentId,
           quarter: _selectedQuarter,

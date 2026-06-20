@@ -44,7 +44,7 @@ pub fn advisory_core_values() -> Vec<CoreValuesSpec> {
                     student_id: uid(uname),
                     class_id: advisory_class,
                     school_year: school_year.into(),
-                    grading_period_number: quarter as i32,
+                    term_number: quarter as i32,
                     core_value: core_value.into(),
                     behavior_statement: behavior.into(),
                     marking: marking.into(),

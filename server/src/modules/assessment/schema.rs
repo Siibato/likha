@@ -15,7 +15,7 @@ pub struct CreateAssessmentRequest {
     pub is_published: Option<bool>,
     // NEW: optional questions for atomic creation when publishing
     pub questions: Option<Vec<AddQuestionRequest>>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
     pub tos_id: Option<String>,
 }
@@ -28,7 +28,7 @@ pub struct UpdateAssessmentRequest {
     pub open_at: Option<String>,
     pub close_at: Option<String>,
     pub show_results_immediately: Option<bool>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
     pub tos_id: Option<Option<String>>,
 }
@@ -137,7 +137,7 @@ pub struct AssessmentResponse {
     pub total_points: i32,
     pub question_count: usize,
     pub submission_count: usize,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
     pub tos_id: Option<String>,
     pub created_at: String,
@@ -163,7 +163,7 @@ pub struct AssessmentDetailResponse {
     pub is_published: bool,
     pub order_index: i32,
     pub total_points: i32,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
     pub tos_id: Option<String>,
     pub questions: Vec<QuestionResponse>,

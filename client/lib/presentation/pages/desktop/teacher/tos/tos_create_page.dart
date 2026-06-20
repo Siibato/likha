@@ -93,7 +93,7 @@ class _CreateTosPageState extends ConsumerState<CreateTosPage> {
       widget.classId,
       {
         'title': _titleController.text.trim(),
-        'grading_period_number': _selectedQuarter!,
+        'term_number': _selectedQuarter!,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
         'time_unit': _timeUnit,

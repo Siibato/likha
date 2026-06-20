@@ -140,7 +140,7 @@ impl crate::modules::assessment::service::AssessmentService {
             is_published: assessment.is_published,
             order_index: assessment.order_index,
             total_points: assessment.total_points,
-            grading_period_number: assessment.grading_period_number,
+            term_number: assessment.term_number,
             component: assessment.component.clone(),
             tos_id: assessment.tos_id.clone(),
             questions: question_responses,

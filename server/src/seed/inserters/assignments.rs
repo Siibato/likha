@@ -25,7 +25,7 @@ pub async fn insert_assignment(
         0, // order_index
         Some(spec.id),
         false, // is_draft
-        Some(spec.grading_period_number),
+        Some(spec.term_number),
         Some(spec.component.clone()),
     )
     .await?;

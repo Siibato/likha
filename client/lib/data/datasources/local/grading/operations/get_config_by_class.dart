@@ -11,7 +11,7 @@ Future<List<GradeConfigModel>> getConfigByClass(
     DbTables.gradeRecord,
     where: '${GradeRecordCols.classId} = ?',
     whereArgs: [classId],
-    orderBy: '${GradeRecordCols.gradingPeriodNumber} ASC',
+    orderBy: '${GradeRecordCols.termNumber} ASC',
   );
   return results.map((row) => GradeConfigModel.fromMap(row)).toList();
 }

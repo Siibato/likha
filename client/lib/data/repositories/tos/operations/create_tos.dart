@@ -22,7 +22,7 @@ ResultFuture<MutationResult<TableOfSpecifications>> createTos(
     final optimisticModel = TosModel(
       id: tosId,
       classId: classId,
-      gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num).toInt(),
+      termNumber: (data['term_number'] as num?)?.toInt() ?? (data['quarter'] as num).toInt(),
       title: data['title'] as String,
       classificationMode: data['classification_mode'] as String,
       totalItems: (data['total_items'] as num).toInt(),

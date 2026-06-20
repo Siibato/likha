@@ -41,6 +41,7 @@ mod m20260618_000004_rename_quarterly_assessment_component;
 mod m20260619_000001_add_school_head_to_settings;
 mod m20260620_000001_create_student_records_tables;
 mod m20260620_000002_phase_1_foundation;
+mod m20260620_000003_rename_terms;
 
 pub struct Migrator;
 
@@ -89,6 +90,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260619_000001_add_school_head_to_settings::Migration),
             Box::new(m20260620_000001_create_student_records_tables::Migration),
             Box::new(m20260620_000002_phase_1_foundation::Migration),
+            Box::new(m20260620_000003_rename_terms::Migration),
         ]
     }
 }

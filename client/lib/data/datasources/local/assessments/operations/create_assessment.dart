@@ -15,7 +15,7 @@ Future<String> createAssessment(
   bool? showResultsImmediately,
   bool isPublished,
   String? tosId,
-  int? gradingPeriodNumber,
+  int? termNumber,
   String? component, {
   String? id,
   Transaction? txn,
@@ -37,7 +37,7 @@ Future<String> createAssessment(
       AssessmentsCols.isPublished: isPublished ? 1 : 0,
       AssessmentsCols.orderIndex: 0,
       if (tosId != null) AssessmentsCols.tosId: tosId,
-      if (gradingPeriodNumber != null) AssessmentsCols.gradingPeriodNumber: gradingPeriodNumber,
+      if (termNumber != null) AssessmentsCols.termNumber: termNumber,
       if (component != null) AssessmentsCols.component: component,
       CommonCols.createdAt: now.toIso8601String(),
       CommonCols.updatedAt: now.toIso8601String(),

@@ -17,7 +17,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(40), close_at: now - chrono::Duration::days(35),
         show_results_immediately: true, total_points: 13, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("eng_q2_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which modal verb expresses obligation?".into(),
@@ -57,7 +57,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(38), close_at: now - chrono::Duration::days(33),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("eng_q2_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Which rhetorical device repeats words at the beginning of successive clauses?".into(),
@@ -120,7 +120,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(42), close_at: now - chrono::Duration::days(36),
         show_results_immediately: true, total_points: eng_q2_exam_points, component: "period_assessment".into(),
         tos_id: tid("english_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: eng_q2_exam_qs,
     });
 
@@ -132,7 +132,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(39), close_at: now - chrono::Duration::days(34),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("eng_q2_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "Which modal verb expresses ability?".into(),
@@ -172,7 +172,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(41), close_at: now - chrono::Duration::days(36),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("sci_q2_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "What is the primary source of energy in most ecosystems?".into(),
@@ -212,7 +212,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(39), close_at: now - chrono::Duration::days(34),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("sci_q2_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Who proposed the theory of natural selection?".into(),
@@ -275,7 +275,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(43), close_at: now - chrono::Duration::days(37),
         show_results_immediately: true, total_points: sci_q2_exam_points, component: "period_assessment".into(),
         tos_id: tid("science_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: sci_q2_exam_qs,
     });
 
@@ -287,7 +287,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(40), close_at: now - chrono::Duration::days(35),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("sci_q2_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the role of decomposers in an ecosystem?".into(),
@@ -327,7 +327,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(38), close_at: now - chrono::Duration::days(33),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("adv_q2_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which nutrient is the body's main source of energy?".into(),
@@ -367,7 +367,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(37), close_at: now - chrono::Duration::days(32),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("adv_q2_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Which nutrient is essential for building muscles?".into(),
@@ -407,7 +407,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(36), close_at: now - chrono::Duration::days(31),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: vec![
             QuestionSpec { id: qid("adv_q2_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the best way to resist peer pressure?".into(),
@@ -470,7 +470,7 @@ pub fn realistic_assessments_q2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 45, open_at: now - chrono::Duration::days(43), close_at: now - chrono::Duration::days(37),
         show_results_immediately: true, total_points: adv_q2_exam_points, component: "period_assessment".into(),
         tos_id: tid("advisory_9a_tos_q2"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 2,
+        is_published: true, results_released: true, term_number: 2,
         questions: adv_q2_exam_qs,
     });
 

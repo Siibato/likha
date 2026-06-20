@@ -197,8 +197,8 @@ impl ManifestRepository {
         ops::get_student_grade_scores(&self.db, student_id, grade_item_ids).await
     }
 
-    pub async fn get_all_period_grades(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
-        ops::get_all_period_grades(&self.db, class_ids).await
+    pub async fn get_all_term_grades(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_all_term_grades(&self.db, class_ids).await
     }
 
     pub async fn get_table_of_specifications_for_classes(&self, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
@@ -209,8 +209,8 @@ impl ManifestRepository {
         ops::get_tos_competencies_for_tos_ids(&self.db, tos_ids).await
     }
 
-    pub async fn get_student_period_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
-        ops::get_student_period_grades(&self.db, student_id, class_ids).await
+    pub async fn get_student_term_grades(&self, student_id: Uuid, class_ids: Vec<Uuid>) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_student_term_grades(&self.db, student_id, class_ids).await
     }
 
     pub async fn get_grade_configs_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
@@ -229,12 +229,12 @@ impl ManifestRepository {
         ops::get_student_grade_scores_since(&self.db, student_id, grade_item_ids, since).await
     }
 
-    pub async fn get_all_period_grades_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
-        ops::get_all_period_grades_since(&self.db, class_ids, since).await
+    pub async fn get_all_term_grades_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_all_term_grades_since(&self.db, class_ids, since).await
     }
 
-    pub async fn get_student_period_grades_since(&self, student_id: Uuid, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
-        ops::get_student_period_grades_since(&self.db, student_id, class_ids, since).await
+    pub async fn get_student_term_grades_since(&self, student_id: Uuid, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_student_term_grades_since(&self.db, student_id, class_ids, since).await
     }
 
     pub async fn get_table_of_specifications_since(&self, class_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {

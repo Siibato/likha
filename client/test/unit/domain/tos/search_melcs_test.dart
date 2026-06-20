@@ -34,7 +34,7 @@ void main() {
       when(() => mockRepository.searchMelcs(
         subject: any(named: 'subject'),
         gradeLevel: any(named: 'gradeLevel'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         query: any(named: 'query'),
       )).thenAnswer((_) async => Right(tMelcs));
 
@@ -44,7 +44,7 @@ void main() {
       verify(() => mockRepository.searchMelcs(
         subject: 'Math',
         gradeLevel: 'Grade 7',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         query: null,
       )).called(1);
     });
@@ -53,7 +53,7 @@ void main() {
       when(() => mockRepository.searchMelcs(
         subject: any(named: 'subject'),
         gradeLevel: any(named: 'gradeLevel'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         query: any(named: 'query'),
       )).thenAnswer((_) async => const Right(<MelcEntryModel>[]));
 
@@ -67,7 +67,7 @@ void main() {
       when(() => mockRepository.searchMelcs(
         subject: any(named: 'subject'),
         gradeLevel: any(named: 'gradeLevel'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         query: any(named: 'query'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 

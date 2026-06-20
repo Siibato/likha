@@ -16,7 +16,7 @@ class AssessmentDetailGradingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GradingSettingsCard(
-      gradingPeriodNumber: assessment.gradingPeriodNumber,
+      termNumber: assessment.termNumber,
       component: assessment.component,
       isEditing: controller.isEditingGrading,
       editingGradingPeriod: controller.editingGradingPeriod,

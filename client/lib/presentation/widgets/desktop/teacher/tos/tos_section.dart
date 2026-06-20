@@ -92,7 +92,7 @@ class TosSection extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              'Q${tos.gradingPeriodNumber}',
+                              'Q${tos.termNumber}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.foregroundSecondary,

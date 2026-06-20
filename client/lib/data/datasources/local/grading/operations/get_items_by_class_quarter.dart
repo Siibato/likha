@@ -10,7 +10,7 @@ Future<List<GradeItemModel>> getItemsByClassQuarter(
 }) async {
   final db = await localDatabase.database;
   var where =
-      '${GradeItemsCols.classId} = ? AND ${GradeItemsCols.gradingPeriodNumber} = ?';
+      '${GradeItemsCols.classId} = ? AND ${GradeItemsCols.termNumber} = ?';
   final whereArgs = <dynamic>[classId, quarter];
 
   if (component != null) {

@@ -14,7 +14,7 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     // For now, implement batch loading by combining individual calls
@@ -24,7 +24,7 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
       remoteDataSource,
       dataEventBus,
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
     );
     
     final gradeSummaryResult = await getGradeSummary(
@@ -32,7 +32,7 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
       remoteDataSource,
       dataEventBus,
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
     );
     
     return gradeItemsResult.fold(
@@ -45,7 +45,7 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
             classId: item.classId,
             title: item.title,
             component: item.component,
-            gradingPeriodNumber: item.gradingPeriodNumber,
+            termNumber: item.termNumber,
             totalPoints: item.totalPoints,
             sourceType: item.sourceType,
             sourceId: item.sourceId,
@@ -54,7 +54,7 @@ ResultFuture<Map<String, dynamic>> getGradeDataBatch(
             updatedAt: item.updatedAt,
           ).toJson()).toList(),
           'grade_summary': gradeSummary,
-          'quarter': gradingPeriodNumber,
+          'quarter': termNumber,
         }),
       ),
     );

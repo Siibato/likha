@@ -639,7 +639,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 deleted_at: None,
                 is_published,
                 results_released,
-                grading_period_number: *period,
+                term_number: *period,
                 questions,
             });
         }
@@ -667,7 +667,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         deleted_at: Some(ctx.days_ago(4)),
         is_published: false,
         results_released: false,
-        grading_period_number: 1,
+        term_number: 1,
         questions: deleted_questions,
     });
 
@@ -842,7 +842,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
                 created_at: created,
                 deleted_at: None,
                 is_published: true,
-                grading_period_number: *period,
+                term_number: *period,
             });
         }
     }
@@ -861,7 +861,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
         created_at: ctx.days_ago(15),
         deleted_at: Some(ctx.days_ago(3)),
         is_published: false,
-        grading_period_number: 1,
+        term_number: 1,
     });
 
     assignments

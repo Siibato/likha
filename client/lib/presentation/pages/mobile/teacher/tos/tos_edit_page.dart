@@ -60,7 +60,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         TextEditingController(text: '${widget.tos.evaluatingPercentage}');
     _creatingPctController =
         TextEditingController(text: '${widget.tos.creatingPercentage}');
-    _selectedQuarter = widget.tos.gradingPeriodNumber;
+    _selectedQuarter = widget.tos.termNumber;
     _classificationMode = widget.tos.classificationMode;
     _timeUnit = widget.tos.timeUnit;
   }

@@ -65,7 +65,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     if (configState.isConfigured) {
       ref.read(classGradesProvider.notifier).loadClassGrades(
         classId: widget.classId,
-        gradingPeriodNumber: _selectedQuarter,
+        termNumber: _selectedQuarter,
       );
     }
   }
@@ -73,7 +73,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   void _reloadGrades() {
     ref.read(classGradesProvider.notifier).loadClassGrades(
       classId: widget.classId,
-      gradingPeriodNumber: _selectedQuarter,
+      termNumber: _selectedQuarter,
       skipBackgroundRefresh: true,
     );
   }
@@ -82,7 +82,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     setState(() => _selectedQuarter = quarter);
     ref.read(classGradesProvider.notifier).loadClassGrades(
       classId: widget.classId,
-      gradingPeriodNumber: quarter,
+      termNumber: quarter,
     );
   }
 
@@ -132,7 +132,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   void _handleQgChanged(String studentId, int? newQg) {
     if (newQg == null) return;
     ref
-        .read(periodGradesProvider.notifier)
+        .read(termGradesProvider.notifier)
         .updatePeriodGrade(
           classId: widget.classId,
           studentId: studentId,
@@ -367,11 +367,11 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               await ref
-                  .read(periodGradesProvider.notifier)
+                  .read(termGradesProvider.notifier)
                   .computeGrades(widget.classId, _selectedQuarter);
               if (!mounted) return;
               ref
-                  .read(periodGradesProvider.notifier)
+                  .read(termGradesProvider.notifier)
                   .loadSummary(widget.classId, _selectedQuarter);
               messenger.showSnackBar(
                 const SnackBar(content: Text('Grades computed')),

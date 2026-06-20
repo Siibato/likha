@@ -30,7 +30,7 @@ void main() {
           'is_archived': false,
           'is_advisory': false,
           'student_count': 0,
-          'grading_period_type': 'quarter',
+          'term_type': 'quarter',
           'created_at': '2026-04-19T08:00:00',
           'updated_at': '2026-04-19T08:00:00',
         }
@@ -53,7 +53,7 @@ void main() {
         'is_archived': false,
         'is_advisory': false,
         'student_count': 0,
-        'grading_period_type': 'quarter',
+        'term_type': 'quarter',
         'created_at': '2026-04-19T08:00:00',
         'updated_at': '2026-04-19T08:00:00',
       };
@@ -79,7 +79,7 @@ void main() {
         'is_archived': false,
         'is_advisory': false,
         'student_count': 0,
-        'grading_period_type': 'quarter',
+        'term_type': 'quarter',
         'created_at': '2026-04-19T08:00:00',
         'updated_at': '2026-04-19T08:00:00',
       });

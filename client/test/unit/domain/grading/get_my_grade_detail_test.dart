@@ -29,25 +29,25 @@ void main() {
     test('should get my grade detail successfully', () async {
       when(() => mockRepository.getMyGradeDetail(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => Right(tDetail));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result, Right(tDetail));
       verify(() => mockRepository.getMyGradeDetail(
         classId: tClassId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
       )).called(1);
     });
 
     test('should return ServerFailure when class not found', () async {
       when(() => mockRepository.getMyGradeDetail(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
-      final result = await useCase(classId: 'nonexistent-id', gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: 'nonexistent-id', termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(
@@ -59,10 +59,10 @@ void main() {
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getMyGradeDetail(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(

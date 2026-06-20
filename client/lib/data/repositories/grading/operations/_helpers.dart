@@ -22,7 +22,7 @@ const weightPresets = {
 GradeConfig configToEntity(GradeConfigModel m) => GradeConfig(
       id: m.id,
       classId: m.classId,
-      gradingPeriodNumber: m.gradingPeriodNumber,
+      termNumber: m.termNumber,
       wwWeight: m.wwWeight,
       ptWeight: m.ptWeight,
       qaWeight: m.qaWeight,
@@ -33,7 +33,7 @@ GradeItem itemToEntity(GradeItemModel m) => GradeItem(
       classId: m.classId,
       title: m.title,
       component: m.component,
-      gradingPeriodNumber: m.gradingPeriodNumber,
+      termNumber: m.termNumber,
       totalPoints: m.totalPoints,
       sourceType: m.sourceType,
       sourceId: m.sourceId,
@@ -67,9 +67,8 @@ PeriodGrade periodToEntity(PeriodGradeModel m) => PeriodGrade(
       id: m.id,
       classId: m.classId,
       studentId: m.studentId,
-      gradingPeriodNumber: m.gradingPeriodNumber,
+      termNumber: m.termNumber,
       initialGrade: m.initialGrade,
       transmutedGrade: m.transmutedGrade,
       isLocked: m.isLocked,
-      computedAt: m.computedAt,
     );

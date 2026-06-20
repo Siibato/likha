@@ -44,7 +44,7 @@ ResultFuture<List<GradeConfig>> getGradingConfig(
                     c.wwWeight != f.wwWeight ||
                     c.ptWeight != f.ptWeight ||
                     c.qaWeight != f.qaWeight ||
-                    c.gradingPeriodNumber != f.gradingPeriodNumber) {
+                    c.termNumber != f.termNumber) {
                   try { await localDataSource.saveConfigs(fresh); } catch (_) {}
                   dataEventBus.notifyGradesChanged(classId);
                   return;

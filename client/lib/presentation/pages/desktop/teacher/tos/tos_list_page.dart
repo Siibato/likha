@@ -106,7 +106,7 @@ class _TosListPageState extends ConsumerState<TosListPage> {
                                   color: AppColors.foregroundPrimary,
                                 ),
                               )),
-                              DataCell(Text('Q${tos.gradingPeriodNumber}')),
+                              DataCell(Text('Q${tos.termNumber}')),
                               DataCell(Text(modeLabel)),
                               DataCell(Text('${tos.totalItems}')),
                               DataCell(Text(

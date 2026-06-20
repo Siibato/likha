@@ -369,7 +369,7 @@ class AssessmentCreateController extends ChangeNotifier {
               showResultsImmediately: showResultsImmediately,
               isPublished: isPublished,
               questions: isPublished ? questionsData : null,
-              gradingPeriodNumber: quarter,
+              termNumber: quarter,
               component: component,
               tosId: linkedTosId,
             ),

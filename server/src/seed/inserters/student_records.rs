@@ -44,7 +44,7 @@ pub async fn insert_core_values_records(
             student_id: Set(spec.student_id),
             class_id: Set(spec.class_id),
             school_year: Set(spec.school_year.clone()),
-            grading_period_number: Set(spec.grading_period_number),
+            term_number: Set(spec.term_number),
             core_value: Set(spec.core_value.clone()),
             behavior_statement: Set(spec.behavior_statement.clone()),
             marking: Set(spec.marking.clone()),

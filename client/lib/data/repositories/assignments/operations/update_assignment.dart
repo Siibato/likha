@@ -55,7 +55,7 @@ ResultFuture<MutationResult<Assignment>> updateAssignment(
       submissionStatus: optimisticAssignment.submissionStatus,
       submissionId: optimisticAssignment.submissionId,
       score: optimisticAssignment.score,
-      gradingPeriodNumber: optimisticAssignment.gradingPeriodNumber,
+      termNumber: optimisticAssignment.termNumber,
       component: optimisticAssignment.component,
       createdAt: optimisticAssignment.createdAt,
       updatedAt: optimisticAssignment.updatedAt,

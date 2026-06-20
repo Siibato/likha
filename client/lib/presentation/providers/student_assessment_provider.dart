@@ -189,7 +189,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
                 submissionCount: a.submissionCount,
                 isSubmitted: true,
                 tosId: a.tosId,
-                gradingPeriodNumber: a.gradingPeriodNumber,
+                termNumber: a.termNumber,
                 component: a.component,
                 createdAt: a.createdAt,
                 updatedAt: a.updatedAt,

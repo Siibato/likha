@@ -18,16 +18,16 @@ ResultFuture<List<PeriodGrade>> getMyGrades(
 }) async {
   try {
     try {
-      final cached = await localDataSource.getPeriodGradesByClass(classId, 0);
+      final cached = await localDataSource.getTermGradesByClass(classId, 0);
 
       fireRemoteFetch(
         dedupKey: 'grading/myGrades/$classId/bg',
         remote: () => remoteDataSource.getMyGrades(classId: classId),
         onSuccess: (fresh) async {
           try {
-            final current = await localDataSource.getPeriodGradesByClass(classId, 0);
+            final current = await localDataSource.getTermGradesByClass(classId, 0);
             if (current.length != fresh.length) {
-              await localDataSource.savePeriodGrades(fresh);
+              await localDataSource.saveTermGrades(fresh);
               dataEventBus.notifyGradesChanged(classId);
               return;
             }
@@ -38,13 +38,13 @@ ResultFuture<List<PeriodGrade>> getMyGrades(
                   c.initialGrade != f.initialGrade ||
                   c.transmutedGrade != f.transmutedGrade ||
                   c.isLocked != f.isLocked) {
-                await localDataSource.savePeriodGrades(fresh);
+                await localDataSource.saveTermGrades(fresh);
                 dataEventBus.notifyGradesChanged(classId);
                 return;
               }
             }
           } catch (_) {
-            await localDataSource.savePeriodGrades(fresh);
+            await localDataSource.saveTermGrades(fresh);
             dataEventBus.notifyGradesChanged(classId);
           }
         },
@@ -56,7 +56,7 @@ ResultFuture<List<PeriodGrade>> getMyGrades(
         dedupKey: 'grading/myGrades/$classId',
         remote: () => remoteDataSource.getMyGrades(classId: classId),
       );
-      await localDataSource.savePeriodGrades(fresh);
+      await localDataSource.saveTermGrades(fresh);
       return Right(fresh.map(helpers.periodToEntity).toList());
     }
   } on ServerException catch (e) {

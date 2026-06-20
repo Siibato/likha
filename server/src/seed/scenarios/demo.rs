@@ -46,7 +46,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let grade_scores = generators::demo_grades::generate_grade_scores(
         &grade_items, &students, &assessment_submissions, &assignment_submissions, &enrollments,
     );
-    let period_grades = generators::demo_grades::generate_period_grades(
+    let term_grades = generators::demo_grades::generate_term_grades(
         &grade_records, &grade_scores, &grade_items, &students, &enrollments, &ctx,
     );
 
@@ -77,7 +77,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
     inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
-    inserters::grading::insert_period_grades(db, &period_grades, ctx.now()).await?;
+    inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
     enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
@@ -92,7 +92,7 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
         users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),
-        period_grades.len()
+        term_grades.len()
     );
 
     Ok(())

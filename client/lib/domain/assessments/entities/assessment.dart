@@ -18,7 +18,7 @@ class Assessment extends Equatable {
   final int submissionCount;
   final bool? isSubmitted; // null if no submission, true if submitted, false if started but not submitted
   final String? tosId;
-  final int? gradingPeriodNumber;
+  final int? termNumber;
   final String? component;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -42,7 +42,7 @@ class Assessment extends Equatable {
     required this.submissionCount,
     this.isSubmitted,
     this.tosId,
-    this.gradingPeriodNumber,
+    this.termNumber,
     this.component,
     required this.createdAt,
     required this.updatedAt,
@@ -68,7 +68,7 @@ class Assessment extends Equatable {
         submissionCount,
         isSubmitted,
         tosId,
-        gradingPeriodNumber,
+        termNumber,
         component,
         createdAt,
         updatedAt,

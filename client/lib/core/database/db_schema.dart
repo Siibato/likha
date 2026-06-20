@@ -30,7 +30,7 @@ abstract final class DbTables {
   static const String gradeRecord = 'grade_record';
   static const String gradeItems = 'grade_items';
   static const String gradeScores = 'grade_scores';
-  static const String periodGrades = 'period_grades';
+  static const String termGrades = 'term_grades';
   static const String tableOfSpecifications = 'table_of_specifications';
   static const String tosCompetencies = 'tos_competencies';
   static const String melcs = 'melcs';
@@ -88,7 +88,7 @@ abstract final class ClassesCols {
   static const String studentCount = 'student_count';
   static const String gradeLevel = 'grade_level';
   static const String schoolYear = 'school_year';
-  static const String gradingPeriodType = 'grading_period_type';
+  static const String termType = 'term_type';
   static const String isAdvisory = 'is_advisory';
   static const String deletedAt = 'deleted_at';
 }
@@ -115,7 +115,7 @@ abstract final class AssessmentsCols {
   static const String questionCount = 'question_count';
   static const String submissionCount = 'submission_count';
   static const String tosId = 'tos_id';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String component = 'component';
 }
 
@@ -185,7 +185,7 @@ abstract final class AssignmentsCols {
   static const String dueAt = 'due_at';
   static const String isPublished = 'is_published';
   static const String orderIndex = 'order_index';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String component = 'component';
   static const String submissionCount = 'submission_count';
   static const String gradedCount = 'graded_count';
@@ -251,7 +251,7 @@ abstract final class SyncMetadataCols {
 
 abstract final class GradeRecordCols {
   static const String classId = 'class_id';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String wwWeight = 'ww_weight';
   static const String ptWeight = 'pt_weight';
   static const String qaWeight = 'qa_weight';
@@ -261,7 +261,7 @@ abstract final class GradeItemsCols {
   static const String classId = 'class_id';
   static const String title = 'title';
   static const String component = 'component';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String totalPoints = 'total_points';
   static const String sourceType = 'source_type';
   static const String sourceId = 'source_id';
@@ -276,14 +276,13 @@ abstract final class GradeScoresCols {
   static const String overrideScore = 'override_score';
 }
 
-abstract final class PeriodGradesCols {
+abstract final class TermGradesCols {
   static const String classId = 'class_id';
   static const String studentId = 'student_id';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String initialGrade = 'initial_grade';
   static const String transmutedGrade = 'transmuted_grade';
   static const String isLocked = 'is_locked';
-  static const String computedAt = 'computed_at';
 }
 
 abstract final class StudentResultsCacheCols {
@@ -302,7 +301,7 @@ abstract final class ValidationMetadataCols {
 
 abstract final class TosCols {
   static const String classId = 'class_id';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String title = 'title';
   static const String classificationMode = 'classification_mode';
   static const String totalItems = 'total_items';
@@ -338,7 +337,7 @@ abstract final class TosCompetenciesCols {
 abstract final class MelcsCols {
   static const String subject = 'subject';
   static const String gradeLevel = 'grade_level';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String competencyCode = 'competency_code';
   static const String competencyText = 'competency_text';
   static const String domain = 'domain';
@@ -390,7 +389,7 @@ abstract final class CoreValuesRecordsCols {
   static const String studentId = 'student_id';
   static const String classId = 'class_id';
   static const String schoolYear = 'school_year';
-  static const String gradingPeriodNumber = 'grading_period_number';
+  static const String termNumber = 'term_number';
   static const String coreValue = 'core_value';
   static const String behaviorStatement = 'behavior_statement';
   static const String marking = 'marking';

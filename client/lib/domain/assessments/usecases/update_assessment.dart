@@ -11,7 +11,7 @@ class UpdateAssessmentParams {
   final String? openAt;
   final String? closeAt;
   final bool? showResultsImmediately;
-  final int? gradingPeriodNumber;
+  final int? termNumber;
   final String? component;
 
   UpdateAssessmentParams({
@@ -22,7 +22,7 @@ class UpdateAssessmentParams {
     this.openAt,
     this.closeAt,
     this.showResultsImmediately,
-    this.gradingPeriodNumber,
+    this.termNumber,
     this.component,
   });
 }
@@ -41,7 +41,7 @@ class UpdateAssessment {
       openAt: params.openAt,
       closeAt: params.closeAt,
       showResultsImmediately: params.showResultsImmediately,
-      gradingPeriodNumber: params.gradingPeriodNumber,
+      termNumber: params.termNumber,
       component: params.component,
     );
   }

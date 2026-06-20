@@ -10,13 +10,13 @@ class UpdatePeriodGrade {
   ResultFuture<MutationResult<void>> call({
     required String classId,
     required String studentId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     required int transmutedGrade,
   }) {
     return _repository.updateTransmutedGrade(
       classId: classId,
       studentId: studentId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       transmutedGrade: transmutedGrade,
     );
   }

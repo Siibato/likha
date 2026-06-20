@@ -17,7 +17,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(120), close_at: now - chrono::Duration::days(115),
         show_results_immediately: true, total_points: 13, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("eng_q4_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which figure of speech compares two unlike things without using 'like' or 'as'?".into(),
@@ -57,7 +57,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(118), close_at: now - chrono::Duration::days(113),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("eng_q4_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What does biographical criticism focus on?".into(),
@@ -120,7 +120,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(122), close_at: now - chrono::Duration::days(116),
         show_results_immediately: true, total_points: eng_q4_exam_points, component: "period_assessment".into(),
         tos_id: tid("english_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: eng_q4_exam_qs,
     });
 
@@ -132,7 +132,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(119), close_at: now - chrono::Duration::days(114),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("eng_q4_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the purpose of a literature review?".into(),
@@ -172,7 +172,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(121), close_at: now - chrono::Duration::days(116),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("sci_q4_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "What is the unit of electric current?".into(),
@@ -212,7 +212,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(119), close_at: now - chrono::Duration::days(114),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("sci_q4_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What is the primary greenhouse gas emitted by human activities?".into(),
@@ -275,7 +275,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(123), close_at: now - chrono::Duration::days(117),
         show_results_immediately: true, total_points: sci_q4_exam_points, component: "period_assessment".into(),
         tos_id: tid("science_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: sci_q4_exam_qs,
     });
 
@@ -287,7 +287,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(120), close_at: now - chrono::Duration::days(115),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("sci_q4_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the unit of electric current?".into(),
@@ -327,7 +327,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(118), close_at: now - chrono::Duration::days(113),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("adv_q4_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "What is the first step in career planning?".into(),
@@ -367,7 +367,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(117), close_at: now - chrono::Duration::days(112),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("adv_q4_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What does SMART stand for in goal setting?".into(),
@@ -407,7 +407,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(116), close_at: now - chrono::Duration::days(111),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: vec![
             QuestionSpec { id: qid("adv_q4_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is self-reflection?".into(),
@@ -470,7 +470,7 @@ pub fn realistic_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 45, open_at: now - chrono::Duration::days(123), close_at: now - chrono::Duration::days(117),
         show_results_immediately: true, total_points: adv_q4_exam_points, component: "period_assessment".into(),
         tos_id: tid("advisory_9a_tos_q4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 4,
+        is_published: true, results_released: true, term_number: 4,
         questions: adv_q4_exam_qs,
     });
 

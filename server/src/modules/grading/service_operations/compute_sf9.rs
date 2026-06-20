@@ -46,18 +46,18 @@ impl crate::modules::grading::service::GradeComputationService {
         let learner_details = self.repo.get_learner_details(student_id).await?;
 
         let mut subjects = Vec::new();
-        let num_periods = crate::modules::grading::helpers::period_count::period_count(&class.grading_period_type);
+        let num_periods = crate::modules::grading::helpers::period_count::period_count(&class.term_type);
         let mut period_sums: Vec<Vec<i32>> = (0..num_periods).map(|_| Vec::new()).collect();
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
-            let period_grades_raw = self.repo.get_period_grades_for_student_class(
+            let term_grades_raw = self.repo.get_term_grades_for_student_class(
                 student_id, ec.class_id,
             ).await?;
 
             let mut period_vals: Vec<Option<i32>> = vec![None; num_periods];
-            for pg in &period_grades_raw {
-                let idx = (pg.grading_period_number - 1) as usize;
+            for pg in &term_grades_raw {
+                let idx = (pg.term_number - 1) as usize;
                 if idx < num_periods {
                     if let Some(t) = pg.transmuted_grade {
                         period_vals[idx] = Some(t);
@@ -83,7 +83,7 @@ impl crate::modules::grading::service::GradeComputationService {
             subjects.push(Sf9SubjectRow {
                 class_title: ec.title.clone(),
                 subject_group: None,
-                period_grades: period_vals,
+                term_grades: period_vals,
                 final_grade,
                 descriptor,
             });
@@ -102,7 +102,7 @@ impl crate::modules::grading::service::GradeComputationService {
         let ga_descriptor = final_average.map(|fa| deped_weights::get_descriptor(fa).to_string());
 
         let general_average = Some(Sf9PeriodAverages {
-            period_grades: (0..num_periods).map(|i| compute_avg(&period_sums[i])).collect(),
+            term_grades: (0..num_periods).map(|i| compute_avg(&period_sums[i])).collect(),
             final_average,
             descriptor: ga_descriptor,
         });
@@ -119,7 +119,7 @@ impl crate::modules::grading::service::GradeComputationService {
             track_strand: learner_details.as_ref().and_then(|d| d.track_strand.clone()),
             curriculum: learner_details.as_ref().and_then(|d| d.curriculum.clone()),
             teacher_name,
-            grading_period_type: Some(class.grading_period_type.clone()),
+            term_type: Some(class.term_type.clone()),
             subjects,
             general_average,
         };

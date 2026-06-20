@@ -6,7 +6,7 @@ class TosModel extends TableOfSpecifications {
   const TosModel({
     required super.id,
     required super.classId,
-    required super.gradingPeriodNumber,
+    required super.termNumber,
     required super.title,
     required super.classificationMode,
     required super.totalItems,
@@ -30,7 +30,7 @@ class TosModel extends TableOfSpecifications {
     return TosModel(
       id: json['id'] as String,
       classId: json['class_id'] as String,
-      gradingPeriodNumber: json['grading_period_number'] as int? ?? json['quarter'] as int,
+      termNumber: json['term_number'] as int? ?? json['quarter'] as int,
       title: json['title'] as String,
       classificationMode: json['classification_mode'] as String,
       totalItems: json['total_items'] as int,
@@ -54,7 +54,7 @@ class TosModel extends TableOfSpecifications {
     return TosModel(
       id: map[CommonCols.id] as String,
       classId: map[TosCols.classId] as String,
-      gradingPeriodNumber: map[TosCols.gradingPeriodNumber] as int,
+      termNumber: map[TosCols.termNumber] as int,
       title: map[TosCols.title] as String,
       classificationMode: map[TosCols.classificationMode] as String,
       totalItems: map[TosCols.totalItems] as int,
@@ -83,7 +83,7 @@ class TosModel extends TableOfSpecifications {
   Map<String, dynamic> toMap() => {
     CommonCols.id: id,
     TosCols.classId: classId,
-    TosCols.gradingPeriodNumber: gradingPeriodNumber,
+    TosCols.termNumber: termNumber,
     TosCols.title: title,
     TosCols.classificationMode: classificationMode,
     TosCols.totalItems: totalItems,
@@ -106,7 +106,7 @@ class TosModel extends TableOfSpecifications {
   Map<String, dynamic> toJson() => {
     'id': id,
     'class_id': classId,
-    'grading_period_number': gradingPeriodNumber,
+    'term_number': termNumber,
     'title': title,
     'classification_mode': classificationMode,
     'total_items': totalItems,
@@ -127,7 +127,7 @@ class TosModel extends TableOfSpecifications {
   Map<String, dynamic> toPayload() => {
     'id': id,
     'class_id': classId,
-    'grading_period_number': gradingPeriodNumber,
+    'term_number': termNumber,
     'title': title,
     'classification_mode': classificationMode,
     'total_items': totalItems,

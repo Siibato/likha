@@ -84,7 +84,7 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<List<GradeItem>> getGradeItems({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     String? component,
   }) =>
       ops.getGradeItems(
@@ -92,7 +92,7 @@ class GradingRepositoryImpl implements GradingRepository {
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         component: component,
       );
 
@@ -186,34 +186,34 @@ class GradingRepositoryImpl implements GradingRepository {
   // ===== Computed Grades =====
 
   @override
-  ResultFuture<List<PeriodGrade>> getPeriodGrades({
+  ResultFuture<List<PeriodGrade>> getTermGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
-      ops.getPeriodGrades(
+      ops.getTermGrades(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   @override
   ResultVoid computeGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.computeGrades(
         _remoteDataSource,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   @override
   ResultFuture<MutationResult<void>> updateTransmutedGrade({
     required String classId,
     required String studentId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     required int transmutedGrade,
   }) =>
       ops.updateTransmutedGrade(
@@ -221,21 +221,21 @@ class GradingRepositoryImpl implements GradingRepository {
         _syncQueue,
         classId: classId,
         studentId: studentId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         transmutedGrade: transmutedGrade,
       );
 
   @override
   ResultFuture<List<Map<String, dynamic>>> getGradeSummary({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.getGradeSummary(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   @override
@@ -265,14 +265,14 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<Map<String, dynamic>> getMyGradeDetail({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.getMyGradeDetail(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   // ===== General Average =====
@@ -339,7 +339,7 @@ class GradingRepositoryImpl implements GradingRepository {
         .map((s) => Sf9SubjectRow(
               classTitle: s.classTitle,
               subjectGroup: s.subjectGroup,
-              periodGrades: s.periodGrades,
+              termGrades: s.termGrades,
               finalGrade: s.finalGrade,
               descriptor: s.descriptor,
             ))
@@ -375,14 +375,14 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<Map<String, dynamic>> getGradeDataBatch({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) =>
       ops.getGradeDataBatch(
         _localDataSource,
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
       );
 
   // ===== Unified Read =====
@@ -390,7 +390,7 @@ class GradingRepositoryImpl implements GradingRepository {
   @override
   ResultFuture<ClassGrades> getClassGrades({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
     bool skipBackgroundRefresh = false,
   }) =>
       ops.getClassGrades(
@@ -398,7 +398,7 @@ class GradingRepositoryImpl implements GradingRepository {
         _remoteDataSource,
         _dataEventBus,
         classId: classId,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
 }

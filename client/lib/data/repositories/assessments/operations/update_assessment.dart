@@ -19,7 +19,7 @@ ResultFuture<MutationResult<Assessment>> updateAssessment(
   String? openAt,
   String? closeAt,
   bool? showResultsImmediately,
-  int? gradingPeriodNumber,
+  int? termNumber,
   String? component,
 }) async {
   try {
@@ -37,7 +37,7 @@ ResultFuture<MutationResult<Assessment>> updateAssessment(
       if (closeAt != null) 'close_at': closeAt,
       if (showResultsImmediately != null)
         'show_results_immediately': showResultsImmediately,
-      if (gradingPeriodNumber != null) 'grading_period_number': gradingPeriodNumber,
+      if (termNumber != null) 'term_number': termNumber,
       if (component != null) 'component': component,
     };
 
@@ -57,7 +57,7 @@ ResultFuture<MutationResult<Assessment>> updateAssessment(
       questionCount: cachedModel.questionCount,
       submissionCount: cachedModel.submissionCount,
       tosId: cachedModel.tosId,
-      gradingPeriodNumber: gradingPeriodNumber ?? cachedModel.gradingPeriodNumber,
+      termNumber: termNumber ?? cachedModel.termNumber,
       component: component ?? cachedModel.component,
       createdAt: cachedModel.createdAt,
       updatedAt: now,

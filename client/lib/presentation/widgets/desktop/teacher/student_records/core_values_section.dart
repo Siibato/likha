@@ -128,7 +128,7 @@ class _CoreValuesGrid extends StatelessWidget {
   });
 
   String? _getMarking(int period, String coreValue) {
-    final rec = state.records.where((r) => r.gradingPeriodNumber == period && r.coreValue == coreValue).firstOrNull;
+    final rec = state.records.where((r) => r.termNumber == period && r.coreValue == coreValue).firstOrNull;
     return rec?.marking;
   }
 
@@ -136,7 +136,7 @@ class _CoreValuesGrid extends StatelessWidget {
     final success = await ref.read(coreValuesProvider.notifier).save(classId, studentId, {
       'class_id': classId,
       'school_year': schoolYear,
-      'grading_period_number': period,
+      'term_number': period,
       'core_value': coreValue,
       'behavior_statement': '',
       'marking': marking,

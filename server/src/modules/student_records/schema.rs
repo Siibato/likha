@@ -35,7 +35,7 @@ pub struct UpsertAttendanceRequest {
 pub struct UpsertCoreValuesRequest {
     pub class_id: String,
     pub school_year: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub core_value: String,
     pub behavior_statement: String,
     pub marking: String,
@@ -141,7 +141,7 @@ pub struct CoreValuesResponse {
     pub student_id: String,
     pub class_id: String,
     pub school_year: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub core_value: String,
     pub behavior_statement: String,
     pub marking: String,
@@ -244,7 +244,7 @@ pub struct Sf10YearRecord {
 pub struct Sf10SubjectRow {
     pub class_title: String,
     pub subject_group: Option<String>,
-    pub period_grades: Vec<Option<i32>>,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -317,7 +317,7 @@ impl From<::entity::core_values_records::Model> for CoreValuesResponse {
             student_id: m.student_id.to_string(),
             class_id: m.class_id.to_string(),
             school_year: m.school_year,
-            grading_period_number: m.grading_period_number,
+            term_number: m.term_number,
             core_value: m.core_value,
             behavior_statement: m.behavior_statement,
             marking: m.marking,

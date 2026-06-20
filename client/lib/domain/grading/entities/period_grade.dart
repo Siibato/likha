@@ -5,22 +5,20 @@ class PeriodGrade extends Equatable {
   final String id;
   final String classId;
   final String studentId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final double? initialGrade;
   final int? transmutedGrade;
   final bool isLocked;
-  final DateTime? computedAt;
   final bool isPreview;
 
   const PeriodGrade({
     required this.id,
     required this.classId,
     required this.studentId,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     this.initialGrade,
     this.transmutedGrade,
     required this.isLocked,
-    this.computedAt,
     this.isPreview = false,
   });
 
@@ -32,11 +30,10 @@ class PeriodGrade extends Equatable {
         id,
         classId,
         studentId,
-        gradingPeriodNumber,
+        termNumber,
         initialGrade,
         transmutedGrade,
         isLocked,
-        computedAt,
         isPreview,
       ];
 }

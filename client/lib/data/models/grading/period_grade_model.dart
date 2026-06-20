@@ -5,11 +5,10 @@ class PeriodGradeModel {
   final String id;
   final String classId;
   final String studentId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final double? initialGrade;
   final int? transmutedGrade;
   final bool isLocked;
-  final DateTime? computedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -17,11 +16,10 @@ class PeriodGradeModel {
     required this.id,
     required this.classId,
     required this.studentId,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     this.initialGrade,
     this.transmutedGrade,
     required this.isLocked,
-    this.computedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -33,11 +31,10 @@ class PeriodGradeModel {
       id: json['id'] as String,
       classId: json['class_id'] as String,
       studentId: json['student_id'] as String,
-      gradingPeriodNumber: json['grading_period_number'] as int,
+      termNumber: json['term_number'] as int,
       initialGrade: json['initial_grade'] != null ? (json['initial_grade'] as num).toDouble() : null,
       transmutedGrade: json['transmuted_grade'] != null ? (json['transmuted_grade'] as num).toInt() : null,
       isLocked: json['is_locked'] == true,
-      computedAt: json['computed_at'] != null ? DateTime.parse(json['computed_at'] as String) : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse((json['updated_at'] ?? json['created_at']) as String),
     );
@@ -46,13 +43,12 @@ class PeriodGradeModel {
   factory PeriodGradeModel.fromMap(Map<String, dynamic> map) {
     return PeriodGradeModel(
       id: map[CommonCols.id] as String,
-      classId: map[PeriodGradesCols.classId] as String,
-      studentId: map[PeriodGradesCols.studentId] as String,
-      gradingPeriodNumber: map[PeriodGradesCols.gradingPeriodNumber] as int,
-      initialGrade: map[PeriodGradesCols.initialGrade] != null ? (map[PeriodGradesCols.initialGrade] as num).toDouble() : null,
-      transmutedGrade: map[PeriodGradesCols.transmutedGrade] != null ? (map[PeriodGradesCols.transmutedGrade] as num).toInt() : null,
-      isLocked: map[PeriodGradesCols.isLocked] == 1,
-      computedAt: map[PeriodGradesCols.computedAt] != null ? DateTime.parse(map[PeriodGradesCols.computedAt] as String) : null,
+      classId: map[TermGradesCols.classId] as String,
+      studentId: map[TermGradesCols.studentId] as String,
+      termNumber: map[TermGradesCols.termNumber] as int,
+      initialGrade: map[TermGradesCols.initialGrade] != null ? (map[TermGradesCols.initialGrade] as num).toDouble() : null,
+      transmutedGrade: map[TermGradesCols.transmutedGrade] != null ? (map[TermGradesCols.transmutedGrade] as num).toInt() : null,
+      isLocked: map[TermGradesCols.isLocked] == 1,
       createdAt: DateTime.parse(map[CommonCols.createdAt] as String),
       updatedAt: DateTime.parse(map[CommonCols.updatedAt] as String),
     );
@@ -62,24 +58,22 @@ class PeriodGradeModel {
     'id': id,
     'class_id': classId,
     'student_id': studentId,
-    'grading_period_number': gradingPeriodNumber,
+    'term_number': termNumber,
     'initial_grade': initialGrade,
     'transmuted_grade': transmutedGrade,
     'is_locked': isLocked,
-    'computed_at': computedAt?.toIso8601String(),
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
   };
 
   Map<String, dynamic> toMap() => {
     CommonCols.id: id,
-    PeriodGradesCols.classId: classId,
-    PeriodGradesCols.studentId: studentId,
-    PeriodGradesCols.gradingPeriodNumber: gradingPeriodNumber,
-    PeriodGradesCols.initialGrade: initialGrade,
-    PeriodGradesCols.transmutedGrade: transmutedGrade,
-    PeriodGradesCols.isLocked: isLocked ? 1 : 0,
-    PeriodGradesCols.computedAt: computedAt?.toIso8601String(),
+    TermGradesCols.classId: classId,
+    TermGradesCols.studentId: studentId,
+    TermGradesCols.termNumber: termNumber,
+    TermGradesCols.initialGrade: initialGrade,
+    TermGradesCols.transmutedGrade: transmutedGrade,
+    TermGradesCols.isLocked: isLocked ? 1 : 0,
     CommonCols.createdAt: createdAt.toIso8601String(),
     CommonCols.updatedAt: updatedAt.toIso8601String(),
     CommonCols.cachedAt: DateTime.now().toIso8601String(),

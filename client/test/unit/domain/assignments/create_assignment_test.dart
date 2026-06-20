@@ -61,7 +61,7 @@ void main() {
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
         isPublished: any(named: 'isPublished'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
       )).thenAnswer((_) async => Right(tMutation));
@@ -80,7 +80,7 @@ void main() {
         maxFileSizeMb: null,
         dueAt: '2024-12-31T23:59:59Z',
         isPublished: true,
-        gradingPeriodNumber: null,
+        termNumber: null,
         component: null,
         noSubmissionRequired: null,
       )).called(1);
@@ -129,7 +129,7 @@ void main() {
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
         isPublished: any(named: 'isPublished'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
       )).thenAnswer((_) async => Right(fileMutation));
@@ -151,7 +151,7 @@ void main() {
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
         isPublished: any(named: 'isPublished'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Invalid title')));
@@ -177,7 +177,7 @@ void main() {
         maxFileSizeMb: any(named: 'maxFileSizeMb'),
         dueAt: any(named: 'dueAt'),
         isPublished: any(named: 'isPublished'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         noSubmissionRequired: any(named: 'noSubmissionRequired'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));

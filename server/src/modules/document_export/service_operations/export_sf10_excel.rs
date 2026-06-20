@@ -79,7 +79,7 @@ pub async fn run(
         for subject in &record.subjects {
             sheet.write_with_format(row, 0, &subject.class_title, &data_fmt())
                 .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
-            for (i, grade) in subject.period_grades.iter().enumerate() {
+            for (i, grade) in subject.term_grades.iter().enumerate() {
                 if let Some(g) = grade {
                     sheet.write_with_format(row, (i + 1) as u16, *g, &data_fmt())
                         .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;

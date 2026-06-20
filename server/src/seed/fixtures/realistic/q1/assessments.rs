@@ -17,7 +17,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(7), close_at: now - chrono::Duration::days(1),
         show_results_immediately: true, total_points: 13, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("eng_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which literary device is used in the phrase 'the wind whispered through the trees'?".into(),
@@ -57,7 +57,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(1), close_at: now + chrono::Duration::days(7),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("eng_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "In persuasive writing, what is the purpose of a counterargument?".into(),
@@ -97,7 +97,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(2), close_at: now + chrono::Duration::days(5),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("eng_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "Which text type presents arguments to convince readers?".into(),
@@ -160,7 +160,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
         show_results_immediately: true, total_points: eng_q1_exam_points, component: "period_assessment".into(),
         tos_id: tid("english_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: eng_q1_exam_qs,
     });
 
@@ -172,7 +172,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(8), close_at: now - chrono::Duration::days(2),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("sci_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which layer of the Earth is composed primarily of iron and nickel?".into(),
@@ -212,7 +212,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(1), close_at: now + chrono::Duration::days(7),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("sci_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What is the basic unit of heredity passed from parents to offspring?".into(),
@@ -252,7 +252,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(2), close_at: now + chrono::Duration::days(5),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("sci_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "Which layer of the Earth is the hottest?".into(),
@@ -315,7 +315,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
         show_results_immediately: true, total_points: sci_q1_exam_points, component: "period_assessment".into(),
         tos_id: tid("science_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: sci_q1_exam_qs,
     });
 
@@ -327,7 +327,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(5), close_at: now + chrono::Duration::days(2),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("adv_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which dimension of holistic health refers to the ability to share feelings with others?".into(),
@@ -367,7 +367,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(4), close_at: now + chrono::Duration::days(3),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("adv_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Which dimension of health relates to your relationship with a higher power or life purpose?".into(),
@@ -407,7 +407,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(3), close_at: now + chrono::Duration::days(4),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: vec![
             QuestionSpec { id: qid("adv_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "How many glasses of water should you drink daily?".into(),
@@ -470,7 +470,7 @@ pub fn realistic_assessments_q1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 45, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
         show_results_immediately: true, total_points: adv_q1_exam_points, component: "period_assessment".into(),
         tos_id: tid("advisory_9a_tos_q1"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 1,
+        is_published: true, results_released: true, term_number: 1,
         questions: adv_q1_exam_qs,
     });
 

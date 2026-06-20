@@ -10,34 +10,34 @@ import 'package:likha/domain/grading/entities/period_grade.dart';
 
 import '_helpers.dart' as helpers;
 
-ResultFuture<List<PeriodGrade>> getPeriodGrades(
+ResultFuture<List<PeriodGrade>> getTermGrades(
   GradingLocalDataSource localDataSource,
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     try {
-      final cached = await localDataSource.getPeriodGradesByClass(
+      final cached = await localDataSource.getTermGradesByClass(
         classId,
-        gradingPeriodNumber,
+        termNumber,
       );
 
       fireRemoteFetch(
-        dedupKey: 'grading/periodGrades/$classId/$gradingPeriodNumber/bg',
-        remote: () => remoteDataSource.getPeriodGrades(
+        dedupKey: 'grading/termGrades/$classId/$termNumber/bg',
+        remote: () => remoteDataSource.getTermGrades(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
         onSuccess: (fresh) async {
           try {
-            final current = await localDataSource.getPeriodGradesByClass(
+            final current = await localDataSource.getTermGradesByClass(
               classId,
-              gradingPeriodNumber,
+              termNumber,
             );
             if (current.length != fresh.length) {
-              await localDataSource.savePeriodGrades(fresh);
+              await localDataSource.saveTermGrades(fresh);
               dataEventBus.notifyGradesChanged(classId);
               return;
             }
@@ -48,13 +48,13 @@ ResultFuture<List<PeriodGrade>> getPeriodGrades(
                   c.initialGrade != f.initialGrade ||
                   c.transmutedGrade != f.transmutedGrade ||
                   c.isLocked != f.isLocked) {
-                await localDataSource.savePeriodGrades(fresh);
+                await localDataSource.saveTermGrades(fresh);
                 dataEventBus.notifyGradesChanged(classId);
                 return;
               }
             }
           } catch (_) {
-            await localDataSource.savePeriodGrades(fresh);
+            await localDataSource.saveTermGrades(fresh);
             dataEventBus.notifyGradesChanged(classId);
           }
         },
@@ -63,13 +63,13 @@ ResultFuture<List<PeriodGrade>> getPeriodGrades(
       return Right(cached.map(helpers.periodToEntity).toList());
     } on CacheException {
       final fresh = await remoteFetch(
-        dedupKey: 'grading/periodGrades/$classId/$gradingPeriodNumber',
-        remote: () => remoteDataSource.getPeriodGrades(
+        dedupKey: 'grading/termGrades/$classId/$termNumber',
+        remote: () => remoteDataSource.getTermGrades(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
         ),
       );
-      await localDataSource.savePeriodGrades(fresh);
+      await localDataSource.saveTermGrades(fresh);
       return Right(fresh.map(helpers.periodToEntity).toList());
     }
   } on ServerException catch (e) {

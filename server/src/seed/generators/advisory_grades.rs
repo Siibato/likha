@@ -32,7 +32,7 @@ pub fn generate_grade_records() -> Vec<GradeRecordSpec> {
         for period in 1..=4 {
             records.push(GradeRecordSpec {
                 class_id: cid(class_key),
-                grading_period_number: period,
+                term_number: period,
                 ww_weight: preset.ww,
                 pt_weight: preset.pt,
                 qa_weight: preset.qa,
@@ -56,7 +56,7 @@ pub fn generate_grade_items() -> Vec<GradeItemSpec> {
                     class_id: cid(class_key),
                     title: format!("{} - Q{}", title, period),
                     component: component.into(),
-                    grading_period_number: period,
+                    term_number: period,
                     total_points,
                     source_type: "manual".into(),
                     source_id: None,
@@ -109,7 +109,7 @@ pub fn generate_grade_scores(
                 is_auto_populated: false,
                 override_score,
                 component: item.component.clone(),
-                grading_period_number: item.grading_period_number,
+                term_number: item.term_number,
             });
         }
     }
@@ -117,15 +117,15 @@ pub fn generate_grade_scores(
     scores
 }
 
-pub fn generate_period_grades(
+pub fn generate_term_grades(
     students: &[UserSpec],
     grade_records: &[GradeRecordSpec],
     grade_scores: &[GradeScoreSpec],
     grade_items: &[GradeItemSpec],
     enrollments: &[EnrollmentSpec],
     ctx: &SeedContext,
-) -> Vec<PeriodGradeSpec> {
-    let mut period_grades = Vec::new();
+) -> Vec<TermGradeSpec> {
+    let mut term_grades = Vec::new();
 
     let mut class_students: HashMap<Uuid, Vec<usize>> = HashMap::new();
     for (idx, student) in students.iter().enumerate() {
@@ -153,7 +153,7 @@ pub fn generate_period_grades(
                 .iter()
                 .filter(|s| {
                     s.student_id == student_id
-                        && s.grading_period_number == record.grading_period_number
+                        && s.term_number == record.term_number
                 })
                 .collect();
 
@@ -207,17 +207,16 @@ pub fn generate_period_grades(
 
             let transmuted = transmute_grade(initial_grade);
 
-            period_grades.push(PeriodGradeSpec {
+            term_grades.push(TermGradeSpec {
                 class_id: record.class_id,
                 student_id,
-                grading_period_number: record.grading_period_number,
+                term_number: record.term_number,
                 initial_grade: Some(initial_grade),
                 transmuted_grade: Some(transmuted),
                 is_locked: false,
-                computed_at: Some(ctx.days_ago(1 + student_idx as i64)),
             });
         }
     }
 
-    period_grades
+    term_grades
 }

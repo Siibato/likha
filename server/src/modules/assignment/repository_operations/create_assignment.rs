@@ -19,7 +19,7 @@ pub async fn create_assignment(
     order_index: i32,
     client_id: Option<Uuid>,
     is_published: bool,
-    grading_period_number: Option<i32>,
+    term_number: Option<i32>,
     component: Option<String>,
 ) -> AppResult<assignments::Model> {
     let assignment = assignments::ActiveModel {
@@ -38,7 +38,7 @@ pub async fn create_assignment(
         created_at: Set(Utc::now().naive_utc()),
         updated_at: Set(Utc::now().naive_utc()),
         deleted_at: Set(None),
-        grading_period_number: Set(grading_period_number),
+        term_number: Set(term_number),
         component: Set(component),
     };
 

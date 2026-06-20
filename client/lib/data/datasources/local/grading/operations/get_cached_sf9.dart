@@ -51,7 +51,7 @@ Future<Map<String, dynamic>> getCachedSf9(
     checkField('track_strand');
     checkField('curriculum');
     checkField('teacher_name');
-    checkField('grading_period_type');
+    checkField('term_type');
     checkField('subjects');
     checkField('general_average');
 

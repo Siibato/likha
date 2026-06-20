@@ -42,7 +42,7 @@ void main() {
         DbTables.gradeRecord,
         DbTables.gradeItems,
         DbTables.gradeScores,
-        DbTables.periodGrades,
+        DbTables.termGrades,
         DbTables.tableOfSpecifications,
         DbTables.tosCompetencies,
       };

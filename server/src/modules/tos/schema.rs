@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct CreateTosRequest {
     pub id: Option<String>,
     pub title: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub classification_mode: String,
     pub total_items: i32,
     pub time_unit: Option<String>,
@@ -94,7 +94,7 @@ pub struct MelcsSearchQuery {
 pub struct TosResponse {
     pub id: String,
     pub class_id: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub title: String,
     pub classification_mode: String,
     pub total_items: i32,

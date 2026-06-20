@@ -56,7 +56,7 @@ pub async fn update_assignment(
         allowed_file_types,
         max_file_size_mb,
         due_at,
-        request.grading_period_number.map(|q| Some(q)),
+        request.term_number.map(|q| Some(q)),
         request.component.clone().map(|c| Some(c)),
     ).await?;
 
@@ -78,7 +78,7 @@ pub async fn update_assignment(
         order_index: updated.order_index,
         submission_count,
         graded_count,
-        grading_period_number: updated.grading_period_number,
+        term_number: updated.term_number,
         component: updated.component.clone(),
         submission_status: None,
         submission_id: None,

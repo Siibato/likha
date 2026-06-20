@@ -21,8 +21,8 @@ void main() {
   group('UpdateGradingConfig', () {
     const tClassId = 'class-1';
     final tConfigs = [
-      {'gradingPeriodNumber': 1, 'wwWeight': 30.0, 'ptWeight': 50.0, 'qaWeight': 20.0},
-      {'gradingPeriodNumber': 2, 'wwWeight': 30.0, 'ptWeight': 50.0, 'qaWeight': 20.0},
+      {'termNumber': 1, 'wwWeight': 30.0, 'ptWeight': 50.0, 'qaWeight': 20.0},
+      {'termNumber': 2, 'wwWeight': 30.0, 'ptWeight': 50.0, 'qaWeight': 20.0},
     ];
 
     test('should update grading config successfully', () async {
@@ -42,7 +42,7 @@ void main() {
 
     test('should return ValidationFailure when weights do not add up to 100', () async {
       final invalidConfigs = [
-        {'gradingPeriodNumber': 1, 'wwWeight': 40.0, 'ptWeight': 40.0, 'qaWeight': 30.0},
+        {'termNumber': 1, 'wwWeight': 40.0, 'ptWeight': 40.0, 'qaWeight': 30.0},
       ];
 
       when(() => mockRepository.updateGradingConfig(

@@ -66,8 +66,8 @@ class FullSyncResponseModel {
   @JsonKey(name: 'grade_scores', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> gradeScores;
 
-  @JsonKey(name: 'period_grades', defaultValue: <Map<String, dynamic>>[])
-  final List<Map<String, dynamic>> periodGrades;
+  @JsonKey(name: 'term_grades', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> termGrades;
 
   @JsonKey(name: 'table_of_specifications', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> tableOfSpecifications;
@@ -125,7 +125,7 @@ class FullSyncResponseModel {
     this.gradeConfigs = const [],
     this.gradeItems = const [],
     this.gradeScores = const [],
-    this.periodGrades = const [],
+    this.termGrades = const [],
     this.tableOfSpecifications = const [],
     this.tosCompetencies = const [],
     this.activityLogs = const [],

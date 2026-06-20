@@ -4,7 +4,7 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/grading/period_grade_model.dart';
 
-Future<void> savePeriodGrades(
+Future<void> saveTermGrades(
   LocalDatabase localDatabase,
   List<PeriodGradeModel> grades,
 ) async {
@@ -12,7 +12,7 @@ Future<void> savePeriodGrades(
   final batch = db.batch();
   for (final grade in grades) {
     batch.insert(
-      DbTables.periodGrades,
+      DbTables.termGrades,
       grade.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

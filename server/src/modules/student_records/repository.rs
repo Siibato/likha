@@ -92,13 +92,13 @@ impl StudentRecordsRepository {
         student_id: Uuid,
         class_id: Uuid,
         school_year: String,
-        grading_period_number: i32,
+        term_number: i32,
         core_value: String,
         behavior_statement: String,
         marking: String,
     ) -> AppResult<core_values_records::Model> {
         ops::upsert_core_values(
-            &self.db, student_id, class_id, school_year, grading_period_number,
+            &self.db, student_id, class_id, school_year, term_number,
             core_value, behavior_statement, marking,
         ).await
     }

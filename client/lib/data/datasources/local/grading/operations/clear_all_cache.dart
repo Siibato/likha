@@ -8,7 +8,7 @@ Future<void> clearAllCache(LocalDatabase localDatabase) async {
     await db.delete(DbTables.gradeScores);
     await db.delete(DbTables.gradeItems);
     await db.delete(DbTables.gradeRecord);
-    await db.delete(DbTables.periodGrades);
+    await db.delete(DbTables.termGrades);
     await db.delete(DbTables.studentResultsCache);
     await db.delete(
       DbTables.syncMetadata,

@@ -16,16 +16,16 @@ ResultFuture<List<GradeItem>> getGradeItems(
   GradingRemoteDataSource remoteDataSource,
   DataEventBus dataEventBus, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
   String? component,
   bool skipBackgroundRefresh = false,
 }) async {
-  RepoLogger.instance.log('getGradeItems() - classId: $classId, quarter: $gradingPeriodNumber, component: $component');
+  RepoLogger.instance.log('getGradeItems() - classId: $classId, quarter: $termNumber, component: $component');
   try {
     try {
       final cachedModels = await localDataSource.getItemsByClassQuarter(
         classId,
-        gradingPeriodNumber,
+        termNumber,
         component: component,
       );
 
@@ -38,10 +38,10 @@ ResultFuture<List<GradeItem>> getGradeItems(
 
       if (!skipBackgroundRefresh) {
         fireRemoteFetch(
-          dedupKey: 'grading/items/$classId/$gradingPeriodNumber/${component ?? 'all'}/bg',
+          dedupKey: 'grading/items/$classId/$termNumber/${component ?? 'all'}/bg',
           remote: () => remoteDataSource.getGradeItems(
             classId: classId,
-            gradingPeriodNumber: gradingPeriodNumber,
+            termNumber: termNumber,
             component: component,
           ),
           onSuccess: (freshModels) async {
@@ -49,7 +49,7 @@ ResultFuture<List<GradeItem>> getGradeItems(
             try {
               final currentModels = await localDataSource.getItemsByClassQuarter(
                 classId,
-                gradingPeriodNumber,
+                termNumber,
                 component: component,
               );
               current = currentModels.map(helpers.itemToEntity).toList();
@@ -70,10 +70,10 @@ ResultFuture<List<GradeItem>> getGradeItems(
       return Right(entities);
     } on CacheException {
       final freshModels = await remoteFetch(
-        dedupKey: 'grading/items/$classId/$gradingPeriodNumber/${component ?? 'all'}',
+        dedupKey: 'grading/items/$classId/$termNumber/${component ?? 'all'}',
         remote: () => remoteDataSource.getGradeItems(
           classId: classId,
-          gradingPeriodNumber: gradingPeriodNumber,
+          termNumber: termNumber,
           component: component,
         ),
       );

@@ -22,7 +22,7 @@ pub fn generate_grade_records(classes: &[ClassSpec]) -> Vec<GradeRecordSpec> {
         for period in 1..=4 {
             records.push(GradeRecordSpec {
                 class_id: class.id,
-                grading_period_number: period,
+                term_number: period,
                 ww_weight: ww,
                 pt_weight: pt,
                 qa_weight: qa,
@@ -45,13 +45,13 @@ pub fn generate_grade_items(
         if !a.is_published || a.deleted_at.is_some() || a.open_at > now {
             continue;
         }
-        let id = crate::seed::tools::seed_id("grade_items", &format!("assess_{}_{}", a.id, a.grading_period_number));
+        let id = crate::seed::tools::seed_id("grade_items", &format!("assess_{}_{}", a.id, a.term_number));
         items.push(GradeItemSpec {
             id,
             class_id: a.class_id,
             title: a.title.clone(),
             component: a.component.clone(),
-            grading_period_number: a.grading_period_number,
+            term_number: a.term_number,
             total_points: a.total_points as f64,
             source_type: "assessment".into(),
             source_id: Some(a.id.to_string()),
@@ -63,13 +63,13 @@ pub fn generate_grade_items(
         if !a.is_published || a.deleted_at.is_some() || a.due_at > now {
             continue;
         }
-        let id = crate::seed::tools::seed_id("grade_items", &format!("assign_{}_{}", a.id, a.grading_period_number));
+        let id = crate::seed::tools::seed_id("grade_items", &format!("assign_{}_{}", a.id, a.term_number));
         items.push(GradeItemSpec {
             id,
             class_id: a.class_id,
             title: a.title.clone(),
             component: a.component.clone(),
-            grading_period_number: a.grading_period_number,
+            term_number: a.term_number,
             total_points: a.total_points as f64,
             source_type: "assignment".into(),
             source_id: Some(a.id.to_string()),
@@ -135,7 +135,7 @@ pub fn generate_grade_scores(
                 is_auto_populated: true,
                 override_score: None,
                 component: item.component.clone(),
-                grading_period_number: item.grading_period_number,
+                term_number: item.term_number,
             });
         }
     }
@@ -144,15 +144,15 @@ pub fn generate_grade_scores(
 }
 
 /// Compute period grades from grade scores using DepEd formulas.
-pub fn generate_period_grades(
+pub fn generate_term_grades(
     grade_records: &[GradeRecordSpec],
     grade_scores: &[GradeScoreSpec],
     grade_items: &[GradeItemSpec],
     students: &[UserSpec],
     enrollments: &[EnrollmentSpec],
     ctx: &SeedContext,
-) -> Vec<PeriodGradeSpec> {
-    let mut period_grades = Vec::new();
+) -> Vec<TermGradeSpec> {
+    let mut term_grades = Vec::new();
 
     let mut class_students: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
     for enrollment in enrollments {
@@ -169,7 +169,7 @@ pub fn generate_period_grades(
         let enrolled = class_students.get(&record.class_id).cloned().unwrap_or_default();
         for (student_idx, student_id) in enrolled.iter().enumerate() {
             let student_scores: Vec<&GradeScoreSpec> = grade_scores.iter()
-                .filter(|s| s.student_id == *student_id && s.grading_period_number == record.grading_period_number)
+                .filter(|s| s.student_id == *student_id && s.term_number == record.term_number)
                 .collect();
 
             let mut ww_sum = 0.0;
@@ -201,17 +201,16 @@ pub fn generate_period_grades(
 
             let transmuted = transmute_grade(initial_grade);
 
-            period_grades.push(PeriodGradeSpec {
+            term_grades.push(TermGradeSpec {
                 class_id: record.class_id,
                 student_id: *student_id,
-                grading_period_number: record.grading_period_number,
+                term_number: record.term_number,
                 initial_grade: Some(initial_grade),
                 transmuted_grade: Some(transmuted),
                 is_locked: false,
-                computed_at: Some(ctx.days_ago(1 + student_idx as i64)),
             });
         }
     }
 
-    period_grades
+    term_grades
 }

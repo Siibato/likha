@@ -31,10 +31,10 @@ pub async fn publish_assignment(
 
     let published = assignment_repo.publish_assignment(assignment_id).await?;
 
-    if let (Some(grading_period_number), Some(ref component)) = (published.grading_period_number, &published.component) {
+    if let (Some(term_number), Some(ref component)) = (published.term_number, &published.component) {
         let _ = auto_populate::create_linked_grade_item(
             grade_computation_repo, "assignment", published.id, published.class_id,
-            &published.title, component, grading_period_number,
+            &published.title, component, term_number,
             published.total_points as f64,
         ).await;
     }
@@ -60,7 +60,7 @@ pub async fn publish_assignment(
         order_index: published.order_index,
         submission_count: 0,
         graded_count: 0,
-        grading_period_number: published.grading_period_number,
+        term_number: published.term_number,
         component: published.component.clone(),
         submission_status: None,
         submission_id: None,

@@ -202,7 +202,7 @@ class AssessmentSettingsPanel extends StatelessWidget {
                     (tos) => DropdownMenuItem(
                       value: tos.id,
                       child: Text(
-                        '${tos.title} (Q${tos.gradingPeriodNumber})',
+                        '${tos.title} (Q${tos.termNumber})',
                       ),
                     ),
                   ),

@@ -4,7 +4,7 @@ import 'package:likha/core/logging/provider_logger.dart';
 class GradeConfigModel {
   final String id;
   final String classId;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final double wwWeight;
   final double ptWeight;
   final double qaWeight;
@@ -14,7 +14,7 @@ class GradeConfigModel {
   const GradeConfigModel({
     required this.id,
     required this.classId,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.wwWeight,
     required this.ptWeight,
     required this.qaWeight,
@@ -29,7 +29,7 @@ class GradeConfigModel {
       final model = GradeConfigModel(
         id: json['id'] as String,
         classId: json['class_id'] as String,
-        gradingPeriodNumber: json['grading_period_number'] as int,
+        termNumber: json['term_number'] as int,
         wwWeight: (json['ww_weight'] as num).toDouble(),
         ptWeight: (json['pt_weight'] as num).toDouble(),
         qaWeight: (json['qa_weight'] as num).toDouble(),
@@ -48,7 +48,7 @@ class GradeConfigModel {
     return GradeConfigModel(
       id: map[CommonCols.id] as String,
       classId: map[GradeRecordCols.classId] as String,
-      gradingPeriodNumber: map[GradeRecordCols.gradingPeriodNumber] as int,
+      termNumber: map[GradeRecordCols.termNumber] as int,
       wwWeight: (map[GradeRecordCols.wwWeight] as num).toDouble(),
       ptWeight: (map[GradeRecordCols.ptWeight] as num).toDouble(),
       qaWeight: (map[GradeRecordCols.qaWeight] as num).toDouble(),
@@ -60,7 +60,7 @@ class GradeConfigModel {
   Map<String, dynamic> toJson() => {
     'id': id,
     'class_id': classId,
-    'grading_period_number': gradingPeriodNumber,
+    'term_number': termNumber,
     'ww_weight': wwWeight,
     'pt_weight': ptWeight,
     'qa_weight': qaWeight,
@@ -71,7 +71,7 @@ class GradeConfigModel {
   Map<String, dynamic> toMap() => {
     CommonCols.id: id,
     GradeRecordCols.classId: classId,
-    GradeRecordCols.gradingPeriodNumber: gradingPeriodNumber,
+    GradeRecordCols.termNumber: termNumber,
     GradeRecordCols.wwWeight: wwWeight,
     GradeRecordCols.ptWeight: ptWeight,
     GradeRecordCols.qaWeight: qaWeight,

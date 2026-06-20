@@ -11,7 +11,7 @@ Future<List<TosModel>> getTosByClass(
     DbTables.tableOfSpecifications,
     where: '${TosCols.classId} = ? AND ${CommonCols.deletedAt} IS NULL',
     whereArgs: [classId],
-    orderBy: '${TosCols.gradingPeriodNumber} ASC',
+    orderBy: '${TosCols.termNumber} ASC',
   );
   return results.map((row) => TosModel.fromMap(row)).toList();
 }

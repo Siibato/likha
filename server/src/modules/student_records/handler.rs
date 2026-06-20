@@ -199,7 +199,7 @@ pub async fn upsert_core_values(
         student_id,
         req_class_id,
         req.school_year,
-        req.grading_period_number,
+        req.term_number,
         req.core_value,
         req.behavior_statement,
         req.marking,

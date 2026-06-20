@@ -31,13 +31,13 @@ import '../../../../../helpers/test_database.dart';
 GradeConfigModel _fakeConfig({
   String id = 'config-1',
   String classId = 'class-1',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
 }) {
   final now = DateTime.now().toIso8601String();
   return GradeConfigModel(
     id: id,
     classId: classId,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     wwWeight: 30.0,
     ptWeight: 50.0,
     qaWeight: 20.0,
@@ -51,7 +51,7 @@ GradeItemModel _fakeItem({
   String classId = 'class-1',
   String title = 'Test Item',
   String component = 'ww',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
   double totalPoints = 100.0,
 }) {
   final now = DateTime.now();
@@ -60,7 +60,7 @@ GradeItemModel _fakeItem({
     classId: classId,
     title: title,
     component: component,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     totalPoints: totalPoints,
     sourceType: 'manual',
     orderIndex: 0,
@@ -93,18 +93,17 @@ PeriodGradeModel _fakePeriodGrade({
   String id = 'pg-1',
   String classId = 'class-1',
   String studentId = 'student-1',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
 }) {
   final now = DateTime.now();
   return PeriodGradeModel(
     id: id,
     classId: classId,
     studentId: studentId,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     initialGrade: 85.0,
     transmutedGrade: 85,
     isLocked: false,
-    computedAt: now,
     createdAt: now,
     updatedAt: now,
   );
@@ -123,7 +122,7 @@ Future<void> _seedScore(GradingLocalDataSource local, GradeScoreModel score) asy
 }
 
 Future<void> _seedPeriodGrade(GradingLocalDataSource local, PeriodGradeModel pg) async {
-  await local.savePeriodGrades([pg]);
+  await local.saveTermGrades([pg]);
 }
 
 Future<void> _seedStudent(String id, {String fullName = 'Student'}) async {
@@ -187,7 +186,7 @@ Future<Map<String, dynamic>?> _getScoreRow(String id) async {
 Future<Map<String, dynamic>?> _getPeriodGradeRow(String id) async {
   final db = await LocalDatabase().database;
   final rows = await db.query(
-    DbTables.periodGrades,
+    DbTables.termGrades,
     where: '${CommonCols.id} = ?',
     whereArgs: [id],
   );
@@ -297,7 +296,7 @@ void main() {
         data: {
           'title': 'New Item',
           'component': 'ww',
-          'grading_period_number': 1,
+          'term_number': 1,
           'total_points': 50.0,
           'order_index': 0,
         },
@@ -453,14 +452,14 @@ void main() {
         syncQueue,
         classId: 'class-1',
         studentId: 'student-1',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         transmutedGrade: 90,
       );
 
       _assertMutationResult(result);
 
       final row = await _getPeriodGradeRow('pg1');
-      expect(row![PeriodGradesCols.transmutedGrade], 90);
+      expect(row![TermGradesCols.transmutedGrade], 90);
       expect(row[CommonCols.syncStatus], SyncStatus.pending.dbValue);
 
       final queue = await _getSyncQueueRows();

@@ -82,7 +82,7 @@ pub fn demo_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             time_limit_minutes: 30, open_at: now - chrono::Duration::days(7), close_at: now - chrono::Duration::days(1),
             show_results_immediately: true, total_points: 10, component: "written_work".into(),
             tos_id: tid("sci10_tos_q4"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, grading_period_number: 4,
+            is_published: true, results_released: true, term_number: 4,
             questions: quiz1_qs,
         },
         AssessmentSpec {
@@ -92,7 +92,7 @@ pub fn demo_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             time_limit_minutes: 30, open_at: now - chrono::Duration::days(5), close_at: now - chrono::Duration::days(1),
             show_results_immediately: true, total_points: 10, component: "written_work".into(),
             tos_id: tid("sci10_tos_q4"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, grading_period_number: 4,
+            is_published: true, results_released: true, term_number: 4,
             questions: quiz2_qs,
         },
         AssessmentSpec {
@@ -102,7 +102,7 @@ pub fn demo_assessments_q4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
             show_results_immediately: true, total_points: 25, component: "period_assessment".into(),
             tos_id: tid("sci10_tos_q4"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, grading_period_number: 4,
+            is_published: true, results_released: true, term_number: 4,
             questions: exam_qs,
         },
     ]

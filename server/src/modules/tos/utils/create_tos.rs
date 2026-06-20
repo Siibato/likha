@@ -20,8 +20,8 @@ impl crate::modules::tos::service::TosService {
             ));
         }
 
-        if !(1..=4).contains(&request.grading_period_number) {
-            return Err(AppError::BadRequest("grading_period_number must be between 1 and 4".to_string()));
+        if !(1..=4).contains(&request.term_number) {
+            return Err(AppError::BadRequest("term_number must be between 1 and 4".to_string()));
         }
 
         let time_unit = request.time_unit.as_deref().unwrap_or("days");
@@ -50,7 +50,7 @@ impl crate::modules::tos::service::TosService {
             .create_tos(
                 id,
                 class_id,
-                request.grading_period_number,
+                request.term_number,
                 &request.title,
                 &request.classification_mode,
                 request.total_items,
@@ -70,7 +70,7 @@ impl crate::modules::tos::service::TosService {
         Ok(TosResponse {
             id: tos.id.to_string(),
             class_id: tos.class_id.to_string(),
-            grading_period_number: tos.grading_period_number,
+            term_number: tos.term_number,
             title: tos.title,
             classification_mode: tos.classification_mode,
             total_items: tos.total_items,

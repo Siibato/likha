@@ -50,7 +50,7 @@ impl StudentRecordsService {
             subjects: sf9.subjects.iter().map(|s| Sf10SubjectRow {
                 class_title: s.class_title.clone(),
                 subject_group: s.subject_group.clone(),
-                period_grades: s.period_grades.clone(),
+                term_grades: s.term_grades.clone(),
                 final_grade: s.final_grade,
                 descriptor: s.descriptor.clone(),
             }).collect(),
@@ -133,7 +133,7 @@ impl StudentRecordsService {
                 Sf10SubjectRow {
                     class_title: s.subject_name.clone(),
                     subject_group: s.subject_group.clone(),
-                    period_grades: vec![s.q1_grade, s.q2_grade, s.q3_grade, s.q4_grade],
+                    term_grades: vec![s.q1_grade, s.q2_grade, s.q3_grade, s.q4_grade],
                     final_grade,
                     descriptor,
                 }

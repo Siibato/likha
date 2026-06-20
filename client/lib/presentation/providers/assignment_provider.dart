@@ -230,14 +230,14 @@ class AssignmentNotifier extends StateNotifier<AssignmentState> {
         state = state.copyWith(
           successMessage: 'Assignment created',
         );
-        // Auto-create linked grade item when component + gradingPeriodNumber are set
-        if (assignment.component != null && assignment.gradingPeriodNumber != null) {
+        // Auto-create linked grade item when component + termNumber are set
+        if (assignment.component != null && assignment.termNumber != null) {
           sl<GradingRepository>().createGradeItem(
             classId: params.classId,
             data: {
               'title': assignment.title,
               'component': _toGradeComponent(assignment.component!),
-              'grading_period_number': assignment.gradingPeriodNumber!,
+              'term_number': assignment.termNumber!,
               'total_points': assignment.totalPoints.toDouble(),
               'is_departmental_exam': false,
               'source_type': 'assignment',

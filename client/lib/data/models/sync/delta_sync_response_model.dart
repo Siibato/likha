@@ -47,8 +47,8 @@ class DeltaPayload {
   @JsonKey(name: 'grade_scores')
   final EntityDeltas gradeScores;
 
-  @JsonKey(name: 'period_grades')
-  final EntityDeltas periodGrades;
+  @JsonKey(name: 'term_grades')
+  final EntityDeltas termGrades;
 
   @JsonKey(name: 'table_of_specifications')
   final EntityDeltas tableOfSpecifications;
@@ -92,7 +92,7 @@ class DeltaPayload {
     required this.gradeConfigs,
     required this.gradeItems,
     required this.gradeScores,
-    required this.periodGrades,
+    required this.termGrades,
     required this.tableOfSpecifications,
     required this.tosCompetencies,
     required this.activityLogs,

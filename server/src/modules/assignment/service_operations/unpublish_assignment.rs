@@ -49,7 +49,7 @@ pub async fn unpublish_assignment(
         order_index: unpublished.order_index,
         submission_count: 0,
         graded_count: 0,
-        grading_period_number: unpublished.grading_period_number,
+        term_number: unpublished.term_number,
         component: unpublished.component.clone(),
         submission_status: None,
         submission_id: None,

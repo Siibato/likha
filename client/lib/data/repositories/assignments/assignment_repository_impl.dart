@@ -42,7 +42,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     int? maxFileSizeMb,
     required String dueAt,
     bool isPublished = true,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
     bool? noSubmissionRequired,
   }) =>
@@ -59,7 +59,7 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
         maxFileSizeMb: maxFileSizeMb,
         dueAt: dueAt,
         isPublished: isPublished,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         component: component,
         noSubmissionRequired: noSubmissionRequired,
       );

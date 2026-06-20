@@ -3,46 +3,46 @@ import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/domain/grading/entities/period_grade.dart';
-import 'package:likha/domain/grading/usecases/get_period_grades.dart';
+import 'package:likha/domain/grading/usecases/get_term_grades.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
 class MockGradingRepository extends Mock implements GradingRepository {}
 
 void main() {
-  late GetPeriodGrades useCase;
+  late GetTermGrades useCase;
   late MockGradingRepository mockRepository;
 
   setUp(() {
     mockRepository = MockGradingRepository();
-    useCase = GetPeriodGrades(mockRepository);
+    useCase = GetTermGrades(mockRepository);
   });
 
-  group('GetPeriodGrades', () {
+  group('GetTermGrades', () {
     const tClassId = 'class-1';
     const tPeriod = 1;
 
     test('should get period grades successfully', () async {
-      when(() => mockRepository.getPeriodGrades(
+      when(() => mockRepository.getTermGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Right(<PeriodGrade>[]));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result.isRight(), true);
-      verify(() => mockRepository.getPeriodGrades(
+      verify(() => mockRepository.getTermGrades(
         classId: tClassId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
       )).called(1);
     });
 
     test('should return ServerFailure when class not found', () async {
-      when(() => mockRepository.getPeriodGrades(
+      when(() => mockRepository.getTermGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
-      final result = await useCase(classId: 'nonexistent-id', gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: 'nonexistent-id', termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(
@@ -52,12 +52,12 @@ void main() {
     });
 
     test('should return ServerFailure when server error occurs', () async {
-      when(() => mockRepository.getPeriodGrades(
+      when(() => mockRepository.getTermGrades(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
-      final result = await useCase(classId: tClassId, gradingPeriodNumber: tPeriod);
+      final result = await useCase(classId: tClassId, termNumber: tPeriod);
 
       expect(result.isLeft(), true);
       result.fold(

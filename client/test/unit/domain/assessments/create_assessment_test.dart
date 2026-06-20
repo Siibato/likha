@@ -62,7 +62,7 @@ void main() {
         showResultsImmediately: any(named: 'showResultsImmediately'),
         isPublished: any(named: 'isPublished'),
         questions: any(named: 'questions'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
       )).thenAnswer((_) async => Right(MutationResult(entity: tCreatedAssessment, status: SyncStatus.pending)));
@@ -82,7 +82,7 @@ void main() {
         showResultsImmediately: true,
         isPublished: false,
         questions: null,
-        gradingPeriodNumber: null,
+        termNumber: null,
         component: null,
         tosId: null,
       )).called(1);
@@ -110,7 +110,7 @@ void main() {
         showResultsImmediately: any(named: 'showResultsImmediately'),
         isPublished: any(named: 'isPublished'),
         questions: any(named: 'questions'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
       )).thenAnswer((_) async => Right(MutationResult(entity: tCreatedAssessment, status: SyncStatus.pending)));
@@ -130,7 +130,7 @@ void main() {
         questions: [
           {'text': 'What is 2+2?', 'type': 'multiple_choice'},
         ],
-        gradingPeriodNumber: null,
+        termNumber: null,
         component: null,
         tosId: null,
       )).called(1);
@@ -155,7 +155,7 @@ void main() {
         showResultsImmediately: any(named: 'showResultsImmediately'),
         isPublished: any(named: 'isPublished'),
         questions: any(named: 'questions'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Title cannot be empty')));
@@ -188,7 +188,7 @@ void main() {
         showResultsImmediately: any(named: 'showResultsImmediately'),
         isPublished: any(named: 'isPublished'),
         questions: any(named: 'questions'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Close date must be after open date')));
@@ -221,7 +221,7 @@ void main() {
         showResultsImmediately: any(named: 'showResultsImmediately'),
         isPublished: any(named: 'isPublished'),
         questions: any(named: 'questions'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
       )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
@@ -254,7 +254,7 @@ void main() {
         showResultsImmediately: any(named: 'showResultsImmediately'),
         isPublished: any(named: 'isPublished'),
         questions: any(named: 'questions'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
         tosId: any(named: 'tosId'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));

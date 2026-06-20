@@ -5,7 +5,7 @@ class CoreValuesRecord extends Equatable {
   final String studentId;
   final String classId;
   final String schoolYear;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final String coreValue;
   final String behaviorStatement;
   final String marking;
@@ -15,7 +15,7 @@ class CoreValuesRecord extends Equatable {
     required this.studentId,
     required this.classId,
     required this.schoolYear,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.coreValue,
     required this.behaviorStatement,
     required this.marking,

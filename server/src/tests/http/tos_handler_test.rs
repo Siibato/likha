@@ -13,7 +13,7 @@ use crate::tests::http::{authed_req, body_json, json_req};
 fn create_tos_body() -> serde_json::Value {
     json!({
         "title": "TOS Quarter 1",
-        "grading_period_number": 1,
+        "term_number": 1,
         "classification_mode": "difficulty",
         "total_items": 40,
         "easy_percentage": 30.0,

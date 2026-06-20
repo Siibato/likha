@@ -31,7 +31,7 @@ pub async fn get_classes_paginated(
             "description": r.description,
             "is_archived": r.is_archived,
             "is_advisory": r.is_advisory,
-            "grading_period_type": r.grading_period_type,
+            "term_type": r.term_type,
             "grade_level": r.grade_level,
             "school_year": r.school_year,
             "teacher_id": teacher_id,

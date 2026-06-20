@@ -16,7 +16,7 @@ void main() {
       return GradeConfig(
         id: 'config-1',
         classId: 'class-1',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         wwWeight: wwWeight,
         ptWeight: ptWeight,
         qaWeight: qaWeight,
@@ -33,7 +33,7 @@ void main() {
         classId: 'class-1',
         title: 'Test Item',
         component: component,
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         totalPoints: totalPoints,
         sourceType: 'assignment',
         orderIndex: 0,
@@ -77,7 +77,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // WW: 80 * 0.30 = 24
@@ -102,7 +102,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // All components are 0, so initial grade is 0
@@ -127,7 +127,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         expect(result.isLocked, isFalse); // Not all items scored
@@ -148,7 +148,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // PT and QA contribute 0 but don't break calculation
@@ -170,7 +170,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // Should use override score (85) not original (70)
@@ -192,7 +192,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         expect(result.isLocked, isFalse); // Score is null, not complete
@@ -218,7 +218,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // 32 + 36 + 17 = 85
@@ -240,7 +240,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // 100 * 0.30 = 30 initial
@@ -279,7 +279,7 @@ void main() {
           scoresByItem: scoresByItem,
           classId: 'class-1',
           studentId: 'student-1',
-          gradingPeriodNumber: 1,
+          termNumber: 1,
         );
 
         // Should use 80 (student-1's score), not 95
@@ -294,15 +294,14 @@ void main() {
 
       test('returns null when no grades are locked', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 85,
             transmutedGrade: 88,
             isLocked: false,
-            computedAt: DateTime.now(),
           ),
         ];
         expect(GradeComputationUtil.computeFinalGrade(grades), isNull);
@@ -310,15 +309,14 @@ void main() {
 
       test('returns null when no grades have transmuted grades', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 85,
             transmutedGrade: null,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
         ];
         expect(GradeComputationUtil.computeFinalGrade(grades), isNull);
@@ -326,15 +324,14 @@ void main() {
 
       test('computes average of single locked grade', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 85,
             transmutedGrade: 88,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
         ];
         expect(GradeComputationUtil.computeFinalGrade(grades), equals(88.0));
@@ -342,25 +339,23 @@ void main() {
 
       test('computes average of multiple locked grades', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 80,
             transmutedGrade: 84,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg2',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 2,
+            termNumber: 2,
             initialGrade: 90,
             transmutedGrade: 92,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
         ];
         // (84 + 92) / 2 = 88
@@ -369,25 +364,23 @@ void main() {
 
       test('ignores unlocked grades in average', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 80,
             transmutedGrade: 84,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg2',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 2,
+            termNumber: 2,
             initialGrade: 90,
             transmutedGrade: 92,
             isLocked: false, // Not locked - should be ignored
-            computedAt: DateTime.now(),
           ),
         ];
         expect(GradeComputationUtil.computeFinalGrade(grades), equals(84.0));
@@ -395,25 +388,23 @@ void main() {
 
       test('ignores grades with null transmuted in average', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 80,
             transmutedGrade: 84,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
-          PeriodGrade(
+          const PeriodGrade(
             id: 'pg2',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 2,
+            termNumber: 2,
             initialGrade: 90,
             transmutedGrade: null, // Null transmuted - should be ignored
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
         ];
         expect(GradeComputationUtil.computeFinalGrade(grades), equals(84.0));
@@ -421,45 +412,41 @@ void main() {
 
       test('handles all four quarters (SF10 use case)', () {
         final grades = [
-          PeriodGrade(
+          const PeriodGrade(
             id: 'q1',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 1,
+            termNumber: 1,
             initialGrade: 85,
             transmutedGrade: 88,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
-          PeriodGrade(
+          const PeriodGrade(
             id: 'q2',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 2,
+            termNumber: 2,
             initialGrade: 87,
             transmutedGrade: 89,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
-          PeriodGrade(
+          const PeriodGrade(
             id: 'q3',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 3,
+            termNumber: 3,
             initialGrade: 86,
             transmutedGrade: 88,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
-          PeriodGrade(
+          const PeriodGrade(
             id: 'q4',
             classId: 'class-1',
             studentId: 'student-1',
-            gradingPeriodNumber: 4,
+            termNumber: 4,
             initialGrade: 88,
             transmutedGrade: 90,
             isLocked: true,
-            computedAt: DateTime.now(),
           ),
         ];
         // (88 + 89 + 88 + 90) / 4 = 88.75

@@ -14,7 +14,7 @@ class Sf9ResponseModel extends Sf9Response {
     super.trackStrand,
     super.curriculum,
     super.teacherName,
-    super.gradingPeriodType,
+    super.termType,
     required super.subjects,
     super.generalAverage,
   });
@@ -36,9 +36,9 @@ class Sf9ResponseModel extends Sf9Response {
     final trackStrand = json['track_strand'] as String?;
     final curriculum = json['curriculum'] as String?;
     final teacherName = json['teacher_name'] as String?;
-    final gradingPeriodType = json['grading_period_type'] as String?;
+    final termType = json['term_type'] as String?;
 
-    log.log('Sf9ResponseModel.fromJson: grade_level=$gradeLevel school_year=$schoolYear section=$section lrn=$lrn age=$age sex=$sex track_strand=$trackStrand curriculum=$curriculum teacher_name=$teacherName grading_period_type=$gradingPeriodType');
+    log.log('Sf9ResponseModel.fromJson: grade_level=$gradeLevel school_year=$schoolYear section=$section lrn=$lrn age=$age sex=$sex track_strand=$trackStrand curriculum=$curriculum teacher_name=$teacherName term_type=$termType');
 
     final subjectsRaw = json['subjects'] as List<dynamic>? ?? [];
     log.log('Sf9ResponseModel.fromJson: subjects raw count = ${subjectsRaw.length}');
@@ -63,7 +63,7 @@ class Sf9ResponseModel extends Sf9Response {
       trackStrand: trackStrand,
       curriculum: curriculum,
       teacherName: teacherName,
-      gradingPeriodType: gradingPeriodType,
+      termType: termType,
       subjects: subjects,
       generalAverage: generalAverage,
     );
@@ -82,7 +82,7 @@ class Sf9ResponseModel extends Sf9Response {
       'track_strand': trackStrand,
       'curriculum': curriculum,
       'teacher_name': teacherName,
-      'grading_period_type': gradingPeriodType,
+      'term_type': termType,
       'subjects': subjects.map((s) => (s as Sf9SubjectRowModel).toJson()).toList(),
       'general_average': generalAverage != null
           ? (generalAverage as Sf9PeriodAveragesModel).toJson()
@@ -95,7 +95,7 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
   const Sf9SubjectRowModel({
     required super.classTitle,
     super.subjectGroup,
-    super.periodGrades,
+    super.termGrades,
     super.finalGrade,
     super.descriptor,
   });
@@ -104,7 +104,7 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
     return Sf9SubjectRowModel(
       classTitle: json['class_title'] as String,
       subjectGroup: json['subject_group'] as String?,
-      periodGrades: _parsePeriodGrades(json['period_grades']),
+      termGrades: _parseTermGrades(json['term_grades']),
       finalGrade: json['final_grade'] as int?,
       descriptor: json['descriptor'] as String?,
     );
@@ -114,7 +114,7 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
     return {
       'class_title': classTitle,
       'subject_group': subjectGroup,
-      'period_grades': periodGrades,
+      'term_grades': termGrades,
       'final_grade': finalGrade,
       'descriptor': descriptor,
     };
@@ -123,14 +123,14 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
 
 class Sf9PeriodAveragesModel extends Sf9PeriodAverages {
   const Sf9PeriodAveragesModel({
-    super.periodGrades,
+    super.termGrades,
     super.finalAverage,
     super.descriptor,
   });
 
   factory Sf9PeriodAveragesModel.fromJson(Map<String, dynamic> json) {
     return Sf9PeriodAveragesModel(
-      periodGrades: _parsePeriodGrades(json['period_grades']),
+      termGrades: _parseTermGrades(json['term_grades']),
       finalAverage: json['final_average'] as int?,
       descriptor: json['descriptor'] as String?,
     );
@@ -138,14 +138,14 @@ class Sf9PeriodAveragesModel extends Sf9PeriodAverages {
 
   Map<String, dynamic> toJson() {
     return {
-      'period_grades': periodGrades,
+      'term_grades': termGrades,
       'final_average': finalAverage,
       'descriptor': descriptor,
     };
   }
 }
 
-List<int?> _parsePeriodGrades(dynamic value) {
+List<int?> _parseTermGrades(dynamic value) {
   if (value == null) return const [];
   if (value is List) {
     return value.map((e) => e as int?).toList();

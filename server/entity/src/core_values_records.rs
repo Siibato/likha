@@ -9,7 +9,7 @@ pub struct Model {
     pub student_id: Uuid,
     pub class_id: Uuid,
     pub school_year: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub core_value: String,
     pub behavior_statement: String,
     pub marking: String,

@@ -28,7 +28,7 @@ impl super::SyncPushService {
             }
             "update" => {
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
-                let period = extract_field!(self, op, parse_i32_field, "grading_period_number");
+                let period = extract_field!(self, op, parse_i32_field, "term_number");
                 let ww_weight = op.payload.get("ww_weight")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(0.0);
@@ -61,7 +61,7 @@ impl super::SyncPushService {
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
                 let title = extract_field!(self, op, parse_str_field, "title");
                 let component = extract_field!(self, op, parse_str_field, "component");
-                let period = extract_field!(self, op, parse_i32_field, "grading_period_number");
+                let period = extract_field!(self, op, parse_i32_field, "term_number");
                 let total_points = op.payload.get("total_points")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(100.0);
@@ -71,7 +71,7 @@ impl super::SyncPushService {
                 let request = CreateGradeItemRequest {
                     title,
                     component,
-                    grading_period_number: Some(period),
+                    term_number: Some(period),
                     total_points,
                     source_type: op.payload.get("source_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     source_id: op.payload.get("source_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -198,7 +198,7 @@ impl super::SyncPushService {
     async fn recompute_after_score_change(&self, grade_item_id: Uuid) {
         if let Ok(Some(item)) = self.grade_computation_service.repo.find_item(grade_item_id).await {
             if let Err(e) = self.grade_computation_service
-                .compute_class_period(item.class_id, item.grading_period_number.unwrap_or(1))
+                .compute_class_term(item.class_id, item.term_number.unwrap_or(1))
                 .await
             {
                 tracing::warn!(

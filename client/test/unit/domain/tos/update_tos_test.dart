@@ -25,7 +25,7 @@ void main() {
     final tUpdatedTos = TableOfSpecifications(
       id: tTosId,
       classId: 'class-1',
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       title: 'Updated TOS',
       classificationMode: 'difficulty',
       totalItems: 60,

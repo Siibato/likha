@@ -17,7 +17,7 @@ pub async fn create_assessment(
     order_index: i32,
     client_id: Option<Uuid>,
     is_published: bool,
-    grading_period_number: Option<i32>,
+    term_number: Option<i32>,
     component: Option<String>,
     tos_id: Option<String>,
 ) -> AppResult<assessments::Model> {
@@ -37,7 +37,7 @@ pub async fn create_assessment(
         created_at: Set(Utc::now().naive_utc()),
         updated_at: Set(Utc::now().naive_utc()),
         deleted_at: Set(None),
-        grading_period_number: Set(grading_period_number),
+        term_number: Set(term_number),
         component: Set(component),
         tos_id: Set(tos_id),
     };

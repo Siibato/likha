@@ -43,7 +43,7 @@ Future<String> createAssessmentWithQuestions(
           AssessmentsCols.isPublished: isPublished ? 1 : 0,
           AssessmentsCols.orderIndex: 0,
           if (linkedTosId != null) AssessmentsCols.tosId: linkedTosId,
-          if (quarter != null) AssessmentsCols.gradingPeriodNumber: quarter,
+          if (quarter != null) AssessmentsCols.termNumber: quarter,
           if (component != null) AssessmentsCols.component: component,
           CommonCols.createdAt: now.toIso8601String(),
           CommonCols.updatedAt: now.toIso8601String(),

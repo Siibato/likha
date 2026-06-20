@@ -42,7 +42,7 @@ fn test_create_assignment_request_optional_fields_absent_are_none() {
     let req: CreateAssignmentRequest = serde_json::from_str(json).unwrap();
     assert!(req.allowed_file_types.is_none());
     assert!(req.max_file_size_mb.is_none());
-    assert!(req.grading_period_number.is_none());
+    assert!(req.term_number.is_none());
     assert!(req.component.is_none());
 }
 
@@ -58,7 +58,7 @@ fn test_create_assignment_request_with_all_fields() {
         "max_file_size_mb": 10,
         "due_at": "2024-06-01T00:00:00",
         "is_published": true,
-        "grading_period_number": 1,
+        "term_number": 1,
         "component": "written_work"
     }"#;
     let req: CreateAssignmentRequest = serde_json::from_str(json).unwrap();
@@ -66,7 +66,7 @@ fn test_create_assignment_request_with_all_fields() {
     assert!(req.allows_file_submission);
     assert_eq!(req.allowed_file_types.as_deref(), Some("pdf,docx"));
     assert_eq!(req.max_file_size_mb, Some(10));
-    assert_eq!(req.grading_period_number, Some(1));
+    assert_eq!(req.term_number, Some(1));
     assert_eq!(req.component.as_deref(), Some("written_work"));
 }
 

@@ -92,7 +92,7 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
         )
         .route(
             "/classes/{class_id}/my-grades/{period}",
-            get(handler::get_my_period_grades),
+            get(handler::get_my_term_grades),
         )
         // Utility
         .route(

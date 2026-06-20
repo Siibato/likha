@@ -128,7 +128,7 @@ import 'package:likha/domain/grading/usecases/get_grade_summary.dart';
 import 'package:likha/domain/grading/usecases/get_grading_config.dart';
 import 'package:likha/domain/grading/usecases/get_my_grade_detail.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
-import 'package:likha/domain/grading/usecases/get_period_grades.dart';
+import 'package:likha/domain/grading/usecases/get_term_grades.dart';
 import 'package:likha/domain/grading/usecases/get_scores_by_item.dart';
 import 'package:likha/domain/grading/usecases/save_scores.dart';
 import 'package:likha/domain/grading/usecases/set_score_override.dart';
@@ -549,7 +549,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SaveScores(sl()));
   sl.registerLazySingleton(() => SetScoreOverride(sl()));
   sl.registerLazySingleton(() => ClearScoreOverride(sl()));
-  sl.registerLazySingleton(() => GetPeriodGrades(sl()));
+  sl.registerLazySingleton(() => GetTermGrades(sl()));
   sl.registerLazySingleton(() => ComputeGrades(sl()));
   sl.registerLazySingleton(() => GetGradeSummary(sl()));
   sl.registerLazySingleton(() => GetFinalGrades(sl()));

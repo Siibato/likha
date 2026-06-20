@@ -6,12 +6,12 @@ import 'package:likha/core/network/dio_client.dart';
 Future<List<Map<String, dynamic>>> getGradeSummary(
   DioClient dioClient, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     final response = await dioClient.dio.get(
       ApiEndpoints.classGradesSummary(classId).path,
-      queryParameters: {'grading_period_number': gradingPeriodNumber},
+      queryParameters: {'term_number': termNumber},
     );
     final data = response.data['data'] ?? response.data;
     final summary = data['students'] as List<dynamic>? ?? [];

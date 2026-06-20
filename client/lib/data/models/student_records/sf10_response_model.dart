@@ -175,7 +175,7 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
   const Sf10SubjectRowModel({
     required super.classTitle,
     super.subjectGroup,
-    super.periodGrades = const [],
+    super.termGrades = const [],
     super.finalGrade,
     super.descriptor,
   });
@@ -184,7 +184,7 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
     return Sf10SubjectRowModel(
       classTitle: json['class_title'] as String,
       subjectGroup: json['subject_group'] as String?,
-      periodGrades: (json['period_grades'] as List<dynamic>?)
+      termGrades: (json['term_grades'] as List<dynamic>?)
           ?.map((e) => e as int?)
           .toList() ??
           const [],
@@ -196,7 +196,7 @@ class Sf10SubjectRowModel extends Sf10SubjectRow {
   Map<String, dynamic> toJson() => {
     'class_title': classTitle,
     'subject_group': subjectGroup,
-    'period_grades': periodGrades,
+    'term_grades': termGrades,
     'final_grade': finalGrade,
     'descriptor': descriptor,
   };

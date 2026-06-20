@@ -1,19 +1,19 @@
 use uuid::Uuid;
-use crate::modules::grading::schema::PeriodGradeResponse;
+use crate::modules::grading::schema::TermGradeResponse;
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
 use crate::modules::grading::helpers::compute_component::compute_component;
 
 impl crate::modules::grading::service::GradeComputationService {
-    pub async fn compute_student_period(
+    pub async fn compute_student_term(
         &self,
         class_id: Uuid,
         student_id: Uuid,
-        grading_period_number: i32,
-    ) -> AppResult<PeriodGradeResponse> {
+        term_number: i32,
+    ) -> AppResult<TermGradeResponse> {
         let config = self
             .repo
-            .get_config(class_id, grading_period_number)
+            .get_config(class_id, term_number)
             .await?
             .ok_or_else(|| {
                 AppError::BadRequest(
@@ -21,7 +21,7 @@ impl crate::modules::grading::service::GradeComputationService {
                 )
             })?;
 
-        let items = self.repo.get_items(class_id, grading_period_number).await?;
+        let items = self.repo.get_items(class_id, term_number).await?;
 
         let mut ww_items = Vec::new();
         let mut pt_items = Vec::new();
@@ -37,7 +37,7 @@ impl crate::modules::grading::service::GradeComputationService {
 
         let scores = self
             .repo
-            .get_scores_by_student_class_period(student_id, class_id, grading_period_number)
+            .get_scores_by_student_class_period(student_id, class_id, term_number)
             .await?;
 
         let mut score_map = std::collections::HashMap::new();
@@ -58,16 +58,16 @@ impl crate::modules::grading::service::GradeComputationService {
 
         let model = self
             .repo
-            .upsert_period_grade(
+            .upsert_term_grade(
                 class_id,
                 student_id,
-                grading_period_number,
+                term_number,
                 initial_grade,
                 transmuted,
                 is_locked,
             )
             .await?;
 
-        Ok(PeriodGradeResponse::from(model))
+        Ok(TermGradeResponse::from(model))
     }
 }

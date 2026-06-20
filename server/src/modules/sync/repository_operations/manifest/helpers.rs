@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use ::entity::{
     class_participants, users,
-    grade_record, grade_items, grade_scores, period_grades,
+    grade_record, grade_items, grade_scores, term_grades,
     table_of_specifications, tos_competencies,
     learner_details, attendance_records, core_values_records,
     student_school_history, previous_school_subjects, previous_school_attendance,
@@ -74,7 +74,7 @@ pub fn grade_config_to_json(r: grade_record::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "ww_weight": r.ww_weight,
         "pt_weight": r.pt_weight,
         "qa_weight": r.qa_weight,
@@ -88,7 +88,7 @@ pub fn tos_to_json(r: table_of_specifications::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "title": r.title,
         "classification_mode": r.classification_mode,
         "total_items": r.total_items,
@@ -137,7 +137,7 @@ pub fn grade_item_to_json(r: grade_items::Model) -> Value {
         "class_id": r.class_id.to_string(),
         "title": r.title,
         "component": r.component,
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "total_points": r.total_points,
         "source_type": r.source_type,
         "source_id": r.source_id,
@@ -162,16 +162,15 @@ pub fn grade_score_to_json(r: grade_scores::Model) -> Value {
     })
 }
 
-pub fn period_grade_to_json(r: period_grades::Model) -> Value {
+pub fn period_grade_to_json(r: term_grades::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
         "student_id": r.student_id.to_string(),
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "initial_grade": r.initial_grade,
         "transmuted_grade": r.transmuted_grade,
         "is_locked": r.is_locked,
-        "computed_at": r.computed_at.map(|d| d.to_string()),
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
         "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -224,7 +223,7 @@ pub fn core_values_record_to_json(r: core_values_records::Model) -> Value {
         "student_id": r.student_id.to_string(),
         "class_id": r.class_id.to_string(),
         "school_year": r.school_year,
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "core_value": r.core_value,
         "behavior_statement": r.behavior_statement,
         "marking": r.marking,

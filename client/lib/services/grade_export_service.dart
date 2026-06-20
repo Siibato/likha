@@ -214,7 +214,7 @@ class GradeExportService {
   }) {
     // Filter grade items by quarter
     final quarterItems = gradeItems
-        .where((item) => item.gradingPeriodNumber == quarter)
+        .where((item) => item.termNumber == quarter)
         .toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 

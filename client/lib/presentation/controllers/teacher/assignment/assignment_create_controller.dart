@@ -149,7 +149,7 @@ class AssignmentCreateController extends ChangeNotifier {
         maxFileSizeMb: maxFileSizeMb,
         dueAt: formatDateTimeForApi(dueAt),
         isPublished: isPublished,
-        gradingPeriodNumber: quarter,
+        termNumber: quarter,
         component: component,
         noSubmissionRequired: noSubmissionRequired,
       ),

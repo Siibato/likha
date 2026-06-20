@@ -82,8 +82,8 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
-  periodGrades:
-      (json['period_grades'] as List<dynamic>?)
+  termGrades:
+      (json['term_grades'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
@@ -162,7 +162,7 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'grade_configs': instance.gradeConfigs,
   'grade_items': instance.gradeItems,
   'grade_scores': instance.gradeScores,
-  'period_grades': instance.periodGrades,
+  'term_grades': instance.termGrades,
   'table_of_specifications': instance.tableOfSpecifications,
   'tos_competencies': instance.tosCompetencies,
   'activity_logs': instance.activityLogs,

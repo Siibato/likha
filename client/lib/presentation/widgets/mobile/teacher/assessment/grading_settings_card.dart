@@ -6,7 +6,7 @@ import 'package:likha/core/theme/app_colors.dart';
 /// Shows the current quarter and grade component in view mode, and exposes
 /// dropdowns to edit them. The parent page manages the editing state.
 class GradingSettingsCard extends StatelessWidget {
-  final int? gradingPeriodNumber;
+  final int? termNumber;
   final String? component;
   final bool isEditing;
 
@@ -21,7 +21,7 @@ class GradingSettingsCard extends StatelessWidget {
 
   const GradingSettingsCard({
     super.key,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.component,
     required this.isEditing,
     required this.editingGradingPeriod,
@@ -89,18 +89,18 @@ class GradingSettingsCard extends StatelessWidget {
                 Icon(
                   Icons.grain_rounded,
                   size: 16,
-                  color: gradingPeriodNumber != null
+                  color: termNumber != null
                       ? AppColors.foregroundPrimary
                       : AppColors.foregroundTertiary,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  gradingPeriodNumber != null
-                      ? 'Quarter $gradingPeriodNumber'
+                  termNumber != null
+                      ? 'Quarter $termNumber'
                       : 'No quarter assigned',
                   style: TextStyle(
                     fontSize: 14,
-                    color: gradingPeriodNumber != null
+                    color: termNumber != null
                         ? AppColors.foregroundPrimary
                         : AppColors.foregroundTertiary,
                   ),

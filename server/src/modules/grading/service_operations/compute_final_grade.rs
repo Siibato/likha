@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use crate::cache::CacheKey;
-use crate::modules::grading::schema::{FinalGradeResponse, PeriodGradeResponse};
+use crate::modules::grading::schema::{FinalGradeResponse, TermGradeResponse};
 use crate::utils::AppResult;
 
 impl crate::modules::grading::service::GradeComputationService {
@@ -20,8 +20,8 @@ impl crate::modules::grading::service::GradeComputationService {
             .get_all_for_student(class_id, student_id)
             .await?;
 
-        let period_responses: Vec<PeriodGradeResponse> =
-            periods.into_iter().map(PeriodGradeResponse::from).collect();
+        let period_responses: Vec<TermGradeResponse> =
+            periods.into_iter().map(TermGradeResponse::from).collect();
 
         let locked_grades: Vec<f64> = period_responses
             .iter()
@@ -37,7 +37,7 @@ impl crate::modules::grading::service::GradeComputationService {
 
         let result = FinalGradeResponse {
             student_id: student_id.to_string(),
-            period_grades: period_responses,
+            term_grades: period_responses,
             final_grade,
         };
         if let Some(ref cache) = self.cache {

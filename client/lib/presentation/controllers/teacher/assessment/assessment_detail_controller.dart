@@ -72,7 +72,7 @@ class AssessmentDetailController extends ChangeNotifier {
   // ── Grading settings ──
 
   void startEditingGrading(Assessment assessment) {
-    editingGradingPeriod = assessment.gradingPeriodNumber;
+    editingGradingPeriod = assessment.termNumber;
     editingComponent = assessment.component;
     isEditingGrading = true;
     formError = null;
@@ -95,7 +95,7 @@ class AssessmentDetailController extends ChangeNotifier {
       await notifier.updateAssessment(
         UpdateAssessmentParams(
           assessmentId: assessmentId,
-          gradingPeriodNumber: editingGradingPeriod,
+          termNumber: editingGradingPeriod,
           component: editingComponent,
         ),
       );

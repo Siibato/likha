@@ -37,7 +37,7 @@ class TosSettingsPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          TosSettingsRow(label: 'Quarter', value: 'Q${tos.gradingPeriodNumber}'),
+          TosSettingsRow(label: 'Quarter', value: 'Q${tos.termNumber}'),
           TosSettingsRow(label: 'Mode', value: modeLabel),
           TosSettingsRow(label: 'Total Items', value: '${tos.totalItems}'),
           TosSettingsRow(label: 'Competencies', value: '${competencies.length}'),

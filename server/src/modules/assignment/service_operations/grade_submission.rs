@@ -64,7 +64,7 @@ pub async fn grade_submission(
 
     if let Some(inv) = invalidator {
         inv.invalidate_assignment_detail(submission.assignment_id).await;
-        if let Some(period) = assignment.grading_period_number {
+        if let Some(period) = assignment.term_number {
             inv.invalidate_class_grades(assignment.class_id, period).await;
             inv.invalidate_student_grades(assignment.class_id, submission.student_id, period).await;
         }

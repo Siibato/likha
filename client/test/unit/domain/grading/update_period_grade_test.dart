@@ -28,14 +28,14 @@ void main() {
       when(() => mockRepository.updateTransmutedGrade(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
       )).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
       final result = await useCase(
         classId: tClassId,
         studentId: tStudentId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
         transmutedGrade: tGrade,
       );
 
@@ -43,7 +43,7 @@ void main() {
       verify(() => mockRepository.updateTransmutedGrade(
         classId: tClassId,
         studentId: tStudentId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
         transmutedGrade: tGrade,
       )).called(1);
     });
@@ -52,14 +52,14 @@ void main() {
       when(() => mockRepository.updateTransmutedGrade(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Grade must be between 60 and 100')));
 
       final result = await useCase(
         classId: tClassId,
         studentId: tStudentId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
         transmutedGrade: 110,
       );
 
@@ -74,14 +74,14 @@ void main() {
       when(() => mockRepository.updateTransmutedGrade(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
       )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 
       final result = await useCase(
         classId: tClassId,
         studentId: tStudentId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
         transmutedGrade: tGrade,
       );
 
@@ -96,14 +96,14 @@ void main() {
       when(() => mockRepository.updateTransmutedGrade(
         classId: any(named: 'classId'),
         studentId: any(named: 'studentId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         transmutedGrade: any(named: 'transmutedGrade'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 
       final result = await useCase(
         classId: tClassId,
         studentId: tStudentId,
-        gradingPeriodNumber: tPeriod,
+        termNumber: tPeriod,
         transmutedGrade: tGrade,
       );
 

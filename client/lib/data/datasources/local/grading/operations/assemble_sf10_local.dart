@@ -10,8 +10,8 @@ String _getDescriptor(int grade) {
   return 'Did Not Meet Expectations';
 }
 
-int _periodCount(String gradingPeriodType) {
-  switch (gradingPeriodType) {
+int _periodCount(String termType) {
+  switch (termType) {
     case 'semester':
       return 2;
     case 'trimester':
@@ -44,9 +44,9 @@ Future<Sf10ResponseModel?> assembleSf10Local(
   final schoolYear = classRow[ClassesCols.schoolYear] as String?;
   final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
   final section = classRow[ClassesCols.title] as String?;
-  final gradingPeriodType =
-      classRow[ClassesCols.gradingPeriodType] as String? ?? 'quarter';
-  final numPeriods = _periodCount(gradingPeriodType);
+  final termType =
+      classRow[ClassesCols.termType] as String? ?? 'quarter';
+  final numPeriods = _periodCount(termType);
 
   // 2. Get student name
   final userRows = await db.query(
@@ -103,16 +103,16 @@ Future<Sf10ResponseModel?> assembleSf10Local(
     final ctitle = classMatch[ClassesCols.title] as String? ?? '';
 
     final pgRows = await db.query(
-      DbTables.periodGrades,
+      DbTables.termGrades,
       where:
-          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
+          '${TermGradesCols.classId} = ? AND ${TermGradesCols.studentId} = ?',
       whereArgs: [cid, studentId],
     );
 
     final periodVals = List<int?>.filled(numPeriods, null);
     for (final pg in pgRows) {
-      final periodNum = pg[PeriodGradesCols.gradingPeriodNumber] as int?;
-      final transmuted = pg[PeriodGradesCols.transmutedGrade] as int?;
+      final periodNum = pg[TermGradesCols.termNumber] as int?;
+      final transmuted = pg[TermGradesCols.transmutedGrade] as int?;
       if (periodNum != null && transmuted != null) {
         final idx = periodNum - 1;
         if (idx >= 0 && idx < numPeriods) {
@@ -138,7 +138,7 @@ Future<Sf10ResponseModel?> assembleSf10Local(
 
     subjects.add(Sf10SubjectRowModel(
       classTitle: ctitle,
-      periodGrades: periodVals,
+      termGrades: periodVals,
       finalGrade: finalGrade,
       descriptor: descriptor,
     ));
@@ -274,7 +274,7 @@ Future<Sf10ResponseModel?> assembleSf10Local(
             s[PreviousSchoolSubjectsCols.subjectName] as String? ?? '',
         subjectGroup:
             s[PreviousSchoolSubjectsCols.subjectGroup] as String?,
-        periodGrades: [
+        termGrades: [
           s[PreviousSchoolSubjectsCols.q1Grade] as int?,
           s[PreviousSchoolSubjectsCols.q2Grade] as int?,
           s[PreviousSchoolSubjectsCols.q3Grade] as int?,

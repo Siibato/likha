@@ -83,7 +83,7 @@ pub struct AssessmentSpec {
     pub deleted_at: Option<NaiveDateTime>,
     pub is_published: bool,
     pub results_released: bool,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub questions: Vec<QuestionSpec>,
 }
 
@@ -129,7 +129,7 @@ pub struct AssignmentSpec {
     pub created_at: NaiveDateTime,
     pub deleted_at: Option<NaiveDateTime>,
     pub is_published: bool,
-    pub grading_period_number: i32,
+    pub term_number: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -194,7 +194,7 @@ pub struct SchoolDetailsSpec {
 #[derive(Debug, Clone)]
 pub struct GradeRecordSpec {
     pub class_id: Uuid,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub ww_weight: f64,
     pub pt_weight: f64,
     pub qa_weight: f64,
@@ -206,7 +206,7 @@ pub struct GradeItemSpec {
     pub class_id: Uuid,
     pub title: String,
     pub component: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub total_points: f64,
     pub source_type: String,
     pub source_id: Option<String>,
@@ -221,18 +221,17 @@ pub struct GradeScoreSpec {
     pub is_auto_populated: bool,
     pub override_score: Option<f64>,
     pub component: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
 }
 
 #[derive(Debug, Clone)]
-pub struct PeriodGradeSpec {
+pub struct TermGradeSpec {
     pub class_id: Uuid,
     pub student_id: Uuid,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub initial_grade: Option<f64>,
     pub transmuted_grade: Option<i32>,
     pub is_locked: bool,
-    pub computed_at: Option<NaiveDateTime>,
 }
 
 #[derive(Debug, Clone)]
@@ -283,7 +282,7 @@ pub struct CoreValuesSpec {
     pub student_id: Uuid,
     pub class_id: Uuid,
     pub school_year: String,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub core_value: String,
     pub behavior_statement: String,
     pub marking: String,

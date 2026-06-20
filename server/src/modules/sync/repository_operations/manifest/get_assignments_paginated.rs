@@ -26,7 +26,7 @@ pub async fn get_assignments_paginated(
             "due_at": r.due_at.to_string(),
             "is_published": r.is_published,
             "order_index": r.order_index,
-            "grading_period_number": r.grading_period_number,
+            "term_number": r.term_number,
             "component": r.component,
             "created_at": r.created_at.to_string(),
             "updated_at": r.updated_at.to_string(),

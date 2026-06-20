@@ -43,7 +43,7 @@ impl crate::modules::assessment::service::AssessmentService {
             open_at,
             close_at,
             request.show_results_immediately,
-            request.grading_period_number.map(|q| Some(q)),
+            request.term_number.map(|q| Some(q)),
             request.component.clone().map(|c| Some(c)),
             request.tos_id,
         ).await?;
@@ -73,7 +73,7 @@ impl crate::modules::assessment::service::AssessmentService {
             total_points: updated.total_points,
             question_count,
             submission_count,
-            grading_period_number: updated.grading_period_number,
+            term_number: updated.term_number,
             component: updated.component.clone(),
             tos_id: updated.tos_id.clone(),
             created_at: fmt_utc(updated.created_at),

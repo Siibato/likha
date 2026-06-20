@@ -17,7 +17,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(80), close_at: now - chrono::Duration::days(75),
         show_results_immediately: true, total_points: 13, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("eng_q3_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "Which is a characteristic of a credible source?".into(),
@@ -57,7 +57,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(78), close_at: now - chrono::Duration::days(73),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("eng_q3_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "Which media technique uses emotional music to influence viewers?".into(),
@@ -120,7 +120,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(82), close_at: now - chrono::Duration::days(76),
         show_results_immediately: true, total_points: eng_q3_exam_points, component: "period_assessment".into(),
         tos_id: tid("english_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: eng_q3_exam_qs,
     });
 
@@ -132,7 +132,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(79), close_at: now - chrono::Duration::days(74),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("english_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("eng_q3_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the first step in conducting research?".into(),
@@ -172,7 +172,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(81), close_at: now - chrono::Duration::days(76),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("sci_q3_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "What is Newton's first law also known as?".into(),
@@ -212,7 +212,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(79), close_at: now - chrono::Duration::days(74),
         show_results_immediately: true, total_points: 12, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("sci_q3_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What type of energy does a moving car have?".into(),
@@ -275,7 +275,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 60, open_at: now - chrono::Duration::days(83), close_at: now - chrono::Duration::days(77),
         show_results_immediately: true, total_points: sci_q3_exam_points, component: "period_assessment".into(),
         tos_id: tid("science_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: sci_q3_exam_qs,
     });
 
@@ -287,7 +287,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 30, open_at: now - chrono::Duration::days(80), close_at: now - chrono::Duration::days(75),
         show_results_immediately: true, total_points: 11, component: "written_work".into(),
         tos_id: tid("science_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("sci_q3_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the SI unit of force?".into(),
@@ -327,7 +327,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(78), close_at: now - chrono::Duration::days(73),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("adv_q3_quiz1", 0), question_type: "multiple_choice".into(),
                 text: "What is assertiveness?".into(),
@@ -367,7 +367,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(77), close_at: now - chrono::Duration::days(72),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("adv_q3_quiz2", 0), question_type: "multiple_choice".into(),
                 text: "What is active listening?".into(),
@@ -407,7 +407,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 20, open_at: now - chrono::Duration::days(76), close_at: now - chrono::Duration::days(71),
         show_results_immediately: true, total_points: 10, component: "written_work".into(),
         tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: vec![
             QuestionSpec { id: qid("adv_q3_quiz3", 0), question_type: "multiple_choice".into(),
                 text: "What is the first step in decision-making?".into(),
@@ -470,7 +470,7 @@ pub fn realistic_assessments_q3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         time_limit_minutes: 45, open_at: now - chrono::Duration::days(83), close_at: now - chrono::Duration::days(77),
         show_results_immediately: true, total_points: adv_q3_exam_points, component: "period_assessment".into(),
         tos_id: tid("advisory_9a_tos_q3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, grading_period_number: 3,
+        is_published: true, results_released: true, term_number: 3,
         questions: adv_q3_exam_qs,
     });
 

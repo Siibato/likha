@@ -2,15 +2,15 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/grading/entities/period_grade.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 
-class GetPeriodGrades {
+class GetTermGrades {
   final GradingRepository _repository;
 
-  GetPeriodGrades(this._repository);
+  GetTermGrades(this._repository);
 
   ResultFuture<List<PeriodGrade>> call({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) {
-    return _repository.getPeriodGrades(classId: classId, gradingPeriodNumber: gradingPeriodNumber);
+    return _repository.getTermGrades(classId: classId, termNumber: termNumber);
   }
 }

@@ -33,7 +33,7 @@ pub async fn seed_advisory_world(db: &DatabaseConnection) -> Result<(), AppError
     let grade_records = advisory_grades::generate_grade_records();
     let grade_items = advisory_grades::generate_grade_items();
     let grade_scores = advisory_grades::generate_grade_scores(&students, &enrollments, &grade_items);
-    let period_grades = advisory_grades::generate_period_grades(
+    let term_grades = advisory_grades::generate_term_grades(
         &students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx,
     );
 
@@ -49,7 +49,7 @@ pub async fn seed_advisory_world(db: &DatabaseConnection) -> Result<(), AppError
     inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
     inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
-    inserters::grading::insert_period_grades(db, &period_grades, ctx.now()).await?;
+    inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
     inserters::student_records::insert_attendance_records(db, &attendance).await?;
     inserters::student_records::insert_core_values_records(db, &core_values).await?;
@@ -66,7 +66,7 @@ pub async fn seed_advisory_world(db: &DatabaseConnection) -> Result<(), AppError
          {} attendance records, {} core values records, \
          {} school history, {} previous subjects, {} previous attendance",
         users.len(), classes.len(), enrollments.len(), learner_details.len(),
-        grade_records.len(), grade_items.len(), grade_scores.len(), period_grades.len(),
+        grade_records.len(), grade_items.len(), grade_scores.len(), term_grades.len(),
         attendance.len(), core_values.len(),
         school_history.len(), previous_subjects.len(), previous_attendance.len()
     );

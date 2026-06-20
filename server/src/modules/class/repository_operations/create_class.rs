@@ -24,7 +24,7 @@ pub async fn create_class(
         deleted_at: Set(None),
         grade_level: Set(None),
         school_year: Set(None),
-        grading_period_type: Set("quarter".to_string()),
+        term_type: Set("quarter".to_string()),
         is_advisory: Set(is_advisory),
     };
 
