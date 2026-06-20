@@ -21,6 +21,13 @@ pub async fn create_assessment(
     component: Option<String>,
     tos_id: Option<String>,
 ) -> AppResult<assessments::Model> {
+    let tos_id = match tos_id {
+        Some(s) if !s.is_empty() => Some(
+            Uuid::parse_str(&s)
+                .map_err(|e| AppError::BadRequest(format!("Invalid tos_id UUID: {}", e)))?,
+        ),
+        _ => None,
+    };
     let assessment = assessments::ActiveModel {
         id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
         class_id: Set(class_id),

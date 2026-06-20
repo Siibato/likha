@@ -47,7 +47,7 @@ impl crate::modules::assessment::service::AssessmentService {
             submission_count,
             term_number: released.term_number,
             component: released.component.clone(),
-            tos_id: released.tos_id.clone(),
+            tos_id: released.tos_id.map(|u| u.to_string()),
             created_at: fmt_utc(released.created_at),
             updated_at: fmt_utc(released.updated_at),
         })

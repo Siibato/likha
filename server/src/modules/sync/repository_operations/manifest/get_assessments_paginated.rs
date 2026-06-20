@@ -28,7 +28,7 @@ pub async fn get_assessments_paginated(
             "total_points": r.total_points,
             "term_number": r.term_number,
             "component": r.component,
-            "tos_id": r.tos_id,
+            "tos_id": r.tos_id.map(|u| u.to_string()),
             "created_at": r.created_at.to_string(),
             "updated_at": r.updated_at.to_string(),
             "deleted_at": r.deleted_at.map(|d| d.to_string()),

@@ -18,6 +18,15 @@ pub async fn update_assessment(
     component: Option<Option<String>>,
     tos_id: Option<Option<String>>,
 ) -> AppResult<assessments::Model> {
+    let tos_id = match tos_id {
+        Some(Some(s)) if !s.is_empty() => Some(Some(
+            Uuid::parse_str(&s)
+                .map_err(|e| AppError::BadRequest(format!("Invalid tos_id UUID: {}", e)))?,
+        )),
+        Some(Some(_)) => Some(None),
+        Some(None) => Some(None),
+        None => None,
+    };
     let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
         .one(db)
         .await

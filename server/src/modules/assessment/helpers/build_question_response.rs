@@ -63,7 +63,7 @@ impl crate::modules::assessment::service::AssessmentService {
             choices,
             correct_answers,
             enumeration_items,
-            tos_competency_id: question.tos_competency_id.clone(),
+            tos_competency_id: question.tos_competency_id.map(|u| u.to_string()),
             cognitive_level: question.cognitive_level.clone(),
         })
     }

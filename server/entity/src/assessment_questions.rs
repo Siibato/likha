@@ -15,7 +15,7 @@ pub struct Model {
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
-    pub tos_competency_id: Option<String>,
+    pub tos_competency_id: Option<Uuid>,
     pub cognitive_level: Option<String>,
     pub difficulty: Option<String>,
 }
@@ -32,6 +32,12 @@ pub enum Relation {
     Choices,
     #[sea_orm(has_many = "super::answer_keys::Entity")]
     AnswerKeys,
+    #[sea_orm(
+        belongs_to = "super::tos_competencies::Entity",
+        from = "Column::TosCompetencyId",
+        to = "super::tos_competencies::Column::Id"
+    )]
+    TosCompetency,
 }
 
 impl Related<super::assessments::Entity> for Entity {
@@ -49,6 +55,12 @@ impl Related<super::question_choices::Entity> for Entity {
 impl Related<super::answer_keys::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::AnswerKeys.def()
+    }
+}
+
+impl Related<super::tos_competencies::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TosCompetency.def()
     }
 }
 

@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 14 (v13 → v14: term renames — term_* → term_*, term_grades → term_grades)
+/// SCHEMA VERSION: 16 (v15 → v16: Phase 4 FK constraints — assessments.tos_id, assessment_questions.tos_competency_id)
 /// TOTAL TABLES: 36
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -85,7 +85,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 15,
+            version: 16,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +106,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 14,
+        version: 15,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -257,7 +257,8 @@ class LocalDatabase {
           deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          FOREIGN KEY(tos_id) REFERENCES table_of_specifications(id) ON DELETE SET NULL
         )
       ''');
 
@@ -279,7 +280,8 @@ class LocalDatabase {
           deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
-          FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
+          FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
+          FOREIGN KEY(tos_competency_id) REFERENCES tos_competencies(id) ON DELETE SET NULL
         )
       ''');
 
@@ -968,6 +970,15 @@ class LocalDatabase {
         await txn.execute('DROP TABLE submission_answer_items');
         await txn.execute('ALTER TABLE submission_answer_items_new RENAME TO submission_answer_items');
       });
+      return;
+    }
+
+    // Targeted migration: Phase 4 FK constraints — assessments.tos_id, assessment_questions.tos_competency_id
+    // Web path: 15 → 16; Mobile path: 14 → 15
+    if ((oldVersion == 15 && newVersion == 16) || (oldVersion == 14 && newVersion == 15)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
       return;
     }
 

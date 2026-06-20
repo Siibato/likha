@@ -232,6 +232,13 @@ class SyncUpsertHelpers {
     for (final record in records) {
       final data = record as Map<String, dynamic>;
       final assessmentId = data['id'];
+
+      final tosId = data['tos_id']?.toString();
+      if (tosId != null && tosId.isNotEmpty && !await _fkExists(db, DbTables.tableOfSpecifications, tosId)) {
+        _log.warn('Skipping assessment $assessmentId: tos $tosId not found locally');
+        continue;
+      }
+
       final map = {
         CommonCols.id: assessmentId,
         AssessmentsCols.classId: data['class_id'],
@@ -277,6 +284,13 @@ class SyncUpsertHelpers {
       if (assessmentId.isEmpty || !await _fkExists(db, DbTables.assessments, assessmentId)) {
         _log.warn('Skipping question ${data['id']}: assessment $assessmentId not found locally');
         continue;
+      }
+
+      // DEFENSE: Nullify tos_competency_id if the referenced competency doesn't exist locally
+      final tosCompetencyId = data['tos_competency_id']?.toString();
+      if (tosCompetencyId != null && tosCompetencyId.isNotEmpty && !await _fkExists(db, DbTables.tosCompetencies, tosCompetencyId)) {
+        _log.warn('Question ${data['id']}: tos_competency $tosCompetencyId not found locally, setting to null');
+        data['tos_competency_id'] = null;
       }
 
       await db.insert(

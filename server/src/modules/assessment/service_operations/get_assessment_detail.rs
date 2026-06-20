@@ -122,7 +122,7 @@ impl crate::modules::assessment::service::AssessmentService {
                 choices,
                 correct_answers,
                 enumeration_items,
-                tos_competency_id: q.tos_competency_id,
+                tos_competency_id: q.tos_competency_id.map(|u| u.to_string()),
                 cognitive_level: q.cognitive_level,
             }
         }).collect();
@@ -142,7 +142,7 @@ impl crate::modules::assessment::service::AssessmentService {
             total_points: assessment.total_points,
             term_number: assessment.term_number,
             component: assessment.component.clone(),
-            tos_id: assessment.tos_id.clone(),
+            tos_id: assessment.tos_id.map(|u| u.to_string()),
             questions: question_responses,
             created_at: fmt_utc(assessment.created_at),
             updated_at: fmt_utc(assessment.updated_at),

@@ -43,6 +43,7 @@ mod m20260620_000001_create_student_records_tables;
 mod m20260620_000002_phase_1_foundation;
 mod m20260620_000003_rename_terms;
 mod m20260620_000004_phase_3_normalization;
+mod m20260620_000005_phase_4_fk_constraints;
 
 pub struct Migrator;
 
@@ -93,6 +94,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260620_000002_phase_1_foundation::Migration),
             Box::new(m20260620_000003_rename_terms::Migration),
             Box::new(m20260620_000004_phase_3_normalization::Migration),
+            Box::new(m20260620_000005_phase_4_fk_constraints::Migration),
         ]
     }
 }

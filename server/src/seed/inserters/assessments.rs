@@ -92,7 +92,7 @@ async fn insert_question_with_choices_and_key(
         .ok_or_else(|| AppError::NotFound(format!("Question {} not found", spec.id)))?;
 
     let mut qam: assessment_questions::ActiveModel = question.into();
-    qam.tos_competency_id = Set(spec.tos_competency_id.map(|id| id.to_string()));
+    qam.tos_competency_id = Set(spec.tos_competency_id);
     qam.difficulty = Set(spec.difficulty.clone());
     qam.cognitive_level = Set(spec.cognitive_level.clone());
     qam.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
