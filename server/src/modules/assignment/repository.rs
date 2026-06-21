@@ -192,7 +192,7 @@ impl AssignmentRepository {
         ops::find_files_by_submission(&self.db, submission_id).await
     }
 
-    pub async fn find_student_name(&self, student_id: Uuid) -> AppResult<String> {
+    pub async fn find_student_name(&self, student_id: Uuid) -> AppResult<(String, String)> {
         ops::find_student_name(&self.db, student_id).await
     }
 

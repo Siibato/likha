@@ -109,11 +109,13 @@ class SyncUpsertHelpers {
       for (final user in cachedUsers) {
         final userId = user[CommonCols.id] as String?;
         final username = user[UsersCols.username] as String?;
-        final fullName = user[UsersCols.fullName] as String?;
-        if (userId != null && username != null && fullName != null) {
+        final firstName = user[UsersCols.firstName] as String?;
+        final lastName = user[UsersCols.lastName] as String?;
+        if (userId != null && username != null && firstName != null) {
           teacherMap[userId] = {
             'username': username,
-            'full_name': fullName,
+            'first_name': firstName,
+            'last_name': lastName ?? '',
           };
         }
       }
@@ -127,7 +129,7 @@ class SyncUpsertHelpers {
             DbTables.classes,
             {
               ClassesCols.teacherUsername: teacherInfo['username'],
-              ClassesCols.teacherFullName: teacherInfo['full_name'],
+              ClassesCols.teacherFullName: '${teacherInfo['first_name']} ${teacherInfo['last_name']}'.trim(),
             },
             where: '${CommonCols.id} = ?',
             whereArgs: [cls[CommonCols.id]],
@@ -209,7 +211,8 @@ class SyncUpsertHelpers {
         {
           CommonCols.id: record['id'],
           UsersCols.username: record['username'],
-          UsersCols.fullName: record['full_name'],
+          UsersCols.firstName: record['first_name'] ?? '',
+          UsersCols.lastName: record['last_name'] ?? '',
           UsersCols.role: record['role'],
           UsersCols.accountStatus: record['account_status'],
           UsersCols.activatedAt: record['activated_at'],
@@ -511,6 +514,21 @@ class SyncUpsertHelpers {
         // Skip if user_id is missing (required field)
         if (userId == null || userId.isEmpty) {
           _log.warn('Assessment submission $submissionId has missing user_id, skipping');
+          skippedCount++;
+          continue;
+        }
+
+        // DEFENSE: Skip if the referenced assessment wasn't synced
+        final assessmentId = data['assessment_id']?.toString() ?? '';
+        if (assessmentId.isEmpty || !await _fkExists(db, DbTables.assessments, assessmentId)) {
+          _log.warn('Skipping assessment submission $submissionId: assessment $assessmentId not found locally');
+          skippedCount++;
+          continue;
+        }
+
+        // DEFENSE: Skip if the referenced user wasn't synced
+        if (!await _fkExists(db, DbTables.users, userId)) {
+          _log.warn('Skipping assessment submission $submissionId: user $userId not found locally');
           skippedCount++;
           continue;
         }
@@ -1305,6 +1323,52 @@ class SyncUpsertHelpers {
     }
   }
 
+  Future<void> upsertTeacherDetails(
+    DatabaseExecutor db,
+    List<dynamic> records,
+  ) async {
+    int successCount = 0;
+    int failedCount = 0;
+
+    for (final record in records) {
+      try {
+        if (record is! Map<String, dynamic>) continue;
+        await db.insert(
+          DbTables.teacherDetails,
+          {
+            CommonCols.id: record['id'],
+            TeacherDetailsCols.userId: record['user_id'],
+            TeacherDetailsCols.licenseId: record['license_id'],
+            TeacherDetailsCols.rank: record['rank'],
+            TeacherDetailsCols.position: record['position'],
+            TeacherDetailsCols.sex: record['sex'],
+            TeacherDetailsCols.birthdate: record['birthdate'],
+            TeacherDetailsCols.homeAddress: record['home_address'],
+            TeacherDetailsCols.dateHired: record['date_hired'],
+            TeacherDetailsCols.educationLevel: record['education_level'],
+            TeacherDetailsCols.specialization: record['specialization'],
+            TeacherDetailsCols.contactNumber: record['contact_number'],
+            CommonCols.createdAt: record['created_at'],
+            CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+            CommonCols.deletedAt: record['deleted_at'],
+            CommonCols.cachedAt: DateTime.now().toIso8601String(),
+            CommonCols.syncStatus: SyncStatus.synced.dbValue,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        successCount++;
+      } catch (e) {
+        failedCount++;
+        _log.error('Failed to upsert teacher_details', e);
+      }
+    }
+
+    _log.upsertSummary('teacher_details', successCount);
+    if (failedCount > 0) {
+      _log.warn('Failed to upsert teacher_details', failedCount);
+    }
+  }
+
   Future<void> upsertAttendanceRecords(
     DatabaseExecutor db,
     List<dynamic> records,
@@ -1575,7 +1639,8 @@ class SyncUpsertHelpers {
       {
         CommonCols.id: userData['id'],
         UsersCols.username: userData['username'],
-        UsersCols.fullName: userData['full_name'],
+        UsersCols.firstName: userData['first_name'] ?? '',
+        UsersCols.lastName: userData['last_name'] ?? '',
         UsersCols.role: userData['role'],
         UsersCols.accountStatus: userData['account_status'],
         UsersCols.activatedAt: userData['activated_at'],
@@ -1669,6 +1734,44 @@ class SyncUpsertHelpers {
     final studentMap = <String, dynamic>{};
     for (final u in cachedUsers) {
       studentMap[u['id'] as String] = u;
+    }
+
+    // Handle table_of_specifications and tos_competencies before assessments
+    // so that FK pre-checks in upsertAssessments / upsertQuestions succeed.
+    final tosDeltas = deltas['table_of_specifications'];
+    if (tosDeltas != null) {
+      final updated = tosDeltas.updated;
+      updatedCounts['table_of_specifications'] = updated.length;
+      await upsertTableOfSpecifications(db, updated);
+
+      final deleted = tosDeltas.deleted;
+      deletedCounts['table_of_specifications'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.tableOfSpecifications,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    final tosCompetenciesDeltas = deltas['tos_competencies'];
+    if (tosCompetenciesDeltas != null) {
+      final updated = tosCompetenciesDeltas.updated;
+      updatedCounts['tos_competencies'] = updated.length;
+      await upsertTosCompetencies(db, updated);
+
+      final deleted = tosCompetenciesDeltas.deleted;
+      deletedCounts['tos_competencies'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.tosCompetencies,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
     }
 
     // Handle assessments separately (requires explicit field mapping)
@@ -1898,44 +2001,6 @@ class SyncUpsertHelpers {
       }
     }
 
-    // Handle table_of_specifications delta
-    final tosDeltas = deltas['table_of_specifications'];
-    if (tosDeltas != null) {
-      final updated = tosDeltas.updated;
-      updatedCounts['table_of_specifications'] = updated.length;
-      await upsertTableOfSpecifications(db, updated);
-
-      final deleted = tosDeltas.deleted;
-      deletedCounts['table_of_specifications'] = deleted.length;
-      for (final id in deleted) {
-        await db.update(
-          DbTables.tableOfSpecifications,
-          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
-
-    // Handle tos_competencies delta
-    final tosCompetenciesDeltas = deltas['tos_competencies'];
-    if (tosCompetenciesDeltas != null) {
-      final updated = tosCompetenciesDeltas.updated;
-      updatedCounts['tos_competencies'] = updated.length;
-      await upsertTosCompetencies(db, updated);
-
-      final deleted = tosCompetenciesDeltas.deleted;
-      deletedCounts['tos_competencies'] = deleted.length;
-      for (final id in deleted) {
-        await db.update(
-          DbTables.tosCompetencies,
-          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
-
     final activityLogsDeltas = deltas['activity_logs'];
     if (activityLogsDeltas != null) {
       final updated = activityLogsDeltas.updated;
@@ -1986,6 +2051,25 @@ class SyncUpsertHelpers {
       for (final id in deleted) {
         await db.update(
           DbTables.learnerDetails,
+          {CommonCols.deletedAt: DateTime.now().toIso8601String()},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [id],
+        );
+      }
+    }
+
+    // Handle teacher_details delta
+    final teacherDetailsDeltas = deltas['teacher_details'];
+    if (teacherDetailsDeltas != null) {
+      final updated = teacherDetailsDeltas.updated;
+      updatedCounts['teacher_details'] = updated.length;
+      await upsertTeacherDetails(db, updated);
+
+      final deleted = teacherDetailsDeltas.deleted;
+      deletedCounts['teacher_details'] = deleted.length;
+      for (final id in deleted) {
+        await db.update(
+          DbTables.teacherDetails,
           {CommonCols.deletedAt: DateTime.now().toIso8601String()},
           where: '${CommonCols.id} = ?',
           whereArgs: [id],

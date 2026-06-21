@@ -10,7 +10,7 @@ Future<List<SubmissionListItemModel>> getCachedSubmissions(
   try {
     final db = await localDatabase.database;
     final results = await db.rawQuery('''
-      SELECT s.*, u.full_name as student_name, u.username as student_username
+      SELECT s.*, u.first_name || ' ' || u.last_name as student_name, u.username as student_username
       FROM ${DbTables.assignmentSubmissions} s
       LEFT JOIN ${DbTables.users} u ON u.id = s.student_id
       WHERE s.assignment_id = ? AND s.deleted_at IS NULL

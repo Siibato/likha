@@ -115,6 +115,11 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
+  teacherDetails:
+      (json['teacher_details'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
   attendanceRecords:
       (json['attendance_records'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
@@ -176,6 +181,7 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'sync_plan': instance.syncPlan,
   'school_details': instance.schoolDetails,
   'learner_details': instance.learnerDetails,
+  'teacher_details': instance.teacherDetails,
   'attendance_records': instance.attendanceRecords,
   'core_values_records': instance.coreValuesRecords,
   'student_school_history': instance.studentSchoolHistory,

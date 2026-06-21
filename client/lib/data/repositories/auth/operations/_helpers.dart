@@ -54,7 +54,8 @@ Future<List<UserModel>> buildPendingAccounts(SyncQueue syncQueue) async {
     result.add(UserModel(
       id: localId,
       username: username,
-      fullName: entry.payload['full_name'] as String? ?? '',
+      firstName: entry.payload['first_name'] as String? ?? '',
+      lastName: entry.payload['last_name'] as String? ?? '',
       role: entry.payload['role'] as String? ?? '',
       accountStatus: 'pending_activation',
       isActive: false,

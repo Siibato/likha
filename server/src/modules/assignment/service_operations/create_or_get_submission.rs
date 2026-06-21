@@ -44,8 +44,8 @@ pub async fn create_or_get_submission(
         }
     };
 
-    let student_name = assignment_repo.find_student_name(student_id).await?;
+    let (student_first_name, student_last_name) = assignment_repo.find_student_name(student_id).await?;
     let files = assignment_repo.find_files_by_submission(submission.id).await?;
 
-    Ok(build_submission_response(submission, student_name, files))
+    Ok(build_submission_response(submission, student_first_name, student_last_name, files))
 }

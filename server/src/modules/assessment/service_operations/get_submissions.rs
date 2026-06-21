@@ -31,7 +31,8 @@ impl crate::modules::assessment::service::AssessmentService {
             Ok::<SubmissionSummaryResponse, AppError>(SubmissionSummaryResponse {
                 id: s.id,
                 student_id: s.user_id,
-                student_name: student.full_name,
+                student_first_name: student.first_name,
+                student_last_name: student.last_name,
                 student_username: student.username,
                 started_at: s.started_at.to_string(),
                 submitted_at: s.submitted_at.map(|dt| dt.to_string()),

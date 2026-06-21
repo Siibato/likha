@@ -1,6 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,6 +76,7 @@ import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
+import 'package:likha/domain/auth/usecases/get_account_details.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/get_current_user.dart';
@@ -85,6 +85,7 @@ import 'package:likha/domain/auth/usecases/login.dart';
 import 'package:likha/domain/auth/usecases/logout.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
+import 'package:likha/domain/auth/usecases/upsert_account_details.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
@@ -236,9 +237,10 @@ Future<void> init() async {
   sl.registerSingleton<DataEventBus>(DataEventBus());
 
   // Core - General
-  sl.registerLazySingleton(() => kIsWeb
-      ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
-      : StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => StorageService(
+        sl<FlutterSecureStorage>(),
+        sl<SharedPreferences>(),
+      ));
 
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
@@ -456,6 +458,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetActivityLogs(sl()));
   sl.registerLazySingleton(() => UpdateAccount(sl()));
   sl.registerLazySingleton(() => DeleteAccount(sl()));
+  sl.registerLazySingleton(() => GetAccountDetails(sl()));
+  sl.registerLazySingleton(() => UpsertAccountDetails(sl()));
 
   // Class use cases
   sl.registerLazySingleton(() => CreateClass(sl()));

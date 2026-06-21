@@ -8,7 +8,7 @@ use crate::tests::common::test_db::test_db;
 async fn test_get_accessible_classes_returns_empty_for_new_user() {
     let db = test_db().await;
     let user = UserRepository::new(db.clone())
-        .create_account("newuser".to_string(), "New".to_string(), "teacher".to_string(), None)
+        .create_account("newuser".to_string(), "New".to_string(), "User".to_string(), "teacher".to_string(), None)
         .await
         .expect("user");
     let repo = EntitlementRepository::new(db);

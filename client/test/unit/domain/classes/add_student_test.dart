@@ -27,7 +27,8 @@ void main() {
       student: User(
         id: 'student-1',
         username: 'student1',
-        fullName: 'Student One',
+        firstName: 'Student',
+        lastName: 'One',
         role: 'student',
         accountStatus: 'activated',
         isActive: true,

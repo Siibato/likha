@@ -70,7 +70,8 @@ ResultFuture<MutationResult<Participant>> addStudent(
 UserModel _skeletonStudent(String studentId) => UserModel(
   id: studentId,
   username: '',
-  fullName: '',
+  firstName: '',
+  lastName: '',
   role: 'student',
   accountStatus: 'active',
   isActive: true,

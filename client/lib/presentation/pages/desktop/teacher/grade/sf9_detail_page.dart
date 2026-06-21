@@ -60,6 +60,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             termType: sf9.termType,
             subjects: sf9.subjects,
             generalAverage: sf9.generalAverage,
+            coreValues: sf9.coreValues,
           )
         : sf9;
 
@@ -210,7 +211,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
           ),
           const SizedBox(height: 24),
           // Core values table
-          const Sf9CoreValuesTable(),
+          Sf9CoreValuesTable(coreValues: displaySf9.coreValues),
         ],
       ),
     );

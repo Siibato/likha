@@ -64,6 +64,9 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   learnerDetails: EntityDeltas.fromJson(
     json['learner_details'] as Map<String, dynamic>,
   ),
+  teacherDetails: EntityDeltas.fromJson(
+    json['teacher_details'] as Map<String, dynamic>,
+  ),
   attendanceRecords: EntityDeltas.fromJson(
     json['attendance_records'] as Map<String, dynamic>,
   ),
@@ -103,6 +106,7 @@ Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
       'activity_logs': instance.activityLogs,
       'school_details': instance.schoolDetails,
       'learner_details': instance.learnerDetails,
+      'teacher_details': instance.teacherDetails,
       'attendance_records': instance.attendanceRecords,
       'core_values_records': instance.coreValuesRecords,
       'student_school_history': instance.studentSchoolHistory,

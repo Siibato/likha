@@ -26,9 +26,9 @@ pub async fn get_student_assignment_submission(
     let submission = assignment_repo.find_student_submission(assignment_id, student_id).await?;
 
     let result = if let Some(sub) = submission {
-        let student_name = assignment_repo.find_student_name(student_id).await?;
+        let (student_first_name, student_last_name) = assignment_repo.find_student_name(student_id).await?;
         let files = assignment_repo.find_files_by_submission(sub.id).await?;
-        Some(build_submission_response(sub, student_name, files))
+        Some(build_submission_response(sub, student_first_name, student_last_name, files))
     } else {
         None
     };

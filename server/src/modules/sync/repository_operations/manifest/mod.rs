@@ -71,6 +71,8 @@ pub mod get_school_details_since;
 // Section F: Student Records sync queries
 pub mod get_learner_details_for_students;
 pub mod get_learner_details_since;
+pub mod get_teacher_details_for_teachers;
+pub mod get_teacher_details_since;
 pub mod get_attendance_for_classes;
 pub mod get_attendance_since;
 pub mod get_core_values_for_classes;
@@ -161,6 +163,8 @@ pub use get_school_details_since::get_school_details_since;
 
 pub use get_learner_details_for_students::get_learner_details_for_students;
 pub use get_learner_details_since::get_learner_details_since;
+pub use get_teacher_details_for_teachers::get_teacher_details_for_teachers;
+pub use get_teacher_details_since::get_teacher_details_since;
 pub use get_attendance_for_classes::get_attendance_for_classes;
 pub use get_attendance_since::get_attendance_since;
 pub use get_core_values_for_classes::get_core_values_for_classes;

@@ -11,9 +11,9 @@ Future<List<UserModel>> searchCachedStudents(
     final db = await localDatabase.database;
     final results = await db.query(
       DbTables.users,
-      where: '(${UsersCols.username} LIKE ? OR ${UsersCols.fullName} LIKE ?) AND ${UsersCols.role} = ?',
-      whereArgs: ['%$query%', '%$query%', 'student'],
-      orderBy: '${UsersCols.fullName} ASC',
+      where: '(${UsersCols.username} LIKE ? OR ${UsersCols.firstName} LIKE ? OR ${UsersCols.lastName} LIKE ?) AND ${UsersCols.role} = ?',
+      whereArgs: ['%$query%', '%$query%', '%$query%', 'student'],
+      orderBy: '${UsersCols.firstName} ASC, ${UsersCols.lastName} ASC',
     );
     return results.map((r) => UserModel.fromMap(r)).toList();
   } catch (e) {

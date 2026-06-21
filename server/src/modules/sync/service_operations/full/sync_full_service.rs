@@ -47,6 +47,7 @@ pub struct FullSyncResponse {
     pub sync_plan: Option<SyncPlan>,
     pub school_details: Option<SchoolDetailsResponse>,
     pub learner_details: Vec<serde_json::Value>,
+    pub teacher_details: Vec<serde_json::Value>,
     pub attendance_records: Vec<serde_json::Value>,
     pub core_values_records: Vec<serde_json::Value>,
     pub student_school_history: Vec<serde_json::Value>,

@@ -92,6 +92,9 @@ class FullSyncResponseModel {
   @JsonKey(name: 'learner_details', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> learnerDetails;
 
+  @JsonKey(name: 'teacher_details', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> teacherDetails;
+
   @JsonKey(name: 'attendance_records', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> attendanceRecords;
 
@@ -137,6 +140,7 @@ class FullSyncResponseModel {
     this.syncPlan,
     this.schoolDetails,
     this.learnerDetails = const [],
+    this.teacherDetails = const [],
     this.attendanceRecords = const [],
     this.coreValuesRecords = const [],
     this.studentSchoolHistory = const [],

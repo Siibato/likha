@@ -14,7 +14,8 @@ ResultFuture<MutationResult<User>> updateAccount(
   SyncQueue syncQueue,
   {
     required String userId,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
   }) async {
   try {
@@ -32,7 +33,8 @@ ResultFuture<MutationResult<User>> updateAccount(
         ? UserModel(
             id: existingUser.id,
             username: existingUser.username,
-            fullName: fullName ?? existingUser.fullName,
+            firstName: firstName ?? existingUser.firstName,
+            lastName: lastName ?? existingUser.lastName,
             role: role ?? existingUser.role,
             accountStatus: existingUser.accountStatus,
             isActive: existingUser.isActive,
@@ -45,7 +47,8 @@ ResultFuture<MutationResult<User>> updateAccount(
         : UserModel(
             id: userId,
             username: '',
-            fullName: fullName ?? '',
+            firstName: firstName ?? '',
+            lastName: lastName ?? '',
             role: role ?? '',
             accountStatus: 'activated',
             isActive: true,
@@ -76,7 +79,8 @@ ResultFuture<MutationResult<User>> updateAccount(
           payload: {
             'id': userId,
             'action': 'update',
-            if (fullName != null) 'full_name': fullName,
+            if (firstName != null) 'first_name': firstName,
+            if (lastName != null) 'last_name': lastName,
             if (role != null) 'role': role,
           },
           status: SyncStatus.pending,

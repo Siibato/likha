@@ -4,7 +4,8 @@ import 'package:likha/core/sync/sync_queue.dart';
 class User extends Equatable {
   final String id;
   final String username;
-  final String fullName;
+  final String firstName;
+  final String lastName;
   final String role;
   final String accountStatus;
   final bool isActive;
@@ -18,7 +19,8 @@ class User extends Equatable {
   const User({
     required this.id,
     required this.username,
-    required this.fullName,
+    required this.firstName,
+    required this.lastName,
     required this.role,
     required this.accountStatus,
     required this.isActive,
@@ -29,6 +31,8 @@ class User extends Equatable {
     this.cachedAt,
     this.syncStatus = SyncStatus.synced,
   });
+
+  String get fullName => '$firstName $lastName'.trim();
 
   bool get isTeacher => role == 'teacher';
   bool get isStudent => role == 'student';
@@ -41,7 +45,8 @@ class User extends Equatable {
   List<Object?> get props => [
     id,
     username,
-    fullName,
+    firstName,
+    lastName,
     role,
     accountStatus,
     isActive,

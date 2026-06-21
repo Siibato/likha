@@ -269,7 +269,8 @@ void main() {
       await db.insert(DbTables.users, {
         CommonCols.id: 'user-1',
         UsersCols.username: 'testuser',
-        UsersCols.fullName: 'Test User',
+        UsersCols.firstName: 'Test',
+        UsersCols.lastName: 'User',
         UsersCols.role: 'student',
         UsersCols.accountStatus: 'active',
         CommonCols.createdAt: DateTime.now().toIso8601String(),
@@ -323,7 +324,8 @@ void main() {
       await db.insert(DbTables.users, {
         CommonCols.id: 'user-1',
         UsersCols.username: 'testuser',
-        UsersCols.fullName: 'Test User',
+        UsersCols.firstName: 'Test',
+        UsersCols.lastName: 'User',
         UsersCols.role: 'student',
         UsersCols.accountStatus: 'active',
         CommonCols.createdAt: DateTime.now().toIso8601String(),

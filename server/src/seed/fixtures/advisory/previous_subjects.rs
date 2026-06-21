@@ -30,7 +30,7 @@ pub fn advisory_previous_subjects() -> Vec<PreviousSubjectSpec> {
     let history = advisory_school_history();
     let mut records = Vec::with_capacity(30 * 3 * 8);
 
-    for (sidx, &(uname, _)) in STUDENT_DATA.iter().enumerate() {
+    for (sidx, &(uname, _, _)) in STUDENT_DATA.iter().enumerate() {
         let student_id = uid(uname);
         let student_history: Vec<_> = history.iter()
             .filter(|h| h.student_id == student_id)

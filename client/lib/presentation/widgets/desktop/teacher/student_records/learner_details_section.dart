@@ -41,79 +41,83 @@ class _LearnerDetailsSectionState extends ConsumerState<LearnerDetailsSection> {
     final state = ref.watch(learnerDetailsProvider);
 
     return DesktopPageScaffold(
+      scrollable: false,
       title: 'Learner Details',
       subtitle: 'Edit student personal information for SF10',
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Student list sidebar
-          SizedBox(
-            width: 280,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: widget.students.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
-                itemBuilder: (context, index) {
-                  final s = widget.students[index];
-                  final isSelected = s.student.id == _selectedStudentId;
-                  return ListTile(
-                    selected: isSelected,
-                    selectedTileColor: AppColors.foregroundPrimary.withValues(alpha: 0.08),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.foregroundPrimary.withValues(alpha: 0.1),
-                      child: Text(
-                        s.student.fullName.isNotEmpty ? s.student.fullName[0].toUpperCase() : '?',
-                        style: const TextStyle(color: AppColors.foregroundPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+      body: SizedBox.expand(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Student list sidebar
+            SizedBox(
+              width: 280,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: ListView.separated(
+                  itemCount: widget.students.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
+                  itemBuilder: (context, index) {
+                    final s = widget.students[index];
+                    final isSelected = s.student.id == _selectedStudentId;
+                    return ListTile(
+                      selected: isSelected,
+                      selectedTileColor: AppColors.foregroundPrimary.withValues(alpha: 0.08),
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.foregroundPrimary.withValues(alpha: 0.1),
+                        child: Text(
+                          s.student.fullName.isNotEmpty ? s.student.fullName[0].toUpperCase() : '?',
+                          style: const TextStyle(color: AppColors.foregroundPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
                       ),
-                    ),
-                    title: Text(
-                      s.student.fullName,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? AppColors.foregroundPrimary : AppColors.foregroundDark,
+                      title: Text(
+                        s.student.fullName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? AppColors.foregroundPrimary : AppColors.foregroundDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () {
-                      setState(() {
-                        _selectedStudentId = s.student.id;
-                        _selectedStudentName = s.student.fullName;
-                      });
-                      ref.read(learnerDetailsProvider.notifier).load(widget.classId, s.student.id);
-                    },
-                  );
-                },
+                      onTap: () {
+                        setState(() {
+                          _selectedStudentId = s.student.id;
+                          _selectedStudentName = s.student.fullName;
+                        });
+                        ref.read(learnerDetailsProvider.notifier).load(widget.classId, s.student.id);
+                      },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 24),
-          // Detail form
-          Expanded(
-            child: _selectedStudentId == null
-                ? const EmptyState.generic(
-                    title: 'Select a student',
-                    subtitle: 'Choose a student from the list to edit their learner details',
-                  )
-                : state.isLoading && state.details == null
-                    ? const LearnerDetailsSkeleton()
-                    : _LearnerDetailsForm(
-                        key: ValueKey(_selectedStudentId),
-                        classId: widget.classId,
-                        studentId: _selectedStudentId!,
-                        studentName: _selectedStudentName ?? 'Student',
-                        state: state,
-                        ref: ref,
-                      ),
-          ),
-        ],
+            const SizedBox(width: 24),
+            // Detail form
+            Expanded(
+              child: _selectedStudentId == null
+                  ? const EmptyState.generic(
+                      title: 'Select a student',
+                      subtitle: 'Choose a student from the list to edit their learner details',
+                    )
+                  : state.isLoading && state.details == null
+                      ? const LearnerDetailsSkeleton()
+                      : SingleChildScrollView(
+                          child: _LearnerDetailsForm(
+                            key: ValueKey(_selectedStudentId),
+                            classId: widget.classId,
+                            studentId: _selectedStudentId!,
+                            studentName: _selectedStudentName ?? 'Student',
+                            state: state,
+                            ref: ref,
+                          ),
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -287,6 +291,7 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [

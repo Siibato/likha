@@ -52,13 +52,16 @@ Future<Sf9ResponseModel?> assembleSf9Local(
   // 2. Get student name from users table
   final userRows = await db.query(
     DbTables.users,
-    columns: [UsersCols.fullName],
+    columns: [UsersCols.firstName, UsersCols.lastName],
     where: '${CommonCols.id} = ?',
     whereArgs: [studentId],
     limit: 1,
   );
   if (userRows.isEmpty) return null;
-  final studentName = userRows.first[UsersCols.fullName] as String? ?? 'Unknown Student';
+  final firstName = userRows.first[UsersCols.firstName] as String? ?? '';
+  final lastName = userRows.first[UsersCols.lastName] as String? ?? '';
+  final studentName = '$firstName $lastName'.trim();
+  if (studentName.isEmpty) return null;
 
   // 3. Get learner details
   final learnerRows = await db.query(
@@ -181,5 +184,26 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     termType: termType,
     subjects: subjects,
     generalAverage: generalAverage,
+    coreValues: await _getLocalCoreValues(db, classId, studentId),
   );
+}
+
+Future<List<Sf9CoreValueMarkingModel>> _getLocalCoreValues(
+  dynamic db,
+  String classId,
+  String studentId,
+) async {
+  final rows = await db.query(
+    DbTables.coreValuesRecords,
+    where:
+        '${CoreValuesRecordsCols.studentId} = ? AND ${CoreValuesRecordsCols.classId} = ? AND ${CoreValuesRecordsCols.deletedAt} IS NULL',
+    whereArgs: [studentId, classId],
+  );
+  return rows
+      .map((row) => Sf9CoreValueMarkingModel(
+            coreValueId: row[CoreValuesRecordsCols.coreValueId] as int,
+            termNumber: row[CoreValuesRecordsCols.termNumber] as int,
+            marking: row[CoreValuesRecordsCols.marking] as String,
+          ))
+      .toList();
 }

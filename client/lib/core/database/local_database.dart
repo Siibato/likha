@@ -9,8 +9,8 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 17 (v16 → v17: Rename period_assessment component to term_assessment)
-/// TOTAL TABLES: 36
+/// SCHEMA VERSION: 19 (v18 → v19: Add teacher_details table)
+/// TOTAL TABLES: 37
 ///
 /// This database was consolidated from 12 historical versions into a single
 /// clean v1 schema. All migrations are now handled via nuclear reset:
@@ -86,7 +86,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 17,
+            version: 19,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -107,7 +107,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 16,
+        version: 17,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -156,7 +156,8 @@ class LocalDatabase {
         CREATE TABLE IF NOT EXISTS users (
           id TEXT PRIMARY KEY,
           username TEXT UNIQUE NOT NULL,
-          full_name TEXT NOT NULL,
+          first_name TEXT NOT NULL DEFAULT '',
+          last_name TEXT NOT NULL DEFAULT '',
           role TEXT NOT NULL,
           account_status TEXT NOT NULL DEFAULT 'pending_activation',
           activated_at TEXT,
@@ -726,6 +727,30 @@ class LocalDatabase {
         )
       ''');
 
+      // Teacher details table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS teacher_details (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL UNIQUE,
+          license_id TEXT,
+          rank TEXT,
+          position TEXT,
+          sex TEXT,
+          birthdate TEXT,
+          home_address TEXT,
+          date_hired TEXT,
+          education_level TEXT,
+          specialization TEXT,
+          contact_number TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
       // Attendance records table
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS attendance_records (
@@ -970,6 +995,15 @@ class LocalDatabase {
         await txn.execute('DROP TABLE submission_answer_items');
         await txn.execute('ALTER TABLE submission_answer_items_new RENAME TO submission_answer_items');
       });
+      return;
+    }
+
+    // Targeted migration: Split users.full_name into first_name and last_name
+    // Web path: 17 → 18; Mobile path: 16 → 17
+    if ((oldVersion == 17 && newVersion == 18) || (oldVersion == 16 && newVersion == 17)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
       return;
     }
 

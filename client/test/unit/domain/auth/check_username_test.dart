@@ -24,7 +24,8 @@ void main() {
       const tResult = CheckUsernameResult(
         username: tUsername,
         accountStatus: 'pending_activation',
-        fullName: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
       );
 
       when(() => mockRepository.checkUsername(username: any(named: 'username')))
@@ -41,7 +42,8 @@ void main() {
       const tResult = CheckUsernameResult(
         username: tUsername,
         accountStatus: 'activated',
-        fullName: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
       );
 
       when(() => mockRepository.checkUsername(username: any(named: 'username')))
@@ -57,7 +59,8 @@ void main() {
       const tResult = CheckUsernameResult(
         username: tUsername,
         accountStatus: 'locked',
-        fullName: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
       );
 
       when(() => mockRepository.checkUsername(username: any(named: 'username')))

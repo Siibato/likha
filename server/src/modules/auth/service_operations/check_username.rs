@@ -14,6 +14,7 @@ pub async fn check_username(
     Ok(CheckUsernameResponse {
         username: user.username,
         account_status: user.account_status,
-        full_name: Some(user.full_name),
+        first_name: Some(user.first_name),
+        last_name: Some(user.last_name),
     })
 }

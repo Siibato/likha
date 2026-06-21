@@ -10,7 +10,7 @@ async fn setup_teacher_class(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid) {
     let class_repo = ClassRepository::new(db.clone());
 
     let teacher = user_repo
-        .create_account("tos_teacher".to_string(), "TOS Teacher".to_string(), "teacher".to_string(), None)
+        .create_account("tos_teacher".to_string(), "TOS".to_string(), "Teacher".to_string(), "teacher".to_string(), None)
         .await
         .expect("teacher");
 

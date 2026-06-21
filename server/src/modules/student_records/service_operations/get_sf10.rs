@@ -31,8 +31,8 @@ impl StudentRecordsService {
         let enrolled_students = self.grade_service.repo.get_enrolled_student_ids(class_id).await?;
         let student_name = enrolled_students
             .iter()
-            .find(|(id, _)| *id == student_id)
-            .map(|(_, name)| name.clone())
+            .find(|(id, _, _)| *id == student_id)
+            .map(|(_, first, last)| format!("{}, {}", last, first))
             .ok_or_else(|| AppError::NotFound("Student not enrolled in this advisory class".to_string()))?;
 
         // Get learner details

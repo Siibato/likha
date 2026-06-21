@@ -26,6 +26,7 @@ import 'package:likha/data/models/student_records/core_values_record_model.dart'
 import 'package:likha/data/models/student_records/school_history_model.dart';
 import 'package:likha/data/models/student_records/previous_subject_model.dart';
 import 'package:likha/data/models/student_records/previous_attendance_model.dart';
+import 'package:likha/data/models/auth/account_detail_response_model.dart';
 import 'package:likha/data/models/student_records/sf10_response_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
@@ -113,6 +114,12 @@ class ApiEndpoints {
         (json) => (json['logs'] as List<dynamic>)
             .map((e) => ActivityLogModel.fromJson(e as Map<String, dynamic>))
             .toList(),
+      );
+
+  static ApiEndpoint<AccountDetailResponseModel> accountDetails(String userId) =>
+      ApiEndpoint(
+        '/api/v1/auth/accounts/$userId/details',
+        (json) => AccountDetailResponseModel.fromJson(json as Map<String, dynamic>),
       );
 
   // ===== Class Endpoints =====

@@ -12,7 +12,7 @@ pub fn demo_enrollments() -> Vec<EnrollmentSpec> {
     enrollments.push(EnrollmentSpec { class_id: cid("adv10"), user_id: uid("rodrigo.santos") });
 
     // All 30 students in both classes
-    for &(uname, _) in &STUDENT_DATA {
+    for &(uname, _, _) in &STUDENT_DATA {
         let sid = uid(uname);
         enrollments.push(EnrollmentSpec { class_id: cid("sci10"), user_id: sid });
         enrollments.push(EnrollmentSpec { class_id: cid("adv10"), user_id: sid });

@@ -1,5 +1,20 @@
 import 'package:equatable/equatable.dart';
 
+class Sf9CoreValueMarking extends Equatable {
+  final int coreValueId;
+  final int termNumber;
+  final String marking;
+
+  const Sf9CoreValueMarking({
+    required this.coreValueId,
+    required this.termNumber,
+    required this.marking,
+  });
+
+  @override
+  List<Object?> get props => [coreValueId, termNumber];
+}
+
 class Sf9Response extends Equatable {
   final String studentId;
   final String studentName;
@@ -15,6 +30,7 @@ class Sf9Response extends Equatable {
   final String? termType;
   final List<Sf9SubjectRow> subjects;
   final Sf9TermAverages? generalAverage;
+  final List<Sf9CoreValueMarking> coreValues;
 
   const Sf9Response({
     required this.studentId,
@@ -31,6 +47,7 @@ class Sf9Response extends Equatable {
     this.termType,
     required this.subjects,
     this.generalAverage,
+    this.coreValues = const [],
   });
 
   @override

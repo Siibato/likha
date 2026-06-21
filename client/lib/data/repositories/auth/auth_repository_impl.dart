@@ -9,6 +9,7 @@ import 'package:likha/data/datasources/local/classes/class_local_datasource.dart
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
+import 'package:likha/data/models/auth/account_detail_response_model.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -122,15 +123,21 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<MutationResult<User>> createAccount({
     required String username,
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String role,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
   }) =>
       ops.createAccount(
         _localDataSource,
         _syncQueue,
         username: username,
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         role: role,
+        learnerDetails: learnerDetails,
+        teacherDetails: teacherDetails,
       );
 
   @override
@@ -168,14 +175,16 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<MutationResult<User>> updateAccount({
     required String userId,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
   }) =>
       ops.updateAccount(
         _localDataSource,
         _syncQueue,
         userId: userId,
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         role: role,
       );
 
@@ -194,5 +203,25 @@ class AuthRepositoryImpl implements AuthRepository {
         _remoteDataSource,
         _dataEventBus,
         userId: userId,
+      );
+
+  @override
+  ResultFuture<AccountDetailResponseModel> getAccountDetails({required String userId}) =>
+      ops.getAccountDetails(
+        _remoteDataSource,
+        userId: userId,
+      );
+
+  @override
+  ResultFuture<AccountDetailResponseModel> upsertAccountDetails({
+    required String userId,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
+  }) =>
+      ops.upsertAccountDetails(
+        _remoteDataSource,
+        userId: userId,
+        learnerDetails: learnerDetails,
+        teacherDetails: teacherDetails,
       );
 }

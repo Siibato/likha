@@ -129,14 +129,22 @@ pub fn student_username(n: u32) -> String {
     format!("student_{n:02}")
 }
 
-pub fn student_full_name(n: u32) -> String {
-    format!("Student {}", number_to_word(n))
+pub fn student_first_name(_n: u32) -> String {
+    "Student".to_string()
+}
+
+pub fn student_last_name(n: u32) -> String {
+    number_to_word(n).to_string()
 }
 
 pub fn teacher_username(n: u32) -> String {
     format!("teacher_{n:02}")
 }
 
-pub fn teacher_full_name(n: u32) -> String {
-    format!("Teacher {}", number_to_word(n))
+pub fn teacher_first_name(_n: u32) -> String {
+    "Teacher".to_string()
+}
+
+pub fn teacher_last_name(n: u32) -> String {
+    number_to_word(n).to_string()
 }

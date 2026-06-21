@@ -51,14 +51,16 @@ Future<Sf10ResponseModel?> assembleSf10Local(
   // 2. Get student name
   final userRows = await db.query(
     DbTables.users,
-    columns: [UsersCols.fullName],
+    columns: [UsersCols.firstName, UsersCols.lastName],
     where: '${CommonCols.id} = ?',
     whereArgs: [studentId],
     limit: 1,
   );
   if (userRows.isEmpty) return null;
-  final studentName =
-      userRows.first[UsersCols.fullName] as String? ?? 'Unknown Student';
+  final firstName = userRows.first[UsersCols.firstName] as String? ?? '';
+  final lastName = userRows.first[UsersCols.lastName] as String? ?? '';
+  final studentName = '$firstName $lastName'.trim();
+  if (studentName.isEmpty) return null;
 
   // 3. Get learner details
   final learnerRows = await db.query(

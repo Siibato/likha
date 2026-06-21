@@ -6,6 +6,8 @@ import 'package:likha/presentation/widgets/mobile/admin/account/edit_dialog.dart
 import 'package:likha/presentation/widgets/desktop/admin/account/account_detail_panel.dart';
 import 'package:likha/presentation/widgets/desktop/admin/account/activity_log_table.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
+import 'package:likha/presentation/widgets/shared/cards/learner_details_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/teacher_details_card.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
@@ -28,6 +30,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
+      ref.read(adminProvider.notifier).loadAccountDetails(widget.user.id);
     });
   }
 
@@ -64,31 +67,61 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left: Account info + actions
+            // Left: Account info + actions + details
             Expanded(
               flex: 2,
-              child: AccountDetailPanel(
-                user: user,
-                isLoading: adminState.isLoading,
-                onEditFullName: () => _showEditDialog(
-                  context,
-                  title: 'Edit Full Name',
-                  currentValue: user.fullName,
-                  onSave: (value) {
-                    ref.read(adminProvider.notifier).updateAccount(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AccountDetailPanel(
+                      user: user,
+                      isLoading: adminState.isLoading,
+                      onEditFullName: () => _showEditDialog(
+                        context,
+                        title: 'Edit Full Name',
+                        currentValue: user.fullName,
+                        onSave: (value) {
+                          final parts = value.trim().split(' ');
+                          final firstName = parts.isNotEmpty ? parts.first : '';
+                          final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+                          ref.read(adminProvider.notifier).updateAccount(
+                                userId: user.id,
+                                firstName: firstName,
+                                lastName: lastName,
+                              );
+                        },
+                      ),
+                      onEditRole: currentUserId != user.id
+                          ? () => _showRoleDialog(context, user)
+                          : null,
+                      onLock: () => _showLockDialog(context, user),
+                      onUnlock: () => ref
+                          .read(adminProvider.notifier)
+                          .lockAccount(user.id, false),
+                      onResetPassword: () => _confirmReset(context, user),
+                    ),
+                    const SizedBox(height: 24),
+                    if (user.role == 'student')
+                      LearnerDetailsCard(
+                        details: adminState.learnerDetails,
+                        isLoading: adminState.isLoading,
+                        onSave: (data) => ref.read(adminProvider.notifier).updateAccountDetails(
                           userId: user.id,
-                          fullName: value,
-                        );
-                  },
+                          learnerDetails: data,
+                        ),
+                      )
+                    else if (user.role == 'teacher')
+                      TeacherDetailsCard(
+                        details: adminState.teacherDetails,
+                        isLoading: adminState.isLoading,
+                        onSave: (data) => ref.read(adminProvider.notifier).updateAccountDetails(
+                          userId: user.id,
+                          teacherDetails: data,
+                        ),
+                      ),
+                  ],
                 ),
-                onEditRole: currentUserId != user.id
-                    ? () => _showRoleDialog(context, user)
-                    : null,
-                onLock: () => _showLockDialog(context, user),
-                onUnlock: () => ref
-                    .read(adminProvider.notifier)
-                    .lockAccount(user.id, false),
-                onResetPassword: () => _confirmReset(context, user),
               ),
             ),
             const SizedBox(width: 24),

@@ -3,6 +3,10 @@ name = "server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["seed"]
+seed = []
+
 [dependencies]
 axum = { version = "0.8.8", features = ["multipart"] }
 bcrypt = "0.18.0"

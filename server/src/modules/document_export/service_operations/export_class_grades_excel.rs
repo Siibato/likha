@@ -57,7 +57,7 @@ pub async fn run(
         .class_repo
         .find_teacher_of_class(class_id)
         .await?;
-    let teacher_name = teacher.map(|t| t.full_name).unwrap_or_default();
+    let teacher_name = teacher.map(|t| format!("{}, {}", t.last_name, t.first_name)).unwrap_or_default();
 
     let header = DepedHeaderData::from_settings(
         &settings,

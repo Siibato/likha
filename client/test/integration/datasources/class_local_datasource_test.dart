@@ -32,7 +32,8 @@ UserModel _sampleStudent({String id = 'student-001'}) {
   return UserModel(
     id: id,
     username: 'student_$id',
-    fullName: 'Student Name',
+    firstName: 'Student',
+    lastName: 'Name',
     role: 'student',
     accountStatus: 'active',
     isActive: true,
@@ -112,7 +113,8 @@ void main() {
       await db.insert(DbTables.users, {
         'id': student.id,
         'username': student.username,
-        'full_name': student.fullName,
+        'first_name': student.firstName,
+        'last_name': student.lastName,
         'role': student.role,
         'account_status': student.accountStatus,
         'created_at': now,

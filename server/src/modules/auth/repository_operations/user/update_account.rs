@@ -8,7 +8,8 @@ use crate::utils::{AppError, AppResult};
 pub async fn update_account(
     db: &DatabaseConnection,
     user_id: Uuid,
-    full_name: Option<String>,
+    first_name: Option<String>,
+    last_name: Option<String>,
     role: Option<String>,
 ) -> AppResult<users::Model> {
     let mut user: users::ActiveModel = users::Entity::find_by_id(user_id)
@@ -18,8 +19,11 @@ pub async fn update_account(
         .ok_or_else(|| AppError::NotFound("User not found".to_string()))?
         .into();
 
-    if let Some(full_name) = full_name {
-        user.full_name = Set(full_name);
+    if let Some(first_name) = first_name {
+        user.first_name = Set(first_name);
+    }
+    if let Some(last_name) = last_name {
+        user.last_name = Set(last_name);
     }
     if let Some(role) = role {
         user.role = Set(role);

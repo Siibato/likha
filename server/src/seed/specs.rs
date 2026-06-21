@@ -5,7 +5,8 @@ use uuid::Uuid;
 pub struct UserSpec {
     pub id: Uuid,
     pub username: String,
-    pub full_name: String,
+    pub first_name: String,
+    pub last_name: String,
     pub role: String,
     pub password_hash: Option<String>,
     pub account_status: String,

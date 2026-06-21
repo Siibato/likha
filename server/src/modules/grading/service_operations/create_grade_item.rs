@@ -31,7 +31,7 @@ impl crate::modules::grading::service::GradeComputationService {
             .await?;
 
         let enrolled = self.repo.get_enrolled_student_ids(class_id).await?;
-        for (student_id, _name) in &enrolled {
+        for (student_id, _first, _last) in &enrolled {
             self.repo.upsert_score(item.id, *student_id, Some(0.0), true).await?;
         }
         tracing::info!(

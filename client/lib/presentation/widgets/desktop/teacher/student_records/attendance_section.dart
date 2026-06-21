@@ -38,73 +38,87 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
       return const DesktopPageScaffold(
         title: 'Attendance',
         subtitle: 'Monthly attendance records for SF10',
-        body: EmptyState.generic(title: 'No students enrolled'),
+        body: EmptyState.generic(
+          title: 'No students enrolled',
+          subtitle: 'Students will appear here once they join the advisory class',
+        ),
       );
     }
 
     final state = ref.watch(attendanceProvider);
 
     return DesktopPageScaffold(
+      scrollable: false,
       title: 'Attendance',
       subtitle: 'Monthly attendance records for SF10',
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 280,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: widget.students.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
-                itemBuilder: (context, index) {
-                  final s = widget.students[index];
-                  final isSelected = s.student.id == _selectedStudentId;
-                  return ListTile(
-                    selected: isSelected,
-                    selectedTileColor: AppColors.foregroundPrimary.withValues(alpha: 0.08),
-                    title: Text(
-                      s.student.fullName,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? AppColors.foregroundPrimary : AppColors.foregroundDark,
+      body: SizedBox.expand(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: 280,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: ListView.separated(
+                  itemCount: widget.students.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
+                  itemBuilder: (context, index) {
+                    final s = widget.students[index];
+                    final isSelected = s.student.id == _selectedStudentId;
+                    return ListTile(
+                      selected: isSelected,
+                      selectedTileColor: AppColors.foregroundPrimary.withValues(alpha: 0.08),
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.foregroundPrimary.withValues(alpha: 0.1),
+                        child: Text(
+                          s.student.fullName.isNotEmpty ? s.student.fullName[0].toUpperCase() : '?',
+                          style: const TextStyle(color: AppColors.foregroundPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () {
-                      setState(() {
-                        _selectedStudentId = s.student.id;
-                        _selectedStudentName = s.student.fullName;
-                      });
-                      ref.read(attendanceProvider.notifier).load(widget.classId, s.student.id, schoolYear: widget.schoolYear);
-                    },
-                  );
-                },
+                      title: Text(
+                        s.student.fullName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? AppColors.foregroundPrimary : AppColors.foregroundDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _selectedStudentId = s.student.id;
+                          _selectedStudentName = s.student.fullName;
+                        });
+                        ref.read(attendanceProvider.notifier).load(widget.classId, s.student.id, schoolYear: widget.schoolYear);
+                      },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: _selectedStudentId == null
-                ? const EmptyState.generic(title: 'Select a student', subtitle: 'Choose a student to view/edit attendance')
-                : _AttendanceGrid(
-                    key: ValueKey(_selectedStudentId),
-                    classId: widget.classId,
-                    studentId: _selectedStudentId!,
-                    studentName: _selectedStudentName ?? 'Student',
-                    schoolYear: widget.schoolYear ?? '',
-                    state: state,
-                    ref: ref,
-                  ),
-          ),
-        ],
+            const SizedBox(width: 24),
+            Expanded(
+              child: _selectedStudentId == null
+                  ? const EmptyState.generic(title: 'Select a student', subtitle: 'Choose a student to view/edit attendance')
+                  : SingleChildScrollView(
+                      child: _AttendanceGrid(
+                        key: ValueKey(_selectedStudentId),
+                        classId: widget.classId,
+                        studentId: _selectedStudentId!,
+                        studentName: _selectedStudentName ?? 'Student',
+                        schoolYear: widget.schoolYear ?? '',
+                        state: state,
+                        ref: ref,
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -207,11 +221,16 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(widget.studentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
           if (widget.state.error != null) ...[
             const SizedBox(height: 12),
-            Text(widget.state.error!, style: const TextStyle(fontSize: 13, color: AppColors.semanticError)),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppColors.semanticError.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+              child: Text(widget.state.error!, style: const TextStyle(fontSize: 13, color: AppColors.semanticError)),
+            ),
           ],
           const SizedBox(height: 20),
           if (widget.state.isLoading && widget.state.records.isEmpty)

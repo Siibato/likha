@@ -1,8 +1,12 @@
 use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9TermAverages};
+use crate::modules::student_records::schema::CoreValuesResponse;
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
+
+use ::entity::core_values_records;
+use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn compute_sf9(
@@ -30,13 +34,13 @@ impl crate::modules::grading::service::GradeComputationService {
         }
 
         let teacher = self.class_repo.find_teacher_of_class(class_id).await?;
-        let teacher_name = teacher.map(|t| t.full_name);
+        let teacher_name = teacher.map(|t| format!("{}, {}", t.last_name, t.first_name));
 
         let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
         let student_name = enrolled_students
             .iter()
-            .find(|(id, _)| *id == student_id)
-            .map(|(_, name)| name.clone())
+            .find(|(id, _, _)| *id == student_id)
+            .map(|(_, first, last)| format!("{}, {}", last, first))
             .ok_or_else(|| AppError::NotFound("Student not enrolled in this advisory class".to_string()))?;
         let enrolled_classes = self.repo.get_student_enrolled_classes(
             student_id,
@@ -44,6 +48,16 @@ impl crate::modules::grading::service::GradeComputationService {
         ).await?;
 
         let learner_details = self.repo.get_learner_details(student_id).await?;
+
+        // Fetch core values records for this student in this class
+        let cv_records = core_values_records::Entity::find()
+            .filter(core_values_records::Column::StudentId.eq(student_id))
+            .filter(core_values_records::Column::ClassId.eq(class_id))
+            .filter(core_values_records::Column::DeletedAt.is_null())
+            .all(&self.db)
+            .await
+            .unwrap_or_default();
+        let core_values: Vec<CoreValuesResponse> = cv_records.into_iter().map(CoreValuesResponse::from).collect();
 
         let mut subjects = Vec::new();
         let num_terms = crate::modules::grading::helpers::term_count::term_count(&class.term_type);
@@ -122,6 +136,7 @@ impl crate::modules::grading::service::GradeComputationService {
             term_type: Some(class.term_type.clone()),
             subjects,
             general_average,
+            core_values,
         };
         if let Some(ref cache) = self.cache {
             if !result.student_name.eq_ignore_ascii_case("Unknown Student") {

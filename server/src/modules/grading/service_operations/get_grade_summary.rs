@@ -36,7 +36,7 @@ impl crate::modules::grading::service::GradeComputationService {
                 .await
                 .ok()
                 .flatten();
-            (p.user_id, user.map(|u| u.full_name).unwrap_or_else(|| "Unknown".to_string()))
+            (p.user_id, user.map(|u| format!("{}, {}", u.last_name, u.first_name)).unwrap_or_else(|| "Unknown".to_string()))
         });
         let name_pairs = join_all(name_futures).await;
         let student_name_map: std::collections::HashMap<Uuid, String> =

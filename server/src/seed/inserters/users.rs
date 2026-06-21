@@ -11,7 +11,8 @@ pub async fn insert_users(db: &DatabaseConnection, specs: &[UserSpec]) -> Result
     for spec in specs {
         repo.create_account(
             spec.username.clone(),
-            spec.full_name.clone(),
+            spec.first_name.clone(),
+            spec.last_name.clone(),
             spec.role.clone(),
             Some(spec.id),
         )

@@ -16,7 +16,7 @@ pub fn advisory_enrollments() -> Vec<EnrollmentSpec> {
         });
     }
 
-    for &(uname, _) in &STUDENT_DATA {
+    for &(uname, _, _) in &STUDENT_DATA {
         let sid = uid(uname);
         for &class_id in &class_ids {
             enrollments.push(EnrollmentSpec {

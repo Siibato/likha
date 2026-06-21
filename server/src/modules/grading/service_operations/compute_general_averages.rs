@@ -28,7 +28,8 @@ impl crate::modules::grading::service::GradeComputationService {
 
         // Process sequentially to avoid SQLite contention with the 5-connection pool.
         let mut students = Vec::new();
-        for (student_id, student_name) in &enrolled_students {
+        for (student_id, first_name, last_name) in &enrolled_students {
+            let student_name = format!("{}, {}", last_name, first_name);
             tracing::info!(student_id = %student_id, "Computing general average for student");
             let sga = self
                 .compute_student_general_average(*student_id, student_name.clone(), school_year)

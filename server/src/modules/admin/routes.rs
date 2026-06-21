@@ -26,6 +26,10 @@ pub fn routes(admin_service: Arc<AdminService>) -> Router {
             "/auth/accounts/{id}/logs",
             get(handler::get_activity_logs),
         )
+        .route(
+            "/auth/accounts/{id}/details",
+            get(handler::get_account_details).put(handler::upsert_account_details),
+        )
         .route("/students/search", get(handler::search_students))
         .with_state(admin_service)
 }

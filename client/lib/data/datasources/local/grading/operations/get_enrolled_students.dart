@@ -9,10 +9,10 @@ Future<List<Map<String, dynamic>>> getEnrolledStudents(
 }) async {
   final db = txn ?? await localDatabase.database;
   return db.rawQuery('''
-    SELECT u.id, u.full_name
+    SELECT u.id, u.first_name, u.last_name
     FROM class_participants cp
     JOIN users u ON u.id = cp.user_id
     WHERE cp.class_id = ? AND cp.removed_at IS NULL
-    ORDER BY u.full_name
+    ORDER BY u.first_name
   ''', [classId]);
 }

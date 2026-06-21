@@ -20,7 +20,33 @@ class CreateAccountPage extends ConsumerStatefulWidget {
 class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+
+  final _sexController = TextEditingController();
+  final _birthdateController = TextEditingController();
+  final _homeAddressController = TextEditingController();
+
+  final _lrnController = TextEditingController();
+  final _birthplaceController = TextEditingController();
+  final _fatherNameController = TextEditingController();
+  final _fatherContactController = TextEditingController();
+  final _motherNameController = TextEditingController();
+  final _motherContactController = TextEditingController();
+  final _guardianNameController = TextEditingController();
+  final _guardianContactController = TextEditingController();
+  final _trackStrandController = TextEditingController();
+  final _curriculumController = TextEditingController();
+  final _dateAdmittedController = TextEditingController();
+
+  final _licenseIdController = TextEditingController();
+  final _rankController = TextEditingController();
+  final _positionController = TextEditingController();
+  final _dateHiredController = TextEditingController();
+  final _educationLevelController = TextEditingController();
+  final _specializationController = TextEditingController();
+  final _contactNumberController = TextEditingController();
+
   String _selectedRole = 'student';
   bool _isSubmitting = false;
   String? _formError;
@@ -28,7 +54,29 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   @override
   void dispose() {
     _usernameController.dispose();
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _sexController.dispose();
+    _birthdateController.dispose();
+    _homeAddressController.dispose();
+    _lrnController.dispose();
+    _birthplaceController.dispose();
+    _fatherNameController.dispose();
+    _fatherContactController.dispose();
+    _motherNameController.dispose();
+    _motherContactController.dispose();
+    _guardianNameController.dispose();
+    _guardianContactController.dispose();
+    _trackStrandController.dispose();
+    _curriculumController.dispose();
+    _dateAdmittedController.dispose();
+    _licenseIdController.dispose();
+    _rankController.dispose();
+    _positionController.dispose();
+    _dateHiredController.dispose();
+    _educationLevelController.dispose();
+    _specializationController.dispose();
+    _contactNumberController.dispose();
     super.dispose();
   }
 
@@ -36,12 +84,52 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
+    Map<String, dynamic>? learnerDetails;
+    Map<String, dynamic>? teacherDetails;
+
+    if (_selectedRole == 'student') {
+      learnerDetails = {
+        if (_lrnController.text.trim().isNotEmpty) 'lrn': _lrnController.text.trim(),
+        if (_sexController.text.trim().isNotEmpty) 'sex': _sexController.text.trim(),
+        if (_birthdateController.text.trim().isNotEmpty) 'birthdate': _birthdateController.text.trim(),
+        if (_birthplaceController.text.trim().isNotEmpty) 'birthplace': _birthplaceController.text.trim(),
+        if (_homeAddressController.text.trim().isNotEmpty) 'home_address': _homeAddressController.text.trim(),
+        if (_fatherNameController.text.trim().isNotEmpty) 'father_name': _fatherNameController.text.trim(),
+        if (_fatherContactController.text.trim().isNotEmpty) 'father_contact': _fatherContactController.text.trim(),
+        if (_motherNameController.text.trim().isNotEmpty) 'mother_name': _motherNameController.text.trim(),
+        if (_motherContactController.text.trim().isNotEmpty) 'mother_contact': _motherContactController.text.trim(),
+        if (_guardianNameController.text.trim().isNotEmpty) 'guardian_name': _guardianNameController.text.trim(),
+        if (_guardianContactController.text.trim().isNotEmpty) 'guardian_contact': _guardianContactController.text.trim(),
+        if (_trackStrandController.text.trim().isNotEmpty) 'track_strand': _trackStrandController.text.trim(),
+        if (_curriculumController.text.trim().isNotEmpty) 'curriculum': _curriculumController.text.trim(),
+        if (_dateAdmittedController.text.trim().isNotEmpty) 'date_admitted': _dateAdmittedController.text.trim(),
+      };
+      if (learnerDetails.isEmpty) learnerDetails = null;
+    } else if (_selectedRole == 'teacher') {
+      teacherDetails = {
+        if (_licenseIdController.text.trim().isNotEmpty) 'license_id': _licenseIdController.text.trim(),
+        if (_rankController.text.trim().isNotEmpty) 'rank': _rankController.text.trim(),
+        if (_positionController.text.trim().isNotEmpty) 'position': _positionController.text.trim(),
+        if (_sexController.text.trim().isNotEmpty) 'sex': _sexController.text.trim(),
+        if (_birthdateController.text.trim().isNotEmpty) 'birthdate': _birthdateController.text.trim(),
+        if (_homeAddressController.text.trim().isNotEmpty) 'home_address': _homeAddressController.text.trim(),
+        if (_dateHiredController.text.trim().isNotEmpty) 'date_hired': _dateHiredController.text.trim(),
+        if (_educationLevelController.text.trim().isNotEmpty) 'education_level': _educationLevelController.text.trim(),
+        if (_specializationController.text.trim().isNotEmpty) 'specialization': _specializationController.text.trim(),
+        if (_contactNumberController.text.trim().isNotEmpty) 'contact_number': _contactNumberController.text.trim(),
+      };
+      if (teacherDetails.isEmpty) teacherDetails = null;
+    }
+
     setState(() => _isSubmitting = true);
     try {
       await ref.read(adminProvider.notifier).createAccount(
             username: _usernameController.text.trim(),
-            fullName: _fullNameController.text.trim(),
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
             role: _selectedRole,
+            learnerDetails: learnerDetails,
+            teacherDetails: teacherDetails,
           );
 
       if (mounted) {
@@ -84,6 +172,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
             ),
             child: Form(
               key: _formKey,
+              child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
@@ -111,13 +200,27 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   ),
                   const SizedBox(height: 16),
                   StyledTextField(
-                    controller: _fullNameController,
-                    label: 'Full Name',
+                    controller: _firstNameController,
+                    label: 'First Name',
                     icon: Icons.badge_outlined,
                     enabled: !adminState.isLoading,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Full name is required';
+                        return 'First name is required';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() => _formError = null),
+                  ),
+                  const SizedBox(height: 16),
+                  StyledTextField(
+                    controller: _lastNameController,
+                    label: 'Last Name',
+                    icon: Icons.badge_outlined,
+                    enabled: !adminState.isLoading,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Last name is required';
                       }
                       return null;
                     },
@@ -145,6 +248,202 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                       }
                     },
                   ),
+                  if (_selectedRole == 'student') ...[
+                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Learner Details (Optional)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foregroundPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _lrnController,
+                      label: 'LRN',
+                      icon: Icons.badge_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _sexController,
+                      label: 'Sex',
+                      icon: Icons.wc_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _birthdateController,
+                      label: 'Birthdate (YYYY-MM-DD)',
+                      icon: Icons.cake_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _birthplaceController,
+                      label: 'Birthplace',
+                      icon: Icons.place_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _homeAddressController,
+                      label: 'Home Address',
+                      icon: Icons.home_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _fatherNameController,
+                      label: "Father's Name",
+                      icon: Icons.person_outline_rounded,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _fatherContactController,
+                      label: "Father's Contact",
+                      icon: Icons.phone_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _motherNameController,
+                      label: "Mother's Name",
+                      icon: Icons.person_outline_rounded,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _motherContactController,
+                      label: "Mother's Contact",
+                      icon: Icons.phone_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _guardianNameController,
+                      label: "Guardian's Name",
+                      icon: Icons.person_outline_rounded,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _guardianContactController,
+                      label: "Guardian's Contact",
+                      icon: Icons.phone_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _trackStrandController,
+                      label: 'Track / Strand',
+                      icon: Icons.school_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _curriculumController,
+                      label: 'Curriculum',
+                      icon: Icons.menu_book_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _dateAdmittedController,
+                      label: 'Date Admitted (YYYY-MM-DD)',
+                      icon: Icons.event_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                  ],
+                  if (_selectedRole == 'teacher') ...[
+                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Teacher Details (Optional)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foregroundPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _licenseIdController,
+                      label: 'License ID (PRC)',
+                      icon: Icons.badge_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _rankController,
+                      label: 'Rank',
+                      icon: Icons.work_outline_rounded,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _positionController,
+                      label: 'Position',
+                      icon: Icons.work_outline_rounded,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _sexController,
+                      label: 'Sex',
+                      icon: Icons.wc_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _birthdateController,
+                      label: 'Birthdate (YYYY-MM-DD)',
+                      icon: Icons.cake_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _homeAddressController,
+                      label: 'Home Address',
+                      icon: Icons.home_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _dateHiredController,
+                      label: 'Date Hired (YYYY-MM-DD)',
+                      icon: Icons.event_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _educationLevelController,
+                      label: 'Education Level',
+                      icon: Icons.school_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _specializationController,
+                      label: 'Specialization',
+                      icon: Icons.school_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    StyledTextField(
+                      controller: _contactNumberController,
+                      label: 'Contact Number',
+                      icon: Icons.phone_outlined,
+                      enabled: !adminState.isLoading,
+                    ),
+                  ],
                   const SizedBox(height: 32),
                   StyledButton(
                     text: 'Create Account',
@@ -152,6 +451,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                     onPressed: _handleCreate,
                   ),
                 ],
+              ),
               ),
             ),
           ),

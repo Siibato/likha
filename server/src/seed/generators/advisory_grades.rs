@@ -123,7 +123,7 @@ pub fn generate_term_grades(
     grade_scores: &[GradeScoreSpec],
     grade_items: &[GradeItemSpec],
     enrollments: &[EnrollmentSpec],
-    ctx: &SeedContext,
+    _ctx: &SeedContext,
 ) -> Vec<TermGradeSpec> {
     let mut term_grades = Vec::new();
 

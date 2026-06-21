@@ -48,7 +48,8 @@ pub async fn add_student(
         student: UserResponse {
             id: student.id,
             username: student.username,
-            full_name: student.full_name,
+            first_name: student.first_name,
+            last_name: student.last_name,
             role: student.role,
             account_status: student.account_status,
             is_active,

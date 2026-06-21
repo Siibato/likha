@@ -39,7 +39,7 @@ impl crate::modules::grading::service::GradeComputationService {
                 .flatten();
             (
                 p.user_id,
-                user.map(|u| u.full_name)
+                user.map(|u| format!("{}, {}", u.last_name, u.first_name))
                     .unwrap_or_else(|| "Unknown".to_string()),
             )
         });

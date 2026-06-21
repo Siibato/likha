@@ -18,7 +18,7 @@ async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {
         .expect("assessment")
         .id;
     let student_id = UserRepository::new(db.clone())
-        .create_account("student_sub".to_string(), "Student Sub".to_string(), "student".to_string(), None)
+        .create_account("student_sub".to_string(), "Student".to_string(), "Sub".to_string(), "student".to_string(), None)
         .await
         .expect("student")
         .id;
@@ -66,7 +66,7 @@ async fn test_count_by_assessment_id() {
     let db = test_db().await;
     let (_, assessment_id, student1) = setup(&db).await;
     let student2 = UserRepository::new(db.clone())
-        .create_account("student_sub2".to_string(), "S2".to_string(), "student".to_string(), None)
+        .create_account("student_sub2".to_string(), "S".to_string(), "2".to_string(), "student".to_string(), None)
         .await
         .expect("s2").id;
     let repo = AssessmentRepository::new(db);

@@ -97,6 +97,7 @@ async fn main() {
                 run_migrations(&db).await.expect("Failed to run migrations");
                 seed_admin(&db).await.expect("Failed to seed admin account");
 
+                #[cfg(feature = "seed")]
                 if args.iter().any(|arg| arg == "--with-seed") {
                     activate_admin(&db).await.expect("Failed to activate admin account");
                     println!("Seeding manual testing world...");
@@ -116,6 +117,7 @@ async fn main() {
                 println!("All login attempt records cleared.");
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-e2e" => {
                 println!("Seeding deterministic E2E world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -126,6 +128,7 @@ async fn main() {
                 println!("E2E seed complete.");
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-manual" => {
                 println!("Seeding manual testing world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -156,6 +159,7 @@ async fn main() {
 
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-realistic" => {
                 println!("Seeding realistic demo world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -166,6 +170,7 @@ async fn main() {
                 println!("Realistic seed complete.");
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-advisory" => {
                 println!("Seeding advisory world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -176,6 +181,7 @@ async fn main() {
                 println!("Advisory seed complete.");
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-demo" => {
                 println!("Seeding focused demo world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -222,14 +228,17 @@ async fn main() {
                 eprintln!("  create-db               Create the database and run migrations");
                 eprintln!("  delete-db               Delete the database file");
                 eprintln!("  reset-db                Delete and recreate the database");
-                eprintln!("  reset-db --with-seed    Reset and seed manual test data");
+                #[cfg(feature = "seed")]
+                {
+                    eprintln!("  reset-db --with-seed    Reset and seed manual test data");
+                    eprintln!("  seed-e2e                Seed deterministic E2E world data");
+                    eprintln!("  seed-manual             Seed manual testing world data");
+                    eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
+                    eprintln!("  seed-realistic          Seed realistic demo world data");
+                    eprintln!("  seed-advisory           Seed advisory world data (full SF10)");
+                    eprintln!("  seed-demo               Seed focused demo world data");
+                }
                 eprintln!("  clear-invalid-attempts  Clear all login attempt records");
-                eprintln!("  seed-e2e                Seed deterministic E2E world data");
-                eprintln!("  seed-manual             Seed manual testing world data");
-                eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
-                eprintln!("  seed-realistic          Seed realistic demo world data");
-                eprintln!("  seed-advisory           Seed advisory world data (full SF10)");
-                eprintln!("  seed-demo               Seed focused demo world data");
                 eprintln!("  deseed                  Clear all seeded data and reset admin");
                 std::process::exit(1);
             }
@@ -485,7 +494,8 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
         id: Set(Uuid::new_v4()),
         username: Set("admin".to_string()),
         password_hash: Set(None),
-        full_name: Set("System Administrator".to_string()),
+        first_name: Set("System".to_string()),
+        last_name: Set("Administrator".to_string()),
         role: Set("admin".to_string()),
         account_status: Set("pending_activation".to_string()),
         activated_at: Set(None),
@@ -500,6 +510,7 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     Ok(())
 }
 
+#[cfg(feature = "seed")]
 async fn activate_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     use ::entity::users;
 

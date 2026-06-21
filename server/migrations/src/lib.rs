@@ -46,6 +46,9 @@ mod m20260620_000004_phase_3_normalization;
 mod m20260620_000005_phase_4_fk_constraints;
 mod m20260620_000006_rename_period_assessment_component;
 mod m20260621_000001_core_values_normalization;
+mod m20260621_000002_core_values_expanded_statements;
+mod m20260621_000003_split_user_name;
+mod m20260621_000004_create_teacher_details;
 
 pub struct Migrator;
 
@@ -99,6 +102,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20260620_000005_phase_4_fk_constraints::Migration),
             Box::new(m20260620_000006_rename_period_assessment_component::Migration),
             Box::new(m20260621_000001_core_values_normalization::Migration),
+            Box::new(m20260621_000002_core_values_expanded_statements::Migration),
+            Box::new(m20260621_000003_split_user_name::Migration),
+            Box::new(m20260621_000004_create_teacher_details::Migration),
         ]
     }
 }

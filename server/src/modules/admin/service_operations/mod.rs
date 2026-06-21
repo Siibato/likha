@@ -7,6 +7,8 @@ pub mod lock_account;
 pub mod delete_account;
 pub mod get_activity_logs;
 pub mod search_students;
+pub mod get_account_details;
+pub mod upsert_account_details;
 
 pub use create_account::create_account;
 pub use update_account::update_account;
@@ -17,3 +19,5 @@ pub use lock_account::lock_account;
 pub use delete_account::delete_account;
 pub use get_activity_logs::get_activity_logs;
 pub use search_students::search_students;
+pub use get_account_details::get_account_details;
+pub use upsert_account_details::upsert_account_details;

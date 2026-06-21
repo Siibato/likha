@@ -26,11 +26,13 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     // Teachers (5)
     for i in 1..=5 {
         let username = teacher_username(i);
-        let full_name = teacher_full_name(i);
+        let first_name = teacher_first_name(i);
+        let last_name = teacher_last_name(i);
         users.push(UserSpec {
             id: user_id(&username),
             username: username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role: "teacher".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_TEACHER, 4).unwrap()),
             account_status: "active".into(),
@@ -43,11 +45,13 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     // Students (70)
     for i in 1..=70 {
         let username = student_username(i);
-        let full_name = student_full_name(i);
+        let first_name = student_first_name(i);
+        let last_name = student_last_name(i);
         users.push(UserSpec {
             id: user_id(&username),
             username: username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),
@@ -61,7 +65,8 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     users.push(UserSpec {
         id: user_id("student_deleted_99"),
         username: "student_deleted_99".into(),
-        full_name: "Student Deleted 99".into(),
+        first_name: "Student".into(),
+        last_name: "Deleted 99".into(),
         role: "student".into(),
         password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
         account_status: "active".into(),
