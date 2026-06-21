@@ -40,7 +40,7 @@ pub async fn preview_students(
                 } else {
                     // Check DB for existing username
                     if let Ok(Some(_)) = user_repo.find_by_username(username).await {
-                        warnings.push("username already exists and will be updated".to_string());
+                        errors.push(format!("username '{}' already exists", username));
                     }
                 }
 

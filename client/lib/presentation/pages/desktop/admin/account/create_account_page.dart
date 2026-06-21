@@ -7,6 +7,7 @@ import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
+import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class CreateAccountPage extends ConsumerStatefulWidget {
@@ -50,6 +51,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   String _selectedRole = 'student';
   bool _isSubmitting = false;
   String? _formError;
+  bool _showChoiceScreen = true;
 
   @override
   void dispose() {
@@ -170,83 +172,98 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.borderLight),
             ),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FormMessage(
-                    message: _formError,
-                    severity: MessageSeverity.error,
-                  ),
-                  if (_formError != null) const SizedBox(height: 16),
-                  StyledTextField(
-                    controller: _usernameController,
-                    label: 'Username',
-                    icon: Icons.person_outline_rounded,
-                    enabled: !adminState.isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Username is required';
-                      }
-                      if (value.trim().length < 3) {
-                        return 'Username must be at least 3 characters';
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() => _formError = null),
-                  ),
-                  const SizedBox(height: 16),
-                  StyledTextField(
-                    controller: _firstNameController,
-                    label: 'First Name',
-                    icon: Icons.badge_outlined,
-                    enabled: !adminState.isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'First name is required';
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() => _formError = null),
-                  ),
-                  const SizedBox(height: 16),
-                  StyledTextField(
-                    controller: _lastNameController,
-                    label: 'Last Name',
-                    icon: Icons.badge_outlined,
-                    enabled: !adminState.isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Last name is required';
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() => _formError = null),
-                  ),
-                  const SizedBox(height: 16),
-                  StyledDropdown(
-                    value: _selectedRole,
-                    label: 'Role',
-                    icon: Icons.work_outline_rounded,
-                    enabled: !adminState.isLoading,
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'student', child: Text('Student')),
-                      DropdownMenuItem(
-                          value: 'teacher', child: Text('Teacher')),
-                      DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedRole = value;
-                          _formError = null;
-                        });
-                      }
-                    },
+            child: _showChoiceScreen
+                ? _buildChoiceScreen()
+                : Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () => setState(() => _showChoiceScreen = true),
+                            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                            label: const Text('Back to options'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.foregroundSecondary,
+                              padding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        FormMessage(
+                          message: _formError,
+                          severity: MessageSeverity.error,
+                        ),
+                        if (_formError != null) const SizedBox(height: 16),
+                        StyledTextField(
+                          controller: _usernameController,
+                          label: 'Username',
+                          icon: Icons.person_outline_rounded,
+                          enabled: !adminState.isLoading,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Username is required';
+                            }
+                            if (value.trim().length < 3) {
+                              return 'Username must be at least 3 characters';
+                            }
+                            return null;
+                          },
+                          onChanged: (_) => setState(() => _formError = null),
+                        ),
+                        const SizedBox(height: 16),
+                        StyledTextField(
+                          controller: _firstNameController,
+                          label: 'First Name',
+                          icon: Icons.badge_outlined,
+                          enabled: !adminState.isLoading,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'First name is required';
+                            }
+                            return null;
+                          },
+                          onChanged: (_) => setState(() => _formError = null),
+                        ),
+                        const SizedBox(height: 16),
+                        StyledTextField(
+                          controller: _lastNameController,
+                          label: 'Last Name',
+                          icon: Icons.badge_outlined,
+                          enabled: !adminState.isLoading,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Last name is required';
+                            }
+                            return null;
+                          },
+                          onChanged: (_) => setState(() => _formError = null),
+                        ),
+                        const SizedBox(height: 16),
+                        StyledDropdown(
+                          value: _selectedRole,
+                          label: 'Role',
+                          icon: Icons.work_outline_rounded,
+                          enabled: !adminState.isLoading,
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'student', child: Text('Student')),
+                            DropdownMenuItem(
+                                value: 'teacher', child: Text('Teacher')),
+                            DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedRole = value;
+                                _formError = null;
+                              });
+                            }
+                          },
                   ),
                   if (_selectedRole == 'student') ...[
                     const SizedBox(height: 24),
@@ -450,8 +467,6 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                     isLoading: adminState.isLoading,
                     onPressed: _handleCreate,
                   ),
-                  const SizedBox(height: 24),
-                  const _BulkOperationsCard(),
                 ],
               ),
               ),
@@ -461,52 +476,128 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
       ),
     );
   }
+
+  Widget _buildChoiceScreen() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'How would you like to create accounts?',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.foregroundDark,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Choose bulk import for multiple accounts or manual entry for a single account.',
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.foregroundSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        _MethodCard(
+          icon: Icons.upload_file_outlined,
+          title: 'Bulk Import',
+          subtitle: 'Upload a CSV file to create multiple student accounts at once.',
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (_) => BulkImportDialog(
+                onSuccess: () => ref.read(adminProvider.notifier).loadAccounts(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _MethodCard(
+          icon: Icons.edit_outlined,
+          title: 'Manual Entry',
+          subtitle: 'Fill in the form to create a single account step by step.',
+          onTap: () => setState(() => _showChoiceScreen = false),
+        ),
+      ],
+    );
+  }
 }
 
-class _BulkOperationsCard extends StatelessWidget {
-  const _BulkOperationsCard();
+class _MethodCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _MethodCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundTertiary,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline_rounded, size: 20, color: AppColors.foregroundSecondary),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bulk Operations',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.foregroundDark,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Need to create multiple accounts? Go to Account Management and use '
-                  '"Bulk Import" to upload a CSV. You can also import school history, '
-                  'subjects, and attendance from there.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.foregroundSecondary,
-                  ),
-                ),
-              ],
-            ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundTertiary,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
           ),
-        ],
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Icon(icon, color: AppColors.foregroundDark, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.foregroundDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.foregroundSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: AppColors.foregroundTertiary,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+

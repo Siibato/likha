@@ -7,6 +7,7 @@ import 'package:likha/presentation/pages/desktop/admin/account/create_account_pa
 import 'package:likha/presentation/widgets/desktop/admin/account/account_data_table.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
 import 'package:likha/presentation/widgets/shared/import/history_import_dialog.dart';
@@ -185,11 +186,18 @@ class _AccountManagementPageState
             ),
           ),
         ),
+        const SizedBox(width: 12),
         OutlinedButton.icon(
           onPressed: () => showDialog(
             context: context,
             builder: (_) => BulkImportDialog(
-              onSuccess: () => ref.read(adminProvider.notifier).loadAccounts(),
+              onSuccess: () {
+                ref.read(syncProvider.notifier).sync().then((_) {
+                  if (mounted) {
+                    ref.read(adminProvider.notifier).loadAccounts();
+                  }
+                });
+              },
             ),
           ),
           icon: const Icon(Icons.upload_file_outlined, size: 18),
@@ -203,6 +211,7 @@ class _AccountManagementPageState
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ),
+        const SizedBox(width: 12),
         FilledButton.icon(
           onPressed: () => Navigator.push(
             context,

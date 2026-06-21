@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
@@ -149,7 +151,11 @@ class _AttendanceGrid extends StatefulWidget {
 class _AttendanceGridState extends State<_AttendanceGrid> {
   final Map<String, TextEditingController> _schoolDaysCtrls = {};
   final Map<String, TextEditingController> _presentCtrls = {};
+  final Map<String, String?> _validationErrors = {};
   bool _synced = false;
+  bool _isSaving = false;
+  bool _showSaved = false;
+  Timer? _savedTimer;
 
   @override
   void didUpdateWidget(_AttendanceGrid oldWidget) {
@@ -186,27 +192,62 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
     for (final c in _presentCtrls.values) {
       c.dispose();
     }
+    _savedTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _saveMonth(String month) async {
-    final sd = int.tryParse(_schoolDaysCtrls[month]!.text) ?? 0;
-    final dp = int.tryParse(_presentCtrls[month]!.text) ?? 0;
-    final success = await widget.ref.read(attendanceProvider.notifier).save(widget.classId, widget.studentId, {
-      'class_id': widget.classId,
-      'school_year': widget.schoolYear,
-      'month': month,
-      'school_days': sd,
-      'days_present': dp,
-    });
-    if (mounted) {
+  bool _validate() {
+    bool valid = true;
+    for (final month in _months) {
+      final sd = int.tryParse(_schoolDaysCtrls[month]!.text) ?? 0;
+      final dp = int.tryParse(_presentCtrls[month]!.text) ?? 0;
+      if (dp > sd) {
+        _validationErrors[month] = 'Cannot exceed school days';
+        valid = false;
+      } else {
+        _validationErrors[month] = null;
+      }
+    }
+    return valid;
+  }
+
+  Future<void> _saveAll() async {
+    if (!_validate()) {
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? '$month attendance saved' : 'Failed to save'),
-          backgroundColor: success ? AppColors.semanticSuccessAlt : AppColors.semanticError,
-          duration: const Duration(seconds: 2),
+        const SnackBar(
+          content: Text('Fix validation errors before saving'),
+          backgroundColor: AppColors.semanticError,
+          duration: Duration(seconds: 2),
         ),
       );
+      return;
+    }
+    setState(() => _isSaving = true);
+    bool allSuccess = true;
+    for (final month in _months) {
+      final sd = int.tryParse(_schoolDaysCtrls[month]!.text) ?? 0;
+      final dp = int.tryParse(_presentCtrls[month]!.text) ?? 0;
+      final success = await widget.ref.read(attendanceProvider.notifier).save(widget.classId, widget.studentId, {
+        'class_id': widget.classId,
+        'school_year': widget.schoolYear,
+        'month': month,
+        'school_days': sd,
+        'days_present': dp,
+      });
+      if (!success) allSuccess = false;
+    }
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+        if (allSuccess) {
+          _showSaved = true;
+          _savedTimer?.cancel();
+          _savedTimer = Timer(const Duration(seconds: 2), () {
+            if (mounted) setState(() => _showSaved = false);
+          });
+        }
+      });
     }
   }
 
@@ -223,7 +264,34 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(widget.studentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+          Row(
+            children: [
+              Text(widget.studentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+              const Spacer(),
+              if (_showSaved)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.semanticSuccess),
+                    const SizedBox(width: 6),
+                    const Text('Saved', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.semanticSuccess)),
+                    const SizedBox(width: 12),
+                  ],
+                ),
+              FilledButton.icon(
+                onPressed: _isSaving ? null : _saveAll,
+                icon: _isSaving
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.save_outlined, size: 18),
+                label: const Text('Save'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.foregroundPrimary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
           if (widget.state.error != null) ...[
             const SizedBox(height: 12),
             Container(
@@ -241,7 +309,6 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
                 0: FlexColumnWidth(2),
                 1: FlexColumnWidth(1),
                 2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
               },
               children: [
                 TableRow(
@@ -249,21 +316,13 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
                     _header('Month'),
                     _header('School Days'),
                     _header('Days Present'),
-                    _header(''),
                   ],
                 ),
                 ..._months.map((m) => TableRow(
                   children: [
                     Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(m, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.foregroundDark))),
-                    _cell(_schoolDaysCtrls[m]!),
-                    _cell(_presentCtrls[m]!),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: TextButton(
-                        onPressed: () => _saveMonth(m),
-                        child: const Text('Save', style: TextStyle(fontSize: 12, color: AppColors.foregroundPrimary)),
-                      ),
-                    ),
+                    _cell(_schoolDaysCtrls[m]!, onChanged: () => _clearError(m)),
+                    _cell(_presentCtrls[m]!, errorText: _validationErrors[m], onChanged: () => _clearError(m)),
                   ],
                 )),
               ],
@@ -278,20 +337,37 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
     child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary)),
   );
 
-  Widget _cell(TextEditingController ctrl) => Padding(
+  void _clearError(String month) {
+    if (_validationErrors[month] != null) {
+      setState(() => _validationErrors[month] = null);
+    }
+  }
+
+  Widget _cell(TextEditingController ctrl, {String? errorText, VoidCallback? onChanged}) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-    child: SizedBox(
-      height: 36,
-      child: TextField(
-        controller: ctrl,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.borderLight)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          isDense: true,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 36,
+          child: TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => onChanged?.call(),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: errorText != null ? AppColors.semanticError : AppColors.borderLight)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              isDense: true,
+            ),
+            style: const TextStyle(fontSize: 13),
+          ),
         ),
-        style: const TextStyle(fontSize: 13),
-      ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: const TextStyle(fontSize: 11, color: AppColors.semanticError)),
+        ],
+      ],
     ),
   );
 }

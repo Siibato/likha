@@ -26,16 +26,23 @@ class ImportPreviewTable extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columnSpacing: 16,
+          columnSpacing: 20,
           horizontalMargin: 16,
+          headingRowHeight: 40,
+          dataRowMinHeight: 48,
+          dataRowMaxHeight: 72,
           columns: [
-            const DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.w700))),
+            const DataColumn(
+              label: Text('#', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
             ...columns.map((c) => DataColumn(
-                  label: Text(c, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  label: Text(c, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                 )),
-            const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
+            const DataColumn(
+              label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
             if (onRemoveRow != null)
-              const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.w700))),
+              const DataColumn(label: SizedBox.shrink()),
           ],
           rows: preview.rows.map((row) {
             final hasErrors = row.hasErrors;
@@ -48,30 +55,26 @@ class ImportPreviewTable extends StatelessWidget {
                       ? WidgetStateProperty.all(AppColors.accentAmberSurface.withValues(alpha: 0.1))
                       : null,
               cells: [
-                DataCell(Text('${row.rowIndex}')),
+                DataCell(Text('${row.rowIndex}', style: const TextStyle(fontSize: 13))),
                 ...columns.map((c) {
                   final val = row.data[c];
                   final display = val == null ? '-' : val.toString();
-                  return DataCell(Text(display));
+                  return DataCell(
+                    Text(
+                      display,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: display == '-' ? AppColors.foregroundTertiary : AppColors.foregroundDark,
+                      ),
+                    ),
+                  );
                 }),
                 DataCell(
                   hasErrors
-                      ? _StatusChip(
-                          icon: Icons.error_outline,
-                          color: AppColors.semanticError,
-                          label: '${row.errors.length} error(s)',
-                        )
+                      ? _ErrorPill(messages: row.errors)
                       : hasWarnings
-                          ? _StatusChip(
-                              icon: Icons.warning_amber_rounded,
-                              color: AppColors.accentAmberBorder,
-                              label: '${row.warnings.length} warning(s)',
-                            )
-                          : const _StatusChip(
-                              icon: Icons.check_circle_outline,
-                              color: AppColors.semanticSuccess,
-                              label: 'OK',
-                            ),
+                          ? _ErrorPill(messages: row.warnings, isWarning: true)
+                          : const _ErrorPill(messages: ['Valid'], isValid: true),
                 ),
                 if (onRemoveRow != null)
                   DataCell(
@@ -92,23 +95,54 @@ class ImportPreviewTable extends StatelessWidget {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
+class _ErrorPill extends StatelessWidget {
+  final List<String> messages;
+  final bool isWarning;
+  final bool isValid;
 
-  const _StatusChip({required this.icon, required this.color, required this.label});
+  const _ErrorPill({
+    required this.messages,
+    this.isWarning = false,
+    this.isValid = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (isValid) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_outline, size: 14, color: AppColors.semanticSuccess),
+          const SizedBox(width: 4),
+          Text(
+            'Valid',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.semanticSuccess),
+          ),
+        ],
+      );
+    }
+
+    final color = isWarning ? AppColors.accentAmberBorder : AppColors.semanticError;
+    final icon = isWarning ? Icons.warning_amber_rounded : Icons.error_outline;
+    final text = messages.join(', ');
+
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: color),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 14, color: color),
+        ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color, height: 1.3),
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
         ),
       ],
     );

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/teacher_details.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 class TeacherDetailsCard extends StatefulWidget {
   final TeacherDetails? details;
@@ -19,6 +22,9 @@ class TeacherDetailsCard extends StatefulWidget {
 }
 
 class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
+  bool _showSaved = false;
+  Timer? _savedTimer;
+
   late final TextEditingController _licenseIdCtrl;
   late final TextEditingController _rankCtrl;
   late final TextEditingController _positionCtrl;
@@ -74,6 +80,7 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
     _educationLevelCtrl.dispose();
     _specializationCtrl.dispose();
     _contactNumberCtrl.dispose();
+    _savedTimer?.cancel();
     super.dispose();
   }
 
@@ -89,6 +96,11 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
       'education_level': _educationLevelCtrl.text.isEmpty ? null : _educationLevelCtrl.text,
       'specialization': _specializationCtrl.text.isEmpty ? null : _specializationCtrl.text,
       'contact_number': _contactNumberCtrl.text.isEmpty ? null : _contactNumberCtrl.text,
+    });
+    setState(() => _showSaved = true);
+    _savedTimer?.cancel();
+    _savedTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showSaved = false);
     });
   }
 
@@ -115,7 +127,24 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
                 ),
               ),
               const Spacer(),
-              if (widget.isLoading)
+              if (_showSaved)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 16, color: AppColors.semanticSuccess),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Saved',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.semanticSuccess,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                )
+              else if (widget.isLoading)
                 const SizedBox(
                   width: 16,
                   height: 16,
@@ -137,57 +166,78 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
             ],
           ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              _field('License ID', _licenseIdCtrl),
-              _field('Rank', _rankCtrl),
-              _field('Position', _positionCtrl),
-              _field('Sex', _sexCtrl),
-              _field('Birthdate', _birthdateCtrl),
-              _field('Home Address', _homeAddressCtrl),
-              _field('Date Hired', _dateHiredCtrl),
-              _field('Education Level', _educationLevelCtrl),
-              _field('Specialization', _specializationCtrl),
-              _field('Contact Number', _contactNumberCtrl),
-            ],
+          StyledTextField(
+            controller: _licenseIdCtrl,
+            label: 'License ID (PRC)',
+            icon: Icons.badge_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _rankCtrl,
+            label: 'Rank',
+            icon: Icons.work_outline_rounded,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _positionCtrl,
+            label: 'Position',
+            icon: Icons.work_outline_rounded,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _sexCtrl,
+            label: 'Sex',
+            icon: Icons.wc_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _birthdateCtrl,
+            label: 'Birthdate (YYYY-MM-DD)',
+            icon: Icons.cake_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _homeAddressCtrl,
+            label: 'Home Address',
+            icon: Icons.home_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _dateHiredCtrl,
+            label: 'Date Hired (YYYY-MM-DD)',
+            icon: Icons.event_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _educationLevelCtrl,
+            label: 'Education Level',
+            icon: Icons.school_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _specializationCtrl,
+            label: 'Specialization',
+            icon: Icons.school_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _contactNumberCtrl,
+            label: 'Contact Number',
+            icon: Icons.phone_outlined,
+            enabled: !widget.isLoading,
           ),
         ],
       ),
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl) {
-    return SizedBox(
-      width: 260,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: ctrl,
-            enabled: !widget.isLoading,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.borderLight),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              isDense: true,
-            ),
-            style: const TextStyle(fontSize: 13, color: AppColors.foregroundDark),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -59,8 +59,13 @@ class _HistoryImportDialogState extends ConsumerState<HistoryImportDialog> {
       allowedExtensions: ['csv'],
     );
     if (result != null && result.files.single.path != null) {
-      ref.read(importProvider.notifier).selectFile(result.files.single.path!);
+      await _handleFileSelected(result.files.single.path!);
     }
+  }
+
+  Future<void> _handleFileSelected(String path) async {
+    ref.read(importProvider.notifier).selectFile(path);
+    await _preview();
   }
 
   Future<void> _downloadTemplate() async {
@@ -69,8 +74,8 @@ class _HistoryImportDialogState extends ConsumerState<HistoryImportDialog> {
       final path = await ref.read(importProvider.notifier).downloadHistoryTemplate(widget.type);
       if (mounted && path != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Template downloaded to $path'),
+          const SnackBar(
+            content: Text('Template downloaded and opened'),
             backgroundColor: AppColors.semanticSuccess,
           ),
         );
@@ -114,6 +119,7 @@ class _HistoryImportDialogState extends ConsumerState<HistoryImportDialog> {
       subtitle: 'Upload a CSV file to import ${widget.type.replaceAll('_', ' ')} records',
       content: _buildContent(state, columns),
       actions: _buildActions(state),
+      onClose: _close,
     );
   }
 
@@ -172,7 +178,7 @@ class _HistoryImportDialogState extends ConsumerState<HistoryImportDialog> {
           selectedFilePath: state.selectedFilePath,
           label: 'Select ${widget.type.replaceAll('_', ' ')} CSV file',
           onPickFile: _pickFile,
-          onDroppedFile: (path) => ref.read(importProvider.notifier).selectFile(path),
+          onDroppedFile: _handleFileSelected,
         ),
         if (state.errorMessage != null) ...[
           const SizedBox(height: 12),
@@ -199,13 +205,10 @@ class _HistoryImportDialogState extends ConsumerState<HistoryImportDialog> {
         ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 300),
           child: SingleChildScrollView(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ImportPreviewTable(
-                preview: state.preview!,
-                columns: columns,
-                onRemoveRow: (index) => ref.read(importProvider.notifier).removeRow(index),
-              ),
+            child: ImportPreviewTable(
+              preview: state.preview!,
+              columns: columns,
+              onRemoveRow: (index) => ref.read(importProvider.notifier).removeRow(index),
             ),
           ),
         ),
@@ -267,23 +270,10 @@ class _HistoryImportDialogState extends ConsumerState<HistoryImportDialog> {
   List<StyledDialogAction> _buildActions(ImportState state) {
     switch (_step) {
       case _ImportStep.upload:
-        return [
-          StyledDialogAction(label: 'Cancel', onPressed: () => Navigator.pop(context)),
-          StyledDialogAction(
-            label: 'Preview',
-            isPrimary: true,
-            onPressed: state.selectedFilePath == null || state.status == ImportStatus.previewing
-                ? () {}
-                : _preview,
-          ),
-        ];
+        return [];
       case _ImportStep.preview:
         final canImport = state.preview != null && !state.preview!.hasErrors;
         return [
-          StyledDialogAction(
-            label: 'Back',
-            onPressed: () => setState(() => _step = _ImportStep.upload),
-          ),
           StyledDialogAction(
             label: 'Import ${state.preview?.validCount ?? 0} Records',
             isPrimary: true,

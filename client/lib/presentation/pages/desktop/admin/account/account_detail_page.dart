@@ -9,10 +9,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/cards/learner_details_card.dart';
 import 'package:likha/presentation/widgets/shared/cards/teacher_details_card.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
-import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
-import 'package:likha/presentation/providers/auth_provider.dart';
-import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class AccountDetailPage extends ConsumerStatefulWidget {
   final User user;
@@ -37,12 +34,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   @override
   Widget build(BuildContext context) {
     final adminState = ref.watch(adminProvider);
-    final authState = ref.watch(authProvider);
     final User user = adminState.accounts
         .cast<User>()
         .firstWhere((a) => a.id == widget.user.id, orElse: () => widget.user);
-    final currentUserId = authState.user?.id;
-
     ref.listen<AdminState>(adminProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
@@ -77,24 +71,24 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
                     AccountDetailPanel(
                       user: user,
                       isLoading: adminState.isLoading,
-                      onEditFullName: () => _showEditDialog(
+                      onEditFirstName: () => _showEditDialog(
                         context,
-                        title: 'Edit Full Name',
-                        currentValue: user.fullName,
-                        onSave: (value) {
-                          final parts = value.trim().split(' ');
-                          final firstName = parts.isNotEmpty ? parts.first : '';
-                          final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-                          ref.read(adminProvider.notifier).updateAccount(
-                                userId: user.id,
-                                firstName: firstName,
-                                lastName: lastName,
-                              );
-                        },
+                        title: 'Edit First Name',
+                        currentValue: user.firstName,
+                        onSave: (value) => ref.read(adminProvider.notifier).updateAccount(
+                          userId: user.id,
+                          firstName: value.trim(),
+                        ),
                       ),
-                      onEditRole: currentUserId != user.id
-                          ? () => _showRoleDialog(context, user)
-                          : null,
+                      onEditLastName: () => _showEditDialog(
+                        context,
+                        title: 'Edit Last Name',
+                        currentValue: user.lastName,
+                        onSave: (value) => ref.read(adminProvider.notifier).updateAccount(
+                          userId: user.id,
+                          lastName: value.trim(),
+                        ),
+                      ),
                       onLock: () => _showLockDialog(context, user),
                       onUnlock: () => ref
                           .read(adminProvider.notifier)
@@ -128,7 +122,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
 
             // Right: Activity log
             Expanded(
-              flex: 3,
+              flex: 1,
               child: ActivityLogTable(
                 logs: adminState.activityLogs,
                 isLoading: adminState.isLoading,
@@ -165,57 +159,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
       confirmLabel: 'Reset',
       onConfirm: () =>
           ref.read(adminProvider.notifier).resetAccount(user.id),
-    );
-  }
-
-  void _showRoleDialog(BuildContext context, User user) {
-    String selectedRole = user.role;
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => StyledDialog(
-          title: 'Change Role',
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Changing a user's role affects their access to features. This change will sync when connected.",
-                style: TextStyle(fontSize: 14, color: AppColors.foregroundSecondary),
-              ),
-              const SizedBox(height: 16),
-              StyledDropdown<String>(
-                value: selectedRole,
-                label: 'Role',
-                icon: Icons.work_outline_rounded,
-                items: const [
-                  DropdownMenuItem(value: 'student', child: Text('Student')),
-                  DropdownMenuItem(value: 'teacher', child: Text('Teacher')),
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                ],
-                onChanged: (v) {
-                  if (v != null) setDialogState(() => selectedRole = v);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            StyledDialogAction(
-                label: 'Cancel', onPressed: () => Navigator.pop(ctx)),
-            StyledDialogAction(
-              label: 'Change',
-              isPrimary: true,
-              onPressed: selectedRole == user.role
-                  ? () {}
-                  : () {
-                      Navigator.pop(ctx);
-                      ref.read(adminProvider.notifier).updateAccount(
-                          userId: user.id, role: selectedRole);
-                    },
-            ),
-          ],
-        ),
-      ),
     );
   }
 

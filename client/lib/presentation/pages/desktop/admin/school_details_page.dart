@@ -46,6 +46,16 @@ class _AdminSchoolDetailsPageState
   void initState() {
     super.initState();
     _originalSchoolCode = '';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final state = ref.read(schoolDetailsProvider);
+        if (state.settings != null && !_hasSyncedControllers) {
+          _syncControllersWithState(state);
+        }
+      }
+    });
+
     Future.microtask(() {
       ref.read(schoolDetailsProvider.notifier).loadSchoolDetails();
     });
@@ -260,6 +270,7 @@ class _AdminSchoolDetailsPageState
 
     final isLoading = providerState.isLoading;
     final isSaving = providerState.isSaving;
+    final error = providerState.error;
 
     return DesktopPageScaffold(
       title: 'School Details',
@@ -293,6 +304,19 @@ class _AdminSchoolDetailsPageState
                         ),
                       ),
                     ),
+                    if (error != null) ...[
+                      const SizedBox(height: 16),
+                      InfoPanel(
+                        child: Text(
+                          error,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.semanticError,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Form(
                       key: _formKey,

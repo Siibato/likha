@@ -149,7 +149,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
   late TextEditingController _sexCtrl;
   late TextEditingController _trackStrandCtrl;
   late TextEditingController _curriculumCtrl;
-  late TextEditingController _birthdateCtrl;
   late TextEditingController _birthplaceCtrl;
   late TextEditingController _homeAddressCtrl;
   late TextEditingController _fatherNameCtrl;
@@ -158,7 +157,8 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
   late TextEditingController _motherContactCtrl;
   late TextEditingController _guardianNameCtrl;
   late TextEditingController _guardianContactCtrl;
-  late TextEditingController _dateAdmittedCtrl;
+  DateTime? _birthdate;
+  DateTime? _dateAdmitted;
   bool _initialized = false;
 
   @override
@@ -175,7 +175,7 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       _sexCtrl.text = d?.sex ?? '';
       _trackStrandCtrl.text = d?.trackStrand ?? '';
       _curriculumCtrl.text = d?.curriculum ?? '';
-      _birthdateCtrl.text = d?.birthdate ?? '';
+      _birthdate = _parseDate(d?.birthdate);
       _birthplaceCtrl.text = d?.birthplace ?? '';
       _homeAddressCtrl.text = d?.homeAddress ?? '';
       _fatherNameCtrl.text = d?.fatherName ?? '';
@@ -184,7 +184,7 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       _motherContactCtrl.text = d?.motherContact ?? '';
       _guardianNameCtrl.text = d?.guardianName ?? '';
       _guardianContactCtrl.text = d?.guardianContact ?? '';
-      _dateAdmittedCtrl.text = d?.dateAdmitted ?? '';
+      _dateAdmitted = _parseDate(d?.dateAdmitted);
       _initialized = true;
     }
   }
@@ -197,7 +197,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     _sexCtrl = TextEditingController();
     _trackStrandCtrl = TextEditingController();
     _curriculumCtrl = TextEditingController();
-    _birthdateCtrl = TextEditingController();
     _birthplaceCtrl = TextEditingController();
     _homeAddressCtrl = TextEditingController();
     _fatherNameCtrl = TextEditingController();
@@ -206,7 +205,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     _motherContactCtrl = TextEditingController();
     _guardianNameCtrl = TextEditingController();
     _guardianContactCtrl = TextEditingController();
-    _dateAdmittedCtrl = TextEditingController();
     _syncControllers();
   }
 
@@ -217,7 +215,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     _sexCtrl.dispose();
     _trackStrandCtrl.dispose();
     _curriculumCtrl.dispose();
-    _birthdateCtrl.dispose();
     _birthplaceCtrl.dispose();
     _homeAddressCtrl.dispose();
     _fatherNameCtrl.dispose();
@@ -226,7 +223,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     _motherContactCtrl.dispose();
     _guardianNameCtrl.dispose();
     _guardianContactCtrl.dispose();
-    _dateAdmittedCtrl.dispose();
     super.dispose();
   }
 
@@ -237,7 +233,7 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       'sex': _sexCtrl.text.isEmpty ? null : _sexCtrl.text,
       'track_strand': _trackStrandCtrl.text.isEmpty ? null : _trackStrandCtrl.text,
       'curriculum': _curriculumCtrl.text.isEmpty ? null : _curriculumCtrl.text,
-      'birthdate': _birthdateCtrl.text.isEmpty ? null : _birthdateCtrl.text,
+      'birthdate': _birthdate == null ? null : _formatDate(_birthdate!),
       'birthplace': _birthplaceCtrl.text.isEmpty ? null : _birthplaceCtrl.text,
       'home_address': _homeAddressCtrl.text.isEmpty ? null : _homeAddressCtrl.text,
       'father_name': _fatherNameCtrl.text.isEmpty ? null : _fatherNameCtrl.text,
@@ -246,7 +242,7 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
       'mother_contact': _motherContactCtrl.text.isEmpty ? null : _motherContactCtrl.text,
       'guardian_name': _guardianNameCtrl.text.isEmpty ? null : _guardianNameCtrl.text,
       'guardian_contact': _guardianContactCtrl.text.isEmpty ? null : _guardianContactCtrl.text,
-      'date_admitted': _dateAdmittedCtrl.text.isEmpty ? null : _dateAdmittedCtrl.text,
+      'date_admitted': _dateAdmitted == null ? null : _formatDate(_dateAdmitted!),
     };
 
     final success = await widget.ref.read(learnerDetailsProvider.notifier).save(widget.classId, widget.studentId, data);
@@ -257,6 +253,44 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
           backgroundColor: success ? AppColors.semanticSuccessAlt : AppColors.semanticError,
         ),
       );
+    }
+  }
+
+  DateTime? _parseDate(String? value) {
+    if (value == null || value.isEmpty) return null;
+    try {
+      return DateTime.parse(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickDate({required String label, required ValueChanged<DateTime?> onPicked, DateTime? initialDate}) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      initialEntryMode: DatePickerEntryMode.input,
+      helpText: label,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.accentCharcoal,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.accentCharcoal,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      onPicked(picked);
     }
   }
 
@@ -275,6 +309,33 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
             isDense: true,
           ),
           style: const TextStyle(fontSize: 13, color: AppColors.foregroundDark),
+        ),
+      ],
+    );
+  }
+
+  Widget _dateField(String label, DateTime? value, {required ValueChanged<DateTime?> onChanged}) {
+    final display = value == null ? '' : _formatDate(value);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.foregroundSecondary)),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: () => _pickDate(label: label, initialDate: value, onPicked: onChanged),
+          borderRadius: BorderRadius.circular(8),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.borderLight)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              isDense: true,
+              suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.foregroundSecondary),
+            ),
+            child: Text(
+              display.isEmpty ? 'Select date' : display,
+              style: TextStyle(fontSize: 13, color: display.isEmpty ? AppColors.foregroundSecondary : AppColors.foregroundDark),
+            ),
+          ),
         ),
       ],
     );
@@ -329,7 +390,14 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
               SizedBox(width: 100, child: _field('Sex', _sexCtrl)),
               SizedBox(width: 200, child: _field('Track / Strand', _trackStrandCtrl)),
               SizedBox(width: 200, child: _field('Curriculum', _curriculumCtrl)),
-              SizedBox(width: 180, child: _field('Birthdate (YYYY-MM-DD)', _birthdateCtrl)),
+              SizedBox(
+                width: 180,
+                child: _dateField(
+                  'Birthdate',
+                  _birthdate,
+                  onChanged: (date) => setState(() => _birthdate = date),
+                ),
+              ),
               SizedBox(width: 220, child: _field('Birthplace', _birthplaceCtrl)),
               SizedBox(width: 300, child: _field('Home Address', _homeAddressCtrl, maxLines: 2)),
               SizedBox(width: 220, child: _field('Father\'s Name', _fatherNameCtrl)),
@@ -338,7 +406,14 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
               SizedBox(width: 180, child: _field('Mother\'s Contact', _motherContactCtrl)),
               SizedBox(width: 220, child: _field('Guardian Name', _guardianNameCtrl)),
               SizedBox(width: 180, child: _field('Guardian Contact', _guardianContactCtrl)),
-              SizedBox(width: 180, child: _field('Date Admitted', _dateAdmittedCtrl)),
+              SizedBox(
+                width: 180,
+                child: _dateField(
+                  'Date Admitted',
+                  _dateAdmitted,
+                  onChanged: (date) => setState(() => _dateAdmitted = date),
+                ),
+              ),
             ],
           ),
         ],

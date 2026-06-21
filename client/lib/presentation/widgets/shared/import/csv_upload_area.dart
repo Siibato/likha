@@ -45,10 +45,12 @@ class _CsvUploadAreaState extends State<CsvUploadArea> {
       },
       onDragEntered: (detail) => setState(() => _isDragging = true),
       onDragExited: (detail) => setState(() => _isDragging = false),
-      child: InkWell(
-        onTap: widget.onPickFile,
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onPickFile,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: double.infinity,
           padding: const EdgeInsets.all(32),
@@ -105,6 +107,7 @@ class _CsvUploadAreaState extends State<CsvUploadArea> {
           ),
         ),
       ),
+    ),
     );
   }
 }

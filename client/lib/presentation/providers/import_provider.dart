@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:likha/data/models/import/import_preview_model.dart';
 import 'package:likha/domain/repositories/import_repository.dart';
@@ -58,9 +59,9 @@ class ImportNotifier extends StateNotifier<ImportState> {
 
   Future<String?> downloadStudentTemplate() async {
     try {
-      final dir = await getTemporaryDirectory();
-      final savePath = '${dir.path}/student_import_template.csv';
+      final savePath = await _templateSavePath('student_import_template.csv');
       await _repository.downloadStudentTemplate(savePath);
+      await OpenFile.open(savePath);
       return savePath;
     } catch (e) {
       state = state.copyWith(status: ImportStatus.error, errorMessage: e.toString());
@@ -70,14 +71,23 @@ class ImportNotifier extends StateNotifier<ImportState> {
 
   Future<String?> downloadHistoryTemplate(String type) async {
     try {
-      final dir = await getTemporaryDirectory();
-      final savePath = '${dir.path}/history_${type}_template.csv';
+      final savePath = await _templateSavePath('history_${type}_template.csv');
       await _repository.downloadHistoryTemplate(type, savePath);
+      await OpenFile.open(savePath);
       return savePath;
     } catch (e) {
       state = state.copyWith(status: ImportStatus.error, errorMessage: e.toString());
       return null;
     }
+  }
+
+  Future<String> _templateSavePath(String fileName) async {
+    final downloadsDir = await getDownloadsDirectory();
+    if (downloadsDir != null) {
+      return '${downloadsDir.path}/$fileName';
+    }
+    final dir = await getApplicationDocumentsDirectory();
+    return '${dir.path}/$fileName';
   }
 
   void removeRow(int rowIndex) {

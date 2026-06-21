@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/student_records/entities/learner_details.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 class LearnerDetailsCard extends StatefulWidget {
   final LearnerDetails? details;
@@ -19,6 +22,9 @@ class LearnerDetailsCard extends StatefulWidget {
 }
 
 class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
+  bool _showSaved = false;
+  Timer? _savedTimer;
+
   late final TextEditingController _lrnCtrl;
   late final TextEditingController _ageCtrl;
   late final TextEditingController _sexCtrl;
@@ -94,6 +100,7 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
     _guardianNameCtrl.dispose();
     _guardianContactCtrl.dispose();
     _dateAdmittedCtrl.dispose();
+    _savedTimer?.cancel();
     super.dispose();
   }
 
@@ -114,6 +121,11 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
       'guardian_name': _guardianNameCtrl.text.isEmpty ? null : _guardianNameCtrl.text,
       'guardian_contact': _guardianContactCtrl.text.isEmpty ? null : _guardianContactCtrl.text,
       'date_admitted': _dateAdmittedCtrl.text.isEmpty ? null : _dateAdmittedCtrl.text,
+    });
+    setState(() => _showSaved = true);
+    _savedTimer?.cancel();
+    _savedTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showSaved = false);
     });
   }
 
@@ -140,7 +152,24 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
                 ),
               ),
               const Spacer(),
-              if (widget.isLoading)
+              if (_showSaved)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 16, color: AppColors.semanticSuccess),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Saved',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.semanticSuccess,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                )
+              else if (widget.isLoading)
                 const SizedBox(
                   width: 16,
                   height: 16,
@@ -162,62 +191,114 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
             ],
           ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              _field('LRN', _lrnCtrl),
-              _field('Age', _ageCtrl),
-              _field('Sex', _sexCtrl),
-              _field('Track/Strand', _trackStrandCtrl),
-              _field('Curriculum', _curriculumCtrl),
-              _field('Birthdate', _birthdateCtrl),
-              _field('Birthplace', _birthplaceCtrl),
-              _field('Home Address', _homeAddressCtrl),
-              _field('Father Name', _fatherNameCtrl),
-              _field('Father Contact', _fatherContactCtrl),
-              _field('Mother Name', _motherNameCtrl),
-              _field('Mother Contact', _motherContactCtrl),
-              _field('Guardian Name', _guardianNameCtrl),
-              _field('Guardian Contact', _guardianContactCtrl),
-              _field('Date Admitted', _dateAdmittedCtrl),
-            ],
+          StyledTextField(
+            controller: _lrnCtrl,
+            label: 'LRN',
+            icon: Icons.badge_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _ageCtrl,
+            label: 'Age',
+            icon: Icons.calendar_today_outlined,
+            enabled: !widget.isLoading,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _sexCtrl,
+            label: 'Sex',
+            icon: Icons.wc_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _trackStrandCtrl,
+            label: 'Track / Strand',
+            icon: Icons.school_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _curriculumCtrl,
+            label: 'Curriculum',
+            icon: Icons.menu_book_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _birthdateCtrl,
+            label: 'Birthdate (YYYY-MM-DD)',
+            icon: Icons.cake_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _birthplaceCtrl,
+            label: 'Birthplace',
+            icon: Icons.place_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _homeAddressCtrl,
+            label: 'Home Address',
+            icon: Icons.home_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _fatherNameCtrl,
+            label: "Father's Name",
+            icon: Icons.person_outline_rounded,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _fatherContactCtrl,
+            label: "Father's Contact",
+            icon: Icons.phone_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _motherNameCtrl,
+            label: "Mother's Name",
+            icon: Icons.person_outline_rounded,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _motherContactCtrl,
+            label: "Mother's Contact",
+            icon: Icons.phone_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _guardianNameCtrl,
+            label: "Guardian's Name",
+            icon: Icons.person_outline_rounded,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _guardianContactCtrl,
+            label: "Guardian's Contact",
+            icon: Icons.phone_outlined,
+            enabled: !widget.isLoading,
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: _dateAdmittedCtrl,
+            label: 'Date Admitted (YYYY-MM-DD)',
+            icon: Icons.event_outlined,
+            enabled: !widget.isLoading,
           ),
         ],
       ),
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl) {
-    return SizedBox(
-      width: 260,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: ctrl,
-            enabled: !widget.isLoading,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.borderLight),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              isDense: true,
-            ),
-            style: const TextStyle(fontSize: 13, color: AppColors.foregroundDark),
-          ),
-        ],
-      ),
-    );
-  }
 }

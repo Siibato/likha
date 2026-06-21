@@ -157,7 +157,7 @@ class _BaseDataTableState<T> extends State<BaseDataTable<T>> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Showing ${_currentPage * widget.rowsPerPage + 1}â\u0080\u0093${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.items.length)} of ${widget.items.length}',
+          'Showing ${_currentPage * widget.rowsPerPage + 1}-${((_currentPage + 1) * widget.rowsPerPage).clamp(0, widget.items.length)} of ${widget.items.length}',
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.foregroundTertiary,
