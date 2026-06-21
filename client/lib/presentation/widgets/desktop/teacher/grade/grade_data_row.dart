@@ -214,11 +214,11 @@ class GradeDataRow extends StatelessWidget {
     return GestureDetector(
       onTap: () => onStartScore(sid, item.id, gs),
       child: GradeScoreCell(
-        text: gs?.effectiveScore != null ? _fmt(gs!.effectiveScore!) : '--',
+        text: gs?.effectiveScore != null ? _fmt(gs!.effectiveScore!) : '0',
         width: GradeSpreadsheetDimensions.scoreColW,
         bgColor: bgColor,
         isOverride: gs?.overrideScore != null,
-        empty: gs?.effectiveScore == null,
+        empty: false,
         syncStatus: gs?.syncStatus,
       ),
     );
@@ -228,16 +228,14 @@ class GradeDataRow extends StatelessWidget {
     final studentScores = scoreLookup[sid] ?? {};
     double total = 0;
     double hs = 0;
-    bool hasScore = false;
     for (final item in items) {
       hs += item.totalPoints;
       final score = studentScores[item.id]?.effectiveScore;
       if (score != null) {
         total += score;
-        hasScore = true;
       }
     }
-    if (!hasScore || hs == 0) {
+    if (hs == 0) {
       return GradeScoreStats(total: null, hs: hs, pct: null, ws: null);
     }
     final pct = (total / hs) * 100;

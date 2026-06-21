@@ -190,16 +190,24 @@ class OutboundSyncHandler {
       _log.log('Processing ${gradingOps.length} grading ops via handler');
       for (final op in gradingOps) {
         _log.log('  grading op: ${op.entityType.dbValue}.${op.operation.dbValue} ID=${op.id} retryCount=${op.retryCount}');
-        final result = await _gradingHandler.handle(op);
-        if (result.success) {
-          _log.log('  grading op ${op.id}: SUCCESS, marking succeeded');
-          await _syncQueue.markSucceeded(op.id);
-        } else if (result.shouldRetry) {
-          _log.log('  grading op ${op.id}: RETRYABLE FAILURE - ${result.error}');
+        try {
+          final result = await _gradingHandler.handle(op);
+          if (result.success) {
+            _log.log('  grading op ${op.id}: SUCCESS, marking succeeded');
+            await _syncQueue.markSucceeded(op.id);
+          } else if (result.shouldRetry) {
+            _log.log('  grading op ${op.id}: RETRYABLE FAILURE - ${result.error}');
+            await _handleRetry(op);
+          } else {
+            _log.log('  grading op ${op.id}: PERMANENT FAILURE - ${result.error}');
+            await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+          }
+        } on NetworkException catch (e) {
+          _log.error('  grading op ${op.id}: NetworkException - ${e.message}');
           await _handleRetry(op);
-        } else {
-          _log.log('  grading op ${op.id}: PERMANENT FAILURE - ${result.error}');
-          await _syncQueue.markFailed(op.id, result.error ?? 'Unknown error');
+        } catch (e) {
+          _log.error('  grading op ${op.id}: UNEXPECTED ERROR - $e');
+          await _syncQueue.markFailed(op.id, e.toString());
         }
       }
     } else if (gradingOps.isNotEmpty && _gradingHandler == null) {

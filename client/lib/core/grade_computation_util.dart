@@ -88,7 +88,7 @@ class GradeComputationUtil {
         totalScored += studentScore.effectiveScore!;
         totalPossible += item.totalPoints;
       } else {
-        allHaveScores = false;
+        // Missing score counts as 0; allHaveScores remains true
         totalPossible += item.totalPoints;
       }
     }

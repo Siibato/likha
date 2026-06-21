@@ -54,7 +54,7 @@ impl crate::modules::grading::service::GradeComputationService {
 
         let initial_grade = ww_weighted + pt_weighted + qa_weighted;
         let transmuted = deped_weights::transmute_grade(initial_grade);
-        let is_locked = items.iter().all(|item| score_map.contains_key(&item.id));
+        let is_locked = !items.is_empty();
 
         let model = self
             .repo
