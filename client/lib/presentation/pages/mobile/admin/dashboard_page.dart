@@ -6,6 +6,8 @@ import 'package:likha/presentation/pages/mobile/admin/class/class_list_page.dart
 import 'package:likha/presentation/pages/mobile/admin/design_system_page.dart';
 import 'package:likha/presentation/pages/mobile/admin/school_details_page.dart';
 import 'package:likha/presentation/pages/mobile/admin/account/create_account_page.dart';
+import 'package:likha/presentation/pages/mobile/admin/bulk_student_import_page.dart';
+import 'package:likha/presentation/pages/mobile/admin/student_history_import_page.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
@@ -78,6 +80,30 @@ class AdminDashboardPage extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const AdminSchoolDetailsPage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    NavigationCard(
+                      icon: Icons.upload_file_outlined,
+                      title: 'Bulk Student Import',
+                      subtitle: 'Import multiple student accounts from CSV',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BulkStudentImportPage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    NavigationCard(
+                      icon: Icons.history_edu_outlined,
+                      title: 'Student History Import',
+                      subtitle: 'Import school history, subjects, or attendance from CSV',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const StudentHistoryImportPage(),
                         ),
                       ),
                     ),

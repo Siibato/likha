@@ -5,6 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::modules::student_records::handler;
+use crate::modules::student_records::import_handler;
 use crate::modules::student_records::service::StudentRecordsService;
 
 pub fn routes(service: Arc<StudentRecordsService>) -> Router {
@@ -75,6 +76,19 @@ pub fn routes(service: Arc<StudentRecordsService>) -> Router {
         .route(
             "/classes/{class_id}/students/{student_id}/sf10",
             get(handler::get_sf10),
+        )
+        // Student History Import
+        .route(
+            "/admin/student-history/template",
+            get(import_handler::get_history_template),
+        )
+        .route(
+            "/admin/student-history/preview",
+            post(import_handler::preview_history_import),
+        )
+        .route(
+            "/admin/student-history/import",
+            post(import_handler::import_history),
         )
         .with_state(service)
 }

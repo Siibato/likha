@@ -9,6 +9,7 @@ use crate::modules::admin::service_operations::{
     create_account, update_account, reset_account, get_account, get_all_accounts,
     lock_account, delete_account, get_activity_logs, search_students,
     get_account_details, upsert_account_details,
+    bulk_import,
 };
 use ::entity::activity_logs;
 
@@ -151,5 +152,13 @@ impl AdminService {
         ).await?;
 
         self.get_account_details(user_id).await
+    }
+
+    pub async fn preview_student_import(&self, csv_bytes: &[u8]) -> AppResult<crate::modules::admin::import_schema::PreviewResponse> {
+        bulk_import::preview_students(&self.repository.db, &self.repository.user_repo, csv_bytes).await
+    }
+
+    pub async fn import_students(&self, rows: Vec<serde_json::Value>) -> AppResult<crate::modules::admin::import_schema::ImportResultResponse> {
+        bulk_import::import_students(&self.repository.db, &self.repository.user_repo, &rows).await
     }
 }

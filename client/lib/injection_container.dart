@@ -175,6 +175,10 @@ import 'package:likha/data/datasources/remote/student_records/student_records_re
 import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
 import 'package:likha/data/repositories/student_records/student_records_repository_impl.dart';
 import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
+import 'package:likha/data/datasources/remote/import/import_remote_datasource.dart';
+import 'package:likha/domain/repositories/import_repository.dart';
+
+// Student Records use cases
 import 'package:likha/domain/student_records/usecases/get_learner_details.dart';
 import 'package:likha/domain/student_records/usecases/upsert_learner_details.dart';
 import 'package:likha/domain/student_records/usecases/get_attendance.dart';
@@ -655,4 +659,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpsertPreviousSubject(sl()));
   sl.registerLazySingleton(() => GetPreviousAttendance(sl()));
   sl.registerLazySingleton(() => UpsertPreviousAttendance(sl()));
+
+  // Import datasource and repository
+  sl.registerLazySingleton<ImportRemoteDataSource>(
+    () => ImportRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton(() => ImportRepository(sl<ImportRemoteDataSource>()));
 }

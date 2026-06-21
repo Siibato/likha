@@ -28,6 +28,7 @@ import 'package:likha/data/models/student_records/previous_subject_model.dart';
 import 'package:likha/data/models/student_records/previous_attendance_model.dart';
 import 'package:likha/data/models/auth/account_detail_response_model.dart';
 import 'package:likha/data/models/student_records/sf10_response_model.dart';
+import 'package:likha/data/models/import/import_preview_model.dart';
 import 'package:likha/data/models/sync/push_response_model.dart';
 import 'package:likha/data/models/sync/conflict_model.dart';
 import 'package:likha/data/models/sync/full_sync_response_model.dart';
@@ -684,4 +685,17 @@ class ApiEndpoints {
             .map((e) => MelcEntryModel.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
+
+  // ===== CSV Import =====
+  static String get studentImportTemplate => '/api/v1/auth/accounts/import-template';
+  static ApiEndpoint<PreviewResponseModel> studentImportPreview() =>
+      ApiEndpoint.fromModel('/api/v1/auth/accounts/import-preview', PreviewResponseModel.fromJson);
+  static ApiEndpoint<ImportResultModel> studentImport() =>
+      ApiEndpoint.fromModel('/api/v1/auth/accounts/import', ImportResultModel.fromJson);
+
+  static String historyImportTemplate(String type) => '/api/v1/admin/student-history/template?type=$type';
+  static ApiEndpoint<PreviewResponseModel> historyImportPreview(String type) =>
+      ApiEndpoint.fromModel('/api/v1/admin/student-history/preview?type=$type', PreviewResponseModel.fromJson);
+  static ApiEndpoint<ImportResultModel> historyImport(String type) =>
+      ApiEndpoint.fromModel('/api/v1/admin/student-history/import?type=$type', ImportResultModel.fromJson);
 }

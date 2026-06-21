@@ -57,7 +57,7 @@ Future<GeneralAverageResponseModel?> assembleGeneralAveragesLocal(
         studentName: studentNameStr,
         generalAverage: null,
         subjectCount: 0,
-        subjects: [],
+        subjects: const [],
       ));
       continue;
     }

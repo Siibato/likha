@@ -5,6 +5,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::modules::admin::handler;
+use crate::modules::admin::import_handler;
 use crate::modules::admin::service::AdminService;
 
 pub fn routes(admin_service: Arc<AdminService>) -> Router {
@@ -31,5 +32,18 @@ pub fn routes(admin_service: Arc<AdminService>) -> Router {
             get(handler::get_account_details).put(handler::upsert_account_details),
         )
         .route("/students/search", get(handler::search_students))
+        // Student import endpoints
+        .route(
+            "/auth/accounts/import-template",
+            get(import_handler::get_import_template),
+        )
+        .route(
+            "/auth/accounts/import-preview",
+            post(import_handler::preview_student_import),
+        )
+        .route(
+            "/auth/accounts/import",
+            post(import_handler::import_students),
+        )
         .with_state(admin_service)
 }

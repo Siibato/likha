@@ -263,7 +263,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
               ),
               if (_selectedRole == 'student') ...[
                 const SizedBox(height: 24),
-                Align(
+                const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Learner Details (Optional)',
@@ -375,7 +375,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
               ],
               if (_selectedRole == 'teacher') ...[
                 const SizedBox(height: 24),
-                Align(
+                const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Teacher Details (Optional)',
