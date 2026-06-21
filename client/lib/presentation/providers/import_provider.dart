@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:likha/data/models/import/import_preview_model.dart';
 import 'package:likha/domain/repositories/import_repository.dart';
 import 'package:likha/injection_container.dart';
@@ -53,6 +54,37 @@ class ImportNotifier extends StateNotifier<ImportState> {
 
   void reset() {
     state = ImportState();
+  }
+
+  Future<String?> downloadStudentTemplate() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final savePath = '${dir.path}/student_import_template.csv';
+      await _repository.downloadStudentTemplate(savePath);
+      return savePath;
+    } catch (e) {
+      state = state.copyWith(status: ImportStatus.error, errorMessage: e.toString());
+      return null;
+    }
+  }
+
+  Future<String?> downloadHistoryTemplate(String type) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final savePath = '${dir.path}/history_${type}_template.csv';
+      await _repository.downloadHistoryTemplate(type, savePath);
+      return savePath;
+    } catch (e) {
+      state = state.copyWith(status: ImportStatus.error, errorMessage: e.toString());
+      return null;
+    }
+  }
+
+  void removeRow(int rowIndex) {
+    if (state.preview == null) return;
+    final updatedRows = state.preview!.rows.where((r) => r.rowIndex != rowIndex).toList();
+    final updatedPreview = PreviewResponseModel(rows: updatedRows);
+    state = state.copyWith(preview: updatedPreview);
   }
 
   Future<void> previewStudentImport(String filePath) async {

@@ -5,11 +5,13 @@ import 'package:likha/data/models/import/import_preview_model.dart';
 class ImportPreviewTable extends StatelessWidget {
   final PreviewResponseModel preview;
   final List<String> columns;
+  final void Function(int rowIndex)? onRemoveRow;
 
   const ImportPreviewTable({
     super.key,
     required this.preview,
     required this.columns,
+    this.onRemoveRow,
   });
 
   @override
@@ -32,6 +34,8 @@ class ImportPreviewTable extends StatelessWidget {
                   label: Text(c, style: const TextStyle(fontWeight: FontWeight.w700)),
                 )),
             const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.w700))),
+            if (onRemoveRow != null)
+              const DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: preview.rows.map((row) {
             final hasErrors = row.hasErrors;
@@ -69,6 +73,16 @@ class ImportPreviewTable extends StatelessWidget {
                               label: 'OK',
                             ),
                 ),
+                if (onRemoveRow != null)
+                  DataCell(
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 16),
+                      color: AppColors.foregroundTertiary,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => onRemoveRow!(row.rowIndex),
+                    ),
+                  ),
               ],
             );
           }).toList(),

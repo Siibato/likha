@@ -35,6 +35,7 @@ class StyledDialog extends StatelessWidget {
   /// When set, the right-side [actions] lose their Expanded stretch and become
   /// content-sized, creating a [Delete]      [Cancel][Save] layout.
   final StyledDialogAction? leadingAction;
+  final double? maxWidth;
 
   const StyledDialog({
     super.key,
@@ -44,6 +45,7 @@ class StyledDialog extends StatelessWidget {
     required this.actions,
     this.warningBox,
     this.leadingAction,
+    this.maxWidth,
   });
 
   @override
@@ -52,7 +54,7 @@ class StyledDialog extends StatelessWidget {
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
+        constraints: BoxConstraints(maxWidth: maxWidth ?? 360),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),

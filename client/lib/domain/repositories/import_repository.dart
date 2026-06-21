@@ -6,12 +6,20 @@ class ImportRepository {
 
   ImportRepository(this._remoteDataSource);
 
+  Future<void> downloadStudentTemplate(String savePath) {
+    return _remoteDataSource.downloadStudentTemplate(savePath);
+  }
+
   Future<PreviewResponseModel> previewStudentImport(String filePath) {
     return _remoteDataSource.previewStudentImport(filePath);
   }
 
   Future<ImportResultModel> importStudents(List<Map<String, dynamic>> rows) {
     return _remoteDataSource.importStudents(rows);
+  }
+
+  Future<void> downloadHistoryTemplate(String type, String savePath) {
+    return _remoteDataSource.downloadHistoryTemplate(type, savePath);
   }
 
   Future<PreviewResponseModel> previewHistoryImport(String filePath, String type) {

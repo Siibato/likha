@@ -59,6 +59,9 @@ dependencies:
   mobile_scanner: ^5.2.3    # QR camera scanner
   web: ^1.1.1
 
+  # Desktop drag-and-drop
+  desktop_drop: ^0.4.4
+
   # Excel generation
   excel: ^4.0.6
 

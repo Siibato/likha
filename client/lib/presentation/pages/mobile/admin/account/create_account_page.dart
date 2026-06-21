@@ -463,9 +463,59 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                 isLoading: adminState.isLoading,
                 onPressed: _handleCreate,
               ),
+              const SizedBox(height: 24),
+              const _BulkOperationsCard(),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BulkOperationsCard extends StatelessWidget {
+  const _BulkOperationsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundTertiary,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, size: 20, color: AppColors.foregroundSecondary),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bulk Operations',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.foregroundDark,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Need to create multiple accounts? Go to Account Management and use '
+                  '"Bulk Import" to upload a CSV. You can also import school history, '
+                  'subjects, and attendance from there.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.foregroundSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

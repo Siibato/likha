@@ -5,9 +5,11 @@ import 'package:likha/core/constants/api_endpoints.dart';
 import 'package:likha/data/models/import/import_preview_model.dart';
 
 abstract class ImportRemoteDataSource {
+  Future<void> downloadStudentTemplate(String savePath);
   Future<PreviewResponseModel> previewStudentImport(String filePath);
   Future<ImportResultModel> importStudents(List<Map<String, dynamic>> rows);
 
+  Future<void> downloadHistoryTemplate(String type, String savePath);
   Future<PreviewResponseModel> previewHistoryImport(String filePath, String type);
   Future<ImportResultModel> importHistory(List<Map<String, dynamic>> rows, String type);
 }
@@ -16,6 +18,15 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
   final DioClient _dioClient;
 
   ImportRemoteDataSourceImpl(this._dioClient);
+
+  @override
+  Future<void> downloadStudentTemplate(String savePath) async {
+    await _dioClient.dio.download(
+      ApiEndpoints.studentImportTemplate,
+      savePath,
+      options: Options(responseType: ResponseType.bytes),
+    );
+  }
 
   @override
   Future<PreviewResponseModel> previewStudentImport(String filePath) async {
@@ -49,6 +60,15 @@ class ImportRemoteDataSourceImpl implements ImportRemoteDataSource {
       (json) => ImportResultModel.fromJson(json as Map<String, dynamic>),
     );
     return apiResponse.unwrap();
+  }
+
+  @override
+  Future<void> downloadHistoryTemplate(String type, String savePath) async {
+    await _dioClient.dio.download(
+      ApiEndpoints.historyImportTemplate(type),
+      savePath,
+      options: Options(responseType: ResponseType.bytes),
+    );
   }
 
   @override

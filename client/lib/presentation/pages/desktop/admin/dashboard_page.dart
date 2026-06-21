@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/admin/account/create_account_page.dart';
-import 'package:likha/presentation/pages/desktop/admin/bulk_student_import_page.dart';
-import 'package:likha/presentation/pages/desktop/admin/student_history_import_page.dart';
 import 'package:likha/presentation/widgets/desktop/admin/dashboard/admin_stats_row.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
@@ -97,34 +95,6 @@ class _AdminDashboardPageState
                   title: 'School Details',
                   subtitle: 'Configure school info for printed reports',
                   onTap: () => widget.onNavigate?.call(3),
-                ),
-              ),
-              SizedBox(
-                width: 380,
-                child: NavigationCard(
-                  icon: Icons.upload_file_outlined,
-                  title: 'Bulk Student Import',
-                  subtitle: 'Import multiple student accounts from CSV',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const BulkStudentImportPage(),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 380,
-                child: NavigationCard(
-                  icon: Icons.history_edu_outlined,
-                  title: 'Student History Import',
-                  subtitle: 'Import school history, subjects, or attendance from CSV',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const StudentHistoryImportPage(),
-                    ),
-                  ),
                 ),
               ),
             ],

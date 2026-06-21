@@ -243,37 +243,40 @@ class GradingSyncHandler {
         final gradeItemId = payload['grade_item_id'] as String;
         final scores = (payload['scores'] as List<dynamic>)
             .cast<Map<String, dynamic>>();
-        _log.log('saveScores: gradeItemId=$gradeItemId, scoresCount=${scores.length}');
+        _log.log('saveScores: START - entryId=${entry.id} gradeItemId=$gradeItemId scoresCount=${scores.length} retryCount=${entry.retryCount}');
         for (final s in scores) {
-          _log.log('  score: student_id=${s['student_id']} score=${s['score']}');
+          _log.log('  score: student_id=${s['student_id']} score=${s['score']} id=${s['id']}');
         }
         try {
+          _log.log('saveScores: Calling _remote.saveScores (PUT /grade-items/$gradeItemId/scores) with idempotencyKey=${entry.id}');
           await _remote.saveScores(
             gradeItemId: gradeItemId,
             scores: scores,
             idempotencyKey: entry.id,
           );
+          _log.log('saveScores: PUT request completed without exception');
         } on ServerException catch (e, st) {
           _log.error(
-            'saveScores FAILED for gradeItemId=$gradeItemId | status=${e.statusCode} | message=${e.message}',
+            'saveScores: ServerException - gradeItemId=$gradeItemId | status=${e.statusCode} | message=${e.message}',
             st,
           );
           rethrow;
         } on NetworkException catch (e, st) {
           _log.error(
-            'saveScores NETWORK FAILED for gradeItemId=$gradeItemId | ${e.message}',
+            'saveScores: NetworkException - gradeItemId=$gradeItemId | ${e.message}',
             st,
           );
           rethrow;
         } catch (e, st) {
           _log.error(
-            'saveScores UNEXPECTED ERROR for gradeItemId=$gradeItemId | $e',
+            'saveScores: UNEXPECTED ERROR - gradeItemId=$gradeItemId | errorType=${e.runtimeType} | $e',
             st,
           );
           rethrow;
         }
-        _log.log('saveScores: server accepted, marking synced');
+        _log.log('saveScores: Server accepted, marking all scores for item $gradeItemId as synced');
         await _markGradeScoresSyncedByItem(gradeItemId);
+        _log.log('saveScores: DONE - entryId=${entry.id} gradeItemId=$gradeItemId');
         return const SyncResult.success();
 
       case SyncOperation.setOverride:

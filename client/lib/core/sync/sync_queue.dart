@@ -208,27 +208,38 @@ class SyncQueueImpl implements SyncQueue {
 
   @override
   Future<void> enqueue(SyncQueueEntry entry, {Transaction? txn}) async {
-    CoreLogger.instance.log('enqueue: Adding ${entry.entityType.dbValue} ${entry.operation.dbValue} to queue, ID=${entry.id}');
-
-    if (txn != null) {
-      CoreLogger.instance.log('enqueue: Using provided transaction object');
-      await txn.insert(
-        DbTables.syncQueue,
-        entry.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    } else {
-      CoreLogger.instance.log('enqueue: Getting database connection');
-      final db = await _localDatabase.database;
-      await db.insert(
-        DbTables.syncQueue,
-        entry.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+    CoreLogger.instance.log('enqueue: START - ${entry.entityType.dbValue}.${entry.operation.dbValue} ID=${entry.id}');
+    if (entry.entityType == SyncEntityType.gradeScore) {
+      final payloadSummary = (entry.payload['scores'] as List?)
+          ?.map((s) => 'student=${s['student_id']},score=${s['score']}')
+          .join(', ') ?? 'no scores';
+      CoreLogger.instance.log('enqueue: gradeScore payload - gradeItemId=${entry.payload['grade_item_id']}, scores=[$payloadSummary]');
     }
 
-    CoreLogger.instance.log('enqueue: Entry added to queue successfully');
-    _onEntryAddedController.add(entry);
+    try {
+      if (txn != null) {
+        CoreLogger.instance.log('enqueue: Using provided transaction, inserting into ${DbTables.syncQueue}');
+        await txn.insert(
+          DbTables.syncQueue,
+          entry.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      } else {
+        CoreLogger.instance.log('enqueue: Getting database connection');
+        final db = await _localDatabase.database;
+        await db.insert(
+          DbTables.syncQueue,
+          entry.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      CoreLogger.instance.log('enqueue: SUCCESS - Entry ${entry.id} inserted, notifying stream listeners');
+      _onEntryAddedController.add(entry);
+    } catch (e, st) {
+      CoreLogger.instance.error('enqueue: FAILED to insert entry ${entry.id} - $e', st);
+      rethrow;
+    }
   }
 
   @override
@@ -240,27 +251,39 @@ class SyncQueueImpl implements SyncQueue {
       whereArgs: [SyncStatus.pending.dbValue],
       orderBy: '${CommonCols.createdAt} ASC',
     );
+    CoreLogger.instance.log('getAllRetriable: Found ${results.length} pending entries in DB');
     final entries = results.map(SyncQueueEntry.fromMap).toList();
     final now = DateTime.now();
-    return entries.where((e) {
+    final retriable = entries.where((e) {
       if (e.lastAttemptedAt == null) return true;
       final backoff = _backoffForRetry(e.retryCount);
       return now.difference(e.lastAttemptedAt!) >= backoff;
     }).toList();
+    final skipped = entries.length - retriable.length;
+    if (skipped > 0) {
+      CoreLogger.instance.log('getAllRetriable: $skipped entries skipped due to backoff');
+    }
+    for (final e in retriable) {
+      CoreLogger.instance.log('getAllRetriable: retriable - ${e.entityType.dbValue}.${e.operation.dbValue} ID=${e.id} retryCount=${e.retryCount}');
+    }
+    return retriable;
   }
 
   @override
   Future<void> markSucceeded(String id) async {
+    CoreLogger.instance.log('markSucceeded: Deleting entry $id from sync_queue (success)');
     final db = await _localDatabase.database;
     await db.delete(
       DbTables.syncQueue,
       where: '${CommonCols.id} = ?',
       whereArgs: [id],
     );
+    CoreLogger.instance.log('markSucceeded: Entry $id deleted successfully');
   }
 
   @override
   Future<void> markFailed(String id, String errorMessage) async {
+    CoreLogger.instance.error('markFailed: Entry $id marked FAILED - $errorMessage', null);
     final db = await _localDatabase.database;
     await db.update(
       DbTables.syncQueue,
@@ -281,6 +304,8 @@ class SyncQueueImpl implements SyncQueue {
       'UPDATE ${DbTables.syncQueue} SET ${SyncQueueCols.retryCount} = ${SyncQueueCols.retryCount} + 1, ${SyncQueueCols.lastAttemptedAt} = ? WHERE ${CommonCols.id} = ?',
       [DateTime.now().toIso8601String(), id],
     );
+    final updated = await getById(id);
+    CoreLogger.instance.log('incrementRetry: Entry $id now retryCount=${updated?.retryCount}/${updated?.maxRetries}');
   }
 
   @override
