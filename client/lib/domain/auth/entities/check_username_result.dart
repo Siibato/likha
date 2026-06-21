@@ -15,7 +15,7 @@ class CheckUsernameResult extends Equatable {
 
   String? get fullName {
     if (firstName == null && lastName == null) return null;
-    return '$firstName $lastName'.trim();
+    return '$lastName, $firstName'.trim();
   }
   bool get isPendingActivation => accountStatus == 'pending_activation';
   bool get isActivated => accountStatus == 'activated';

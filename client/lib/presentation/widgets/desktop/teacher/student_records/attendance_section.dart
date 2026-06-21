@@ -36,7 +36,16 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.students.isEmpty) {
+    final students = List<Participant>.from(widget.students)
+      ..sort((a, b) {
+        final lastCmp = a.student.lastName.toLowerCase().compareTo(
+            b.student.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return a.student.firstName.toLowerCase().compareTo(
+            b.student.firstName.toLowerCase());
+      });
+
+    if (students.isEmpty) {
       return const DesktopPageScaffold(
         title: 'Attendance',
         subtitle: 'Monthly attendance records for SF10',
@@ -66,10 +75,10 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
                   border: Border.all(color: AppColors.borderLight),
                 ),
                 child: ListView.separated(
-                  itemCount: widget.students.length,
+                  itemCount: students.length,
                   separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
                   itemBuilder: (context, index) {
-                    final s = widget.students[index];
+                    final s = students[index];
                     final isSelected = s.student.id == _selectedStudentId;
                     return ListTile(
                       selected: isSelected,
@@ -105,22 +114,181 @@ class _AttendanceSectionState extends ConsumerState<AttendanceSection> {
             ),
             const SizedBox(width: 24),
             Expanded(
-              child: _selectedStudentId == null
-                  ? const EmptyState.generic(title: 'Select a student', subtitle: 'Choose a student to view/edit attendance')
-                  : SingleChildScrollView(
-                      child: _AttendanceGrid(
-                        key: ValueKey(_selectedStudentId),
-                        classId: widget.classId,
-                        studentId: _selectedStudentId!,
-                        studentName: _selectedStudentName ?? 'Student',
-                        schoolYear: widget.schoolYear ?? '',
-                        state: state,
-                        ref: ref,
-                      ),
-                    ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _BulkSchoolDaysCard(
+                    classId: widget.classId,
+                    studentIds: students.map((s) => s.student.id).toList(),
+                    schoolYear: widget.schoolYear ?? '',
+                    isBulkSaving: state.isBulkSaving,
+                    ref: ref,
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _selectedStudentId == null
+                        ? const EmptyState.generic(title: 'Select a student', subtitle: 'Choose a student to view/edit attendance')
+                        : SingleChildScrollView(
+                            child: _AttendanceGrid(
+                              key: ValueKey(_selectedStudentId),
+                              classId: widget.classId,
+                              studentId: _selectedStudentId!,
+                              studentName: _selectedStudentName ?? 'Student',
+                              schoolYear: widget.schoolYear ?? '',
+                              state: state,
+                              ref: ref,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BulkSchoolDaysCard extends StatefulWidget {
+  final String classId;
+  final List<String> studentIds;
+  final String schoolYear;
+  final bool isBulkSaving;
+  final WidgetRef ref;
+
+  const _BulkSchoolDaysCard({
+    super.key,
+    required this.classId,
+    required this.studentIds,
+    required this.schoolYear,
+    required this.isBulkSaving,
+    required this.ref,
+  });
+
+  @override
+  State<_BulkSchoolDaysCard> createState() => _BulkSchoolDaysCardState();
+}
+
+class _BulkSchoolDaysCardState extends State<_BulkSchoolDaysCard> {
+  String? _selectedMonth;
+  final _schoolDaysCtrl = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _schoolDaysCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _applyToAll() async {
+    if (_selectedMonth == null) {
+      setState(() => _error = 'Select a month');
+      return;
+    }
+    final sd = int.tryParse(_schoolDaysCtrl.text);
+    if (sd == null || sd < 0) {
+      setState(() => _error = 'Enter a valid number of school days');
+      return;
+    }
+    setState(() => _error = null);
+
+    final (allSuccess, successCount, failCount) = await widget.ref
+        .read(attendanceProvider.notifier)
+        .bulkSaveSchoolDays(
+          classId: widget.classId,
+          studentIds: widget.studentIds,
+          schoolYear: widget.schoolYear,
+          month: _selectedMonth!,
+          schoolDays: sd,
+        );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            allSuccess
+                ? 'School days set to $sd for $successCount student${successCount == 1 ? '' : 's'} in $_selectedMonth'
+                : 'Updated $successCount student${successCount == 1 ? '' : 's'}, $failCount failed',
+          ),
+          backgroundColor: allSuccess ? AppColors.semanticSuccess : AppColors.semanticError,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.group_rounded, size: 20, color: AppColors.foregroundPrimary),
+          const SizedBox(width: 12),
+          Text(
+            'Set school days for all students',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.foregroundDark),
+          ),
+          const SizedBox(width: 20),
+          SizedBox(
+            width: 140,
+            child: DropdownButtonFormField<String>(
+              value: _selectedMonth,
+              decoration: InputDecoration(
+                labelText: 'Month',
+                labelStyle: const TextStyle(fontSize: 12, color: AppColors.foregroundSecondary),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.borderLight)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                isDense: true,
+              ),
+              items: _months.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 12)))).toList(),
+              onChanged: widget.isBulkSaving ? null : (v) => setState(() { _selectedMonth = v; _error = null; }),
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 120,
+            child: TextField(
+              controller: _schoolDaysCtrl,
+              keyboardType: TextInputType.number,
+              enabled: !widget.isBulkSaving,
+              decoration: InputDecoration(
+                labelText: 'School Days',
+                labelStyle: const TextStyle(fontSize: 12, color: AppColors.foregroundSecondary),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: _error != null ? AppColors.semanticError : AppColors.borderLight)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                isDense: true,
+              ),
+              style: const TextStyle(fontSize: 13),
+              onChanged: (_) => setState(() => _error = null),
+            ),
+          ),
+          const SizedBox(width: 12),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(_error!, style: const TextStyle(fontSize: 12, color: AppColors.semanticError)),
+            ),
+          const Spacer(),
+          FilledButton.icon(
+            onPressed: widget.isBulkSaving ? null : _applyToAll,
+            icon: widget.isBulkSaving
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Set for All'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.foregroundPrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -160,7 +328,12 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
   @override
   void didUpdateWidget(_AttendanceGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncFromState();
+    // Only sync when not in the middle of saving and the records list
+    // identity has actually changed. Otherwise toggles like isSaving
+    // trigger rebuilds that overwrite user-edited controller values.
+    if (!_isSaving && oldWidget.state.records != widget.state.records) {
+      _syncFromState();
+    }
   }
 
   void _syncFromState() {
@@ -224,10 +397,18 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
       return;
     }
     setState(() => _isSaving = true);
+    // Snapshot controller values before any async work so that
+    // _syncFromState() cannot overwrite them mid-loop.
+    final snapshot = <String, (int, int)>{
+      for (final month in _months)
+        month: (
+          int.tryParse(_schoolDaysCtrls[month]!.text) ?? 0,
+          int.tryParse(_presentCtrls[month]!.text) ?? 0,
+        ),
+    };
     bool allSuccess = true;
     for (final month in _months) {
-      final sd = int.tryParse(_schoolDaysCtrls[month]!.text) ?? 0;
-      final dp = int.tryParse(_presentCtrls[month]!.text) ?? 0;
+      final (sd, dp) = snapshot[month]!;
       final success = await widget.ref.read(attendanceProvider.notifier).save(widget.classId, widget.studentId, {
         'class_id': widget.classId,
         'school_year': widget.schoolYear,

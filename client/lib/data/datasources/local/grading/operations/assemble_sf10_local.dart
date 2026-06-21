@@ -92,6 +92,7 @@ Future<Sf10ResponseModel?> assembleSf10Local(
     'SELECT ${CommonCols.id}, ${ClassesCols.title} FROM ${DbTables.classes} '
     'WHERE ${CommonCols.id} IN ($classIdPlaceholders) '
     'AND ${ClassesCols.schoolYear} = ? '
+    'AND ${ClassesCols.isAdvisory} = 0 '
     'AND ${CommonCols.deletedAt} IS NULL',
     [...enrolledClassIds, schoolYear],
   );

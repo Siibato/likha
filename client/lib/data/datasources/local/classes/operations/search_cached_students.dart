@@ -13,7 +13,7 @@ Future<List<UserModel>> searchCachedStudents(
       DbTables.users,
       where: '(${UsersCols.username} LIKE ? OR ${UsersCols.firstName} LIKE ? OR ${UsersCols.lastName} LIKE ?) AND ${UsersCols.role} = ?',
       whereArgs: ['%$query%', '%$query%', '%$query%', 'student'],
-      orderBy: '${UsersCols.firstName} ASC, ${UsersCols.lastName} ASC',
+      orderBy: '${UsersCols.lastName} ASC, ${UsersCols.firstName} ASC',
     );
     return results.map((r) => UserModel.fromMap(r)).toList();
   } catch (e) {

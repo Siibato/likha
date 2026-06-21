@@ -33,7 +33,16 @@ class _CoreValuesSectionState extends ConsumerState<CoreValuesSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.students.isEmpty) {
+    final students = List<Participant>.from(widget.students)
+      ..sort((a, b) {
+        final lastCmp = a.student.lastName.toLowerCase().compareTo(
+            b.student.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return a.student.firstName.toLowerCase().compareTo(
+            b.student.firstName.toLowerCase());
+      });
+
+    if (students.isEmpty) {
       return const DesktopPageScaffold(
         title: 'Core Values',
         subtitle: 'Character development records for SF10',
@@ -63,10 +72,10 @@ class _CoreValuesSectionState extends ConsumerState<CoreValuesSection> {
                   border: Border.all(color: AppColors.borderLight),
                 ),
                 child: ListView.separated(
-                  itemCount: widget.students.length,
+                  itemCount: students.length,
                   separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
                   itemBuilder: (context, index) {
-                    final s = widget.students[index];
+                    final s = students[index];
                     final isSelected = s.student.id == _selectedStudentId;
                     return ListTile(
                       selected: isSelected,
@@ -191,14 +200,17 @@ class _CoreValuesGrid extends StatelessWidget {
           if (state.isLoading && state.records.isEmpty)
             const CoreValuesSkeleton()
           else
-            ...coreValueNames.map((cvName) {
+            ...coreValueNames.asMap().entries.map((cvEntry) {
+              final cvIndex = cvEntry.key;
+              final cvName = cvEntry.value;
+              final numberedName = '${cvIndex + 1}. $cvName';
               final stmts = statementsForCoreValue(cvName);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(cvName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    Text(numberedName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const SizedBox(height: 12),
                     Table(
                       columnWidths: {

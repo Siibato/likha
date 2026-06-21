@@ -22,6 +22,8 @@ pub async fn get_enrolled_student_ids(
         .filter(class_participants::Column::ClassId.eq(class_id))
         .filter(class_participants::Column::RemovedAt.is_null())
         .filter(users::Column::Role.eq("student"))
+        .order_by_asc(users::Column::LastName)
+        .order_by_asc(users::Column::FirstName)
         .into_tuple::<(Uuid, String, String)>()
         .all(db)
         .await

@@ -61,6 +61,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
             subjects: sf9.subjects,
             generalAverage: sf9.generalAverage,
             coreValues: sf9.coreValues,
+            attendance: sf9.attendance,
           )
         : sf9;
 
@@ -212,10 +213,149 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
           const SizedBox(height: 24),
           // Core values table
           Sf9CoreValuesTable(coreValues: displaySf9.coreValues),
+          const SizedBox(height: 24),
+          // Attendance
+          _buildAttendanceSection(displaySf9.attendance),
         ],
       ),
     );
   }
+
+  static const _monthOrder = [
+    'June', 'July', 'August', 'September', 'October', 'November',
+    'December', 'January', 'February', 'March', 'April',
+  ];
+
+  int _monthSortKey(String month) {
+    final idx = _monthOrder.indexOf(month);
+    return idx == -1 ? 999 : idx;
+  }
+
+  Widget _buildAttendanceSection(List<Sf9AttendanceRecord> attendance) {
+    final sorted = [...attendance]..sort((a, b) => _monthSortKey(a.month).compareTo(_monthSortKey(b.month)));
+    final totalSchoolDays = sorted.fold<int>(0, (sum, a) => sum + a.schoolDays);
+    final totalDaysPresent = sorted.fold<int>(0, (sum, a) => sum + a.daysPresent);
+    final totalDaysAbsent = totalSchoolDays - totalDaysPresent;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Attendance',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppColors.foregroundPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Table(
+            columnWidths: {
+              0: const FixedColumnWidth(100),
+              for (int i = 0; i < _monthOrder.length; i++)
+                i + 1: const FixedColumnWidth(44),
+              _monthOrder.length + 1: const FixedColumnWidth(52),
+            },
+            border: TableBorder(
+              horizontalInside: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+              verticalInside: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+            ),
+            children: [
+              // Header row
+              TableRow(
+                children: [
+                  _attendanceTh(''),
+                  ..._monthOrder.map((m) => _attendanceTh(m.substring(0, 3))),
+                  _attendanceTh('Total'),
+                ],
+              ),
+              // School Days row
+              TableRow(
+                children: [
+                  _attendanceLabel('No. of\nSchool Days'),
+                  ..._monthOrder.map((m) {
+                    final rec = sorted.where((a) => a.month == m).firstOrNull;
+                    return _attendanceCell(rec?.schoolDays.toString() ?? '');
+                  }),
+                  _attendanceCell(totalSchoolDays.toString(), isBold: true),
+                ],
+              ),
+              // Days Present row
+              TableRow(
+                children: [
+                  _attendanceLabel('No. of\nDays Present'),
+                  ..._monthOrder.map((m) {
+                    final rec = sorted.where((a) => a.month == m).firstOrNull;
+                    return _attendanceCell(rec?.daysPresent.toString() ?? '');
+                  }),
+                  _attendanceCell(totalDaysPresent.toString(), isBold: true),
+                ],
+              ),
+              // Times Absent row
+              TableRow(
+                children: [
+                  _attendanceLabel('No. of\nTimes Absent'),
+                  ..._monthOrder.map((m) {
+                    final rec = sorted.where((a) => a.month == m).firstOrNull;
+                    final absent = rec != null ? rec.schoolDays - rec.daysPresent : 0;
+                    return _attendanceCell(absent > 0 ? absent.toString() : '');
+                  }),
+                  _attendanceCell(totalDaysAbsent > 0 ? totalDaysAbsent.toString() : '', isBold: true),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _attendanceTh(String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        color: AppColors.foregroundSecondary,
+      ),
+    ),
+  );
+
+  Widget _attendanceLabel(String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: AppColors.foregroundDark,
+        height: 1.3,
+      ),
+    ),
+  );
+
+  Widget _attendanceCell(String text, {bool isBold = false}) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+        color: AppColors.foregroundDark,
+      ),
+    ),
+  );
 
   Future<void> _downloadSf9(Sf9Response displaySf9) async {
     final reachability = sl<ServerReachabilityService>();

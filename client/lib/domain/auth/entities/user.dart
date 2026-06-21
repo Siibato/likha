@@ -32,7 +32,7 @@ class User extends Equatable {
     this.syncStatus = SyncStatus.synced,
   });
 
-  String get fullName => '$firstName $lastName'.trim();
+  String get fullName => '$lastName, $firstName'.trim();
 
   bool get isTeacher => role == 'teacher';
   bool get isStudent => role == 'student';

@@ -27,7 +27,16 @@ class _LearnerDetailsSectionState extends ConsumerState<LearnerDetailsSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.students.isEmpty) {
+    final students = List<Participant>.from(widget.students)
+      ..sort((a, b) {
+        final lastCmp = a.student.lastName.toLowerCase().compareTo(
+            b.student.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return a.student.firstName.toLowerCase().compareTo(
+            b.student.firstName.toLowerCase());
+      });
+
+    if (students.isEmpty) {
       return const DesktopPageScaffold(
         title: 'Learner Details',
         subtitle: 'Edit student personal information for SF10',
@@ -58,10 +67,10 @@ class _LearnerDetailsSectionState extends ConsumerState<LearnerDetailsSection> {
                   border: Border.all(color: AppColors.borderLight),
                 ),
                 child: ListView.separated(
-                  itemCount: widget.students.length,
+                  itemCount: students.length,
                   separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
                   itemBuilder: (context, index) {
-                    final s = widget.students[index];
+                    final s = students[index];
                     final isSelected = s.student.id == _selectedStudentId;
                     return ListTile(
                       selected: isSelected,

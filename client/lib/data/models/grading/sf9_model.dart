@@ -18,6 +18,7 @@ class Sf9ResponseModel extends Sf9Response {
     required super.subjects,
     super.generalAverage,
     super.coreValues = const [],
+    super.attendance = const [],
   });
 
   factory Sf9ResponseModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +58,11 @@ class Sf9ResponseModel extends Sf9Response {
         .map((e) => Sf9CoreValueMarkingModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
 
+    final attendanceRaw = json['attendance'] as List<dynamic>? ?? [];
+    final attendance = attendanceRaw
+        .map((e) => Sf9AttendanceRecordModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+
     return Sf9ResponseModel(
       studentId: studentId,
       studentName: studentName,
@@ -73,6 +79,7 @@ class Sf9ResponseModel extends Sf9Response {
       subjects: subjects,
       generalAverage: generalAverage,
       coreValues: coreValues,
+      attendance: attendance,
     );
   }
 
@@ -95,6 +102,7 @@ class Sf9ResponseModel extends Sf9Response {
           ? (generalAverage as Sf9TermAveragesModel).toJson()
           : null,
       'core_values': coreValues.map((v) => (v as Sf9CoreValueMarkingModel).toJson()).toList(),
+      'attendance': attendance.map((a) => (a as Sf9AttendanceRecordModel).toJson()).toList(),
     };
   }
 }
@@ -159,6 +167,30 @@ List<int?> _parseTermGrades(dynamic value) {
     return value.map((e) => e as int?).toList();
   }
   return const [];
+}
+
+class Sf9AttendanceRecordModel extends Sf9AttendanceRecord {
+  const Sf9AttendanceRecordModel({
+    required super.month,
+    required super.schoolDays,
+    required super.daysPresent,
+  });
+
+  factory Sf9AttendanceRecordModel.fromJson(Map<String, dynamic> json) {
+    return Sf9AttendanceRecordModel(
+      month: json['month'] as String,
+      schoolDays: json['school_days'] as int,
+      daysPresent: json['days_present'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'month': month,
+      'school_days': schoolDays,
+      'days_present': daysPresent,
+    };
+  }
 }
 
 class Sf9CoreValueMarkingModel extends Sf9CoreValueMarking {

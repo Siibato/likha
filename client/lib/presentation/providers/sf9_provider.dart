@@ -124,6 +124,8 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   final GetSf10 _getSf10;
   late StreamSubscription<String> _sf9Sub;
   late StreamSubscription<String> _sf10Sub;
+  late StreamSubscription<String> _attendanceSub;
+  late StreamSubscription<String> _coreValuesSub;
   String? _currentClassId;
   String? _currentStudentId;
 
@@ -137,6 +139,16 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
     _sf10Sub = sl<DataEventBus>().onSf10Changed.listen((classId) {
       if (_currentClassId != null && _currentClassId == classId && _currentStudentId != null) {
         loadSf10(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
+      }
+    });
+    _attendanceSub = sl<DataEventBus>().onAttendanceChanged.listen((studentId) {
+      if (_currentStudentId != null && _currentStudentId == studentId && _currentClassId != null) {
+        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
+      }
+    });
+    _coreValuesSub = sl<DataEventBus>().onCoreValuesChanged.listen((studentId) {
+      if (_currentStudentId != null && _currentStudentId == studentId && _currentClassId != null) {
+        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
       }
     });
   }
@@ -196,6 +208,8 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   void dispose() {
     _sf9Sub.cancel();
     _sf10Sub.cancel();
+    _attendanceSub.cancel();
+    _coreValuesSub.cancel();
     super.dispose();
   }
 }

@@ -1,11 +1,11 @@
 use uuid::Uuid;
 use crate::cache::CacheKey;
-use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9TermAverages};
+use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9TermAverages, Sf9AttendanceRecord};
 use crate::modules::student_records::schema::CoreValuesResponse;
 use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
 
-use ::entity::core_values_records;
+use ::entity::{attendance_records, core_values_records};
 use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
 
 impl crate::modules::grading::service::GradeComputationService {
@@ -58,6 +58,19 @@ impl crate::modules::grading::service::GradeComputationService {
             .await
             .unwrap_or_default();
         let core_values: Vec<CoreValuesResponse> = cv_records.into_iter().map(CoreValuesResponse::from).collect();
+
+        let att_records = attendance_records::Entity::find()
+            .filter(attendance_records::Column::StudentId.eq(student_id))
+            .filter(attendance_records::Column::ClassId.eq(class_id))
+            .filter(attendance_records::Column::DeletedAt.is_null())
+            .all(&self.db)
+            .await
+            .unwrap_or_default();
+        let attendance: Vec<Sf9AttendanceRecord> = att_records.into_iter().map(|r| Sf9AttendanceRecord {
+            month: r.month,
+            school_days: r.school_days,
+            days_present: r.days_present,
+        }).collect();
 
         let mut subjects = Vec::new();
         let num_terms = crate::modules::grading::helpers::term_count::term_count(&class.term_type);
@@ -137,6 +150,7 @@ impl crate::modules::grading::service::GradeComputationService {
             subjects,
             general_average,
             core_values,
+            attendance,
         };
         if let Some(ref cache) = self.cache {
             if !result.student_name.eq_ignore_ascii_case("Unknown Student") {

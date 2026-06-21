@@ -5,7 +5,7 @@ import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/presentation/widgets/shared/primitives/class_section_header.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
-import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_year_dropdown.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 
 class ClassGradingSetupPage extends ConsumerStatefulWidget {
@@ -22,7 +22,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
   String? _selectedGradeLevel;
   String? _selectedSubjectGroup;
   int? _selectedSemester;
-  late TextEditingController _schoolYearController;
+  String? _selectedSchoolYear;
 
   static const _gradeLevels = [
     'Grade 7',
@@ -71,22 +71,13 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    final startYear = now.month >= 6 ? now.year : now.year - 1;
-    _schoolYearController =
-        TextEditingController(text: '$startYear-${startYear + 1}');
-  }
-
-  @override
-  void dispose() {
-    _schoolYearController.dispose();
-    super.dispose();
+    _selectedSchoolYear = SchoolYearDropdown.currentSchoolYear;
   }
 
   Future<void> _saveConfig() async {
     if (_selectedGradeLevel == null ||
         _selectedSubjectGroup == null ||
-        _schoolYearController.text.isEmpty) {
+        (_selectedSchoolYear?.isEmpty ?? true)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
       );
@@ -105,7 +96,7 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
             classId: widget.classId,
             gradeLevel: _selectedGradeLevel!,
             subjectGroup: _selectedSubjectGroup!,
-            schoolYear: _schoolYearController.text,
+            schoolYear: _selectedSchoolYear!,
             semester: _isShs ? _selectedSemester : null,
           ),
         );
@@ -197,11 +188,9 @@ class _ClassGradingSetupPageState extends ConsumerState<ClassGradingSetupPage> {
                     const SizedBox(height: 16),
 
                     // School Year
-                    StyledTextField(
-                      controller: _schoolYearController,
-                      label: 'School Year',
-                      icon: Icons.calendar_today_outlined,
-                      hintText: '2025-2026',
+                    SchoolYearDropdown(
+                      value: _selectedSchoolYear,
+                      onChanged: (val) => setState(() => _selectedSchoolYear = val),
                     ),
                     const SizedBox(height: 16),
 

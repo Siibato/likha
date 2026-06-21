@@ -68,7 +68,10 @@ class Sf9CoreValuesTable extends StatelessWidget {
           ),
           const Divider(height: 1, color: AppColors.borderLight),
           // Core value rows
-          ...coreValueNames.map((cvName) {
+          ...coreValueNames.asMap().entries.map((cvEntry) {
+            final cvIndex = cvEntry.key;
+            final cvName = cvEntry.value;
+            final numberedName = '${cvIndex + 1}. $cvName';
             final stmts = statementsForCoreValue(cvName);
             return Column(
               children: stmts.asMap().entries.map((entry) {
@@ -77,7 +80,7 @@ class Sf9CoreValuesTable extends StatelessWidget {
                 return Row(
                   children: [
                     if (isFirst)
-                      _cell(cvName, nameWidth, cellHeight, bold: true)
+                      _cell(numberedName, nameWidth, cellHeight, bold: true)
                     else
                       _cell('', nameWidth, cellHeight),
                     _cell(stmt.statement, stmtWidth, cellHeight, align: Alignment.centerLeft, size: 10),

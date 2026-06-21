@@ -49,9 +49,21 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
     });
 
     // Determine which student list to show
-    final students = currentClassDetail != null
+    final rawStudents = currentClassDetail != null
         ? currentClassDetail.students // Online: from API
         : classState.searchResults; // Offline: from local DB
+
+    // Sort by last name, then first name
+    final students = List<dynamic>.from(rawStudents)
+      ..sort((a, b) {
+        final userA = a is Participant ? a.student : a as User;
+        final userB = b is Participant ? b.student : b as User;
+        final lastCmp = userA.lastName.toLowerCase().compareTo(
+            userB.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return userA.firstName.toLowerCase().compareTo(
+            userB.firstName.toLowerCase());
+      });
 
     return MobilePageScaffold(
       title: 'Students',

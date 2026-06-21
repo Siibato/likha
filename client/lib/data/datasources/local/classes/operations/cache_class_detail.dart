@@ -27,7 +27,7 @@ Future<void> cacheClassDetail(
           teacherUsername = teacherRows.first['username'] as String? ?? '';
           final firstName = teacherRows.first['first_name'] as String? ?? '';
           final lastName = teacherRows.first['last_name'] as String? ?? '';
-          teacherFullName = '$firstName $lastName'.trim();
+          teacherFullName = '$lastName, $firstName'.trim();
         }
       }
 

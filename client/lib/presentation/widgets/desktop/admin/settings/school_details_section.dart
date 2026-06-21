@@ -11,7 +11,8 @@ class SchoolDetailsSection extends StatefulWidget {
   final TextEditingController schoolNameController;
   final TextEditingController regionController;
   final TextEditingController divisionController;
-  final TextEditingController schoolYearController;
+  final String? selectedSchoolYear;
+  final ValueChanged<String?>? onSchoolYearChanged;
   final TextEditingController schoolCodeController;
   final String originalSchoolCode;
   final bool isLoading;
@@ -26,7 +27,8 @@ class SchoolDetailsSection extends StatefulWidget {
     required this.schoolNameController,
     required this.regionController,
     required this.divisionController,
-    required this.schoolYearController,
+    this.selectedSchoolYear,
+    this.onSchoolYearChanged,
     required this.schoolCodeController,
     required this.originalSchoolCode,
     this.isLoading = false,
@@ -88,7 +90,8 @@ class _SchoolDetailsSectionState extends State<SchoolDetailsSection> {
                 schoolNameController: widget.schoolNameController,
                 regionController: widget.regionController,
                 divisionController: widget.divisionController,
-                schoolYearController: widget.schoolYearController,
+                selectedSchoolYear: widget.selectedSchoolYear,
+                onSchoolYearChanged: widget.onSchoolYearChanged,
                 schoolCodeController: widget.schoolCodeController,
                 enabled: !widget.isSaving,
                 onSchoolNameChanged: widget.onSchoolNameChanged,
@@ -213,11 +216,11 @@ class _SchoolDetailsSectionState extends State<SchoolDetailsSection> {
               value: widget.divisionController.text,
             ),
           ],
-          if (widget.schoolYearController.text.isNotEmpty) ...[
+          if (widget.selectedSchoolYear != null && widget.selectedSchoolYear!.isNotEmpty) ...[
             const SizedBox(height: 8),
             _InfoRow(
               label: 'School Year',
-              value: widget.schoolYearController.text,
+              value: widget.selectedSchoolYear!,
             ),
           ],
         ],

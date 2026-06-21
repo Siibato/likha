@@ -39,7 +39,7 @@ Future<GeneralAverageResponseModel?> assembleGeneralAveragesLocal(
 
   for (final studentRow in studentRows) {
     final studentId = studentRow[CommonCols.id] as String;
-    final studentName = '${studentRow[UsersCols.firstName] ?? ''} ${studentRow[UsersCols.lastName] ?? ''}'.trim();
+    final studentName = '${studentRow[UsersCols.lastName] ?? ''}, ${studentRow[UsersCols.firstName] ?? ''}'.trim();
     final studentNameStr = studentName.isEmpty ? 'Unknown Student' : studentName;
 
     // 3. Get all class_participants for this student (not removed)

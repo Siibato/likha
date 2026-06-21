@@ -94,6 +94,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     'SELECT ${CommonCols.id}, ${ClassesCols.title} FROM ${DbTables.classes} '
     'WHERE ${CommonCols.id} IN ($classIdPlaceholders) '
     'AND ${ClassesCols.schoolYear} = ? '
+    'AND ${ClassesCols.isAdvisory} = 0 '
     'AND ${CommonCols.deletedAt} IS NULL',
     [...enrolledClassIds, schoolYear],
   );
@@ -185,7 +186,29 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     subjects: subjects,
     generalAverage: generalAverage,
     coreValues: await _getLocalCoreValues(db, classId, studentId),
+    attendance: await _getLocalAttendance(db, classId, studentId, schoolYear),
   );
+}
+
+Future<List<Sf9AttendanceRecordModel>> _getLocalAttendance(
+  dynamic db,
+  String classId,
+  String studentId,
+  String? schoolYear,
+) async {
+  final rows = await db.query(
+    DbTables.attendanceRecords,
+    where:
+        '${AttendanceRecordsCols.studentId} = ? AND ${AttendanceRecordsCols.classId} = ? AND ${AttendanceRecordsCols.schoolYear} = ? AND ${AttendanceRecordsCols.deletedAt} IS NULL',
+    whereArgs: [studentId, classId, schoolYear],
+  );
+  return rows
+      .map((row) => Sf9AttendanceRecordModel(
+            month: row[AttendanceRecordsCols.month] as String,
+            schoolDays: row[AttendanceRecordsCols.schoolDays] as int,
+            daysPresent: row[AttendanceRecordsCols.daysPresent] as int,
+          ))
+      .toList();
 }
 
 Future<List<Sf9CoreValueMarkingModel>> _getLocalCoreValues(
