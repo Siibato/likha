@@ -724,11 +724,11 @@ fn generate_questions(
         // Competency assignment
         let tos_competency_id = comp_ids.get(q_idx % comp_ids.len()).copied();
 
-        let q_id = question_id(&format!("{}_t{}_assess_{}", class_key, term, assess_idx), q_idx as u32);
+        let q_id = question_id(&format!("{}_t{}_assess_{}", class_key, term_number, assess_idx), q_idx as u32);
 
         // Generate choices for MCQ
         let choices = if has_choices {
-            let q_id_str = format!("{}_t{}_assess_{}_q{}", class_key, term, assess_idx, q_idx);
+            let q_id_str = format!("{}_t{}_assess_{}_q{}", class_key, term_number, assess_idx, q_idx);
             vec![
                 ChoiceSpec { id: choice_id(&q_id_str, 0), text: "Option A".into(), is_correct: true, order: 0 },
                 ChoiceSpec { id: choice_id(&q_id_str, 1), text: "Option B".into(), is_correct: false, order: 1 },

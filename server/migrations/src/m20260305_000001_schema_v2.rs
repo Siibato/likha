@@ -86,7 +86,7 @@ impl MigrationTrait for Migration {
         // Using INSERT ... SELECT for better compatibility
         db.execute_unprepared(
             "INSERT INTO class_participants (id, class_id, user_id, role, joined_at, updated_at, removed_at)
-             SELECT gen_random_uuid(), class_id, student_id, 'student', enrolled_at, enrolled_at, removed_at
+             SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))), class_id, student_id, 'student', enrolled_at, enrolled_at, removed_at
              FROM class_enrollments"
         )
         .await
@@ -95,7 +95,7 @@ impl MigrationTrait for Migration {
         // Migrate teachers from classes to class_participants
         db.execute_unprepared(
             "INSERT INTO class_participants (id, class_id, user_id, role, joined_at, updated_at, removed_at)
-             SELECT gen_random_uuid(), id, teacher_id, 'teacher', created_at, created_at, NULL
+             SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))), id, teacher_id, 'teacher', created_at, created_at, NULL
              FROM classes"
         )
         .await

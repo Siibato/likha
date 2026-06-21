@@ -10,18 +10,29 @@ impl MigrationTrait for Migration {
 
         // ── 1. previous_school_subjects: table swap (drop q1–q4, add term_type + deleted_at) ──
 
-        // Create backup
+        // Clean up stale tables from previous failed runs
+        db.execute_unprepared(r#"DROP TABLE IF EXISTS previous_school_subjects_backup"#).await.ok();
+        db.execute_unprepared(r#"DROP TABLE IF EXISTS previous_school_term_grades"#).await.ok();
+        db.execute_unprepared(r#"DROP TABLE IF EXISTS attendance_records_backup"#).await.ok();
+        db.execute_unprepared(r#"DROP TABLE IF EXISTS previous_school_attendance_backup"#).await.ok();
+
+        // Create backup of old table (has q1–q4 columns)
         db.execute_unprepared(
             r#"CREATE TABLE previous_school_subjects_backup AS SELECT * FROM previous_school_subjects"#,
         )
         .await?;
 
-        // Create new table
+        // Drop old indexes and table
+        db.execute_unprepared(r#"DROP INDEX IF EXISTS idx_previous_school_subjects_student_id"#).await.ok();
+        db.execute_unprepared(r#"DROP INDEX IF EXISTS idx_previous_school_subjects_school_history_id"#).await.ok();
+        db.execute_unprepared(r#"DROP TABLE previous_school_subjects"#).await?;
+
+        // Recreate with new schema (same name)
         db.execute_unprepared(r#"
-            CREATE TABLE previous_school_subjects_new (
-                id UUID PRIMARY KEY,
-                student_id UUID NOT NULL,
-                school_history_id UUID NOT NULL,
+            CREATE TABLE previous_school_subjects (
+                id TEXT PRIMARY KEY,
+                student_id TEXT NOT NULL,
+                school_history_id TEXT NOT NULL,
                 subject_name TEXT NOT NULL,
                 subject_group TEXT,
                 term_type TEXT NOT NULL DEFAULT 'quarterly',
@@ -34,19 +45,19 @@ impl MigrationTrait for Migration {
         "#)
         .await?;
 
-        // Migrate data
+        // Copy data from backup
         db.execute_unprepared(r#"
-            INSERT INTO previous_school_subjects_new (id, student_id, school_history_id, subject_name, subject_group, term_type, final_grade, descriptor, created_at, updated_at, deleted_at)
+            INSERT INTO previous_school_subjects (id, student_id, school_history_id, subject_name, subject_group, term_type, final_grade, descriptor, created_at, updated_at, deleted_at)
             SELECT id, student_id, school_history_id, subject_name, subject_group, 'quarterly', final_grade, descriptor, created_at, updated_at, NULL
-            FROM previous_school_subjects
+            FROM previous_school_subjects_backup
         "#)
         .await?;
 
-        // Create previous_school_term_grades BEFORE dropping old table (so we can read q1–q4)
+        // Create previous_school_term_grades and migrate q1–q4 from backup
         db.execute_unprepared(r#"
             CREATE TABLE previous_school_term_grades (
-                id UUID PRIMARY KEY,
-                subject_id UUID NOT NULL REFERENCES previous_school_subjects_new(id) ON DELETE CASCADE,
+                id TEXT PRIMARY KEY,
+                subject_id TEXT NOT NULL,
                 term_number INTEGER NOT NULL,
                 grade INTEGER,
                 created_at TIMESTAMP NOT NULL,
@@ -57,42 +68,35 @@ impl MigrationTrait for Migration {
         "#)
         .await?;
 
-        // Migrate q1–q4 data into previous_school_term_grades
         db.execute_unprepared(r#"
             INSERT INTO previous_school_term_grades (id, subject_id, term_number, grade, created_at, updated_at, deleted_at)
-            SELECT gen_random_uuid(), id, 1, q1_grade, created_at, updated_at, NULL
-            FROM previous_school_subjects WHERE q1_grade IS NOT NULL
+            SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))), id, 1, q1_grade, created_at, updated_at, NULL
+            FROM previous_school_subjects_backup WHERE q1_grade IS NOT NULL
         "#)
         .await?;
 
         db.execute_unprepared(r#"
             INSERT INTO previous_school_term_grades (id, subject_id, term_number, grade, created_at, updated_at, deleted_at)
-            SELECT gen_random_uuid(), id, 2, q2_grade, created_at, updated_at, NULL
-            FROM previous_school_subjects WHERE q2_grade IS NOT NULL
+            SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))), id, 2, q2_grade, created_at, updated_at, NULL
+            FROM previous_school_subjects_backup WHERE q2_grade IS NOT NULL
         "#)
         .await?;
 
         db.execute_unprepared(r#"
             INSERT INTO previous_school_term_grades (id, subject_id, term_number, grade, created_at, updated_at, deleted_at)
-            SELECT gen_random_uuid(), id, 3, q3_grade, created_at, updated_at, NULL
-            FROM previous_school_subjects WHERE q3_grade IS NOT NULL
+            SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))), id, 3, q3_grade, created_at, updated_at, NULL
+            FROM previous_school_subjects_backup WHERE q3_grade IS NOT NULL
         "#)
         .await?;
 
         db.execute_unprepared(r#"
             INSERT INTO previous_school_term_grades (id, subject_id, term_number, grade, created_at, updated_at, deleted_at)
-            SELECT gen_random_uuid(), id, 4, q4_grade, created_at, updated_at, NULL
-            FROM previous_school_subjects WHERE q4_grade IS NOT NULL
+            SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))), id, 4, q4_grade, created_at, updated_at, NULL
+            FROM previous_school_subjects_backup WHERE q4_grade IS NOT NULL
         "#)
         .await?;
 
-        // Drop old table, rename new
-        db.execute_unprepared(r#"DROP TABLE previous_school_subjects"#)
-            .await?;
-        db.execute_unprepared(r#"ALTER TABLE previous_school_subjects_new RENAME TO previous_school_subjects"#)
-            .await?;
-
-        // Create index
+        // Create indexes
         db.execute_unprepared(
             r#"CREATE INDEX idx_previous_school_subjects_school_history_id ON previous_school_subjects(school_history_id)"#,
         )
@@ -110,11 +114,15 @@ impl MigrationTrait for Migration {
         )
         .await?;
 
+        db.execute_unprepared(r#"DROP INDEX IF EXISTS idx_attendance_records_student_id"#).await.ok();
+        db.execute_unprepared(r#"DROP INDEX IF EXISTS idx_attendance_records_class_id"#).await.ok();
+        db.execute_unprepared(r#"DROP TABLE attendance_records"#).await?;
+
         db.execute_unprepared(r#"
-            CREATE TABLE attendance_records_new (
-                id UUID PRIMARY KEY,
-                student_id UUID NOT NULL,
-                class_id UUID NOT NULL,
+            CREATE TABLE attendance_records (
+                id TEXT PRIMARY KEY,
+                student_id TEXT NOT NULL,
+                class_id TEXT NOT NULL,
                 school_year TEXT NOT NULL,
                 month TEXT NOT NULL,
                 school_days INTEGER NOT NULL,
@@ -127,18 +135,12 @@ impl MigrationTrait for Migration {
         .await?;
 
         db.execute_unprepared(r#"
-            INSERT INTO attendance_records_new (id, student_id, class_id, school_year, month, school_days, days_present, created_at, updated_at, deleted_at)
+            INSERT INTO attendance_records (id, student_id, class_id, school_year, month, school_days, days_present, created_at, updated_at, deleted_at)
             SELECT id, student_id, class_id, school_year, month, school_days, days_present, created_at, updated_at, NULL
-            FROM attendance_records
+            FROM attendance_records_backup
         "#)
         .await?;
 
-        db.execute_unprepared(r#"DROP TABLE attendance_records"#)
-            .await?;
-        db.execute_unprepared(r#"ALTER TABLE attendance_records_new RENAME TO attendance_records"#)
-            .await?;
-
-        // Recreate indexes
         db.execute_unprepared(
             r#"CREATE UNIQUE INDEX idx_attendance_records_unique ON attendance_records(student_id, class_id, school_year, month)"#,
         )
@@ -151,11 +153,15 @@ impl MigrationTrait for Migration {
         )
         .await?;
 
+        db.execute_unprepared(r#"DROP INDEX IF EXISTS idx_previous_school_attendance_student_id"#).await.ok();
+        db.execute_unprepared(r#"DROP INDEX IF EXISTS idx_previous_school_attendance_school_history_id"#).await.ok();
+        db.execute_unprepared(r#"DROP TABLE previous_school_attendance"#).await?;
+
         db.execute_unprepared(r#"
-            CREATE TABLE previous_school_attendance_new (
-                id UUID PRIMARY KEY,
-                student_id UUID NOT NULL,
-                school_history_id UUID NOT NULL,
+            CREATE TABLE previous_school_attendance (
+                id TEXT PRIMARY KEY,
+                student_id TEXT NOT NULL,
+                school_history_id TEXT NOT NULL,
                 school_year TEXT NOT NULL,
                 month TEXT NOT NULL,
                 school_days INTEGER NOT NULL,
@@ -168,18 +174,12 @@ impl MigrationTrait for Migration {
         .await?;
 
         db.execute_unprepared(r#"
-            INSERT INTO previous_school_attendance_new (id, student_id, school_history_id, school_year, month, school_days, days_present, created_at, updated_at, deleted_at)
+            INSERT INTO previous_school_attendance (id, student_id, school_history_id, school_year, month, school_days, days_present, created_at, updated_at, deleted_at)
             SELECT id, student_id, school_history_id, school_year, month, school_days, days_present, created_at, updated_at, NULL
-            FROM previous_school_attendance
+            FROM previous_school_attendance_backup
         "#)
         .await?;
 
-        db.execute_unprepared(r#"DROP TABLE previous_school_attendance"#)
-            .await?;
-        db.execute_unprepared(r#"ALTER TABLE previous_school_attendance_new RENAME TO previous_school_attendance"#)
-            .await?;
-
-        // Recreate unique index
         db.execute_unprepared(
             r#"CREATE UNIQUE INDEX idx_previous_school_attendance_unique ON previous_school_attendance(student_id, school_history_id, school_year, month)"#,
         )
