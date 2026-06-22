@@ -11,6 +11,7 @@ pub struct Model {
     pub points: f64,
     pub overridden_by: Option<Uuid>,
     pub overridden_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

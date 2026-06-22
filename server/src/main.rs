@@ -1,33 +1,45 @@
 use axum::Router;
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT, HeaderName, HeaderValue};
+use axum::http::Method;
 use chrono::Utc;
 use dotenv::dotenv;
+use reqwest::Client;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT, HeaderName, HeaderValue};
-use axum::http::Method;
+use std::time::{Duration, Instant};
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::timeout::TimeoutLayer;
+use url::Url;
 use uuid::Uuid;
 
+use server::cache::{RedisCache, CacheTtl};
+use server::middleware::{RateLimitLayer, RateLimitStore};
 use server::modules::assessment::service::AssessmentService;
 use server::modules::assignment::service::AssignmentService;
 use server::modules::auth::service::AuthService;
 use server::modules::class::service::ClassService;
-use server::modules::learning_material::service::LearningMaterialService;
-use server::modules::tos::service::TosService;
-use server::modules::grading::service::GradeComputationService;
-use server::modules::setup::service::SetupService;
 use server::modules::document_export::service::DocumentExportService;
-use server::modules::student_records::service::StudentRecordsService;
 use server::modules::entitlement::EntitlementService;
-use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
-use server::utils::file_encryption::parse_key;
+use server::modules::grading::service::GradeComputationService;
+use server::modules::learning_material::service::LearningMaterialService;
+use server::modules::replication::{
+    run_dynamic_replication,
+    DiscoveryConfig,
+    DiscoveryService,
+    PeerInfo,
+    PeerManager,
+    PeerStatus,
+    ReplicationService,
+};
+use server::modules::replication::worker::spawn_replication_worker;
+use server::modules::setup::service::SetupService;
+use server::modules::student_records::service::StudentRecordsService;
 use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
-use server::cache::{RedisCache, CacheTtl};
-use server::middleware::{RateLimitLayer, RateLimitStore};
+use server::modules::sync::service::{SyncConflictService, SyncDeltaService, SyncFullService, SyncPushService};
+use server::modules::tos::service::TosService;
+use server::utils::file_encryption::parse_key;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 16)]
 async fn main() {
@@ -57,6 +69,7 @@ async fn main() {
                     eprintln!("Cannot delete in-memory database");
                     std::process::exit(1);
                 }
+
 
                 if std::path::Path::new(&db_path).exists() {
                     std::fs::remove_file(&db_path).expect("Failed to delete database file");
@@ -347,6 +360,8 @@ async fn main() {
         ),
     );
 
+    let replication_service = Arc::new(ReplicationService::new(db.clone(), config.node_id.clone()));
+
     let app = create_app(
         &config,
         auth_service,
@@ -364,7 +379,13 @@ async fn main() {
         sync_conflict_service,
         sync_full_service,
         sync_delta_service,
+        replication_service.clone(),
     );
+
+    initialize_replication_infrastructure(
+        &config,
+        replication_service.clone(),
+    ).await;
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -396,6 +417,7 @@ fn create_app(
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
     sync_delta_service: Arc<SyncDeltaService>,
+    replication_service: Arc<ReplicationService>,
 ) -> Router {
     let rate_limit_store = Arc::new(RateLimitStore::new());
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
@@ -420,6 +442,7 @@ fn create_app(
             sync_full_service,
             sync_delta_service,
         ))
+        .merge(server::modules::replication::routes::routes(replication_service))
         .layer(RateLimitLayer::new(rate_limit_store, jwt_secret));
 
     Router::new().nest("/api/v1", api)
@@ -463,6 +486,125 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
         .allow_methods(allowed_methods)
         .allow_headers(allowed_headers)
         .max_age(Duration::from_secs(3600))
+}
+
+async fn initialize_replication_infrastructure(
+    config: &server::config::ServerConfig,
+    replication_service: Arc<ReplicationService>,
+) {
+    let Some(secret) = config.replication_secret.clone() else {
+        tracing::warn!("REPLICATION_SECRET not set; replication workers disabled");
+        return;
+    };
+
+    if let Some(peer_url) = &config.peer_url {
+        if let Some(peer) = build_static_peer_info(peer_url) {
+            let client = Client::builder()
+                .timeout(Duration::from_secs(30))
+                .build()
+                .expect("failed to build replication HTTP client");
+            spawn_replication_worker(
+                peer,
+                replication_service.clone(),
+                client,
+                secret.clone(),
+                Duration::from_secs(config.replication_interval_seconds),
+            );
+            tracing::info!("Started static replication worker targeting {}", peer_url);
+        } else {
+            tracing::warn!("Invalid PEER_URL '{}'; static replication worker not started", peer_url);
+        }
+    }
+
+    if let Some(group_id) = &config.mesh_group_id {
+        let Ok(multicast_addr) = config.discovery_multicast_addr.parse::<SocketAddr>() else {
+            tracing::error!(
+                "Invalid DISCOVERY_MULTICAST_ADDR '{}'; discovery disabled",
+                config.discovery_multicast_addr
+            );
+            return;
+        };
+
+        let discovery_cfg = DiscoveryConfig {
+            multicast_addr,
+            group_id: group_id.clone(),
+            node_id: config.node_id.clone(),
+            node_ip: config.node_ip.clone(),
+            api_port: config.port,
+            discovery_port: multicast_addr.port(),
+            beacon_interval: Duration::from_secs(config.discovery_beacon_interval_seconds),
+            peer_ttl: config.discovery_peer_ttl_seconds,
+            replication_secret: secret.clone(),
+        };
+
+        match DiscoveryService::new(discovery_cfg).await {
+            Ok(discovery_service) => {
+                let announce_service = discovery_service.clone();
+                let beacon_sleep = Duration::from_secs(config.discovery_beacon_interval_seconds);
+                tokio::spawn(async move {
+                    loop {
+                        if let Err(err) = announce_service.announce().await {
+                            tracing::warn!("Failed to send discovery beacon: {}", err);
+                        }
+                        tokio::time::sleep(beacon_sleep).await;
+                    }
+                });
+
+                let listen_service = discovery_service.clone();
+                let peer_manager = Arc::new(PeerManager::new(
+                    config.mesh_group_id.clone(),
+                    config.node_id.clone(),
+                    config.discovery_peer_ttl_seconds,
+                ));
+                let peer_manager_for_listener = peer_manager.clone();
+                tokio::spawn(async move {
+                    loop {
+                        match listen_service.recv_beacon().await {
+                            Ok(beacon) => {
+                                if listen_service.verify_beacon(&beacon) {
+                                    peer_manager_for_listener.handle_beacon(beacon).await;
+                                } else {
+                                    tracing::warn!("Rejected beacon with invalid HMAC");
+                                }
+                            }
+                            Err(err) => tracing::warn!("Failed to receive beacon: {}", err),
+                        }
+                    }
+                });
+
+                let interval = Duration::from_secs(config.replication_interval_seconds);
+                tokio::spawn(run_dynamic_replication(
+                    peer_manager,
+                    replication_service,
+                    secret,
+                    interval,
+                ));
+
+                tracing::info!("Mesh discovery enabled for group '{}'", group_id);
+            }
+            Err(err) => tracing::error!("Failed to initialize discovery service: {}", err),
+        }
+    }
+}
+
+fn build_static_peer_info(peer_url: &str) -> Option<PeerInfo> {
+    let parsed = Url::parse(peer_url).ok()?;
+    let host = parsed.host_str()?.to_string();
+    let port = parsed.port_or_known_default().unwrap_or(80);
+    let base_url = if let Some(explicit_port) = parsed.port() {
+        format!("{}://{}:{}", parsed.scheme(), host, explicit_port)
+    } else {
+        format!("{}://{}", parsed.scheme(), host)
+    };
+
+    Some(PeerInfo {
+        node_id: format!("static-{}-{}", host, port),
+        node_ip: host,
+        api_port: port,
+        base_url,
+        last_seen: Instant::now(),
+        status: PeerStatus::Active,
+    })
 }
 
 async fn run_migrations(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {

@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 
@@ -108,6 +109,7 @@ async fn insert_question_with_choices_and_key(
         let ak = answer_keys::ActiveModel {
             id: Set(Uuid::new_v4()),
             question_id: Set(spec.id),
+            updated_at: Set(Utc::now().naive_utc()),
         };
         let inserted_ak = ak.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 

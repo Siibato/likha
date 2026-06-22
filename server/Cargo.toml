@@ -38,6 +38,8 @@ fred = { version = "10" }
 printpdf = { version = "0.7", features = ["embedded_images"] }
 rust_xlsxwriter = "0.79"
 csv = "1.4"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+url = "2.5"
 
 [dev-dependencies]
 # mockall = "0.13"  # not yet vendored; trait-based mock tests scaffolded but guarded by #[cfg(feature = "mock_tests")]

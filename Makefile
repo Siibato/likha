@@ -9,9 +9,15 @@ CLIENT_DIR := client
 TEST_DEVICE_HOST ?= 10.0.2.2
 TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 
+# Pi image build paths
+PI_IMAGE_DIR      := deployment/pi-image
+PI_GEN_DIR        := /tmp/pi-gen
+PI_GEN_REPO       := https://github.com/RPi-Distro/pi-gen.git
+PI_DEPLOY_DIR     := $(PI_GEN_DIR)/deploy
+
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-down clean clean-server clean-client
+.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -105,6 +111,38 @@ docker-up:
 
 docker-down:
 	@docker-compose down
+
+sync-pi-assets: ## Sync deployment assets (compose, scripts, systemd) into pi-gen stage
+	@cd $(PI_IMAGE_DIR) && ./sync-assets.sh
+
+build-pi-server-image: ## Build ARM64 Docker image and save as tar for pi-gen embedding
+	@docker buildx build --platform linux/arm64 -t likha-server:latest -f $(SERVER_DIR)/Dockerfile $(SERVER_DIR)/
+	@mkdir -p $(PI_IMAGE_DIR)/stage-likha
+	@docker save likha-server:latest > $(PI_IMAGE_DIR)/stage-likha/likha-server-arm64.tar
+	@echo "Saved likha-server-arm64.tar to $(PI_IMAGE_DIR)/stage-likha/"
+
+build-pi-image: sync-pi-assets build-pi-server-image ## Build the full Raspberry Pi SD card image (.img.xz)
+	@echo "Cloning pi-gen..."
+	@rm -rf $(PI_GEN_DIR)
+	@git clone --depth 1 $(PI_GEN_REPO) $(PI_GEN_DIR)
+	@echo "Copying Likha config and stage..."
+	@cp $(PI_IMAGE_DIR)/config $(PI_GEN_DIR)/
+	@cp -r $(PI_IMAGE_DIR)/stage-likha $(PI_GEN_DIR)/
+	@echo "Building Pi image (this takes 30–60 min)..."
+	@cd $(PI_GEN_DIR) && ./build-docker.sh
+	@echo "Compressing image..."
+	@for img in $(PI_DEPLOY_DIR)/*.img; do \
+		if [ -f "$$img" ]; then \
+			xz -T0 -v "$$img"; \
+			echo "Output: $$img.xz"; \
+		fi; \
+	done
+	@echo "Done. Image(s) in $(PI_DEPLOY_DIR)/"
+
+clean-pi-image: ## Remove pi-gen clone and build artifacts
+	@rm -rf $(PI_GEN_DIR)
+	@rm -f $(PI_IMAGE_DIR)/stage-likha/likha-server-arm64.tar
+	@echo "Pi image build artifacts cleaned"
 
 clean:
 	@rm -rf $(SERVER_DIR)/target $(CLIENT_DIR)/build $(SERVER_DIR)/data/*.db

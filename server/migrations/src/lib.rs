@@ -51,6 +51,8 @@ mod m20260621_000003_split_user_name;
 mod m20260621_000004_create_teacher_details;
 mod m20260622_000001_fix_core_values_sf9_alignment;
 mod m20260622_000002_rebuild_core_values_records;
+mod m20260622_000003_create_replication_state;
+mod m20260622_000004_add_replication_timestamps;
 
 pub struct Migrator;
 
@@ -109,6 +111,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260621_000004_create_teacher_details::Migration),
             Box::new(m20260622_000001_fix_core_values_sf9_alignment::Migration),
             Box::new(m20260622_000002_rebuild_core_values_records::Migration),
+            Box::new(m20260622_000003_create_replication_state::Migration),
+            Box::new(m20260622_000004_add_replication_timestamps::Migration),
         ]
     }
 }

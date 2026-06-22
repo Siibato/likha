@@ -18,6 +18,10 @@ pub fn resolve(method: &Method, path: &str) -> RateLimitPolicy {
         return RateLimitPolicy::SyncGenerous;
     }
 
+    if path.starts_with("/replication/") {
+        return RateLimitPolicy::SyncGenerous;
+    }
+
     // File upload / download / delete endpoints
     if path.ends_with("/files")
         || path.ends_with("/upload")

@@ -11,6 +11,7 @@ pub struct Model {
     pub choice_id: Option<Uuid>,
     pub answer_text: Option<String>,
     pub is_correct: bool,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

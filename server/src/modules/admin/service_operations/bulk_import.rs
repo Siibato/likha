@@ -27,7 +27,7 @@ pub async fn preview_students(
     for (i, result) in parsed.into_iter().enumerate() {
         let row_index = i + 1;
         let mut errors = Vec::new();
-        let mut warnings = Vec::new();
+        let warnings = Vec::new();
 
         let row_data: Value = match result {
             Ok(row) => {
