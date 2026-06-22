@@ -1,6 +1,6 @@
 # Multi-stage build — works on x86_64 and ARM64 (Raspberry Pi 4/5)
 # Stage 1: compile the release binary
-FROM rust:1.82-alpine AS builder
+FROM rust:1.86-alpine AS builder
 
 RUN apk add --no-cache musl-dev
 
@@ -8,16 +8,11 @@ WORKDIR /build
 
 # Copy the full workspace needed by the server crate
 COPY Cargo.toml Cargo.lock ./
-COPY .cargo/ ./.cargo/
 COPY src/ ./src/
 COPY entity/ ./entity/
 COPY migrations/ ./migrations/
-COPY vendor/ ./vendor/
 
-# Configure cargo to use the vendored sources
-ENV CARGO_NET_OFFLINE=true
-
-RUN cargo build --release --offline
+RUN cargo build --release
 
 # Stage 2: minimal runtime image
 FROM alpine:3.20 AS runtime

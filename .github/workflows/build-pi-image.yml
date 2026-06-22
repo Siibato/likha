@@ -42,18 +42,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Vendor Rust dependencies
-        run: |
-          cd server
-          cargo vendor
-
       - name: Build ARM64 server image
         run: |
           docker buildx build \
             --platform linux/arm64 \
+            --load \
             -t likha-server:latest \
             -f server/Dockerfile \
             server/
