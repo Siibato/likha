@@ -1,3 +1,4 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
@@ -23,7 +24,11 @@ Future<void> cacheCoreValues(
           whereArgs: [map[CommonCols.id]],
         );
         if (updated == 0) {
-          await executor.insert(DbTables.coreValuesRecords, map);
+          await executor.insert(
+            DbTables.coreValuesRecords,
+            map,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
       }
     }

@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 19 (v18 → v19: Add teacher_details table)
+/// SCHEMA VERSION: 20 (v19 → v20: Add UNIQUE constraint on core_values_records)
 /// TOTAL TABLES: 37
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -86,7 +86,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 19,
+            version: 20,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -107,7 +107,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 17,
+        version: 18,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -788,7 +788,8 @@ class LocalDatabase {
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          UNIQUE(student_id, class_id, school_year, term_number, core_value_id)
         )
       ''');
 

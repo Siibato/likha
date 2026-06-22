@@ -1,3 +1,4 @@
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
@@ -17,10 +18,18 @@ Future<void> insertCoreValues(
     map[CommonCols.syncStatus] = SyncStatus.pending.dbValue;
 
     if (txn != null) {
-      await txn.insert(DbTables.coreValuesRecords, map);
+      await txn.insert(
+        DbTables.coreValuesRecords,
+        map,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     } else {
       final db = await localDatabase.database;
-      await db.insert(DbTables.coreValuesRecords, map);
+      await db.insert(
+        DbTables.coreValuesRecords,
+        map,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
   } catch (e) {
     throw CacheException('Failed to insert core values locally: $e');

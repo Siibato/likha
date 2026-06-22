@@ -42,28 +42,44 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
   }
 
   @override
+  void didUpdateWidget(covariant Sf9DetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.studentId != widget.studentId || oldWidget.classId != widget.classId) {
+      ref.read(sf9DetailProvider.notifier).loadSf9(widget.classId, widget.studentId);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(sf9DetailProvider);
     final sf9 = state.currentSf9;
-    final displaySf9 = sf9 != null && sf9.studentName == 'Unknown Student'
-        ? Sf9Response(
-            studentId: sf9.studentId,
+    final displaySf9 = sf9 != null
+        ? (sf9.studentName == 'Unknown Student'
+            ? Sf9Response(
+                studentId: sf9.studentId,
+                studentName: widget.studentName,
+                gradeLevel: sf9.gradeLevel,
+                schoolYear: sf9.schoolYear,
+                section: sf9.section,
+                lrn: sf9.lrn,
+                age: sf9.age,
+                sex: sf9.sex,
+                trackStrand: sf9.trackStrand,
+                curriculum: sf9.curriculum,
+                termType: sf9.termType,
+                subjects: sf9.subjects,
+                generalAverage: sf9.generalAverage,
+                coreValues: sf9.coreValues,
+                attendance: sf9.attendance,
+              )
+            : sf9)
+        : Sf9Response(
+            studentId: widget.studentId,
             studentName: widget.studentName,
-            gradeLevel: sf9.gradeLevel,
-            schoolYear: sf9.schoolYear,
-            section: sf9.section,
-            lrn: sf9.lrn,
-            age: sf9.age,
-            sex: sf9.sex,
-            trackStrand: sf9.trackStrand,
-            curriculum: sf9.curriculum,
-            termType: sf9.termType,
-            subjects: sf9.subjects,
-            generalAverage: sf9.generalAverage,
-            coreValues: sf9.coreValues,
-            attendance: sf9.attendance,
-          )
-        : sf9;
+            subjects: const [],
+            coreValues: const [],
+            attendance: const [],
+          );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -75,8 +91,7 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (displaySf9 != null)
-            TextButton.icon(
+          TextButton.icon(
               onPressed: _isDownloading ? null : () => _downloadSf9(displaySf9),
               icon: _isDownloading
                   ? const SizedBox(
@@ -101,8 +116,8 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
     );
   }
 
-  Widget _buildBody(Sf9DetailState state, Sf9Response? displaySf9) {
-    if (state.isLoading && displaySf9 == null) {
+  Widget _buildBody(Sf9DetailState state, Sf9Response displaySf9) {
+    if (state.isLoading) {
       return const Center(
         child: CircularProgressIndicator(
           color: AppColors.foregroundPrimary,
@@ -118,18 +133,6 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.semanticError,
-          ),
-        ),
-      );
-    }
-
-    if (displaySf9 == null) {
-      return const Center(
-        child: Text(
-          'No SF9 data available.',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.foregroundSecondary,
           ),
         ),
       );
@@ -306,9 +309,9 @@ class _Sf9DetailPageState extends ConsumerState<Sf9DetailPage> {
                   ..._monthOrder.map((m) {
                     final rec = sorted.where((a) => a.month == m).firstOrNull;
                     final absent = rec != null ? rec.schoolDays - rec.daysPresent : 0;
-                    return _attendanceCell(absent > 0 ? absent.toString() : '');
+                    return _attendanceCell(absent.toString());
                   }),
-                  _attendanceCell(totalDaysAbsent > 0 ? totalDaysAbsent.toString() : '', isBold: true),
+                  _attendanceCell(totalDaysAbsent.toString(), isBold: true),
                 ],
               ),
             ],

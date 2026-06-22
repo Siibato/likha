@@ -92,7 +92,7 @@ pub async fn run(
     layout::draw_center_split_line(&engine, &layer2, 0.3);
 
     page2_left::draw_page2_left(&engine, &layer2, &sf9);
-    page2_right::draw_page2_right(&engine, &layer2);
+    page2_right::draw_page2_right(&engine, &layer2, &sf9);
 
     engine
         .save()

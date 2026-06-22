@@ -1,12 +1,14 @@
 use printpdf::*;
 
 use crate::modules::document_export::helpers::pdf_engine::{PdfEngine, grey300};
+use crate::modules::grading::schema::Sf9Response;
 
 use super::layout::*;
 
 pub fn draw_page2_right(
     engine: &PdfEngine,
     layer: &PdfLayerReference,
+    sf9: &Sf9Response,
 ) {
     let top = CONTENT_TOP;
     let rx = RIGHT_COL_LEFT;
@@ -20,7 +22,7 @@ pub fn draw_page2_right(
         Mm(top),
         true,
     );
-    let cv_bottom = draw_core_values_table(engine, layer, rx, top - GAP_MEDIUM, r_w);
+    let cv_bottom = draw_core_values_table(engine, layer, sf9, rx, top - GAP_MEDIUM, r_w);
 
     // Marking legend
     let mut my = cv_bottom - GAP_XL;
@@ -42,6 +44,7 @@ pub fn draw_page2_right(
 fn draw_core_values_table(
     engine: &PdfEngine,
     layer: &PdfLayerReference,
+    sf9: &Sf9Response,
     x: f32,
     y: f32,
     avail_w: f32,
@@ -117,7 +120,14 @@ fn draw_core_values_table(
     }
     current_y -= header_row_height;
 
+    // Build a lookup map: (core_value_id, term_number) -> marking
+    let mut marking_map: std::collections::HashMap<(i32, i32), &str> = std::collections::HashMap::new();
+    for cv in &sf9.core_values {
+        marking_map.insert((cv.core_value_id, cv.term_number), cv.marking.as_str());
+    }
+
     // Core value rows
+    let mut statement_id = 1;
     for (core_label, statements) in core_values {
         let statement_count = statements.len();
         let core_value_height = CORE_VALUES_ROW_HEIGHT * statement_count as f32;
@@ -163,21 +173,37 @@ fn draw_core_values_table(
                 BEHAVIOR_FONT_SIZE,
             );
 
-            // Term columns
+            // Term columns — draw markings from sf9.core_values
             let mut term_x = x + column_widths[0] + column_widths[1];
-            for column_index in 2..=4 {
+            for term_num in 1..=3 {
+                let marking = marking_map
+                    .get(&(statement_id, term_num))
+                    .unwrap_or(&"");
                 engine.draw_rect(
                     layer,
                     Mm(term_x),
                     Mm(row_bottom),
-                    Mm(column_widths[column_index]),
+                    Mm(column_widths[term_num as usize + 1]),
                     Mm(CORE_VALUES_ROW_HEIGHT),
                     None,
                     true,
                 );
-                term_x += column_widths[column_index];
+                if !marking.is_empty() {
+                    let text_w = text_width(marking, FONT_SIZE_NORMAL);
+                    let text_x = term_x + column_widths[term_num as usize + 1] / 2.0 - text_w / 2.0;
+                    engine.draw_text(
+                        layer,
+                        marking,
+                        FONT_SIZE_NORMAL,
+                        Mm(text_x.max(term_x + 0.5)),
+                        Mm(row_bottom + CORE_VALUES_ROW_HEIGHT / 2.0 - 2.5),
+                        false,
+                    );
+                }
+                term_x += column_widths[term_num as usize + 1];
             }
         }
+        statement_id += statement_count as i32;
         current_y -= core_value_height;
     }
 

@@ -103,7 +103,6 @@ abstract class GradingRepository {
     required String classId,
   });
 
-  // SF9/SF10
   ResultFuture<Sf9Response> getSf9({
     required String classId,
     required String studentId,
