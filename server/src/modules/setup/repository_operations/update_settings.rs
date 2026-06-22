@@ -1,7 +1,7 @@
 use chrono::Utc;
 use sea_orm::*;
 
-use ::entity::school_settings;
+use ::entity::school_details;
 use crate::utils::{AppError, AppResult};
 
 pub async fn update_settings(
@@ -14,9 +14,9 @@ pub async fn update_settings(
     school_district: Option<Option<String>>,
     school_head_name: Option<Option<String>>,
     school_head_position: Option<Option<String>>,
-) -> AppResult<school_settings::Model> {
+) -> AppResult<school_details::Model> {
     let row = super::get_settings(db).await?;
-    let mut active: school_settings::ActiveModel = row.into();
+    let mut active: school_details::ActiveModel = row.into();
 
     if let Some(code) = school_code {
         active.school_code = Set(code);

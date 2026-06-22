@@ -66,7 +66,7 @@ export const endpointThresholds = {
   'http_req_duration{name:Teacher:StudentAssignmentSubmissions}': ['p(95)<500'],
   'http_req_duration{name:Teacher:Grades}': ['p(95)<500'],
   'http_req_duration{name:Student:MyGrades}': ['p(95)<500'],
-  'http_req_duration{name:Student:MyQuarterGrades}': ['p(95)<500'],
+  'http_req_duration{name:Student:MyTermGrades}': ['p(95)<500'],
   'http_req_duration{name:Teacher:GradeSummary}': ['p(95)<500'],
   'http_req_duration{name:Teacher:FinalGrades}': ['p(95)<500'],
   'http_req_duration{name:Teacher:GeneralAverages}': ['p(95)<500'],

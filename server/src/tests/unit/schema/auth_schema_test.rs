@@ -34,10 +34,11 @@ fn test_login_request_missing_required_field_fails() {
 
 #[test]
 fn test_create_account_request_deserializes() {
-    let json = r#"{"username":"bob","full_name":"Bob Smith","role":"teacher"}"#;
+    let json = r#"{"username":"bob","first_name":"Bob","last_name":"Smith","role":"teacher"}"#;
     let req: CreateAccountRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.username, "bob");
-    assert_eq!(req.full_name, "Bob Smith");
+    assert_eq!(req.first_name, "Bob");
+    assert_eq!(req.last_name, "Smith");
     assert_eq!(req.role, "teacher");
 }
 
@@ -68,7 +69,8 @@ fn test_user_response_serializes_with_is_active_true() {
     let resp = UserResponse {
         id: Uuid::new_v4(),
         username: "eve".to_string(),
-        full_name: "Eve Adams".to_string(),
+        first_name: "Eve".to_string(),
+        last_name: "Adams".to_string(),
         role: "student".to_string(),
         account_status: "active".to_string(),
         is_active: true,
@@ -85,7 +87,8 @@ fn test_user_response_serializes_with_is_active_false_for_locked() {
     let resp = UserResponse {
         id: Uuid::new_v4(),
         username: "frank".to_string(),
-        full_name: "Frank Lee".to_string(),
+        first_name: "Frank".to_string(),
+        last_name: "Lee".to_string(),
         role: "teacher".to_string(),
         account_status: "locked".to_string(),
         is_active: false,
@@ -102,7 +105,8 @@ fn test_user_response_activated_at_none_serializes_as_null() {
     let resp = UserResponse {
         id: Uuid::new_v4(),
         username: "grace".to_string(),
-        full_name: "Grace Hopper".to_string(),
+        first_name: "Grace".to_string(),
+        last_name: "Hopper".to_string(),
         role: "admin".to_string(),
         account_status: "active".to_string(),
         is_active: true,

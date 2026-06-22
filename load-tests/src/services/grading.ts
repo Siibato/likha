@@ -50,8 +50,8 @@ export class GradingService {
     return this.client.get(`/classes/${classId}/my-grades`, { tags: { name: 'Student:MyGrades' } });
   }
 
-  getMyQuarterGrades(classId: string, quarter: string) {
-    return this.client.get(`/classes/${classId}/my-grades/${quarter}`, { tags: { name: 'Student:MyQuarterGrades' } });
+  getMyTermGrades(classId: string, termNumber: string) {
+    return this.client.get(`/classes/${classId}/my-grades/${termNumber}`, { tags: { name: 'Student:MyTermGrades' } });
   }
 
   getGeneralAverages(classId: string, opts?: RequestOptions) {

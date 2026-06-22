@@ -22,7 +22,7 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
   int? maxFileSizeMb,
   required String dueAt,
   bool isPublished = true,
-  int? gradingPeriodNumber,
+  int? termNumber,
   String? component,
   bool? noSubmissionRequired,
 }) async {
@@ -46,7 +46,7 @@ ResultFuture<MutationResult<Assignment>> createAssignment(
       orderIndex: 0,
       submissionCount: 0,
       gradedCount: 0,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
       component: component,
       createdAt: now,
       updatedAt: now,

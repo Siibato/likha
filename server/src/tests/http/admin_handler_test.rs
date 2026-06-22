@@ -24,7 +24,8 @@ async fn create_account_as_admin_returns_201() {
         &admin.token,
         Some(json!({
             "username": format!("newteacher_{}", &Uuid::new_v4().to_string()[..6]),
-            "full_name": "New Teacher",
+            "first_name": "New",
+            "last_name": "Teacher",
             "role": "teacher"
         })),
     );
@@ -46,7 +47,7 @@ async fn create_account_as_teacher_returns_403() {
         "POST",
         "/api/v1/auth/accounts",
         &teacher.token,
-        Some(json!({ "username": "someone", "full_name": "X", "role": "teacher" })),
+        Some(json!({ "username": "someone", "first_name": "X", "last_name": "Y", "role": "teacher" })),
     );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);
@@ -60,7 +61,7 @@ async fn create_account_unauthenticated_returns_401() {
     let req = json_req(
         "POST",
         "/api/v1/auth/accounts",
-        Some(json!({ "username": "u", "full_name": "U", "role": "teacher" })),
+        Some(json!({ "username": "u", "first_name": "U", "last_name": "U", "role": "teacher" })),
     );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
@@ -76,7 +77,7 @@ async fn create_account_missing_role_returns_error() {
         "POST",
         "/api/v1/auth/accounts",
         &admin.token,
-        Some(json!({ "username": "u", "full_name": "U" })),
+        Some(json!({ "username": "u", "first_name": "U", "last_name": "U" })),
     );
     let resp = app.oneshot(req).await.unwrap();
     assert!(resp.status().is_client_error());
@@ -167,7 +168,7 @@ async fn update_account_as_admin_returns_200() {
         "PUT",
         &format!("/api/v1/auth/accounts/{}", teacher.id),
         &admin.token,
-        Some(json!({ "full_name": "Updated Name" })),
+        Some(json!({ "first_name": "Updated", "last_name": "Name" })),
     );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
@@ -183,7 +184,7 @@ async fn update_nonexistent_account_returns_404() {
         "PUT",
         &format!("/api/v1/auth/accounts/{}", Uuid::new_v4()),
         &admin.token,
-        Some(json!({ "full_name": "Ghost" })),
+        Some(json!({ "first_name": "Ghost", "last_name": "User" })),
     );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);

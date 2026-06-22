@@ -31,7 +31,7 @@ ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
         configs.add(GradeConfigModel(
           id: const Uuid().v4(),
           classId: classId,
-          gradingPeriodNumber: q,
+          termNumber: q,
           wwWeight: weights.ww,
           ptWeight: weights.pt,
           qaWeight: weights.qa,

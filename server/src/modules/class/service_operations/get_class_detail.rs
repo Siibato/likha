@@ -29,7 +29,8 @@ pub async fn get_class_detail(
                 student: UserResponse {
                     id: user.id,
                     username: user.username,
-                    full_name: user.full_name,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
                     role: user.role,
                     account_status: user.account_status,
                     is_active,

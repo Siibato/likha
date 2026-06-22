@@ -10,23 +10,23 @@ impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_grade_summary(
         &self,
         class_id: Uuid,
-        grading_period_number: i32,
+        term_number: i32,
     ) -> AppResult<GradeSummaryResponse> {
         if let Some(ref cache) = self.cache {
-            let key = CacheKey::GradeSummary(class_id, grading_period_number).as_str();
+            let key = CacheKey::GradeSummary(class_id, term_number).as_str();
             if let Some(cached) = cache.get::<GradeSummaryResponse>(&key).await {
                 return Ok(cached);
             }
         }
-        let (config_opt, period_grades_data, participants) = tokio::try_join!(
-            self.repo.get_config(class_id, grading_period_number),
-            self.repo.get_all_for_class(class_id, grading_period_number),
+        let (config_opt, term_grades_data, participants) = tokio::try_join!(
+            self.repo.get_config(class_id, term_number),
+            self.repo.get_all_for_class(class_id, term_number),
             self.class_repo.find_participants_by_class_id(class_id, None),
         )?;
 
         let config = config_opt.ok_or_else(|| {
             AppError::BadRequest(
-                "Grading config not set up for this class/period".to_string(),
+                "Grading config not set up for this class/term".to_string(),
             )
         })?;
 
@@ -36,13 +36,13 @@ impl crate::modules::grading::service::GradeComputationService {
                 .await
                 .ok()
                 .flatten();
-            (p.user_id, user.map(|u| u.full_name).unwrap_or_else(|| "Unknown".to_string()))
+            (p.user_id, user.map(|u| format!("{}, {}", u.last_name, u.first_name)).unwrap_or_else(|| "Unknown".to_string()))
         });
         let name_pairs = join_all(name_futures).await;
         let student_name_map: std::collections::HashMap<Uuid, String> =
             name_pairs.into_iter().collect();
 
-        let students = period_grades_data
+        let mut students: Vec<GradeSummaryRow> = term_grades_data
             .into_iter()
             .map(|qg| {
                 let descriptor = qg
@@ -61,17 +61,18 @@ impl crate::modules::grading::service::GradeComputationService {
                 }
             })
             .collect();
+        students.sort_by(|a, b| a.student_name.cmp(&b.student_name));
 
         let result = GradeSummaryResponse {
             class_id: class_id.to_string(),
-            grading_period_number,
+            term_number,
             ww_weight: config.ww_weight,
             pt_weight: config.pt_weight,
             qa_weight: config.qa_weight,
             students,
         };
         if let Some(ref cache) = self.cache {
-            let key = CacheKey::GradeSummary(class_id, grading_period_number).as_str();
+            let key = CacheKey::GradeSummary(class_id, term_number).as_str();
             cache.set(&key, &result, cache.ttl.list_seconds).await;
         }
         Ok(result)

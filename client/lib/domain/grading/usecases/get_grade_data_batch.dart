@@ -8,11 +8,11 @@ class GetGradeDataBatch {
 
   ResultFuture<Map<String, dynamic>> call({
     required String classId,
-    required int gradingPeriodNumber,
+    required int termNumber,
   }) {
     return _repository.getGradeDataBatch(
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
     );
   }
 }

@@ -23,7 +23,7 @@ void main() {
       TableOfSpecifications(
         id: 'tos-1',
         classId: tClassId,
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         title: 'Q1 TOS',
         classificationMode: 'difficulty',
         totalItems: 50,

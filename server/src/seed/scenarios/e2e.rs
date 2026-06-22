@@ -10,7 +10,7 @@ use crate::utils::AppError;
 pub async fn seed_e2e_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let ctx = SeedContext::new();
 
-    let school = fixtures::e2e_school_settings(&ctx);
+    let school = fixtures::e2e_school_details(&ctx);
     let users = fixtures::e2e_users(&ctx);
     let classes = fixtures::e2e_classes(&ctx);
     let enrollments = fixtures::e2e_enrollments();
@@ -21,7 +21,7 @@ pub async fn seed_e2e_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let materials = fixtures::e2e_materials(&ctx);
 
     disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
-    inserters::school::insert_school_settings(db, &school).await?;
+    inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
     inserters::classes::insert_classes(db, &classes).await?;
     inserters::classes::insert_enrollments(db, &enrollments).await?;

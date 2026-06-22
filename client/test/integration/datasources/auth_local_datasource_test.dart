@@ -11,7 +11,8 @@ UserModel _sampleUser({String id = 'user-001', String role = 'teacher'}) {
   return UserModel(
     id: id,
     username: 'testuser_$id',
-    fullName: 'Test User',
+    firstName: 'Test',
+    lastName: 'User',
     role: role,
     accountStatus: 'active',
     isActive: true,
@@ -62,7 +63,8 @@ void main() {
       final updated = UserModel(
         id: 'u1',
         username: 'updated_user',
-        fullName: 'Updated Name',
+        firstName: 'Updated',
+        lastName: 'Name',
         role: 'teacher',
         accountStatus: 'active',
         isActive: true,

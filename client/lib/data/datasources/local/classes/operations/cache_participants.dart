@@ -21,7 +21,8 @@ Future<void> cacheParticipants(
           {
             CommonCols.id: user.id,
             UsersCols.username: user.username,
-            UsersCols.fullName: user.fullName,
+            UsersCols.firstName: user.firstName,
+            UsersCols.lastName: user.lastName,
             UsersCols.role: user.role,
             UsersCols.accountStatus: user.accountStatus,
             UsersCols.activatedAt: user.activatedAt?.toIso8601String(),

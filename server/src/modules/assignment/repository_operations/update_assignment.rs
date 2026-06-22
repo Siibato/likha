@@ -16,7 +16,7 @@ pub async fn update_assignment(
     allowed_file_types: Option<Option<String>>,
     max_file_size_mb: Option<Option<i32>>,
     due_at: Option<chrono::NaiveDateTime>,
-    grading_period_number: Option<Option<i32>>,
+    term_number: Option<Option<i32>>,
     component: Option<Option<String>>,
 ) -> AppResult<assignments::Model> {
     let mut assignment: assignments::ActiveModel = assignments::Entity::find_by_id(id)
@@ -50,8 +50,8 @@ pub async fn update_assignment(
     if let Some(due) = due_at {
         assignment.due_at = Set(due);
     }
-    if let Some(q) = grading_period_number {
-        assignment.grading_period_number = Set(q);
+    if let Some(q) = term_number {
+        assignment.term_number = Set(q);
     }
     if let Some(c) = component {
         assignment.component = Set(c);

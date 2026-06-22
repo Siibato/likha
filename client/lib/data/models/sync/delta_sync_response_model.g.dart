@@ -46,8 +46,8 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   gradeScores: EntityDeltas.fromJson(
     json['grade_scores'] as Map<String, dynamic>,
   ),
-  periodGrades: EntityDeltas.fromJson(
-    json['period_grades'] as Map<String, dynamic>,
+  termGrades: EntityDeltas.fromJson(
+    json['term_grades'] as Map<String, dynamic>,
   ),
   tableOfSpecifications: EntityDeltas.fromJson(
     json['table_of_specifications'] as Map<String, dynamic>,
@@ -58,11 +58,14 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   activityLogs: EntityDeltas.fromJson(
     json['activity_logs'] as Map<String, dynamic>,
   ),
-  schoolSettings: EntityDeltas.fromJson(
-    json['school_settings'] as Map<String, dynamic>,
+  schoolDetails: EntityDeltas.fromJson(
+    json['school_details'] as Map<String, dynamic>,
   ),
   learnerDetails: EntityDeltas.fromJson(
     json['learner_details'] as Map<String, dynamic>,
+  ),
+  teacherDetails: EntityDeltas.fromJson(
+    json['teacher_details'] as Map<String, dynamic>,
   ),
   attendanceRecords: EntityDeltas.fromJson(
     json['attendance_records'] as Map<String, dynamic>,
@@ -75,6 +78,9 @@ DeltaPayload _$DeltaPayloadFromJson(Map<String, dynamic> json) => DeltaPayload(
   ),
   previousSchoolSubjects: EntityDeltas.fromJson(
     json['previous_school_subjects'] as Map<String, dynamic>,
+  ),
+  previousSchoolTermGrades: EntityDeltas.fromJson(
+    json['previous_school_term_grades'] as Map<String, dynamic>,
   ),
   previousSchoolAttendance: EntityDeltas.fromJson(
     json['previous_school_attendance'] as Map<String, dynamic>,
@@ -94,16 +100,18 @@ Map<String, dynamic> _$DeltaPayloadToJson(DeltaPayload instance) =>
       'grade_configs': instance.gradeConfigs,
       'grade_items': instance.gradeItems,
       'grade_scores': instance.gradeScores,
-      'period_grades': instance.periodGrades,
+      'term_grades': instance.termGrades,
       'table_of_specifications': instance.tableOfSpecifications,
       'tos_competencies': instance.tosCompetencies,
       'activity_logs': instance.activityLogs,
-      'school_settings': instance.schoolSettings,
+      'school_details': instance.schoolDetails,
       'learner_details': instance.learnerDetails,
+      'teacher_details': instance.teacherDetails,
       'attendance_records': instance.attendanceRecords,
       'core_values_records': instance.coreValuesRecords,
       'student_school_history': instance.studentSchoolHistory,
       'previous_school_subjects': instance.previousSchoolSubjects,
+      'previous_school_term_grades': instance.previousSchoolTermGrades,
       'previous_school_attendance': instance.previousSchoolAttendance,
     };
 

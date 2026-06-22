@@ -9,12 +9,12 @@ pub struct Model {
     pub student_id: Uuid,
     pub class_id: Uuid,
     pub school_year: String,
-    pub grading_period_number: i32,
-    pub core_value: String,
-    pub behavior_statement: String,
+    pub term_number: i32,
+    pub core_value_id: i32,
     pub marking: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

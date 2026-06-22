@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
@@ -20,6 +21,7 @@ pub async fn upsert_answer(
     if let Some(existing) = existing {
         Ok(existing)
     } else {
+        let now = Utc::now().naive_utc();
         let answer = submission_answers::ActiveModel {
             id: Set(Uuid::new_v4()),
             submission_id: Set(submission_id),
@@ -27,6 +29,7 @@ pub async fn upsert_answer(
             points: Set(0.0),
             overridden_by: Set(None),
             overridden_at: Set(None),
+            updated_at: Set(now),
         };
 
         answer

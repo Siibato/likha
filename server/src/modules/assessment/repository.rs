@@ -27,11 +27,11 @@ impl AssessmentRepository {
         order_index: i32,
         client_id: Option<Uuid>,
         is_published: bool,
-        grading_period_number: Option<i32>,
+        term_number: Option<i32>,
         component: Option<String>,
         tos_id: Option<String>,
     ) -> AppResult<assessments::Model> {
-        ops::create_assessment(&self.db, class_id, title, description, time_limit_minutes, open_at, close_at, show_results_immediately, order_index, client_id, is_published, grading_period_number, component, tos_id).await
+        ops::create_assessment(&self.db, class_id, title, description, time_limit_minutes, open_at, close_at, show_results_immediately, order_index, client_id, is_published, term_number, component, tos_id).await
     }
 
     pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<assessments::Model>> {
@@ -55,11 +55,11 @@ impl AssessmentRepository {
         open_at: Option<chrono::NaiveDateTime>,
         close_at: Option<chrono::NaiveDateTime>,
         show_results_immediately: Option<bool>,
-        grading_period_number: Option<Option<i32>>,
+        term_number: Option<Option<i32>>,
         component: Option<Option<String>>,
         tos_id: Option<Option<String>>,
     ) -> AppResult<assessments::Model> {
-        ops::update_assessment(&self.db, id, title, description, time_limit_minutes, open_at, close_at, show_results_immediately, grading_period_number, component, tos_id).await
+        ops::update_assessment(&self.db, id, title, description, time_limit_minutes, open_at, close_at, show_results_immediately, term_number, component, tos_id).await
     }
 
     pub async fn publish_assessment(&self, id: Uuid) -> AppResult<assessments::Model> {

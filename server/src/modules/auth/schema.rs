@@ -6,7 +6,8 @@ use uuid::Uuid;
 #[derive(Debug, Deserialize)]
 pub struct CreateAccountRequest {
     pub username: String,
-    pub full_name: String,
+    pub first_name: String,
+    pub last_name: String,
     pub role: String,
 }
 
@@ -49,7 +50,8 @@ pub struct LockAccountRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateAccountRequest {
-    pub full_name: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
     pub role: Option<String>,
 }
 
@@ -73,7 +75,8 @@ pub struct AuthResponse {
 pub struct UserResponse {
     pub id: Uuid,
     pub username: String,
-    pub full_name: String,
+    pub first_name: String,
+    pub last_name: String,
     pub role: String,
     pub account_status: String,
     pub is_active: bool,
@@ -85,7 +88,8 @@ pub struct UserResponse {
 pub struct CheckUsernameResponse {
     pub username: String,
     pub account_status: String,
-    pub full_name: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

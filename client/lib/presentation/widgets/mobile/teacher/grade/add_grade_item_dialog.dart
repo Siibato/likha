@@ -10,7 +10,7 @@ const List<String> _componentKeys = ['ww', 'pt', 'qa'];
 void showAddGradeItemDialog({
   required BuildContext context,
   required String classId,
-  required int selectedQuarter,
+  required int selectedTerm,
   required WidgetRef ref,
 }) {
   final titleCtrl = TextEditingController();
@@ -44,7 +44,7 @@ void showAddGradeItemDialog({
             ),
             const SizedBox(height: 20),
             Text(
-              'Add Grade Item  •  Q$selectedQuarter',
+              'Add Grade Item  •  T$selectedTerm',
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -147,7 +147,7 @@ void showAddGradeItemDialog({
                           .createItem(classId, {
                         'title': title,
                         'component': selectedComponent,
-                        'quarter': selectedQuarter,
+                        'term_number': selectedTerm,
                         'total_points': points,
                         'source_type': 'manual',
                       });

@@ -1,5 +1,6 @@
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/utils/typedef.dart';
+import 'package:likha/data/models/auth/account_detail_response_model.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
 import 'package:likha/domain/auth/entities/check_username_result.dart';
 import 'package:likha/domain/auth/entities/user.dart';
@@ -30,8 +31,11 @@ abstract class AuthRepository {
   // Admin methods
   ResultFuture<MutationResult<User>> createAccount({
     required String username,
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String role,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
   });
 
   ResultFuture<List<User>> getAllAccounts({bool skipBackgroundRefresh = false});
@@ -44,9 +48,18 @@ abstract class AuthRepository {
 
   ResultFuture<MutationResult<User>> updateAccount({
     required String userId,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
   });
 
   ResultVoid deleteAccount({required String userId});
+
+  ResultFuture<AccountDetailResponseModel> getAccountDetails({required String userId});
+
+  ResultFuture<AccountDetailResponseModel> upsertAccountDetails({
+    required String userId,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
+  });
 }

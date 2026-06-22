@@ -52,6 +52,16 @@ pub fn demo_learner_details() -> Vec<LearnerDetailsSpec> {
             sex: Some((*sex).into()),
             track_strand: Some((*track).into()),
             curriculum: Some((*curriculum).into()),
+            birthdate: None,
+            birthplace: None,
+            home_address: None,
+            father_name: None,
+            father_contact: None,
+            mother_name: None,
+            mother_contact: None,
+            guardian_name: None,
+            guardian_contact: None,
+            date_admitted: None,
         });
     }
 

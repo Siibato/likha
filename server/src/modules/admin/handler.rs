@@ -7,7 +7,7 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::modules::admin::schema::{CreateAccountRequest, LockAccountRequest, MessageResponse, ResetAccountRequest, SearchStudentsQuery, UpdateAccountRequest};
+use crate::modules::admin::schema::{CreateAccountRequest, LockAccountRequest, MessageResponse, ResetAccountRequest, SearchStudentsQuery, UpdateAccountRequest, UpdateAccountDetailsRequest};
 use crate::utils::response::success_response;
 use crate::modules::admin::service::AdminService;
 use crate::middleware::auth_middleware::AuthUser;
@@ -143,6 +143,37 @@ pub async fn search_students(
 ) -> impl IntoResponse {
     let search_query = query.q.unwrap_or_default();
     match admin_service.search_students(&search_query).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn get_account_details(
+    State(admin_service): State<Arc<AdminService>>,
+    auth_user: AuthUser,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&auth_user) {
+        return e.into_response();
+    }
+
+    match admin_service.get_account_details(user_id).await {
+        Ok(response) => success_response(response, StatusCode::OK).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+pub async fn upsert_account_details(
+    State(admin_service): State<Arc<AdminService>>,
+    auth_user: AuthUser,
+    Path(user_id): Path<Uuid>,
+    Json(request): Json<UpdateAccountDetailsRequest>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&auth_user) {
+        return e.into_response();
+    }
+
+    match admin_service.upsert_account_details(user_id, request).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

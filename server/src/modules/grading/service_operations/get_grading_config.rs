@@ -14,7 +14,7 @@ impl crate::modules::grading::service::GradeComputationService {
             class_id: class_id.to_string(),
             grade_level: class.grade_level.unwrap_or_default(),
             school_year: class.school_year.unwrap_or_default(),
-            grading_period_type: class.grading_period_type,
+            term_type: class.term_type,
             configs: configs.into_iter().map(GradingConfigResponse::from).collect(),
         })
     }

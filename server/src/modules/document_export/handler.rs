@@ -17,8 +17,8 @@ pub async fn export_class_grades_pdf(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let period = query.period.unwrap_or(1);
-    match service.export_class_grades_pdf(class_id, period, auth_user.user_id).await {
+    let term_number = query.term_number.unwrap_or(1);
+    match service.export_class_grades_pdf(class_id, term_number, auth_user.user_id).await {
         Ok(bytes) => pdf_response(bytes),
         Err(e) => e.into_response(),
     }
@@ -33,8 +33,8 @@ pub async fn export_class_grades_excel(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let period = query.period.unwrap_or(1);
-    match service.export_class_grades_excel(class_id, period, auth_user.user_id).await {
+    let term_number = query.term_number.unwrap_or(1);
+    match service.export_class_grades_excel(class_id, term_number, auth_user.user_id).await {
         Ok(bytes) => excel_response(bytes),
         Err(e) => e.into_response(),
     }

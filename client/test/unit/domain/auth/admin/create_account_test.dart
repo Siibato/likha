@@ -23,7 +23,8 @@ void main() {
     final tUser = User(
       id: 'new-user-1',
       username: 'newuser',
-      fullName: 'New User',
+      firstName: 'New',
+      lastName: 'User',
       role: 'student',
       accountStatus: 'pending_activation',
       isActive: false,
@@ -32,7 +33,8 @@ void main() {
 
     final tParams = CreateAccountParams(
       username: 'newuser',
-      fullName: 'New User',
+      firstName: 'New',
+      lastName: 'User',
       role: 'student',
     );
 
@@ -41,7 +43,8 @@ void main() {
     test('should return created User when account creation succeeds', () async {
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => Right(tMutationResult));
 
@@ -51,7 +54,8 @@ void main() {
       expect(result.getOrElse(() => throw Exception()).entity.isPendingActivation, true);
       verify(() => mockRepository.createAccount(
         username: 'newuser',
-        fullName: 'New User',
+        firstName: 'New',
+        lastName: 'User',
         role: 'student',
       )).called(1);
     });
@@ -60,7 +64,8 @@ void main() {
       final teacherUser = User(
         id: 'teacher-1',
         username: 'newteacher',
-        fullName: 'New Teacher',
+        firstName: 'New',
+        lastName: 'Teacher',
         role: 'teacher',
         accountStatus: 'pending_activation',
         isActive: false,
@@ -69,7 +74,8 @@ void main() {
 
       final teacherParams = CreateAccountParams(
         username: 'newteacher',
-        fullName: 'New Teacher',
+        firstName: 'New',
+        lastName: 'Teacher',
         role: 'teacher',
       );
 
@@ -77,7 +83,8 @@ void main() {
 
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => Right(teacherMutationResult));
 
@@ -89,7 +96,8 @@ void main() {
     test('should return ValidationFailure when username already exists', () async {
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Username already exists')));
 
@@ -105,13 +113,15 @@ void main() {
     test('should return ValidationFailure when role is invalid', () async {
       final invalidParams = CreateAccountParams(
         username: 'newuser',
-        fullName: 'New User',
+        firstName: 'New',
+        lastName: 'User',
         role: 'superadmin',
       );
 
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Invalid role')));
 
@@ -127,7 +137,8 @@ void main() {
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.createAccount(
         username: any(named: 'username'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 

@@ -2,7 +2,7 @@ use sea_orm::DatabaseConnection;
 
 use crate::modules::setup::repository_operations as ops;
 use crate::utils::AppResult;
-use ::entity::school_settings;
+use ::entity::school_details;
 
 pub struct SetupRepository {
     db: DatabaseConnection,
@@ -13,11 +13,11 @@ impl SetupRepository {
         Self { db }
     }
 
-    pub async fn get_settings(&self) -> AppResult<school_settings::Model> {
+    pub async fn get_settings(&self) -> AppResult<school_details::Model> {
         ops::get_settings(&self.db).await
     }
 
-    pub async fn insert_settings(&self, default_code: String) -> AppResult<school_settings::Model> {
+    pub async fn insert_settings(&self, default_code: String) -> AppResult<school_details::Model> {
         ops::insert_settings(&self.db, default_code).await
     }
 
@@ -31,7 +31,7 @@ impl SetupRepository {
         school_district: Option<Option<String>>,
         school_head_name: Option<Option<String>>,
         school_head_position: Option<Option<String>>,
-    ) -> AppResult<school_settings::Model> {
+    ) -> AppResult<school_details::Model> {
         ops::update_settings(&self.db, school_code, school_name, school_region, school_division, school_year, school_district, school_head_name, school_head_position).await
     }
 }

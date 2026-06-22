@@ -1,33 +1,45 @@
 use axum::Router;
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT, HeaderName, HeaderValue};
+use axum::http::Method;
 use chrono::Utc;
 use dotenv::dotenv;
+use reqwest::Client;
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT, HeaderName, HeaderValue};
-use axum::http::Method;
+use std::time::{Duration, Instant};
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::timeout::TimeoutLayer;
+use url::Url;
 use uuid::Uuid;
 
+use server::cache::{RedisCache, CacheTtl};
+use server::middleware::{RateLimitLayer, RateLimitStore};
 use server::modules::assessment::service::AssessmentService;
 use server::modules::assignment::service::AssignmentService;
 use server::modules::auth::service::AuthService;
 use server::modules::class::service::ClassService;
-use server::modules::learning_material::service::LearningMaterialService;
-use server::modules::tos::service::TosService;
-use server::modules::grading::service::GradeComputationService;
-use server::modules::setup::service::SetupService;
 use server::modules::document_export::service::DocumentExportService;
-use server::modules::student_records::service::StudentRecordsService;
 use server::modules::entitlement::EntitlementService;
-use server::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
-use server::utils::file_encryption::parse_key;
+use server::modules::grading::service::GradeComputationService;
+use server::modules::learning_material::service::LearningMaterialService;
+use server::modules::replication::{
+    run_dynamic_replication,
+    DiscoveryConfig,
+    DiscoveryService,
+    PeerInfo,
+    PeerManager,
+    PeerStatus,
+    ReplicationService,
+};
+use server::modules::replication::worker::spawn_replication_worker;
+use server::modules::setup::service::SetupService;
+use server::modules::student_records::service::StudentRecordsService;
 use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
-use server::cache::{RedisCache, CacheTtl};
-use server::middleware::{RateLimitLayer, RateLimitStore};
+use server::modules::sync::service::{SyncConflictService, SyncDeltaService, SyncFullService, SyncPushService};
+use server::modules::tos::service::TosService;
+use server::utils::file_encryption::parse_key;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 16)]
 async fn main() {
@@ -57,6 +69,7 @@ async fn main() {
                     eprintln!("Cannot delete in-memory database");
                     std::process::exit(1);
                 }
+
 
                 if std::path::Path::new(&db_path).exists() {
                     std::fs::remove_file(&db_path).expect("Failed to delete database file");
@@ -97,6 +110,7 @@ async fn main() {
                 run_migrations(&db).await.expect("Failed to run migrations");
                 seed_admin(&db).await.expect("Failed to seed admin account");
 
+                #[cfg(feature = "seed")]
                 if args.iter().any(|arg| arg == "--with-seed") {
                     activate_admin(&db).await.expect("Failed to activate admin account");
                     println!("Seeding manual testing world...");
@@ -116,6 +130,7 @@ async fn main() {
                 println!("All login attempt records cleared.");
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-e2e" => {
                 println!("Seeding deterministic E2E world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -126,6 +141,7 @@ async fn main() {
                 println!("E2E seed complete.");
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-manual" => {
                 println!("Seeding manual testing world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -156,6 +172,7 @@ async fn main() {
 
                 return;
             }
+            #[cfg(feature = "seed")]
             "seed-realistic" => {
                 println!("Seeding realistic demo world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -166,6 +183,18 @@ async fn main() {
                 println!("Realistic seed complete.");
                 return;
             }
+            #[cfg(feature = "seed")]
+            "seed-advisory" => {
+                println!("Seeding advisory world...");
+                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                    .await
+                    .expect("Failed to connect to database");
+                activate_admin(&db).await.expect("Failed to activate admin account");
+                server::seed::scenarios::advisory::seed_advisory_world(&db).await.expect("Advisory seed failed");
+                println!("Advisory seed complete.");
+                return;
+            }
+            #[cfg(feature = "seed")]
             "seed-demo" => {
                 println!("Seeding focused demo world...");
                 let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
@@ -183,16 +212,15 @@ async fn main() {
                     .await
                     .expect("Failed to connect to database");
 
-                // Get all table names to clear (excluding migrations)
                 let tables = vec![
                     "users", "classes", "enrollments", "assessments", "assessment_questions",
                     "question_choices", "answer_keys", "tos_competencies", "table_of_specifications",
                     "assignments", "learning_materials", "assessment_submissions", "submission_answers",
                     "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
-                    "grade_scores", "period_grades", "activity_logs", "advisory_class_students",
+                    "grade_scores", "term_grades", "activity_logs", "advisory_class_students",
                     "sync_manifest", "sync_processed_operations",
                     "student_school_history", "previous_school_subjects", "previous_school_attendance",
-                    "attendance_records", "core_values_records", "learner_details",
+                    "attendance_records", "core_values_records", "core_values", "learner_details",
                 ];
 
                 for table in tables {
@@ -213,13 +241,17 @@ async fn main() {
                 eprintln!("  create-db               Create the database and run migrations");
                 eprintln!("  delete-db               Delete the database file");
                 eprintln!("  reset-db                Delete and recreate the database");
-                eprintln!("  reset-db --with-seed    Reset and seed manual test data");
+                #[cfg(feature = "seed")]
+                {
+                    eprintln!("  reset-db --with-seed    Reset and seed manual test data");
+                    eprintln!("  seed-e2e                Seed deterministic E2E world data");
+                    eprintln!("  seed-manual             Seed manual testing world data");
+                    eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
+                    eprintln!("  seed-realistic          Seed realistic demo world data");
+                    eprintln!("  seed-advisory           Seed advisory world data (full SF10)");
+                    eprintln!("  seed-demo               Seed focused demo world data");
+                }
                 eprintln!("  clear-invalid-attempts  Clear all login attempt records");
-                eprintln!("  seed-e2e                Seed deterministic E2E world data");
-                eprintln!("  seed-manual             Seed manual testing world data");
-                eprintln!("  seed-manual --export-manifest <path>  Seed and export manifest JSON (default: ../load-tests/seed-manifest.json)");
-                eprintln!("  seed-realistic          Seed realistic demo world data");
-                eprintln!("  seed-demo               Seed focused demo world data");
                 eprintln!("  deseed                  Clear all seeded data and reset admin");
                 std::process::exit(1);
             }
@@ -328,6 +360,8 @@ async fn main() {
         ),
     );
 
+    let replication_service = Arc::new(ReplicationService::new(db.clone(), config.node_id.clone()));
+
     let app = create_app(
         &config,
         auth_service,
@@ -345,7 +379,13 @@ async fn main() {
         sync_conflict_service,
         sync_full_service,
         sync_delta_service,
+        replication_service.clone(),
     );
+
+    initialize_replication_infrastructure(
+        &config,
+        replication_service.clone(),
+    ).await;
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -377,6 +417,7 @@ fn create_app(
     sync_conflict_service: Arc<SyncConflictService>,
     sync_full_service: Arc<SyncFullService>,
     sync_delta_service: Arc<SyncDeltaService>,
+    replication_service: Arc<ReplicationService>,
 ) -> Router {
     let rate_limit_store = Arc::new(RateLimitStore::new());
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
@@ -401,6 +442,7 @@ fn create_app(
             sync_full_service,
             sync_delta_service,
         ))
+        .merge(server::modules::replication::routes::routes(replication_service))
         .layer(RateLimitLayer::new(rate_limit_store, jwt_secret));
 
     Router::new().nest("/api/v1", api)
@@ -446,6 +488,125 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
         .max_age(Duration::from_secs(3600))
 }
 
+async fn initialize_replication_infrastructure(
+    config: &server::config::ServerConfig,
+    replication_service: Arc<ReplicationService>,
+) {
+    let Some(secret) = config.replication_secret.clone() else {
+        tracing::warn!("REPLICATION_SECRET not set; replication workers disabled");
+        return;
+    };
+
+    if let Some(peer_url) = &config.peer_url {
+        if let Some(peer) = build_static_peer_info(peer_url) {
+            let client = Client::builder()
+                .timeout(Duration::from_secs(30))
+                .build()
+                .expect("failed to build replication HTTP client");
+            spawn_replication_worker(
+                peer,
+                replication_service.clone(),
+                client,
+                secret.clone(),
+                Duration::from_secs(config.replication_interval_seconds),
+            );
+            tracing::info!("Started static replication worker targeting {}", peer_url);
+        } else {
+            tracing::warn!("Invalid PEER_URL '{}'; static replication worker not started", peer_url);
+        }
+    }
+
+    if let Some(group_id) = &config.mesh_group_id {
+        let Ok(multicast_addr) = config.discovery_multicast_addr.parse::<SocketAddr>() else {
+            tracing::error!(
+                "Invalid DISCOVERY_MULTICAST_ADDR '{}'; discovery disabled",
+                config.discovery_multicast_addr
+            );
+            return;
+        };
+
+        let discovery_cfg = DiscoveryConfig {
+            multicast_addr,
+            group_id: group_id.clone(),
+            node_id: config.node_id.clone(),
+            node_ip: config.node_ip.clone(),
+            api_port: config.port,
+            discovery_port: multicast_addr.port(),
+            beacon_interval: Duration::from_secs(config.discovery_beacon_interval_seconds),
+            peer_ttl: config.discovery_peer_ttl_seconds,
+            replication_secret: secret.clone(),
+        };
+
+        match DiscoveryService::new(discovery_cfg).await {
+            Ok(discovery_service) => {
+                let announce_service = discovery_service.clone();
+                let beacon_sleep = Duration::from_secs(config.discovery_beacon_interval_seconds);
+                tokio::spawn(async move {
+                    loop {
+                        if let Err(err) = announce_service.announce().await {
+                            tracing::warn!("Failed to send discovery beacon: {}", err);
+                        }
+                        tokio::time::sleep(beacon_sleep).await;
+                    }
+                });
+
+                let listen_service = discovery_service.clone();
+                let peer_manager = Arc::new(PeerManager::new(
+                    config.mesh_group_id.clone(),
+                    config.node_id.clone(),
+                    config.discovery_peer_ttl_seconds,
+                ));
+                let peer_manager_for_listener = peer_manager.clone();
+                tokio::spawn(async move {
+                    loop {
+                        match listen_service.recv_beacon().await {
+                            Ok(beacon) => {
+                                if listen_service.verify_beacon(&beacon) {
+                                    peer_manager_for_listener.handle_beacon(beacon).await;
+                                } else {
+                                    tracing::warn!("Rejected beacon with invalid HMAC");
+                                }
+                            }
+                            Err(err) => tracing::warn!("Failed to receive beacon: {}", err),
+                        }
+                    }
+                });
+
+                let interval = Duration::from_secs(config.replication_interval_seconds);
+                tokio::spawn(run_dynamic_replication(
+                    peer_manager,
+                    replication_service,
+                    secret,
+                    interval,
+                ));
+
+                tracing::info!("Mesh discovery enabled for group '{}'", group_id);
+            }
+            Err(err) => tracing::error!("Failed to initialize discovery service: {}", err),
+        }
+    }
+}
+
+fn build_static_peer_info(peer_url: &str) -> Option<PeerInfo> {
+    let parsed = Url::parse(peer_url).ok()?;
+    let host = parsed.host_str()?.to_string();
+    let port = parsed.port_or_known_default().unwrap_or(80);
+    let base_url = if let Some(explicit_port) = parsed.port() {
+        format!("{}://{}:{}", parsed.scheme(), host, explicit_port)
+    } else {
+        format!("{}://{}", parsed.scheme(), host)
+    };
+
+    Some(PeerInfo {
+        node_id: format!("static-{}-{}", host, port),
+        node_ip: host,
+        api_port: port,
+        base_url,
+        last_seen: Instant::now(),
+        status: PeerStatus::Active,
+    })
+}
+
 async fn run_migrations(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     use migration::{Migrator, MigratorTrait};
 
@@ -475,7 +636,8 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
         id: Set(Uuid::new_v4()),
         username: Set("admin".to_string()),
         password_hash: Set(None),
-        full_name: Set("System Administrator".to_string()),
+        first_name: Set("System".to_string()),
+        last_name: Set("Administrator".to_string()),
         role: Set("admin".to_string()),
         account_status: Set("pending_activation".to_string()),
         activated_at: Set(None),
@@ -490,6 +652,7 @@ async fn seed_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     Ok(())
 }
 
+#[cfg(feature = "seed")]
 async fn activate_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     use ::entity::users;
 

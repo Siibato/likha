@@ -1,6 +1,6 @@
 //! Pure functions for generating grading data.
 //!
-//! Grade scores and period grades are computed from submission data
+//! Grade scores and term grades are computed from submission data
 //! using the deterministic rules from the seeding spec.
 
 use uuid::Uuid;
@@ -19,17 +19,17 @@ pub fn generate_grade_scores(
     vec![]
 }
 
-pub fn generate_period_grades(
-    ctx: &SeedContext,
+pub fn generate_term_grades(
+    _ctx: &SeedContext,
     classes: &[ClassSpec],
     students: &[UserSpec],
     grade_scores: &[GradeScoreSpec],
     enrollments: &[EnrollmentSpec],
-) -> Vec<PeriodGradeSpec> {
+) -> Vec<TermGradeSpec> {
     use crate::modules::grading::helpers::deped_weights::transmute_grade;
     use uuid::Uuid;
 
-    let mut period_grades = Vec::new();
+    let mut term_grades = Vec::new();
 
     // Build class_id -> enrolled student_ids lookup (only actual enrollments)
     let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
@@ -44,12 +44,12 @@ pub fn generate_period_grades(
         }
     }
 
-    // Generate 4 period records per non-deleted class (Q1-Q4)
+    // Generate term records per non-deleted class (T1-T4)
     for class in classes {
         if class.deleted_at.is_some() {
             continue;
         }
-        for period in 1..=4 {
+        for term in 1..=4 {
             let enrolled = class_students.get(&class.id).cloned().unwrap_or_default();
 
             for &student_idx in &enrolled {
@@ -70,18 +70,17 @@ pub fn generate_period_grades(
 
                 let transmuted = transmute_grade(initial_grade);
 
-                period_grades.push(PeriodGradeSpec {
+                term_grades.push(TermGradeSpec {
                     class_id: class.id,
                     student_id,
-                    grading_period_number: period,
+                    term_number: term,
                     initial_grade: Some(initial_grade),
                     transmuted_grade: Some(transmuted),
                     is_locked: false,
-                    computed_at: Some(ctx.days_ago(1 + student_idx as i64)),
                 });
             }
         }
     }
 
-    period_grades
+    term_grades
 }

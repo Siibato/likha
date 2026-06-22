@@ -82,8 +82,8 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
-  periodGrades:
-      (json['period_grades'] as List<dynamic>?)
+  termGrades:
+      (json['term_grades'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
@@ -109,9 +109,14 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
   syncPlan: json['sync_plan'] == null
       ? null
       : SyncPlanModel.fromJson(json['sync_plan'] as Map<String, dynamic>),
-  schoolSettings: json['school_settings'] as Map<String, dynamic>?,
+  schoolDetails: json['school_details'] as Map<String, dynamic>?,
   learnerDetails:
       (json['learner_details'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  teacherDetails:
+      (json['teacher_details'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
@@ -132,6 +137,11 @@ FullSyncResponseModel _$FullSyncResponseModelFromJson(
       [],
   previousSchoolSubjects:
       (json['previous_school_subjects'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+      [],
+  previousSchoolTermGrades:
+      (json['previous_school_term_grades'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList() ??
       [],
@@ -162,18 +172,20 @@ Map<String, dynamic> _$FullSyncResponseModelToJson(
   'grade_configs': instance.gradeConfigs,
   'grade_items': instance.gradeItems,
   'grade_scores': instance.gradeScores,
-  'period_grades': instance.periodGrades,
+  'term_grades': instance.termGrades,
   'table_of_specifications': instance.tableOfSpecifications,
   'tos_competencies': instance.tosCompetencies,
   'activity_logs': instance.activityLogs,
   'user': instance.user,
   'enrolled_students': instance.enrolledStudents,
   'sync_plan': instance.syncPlan,
-  'school_settings': instance.schoolSettings,
+  'school_details': instance.schoolDetails,
   'learner_details': instance.learnerDetails,
+  'teacher_details': instance.teacherDetails,
   'attendance_records': instance.attendanceRecords,
   'core_values_records': instance.coreValuesRecords,
   'student_school_history': instance.studentSchoolHistory,
   'previous_school_subjects': instance.previousSchoolSubjects,
+  'previous_school_term_grades': instance.previousSchoolTermGrades,
   'previous_school_attendance': instance.previousSchoolAttendance,
 };

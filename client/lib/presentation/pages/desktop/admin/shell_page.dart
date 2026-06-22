@@ -7,7 +7,7 @@ import 'package:likha/presentation/pages/desktop/admin/account/account_managemen
 import 'package:likha/presentation/pages/desktop/admin/class/class_list_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/dashboard_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/design_system_page.dart';
-import 'package:likha/presentation/pages/desktop/admin/school_settings_page.dart';
+import 'package:likha/presentation/pages/desktop/admin/school_details_page.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
@@ -95,7 +95,7 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
                 AdminDashboardPage(onNavigate: _navigateToIndex),
                 const AccountManagementPage(),
                 const AdminClassesPage(),
-                const AdminSchoolSettingsPage(),
+                const AdminSchoolDetailsPage(),
                 const DesignSystemPage(),
               ],
             ),

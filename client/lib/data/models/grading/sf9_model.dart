@@ -14,9 +14,11 @@ class Sf9ResponseModel extends Sf9Response {
     super.trackStrand,
     super.curriculum,
     super.teacherName,
-    super.gradingPeriodType,
+    super.termType,
     required super.subjects,
     super.generalAverage,
+    super.coreValues = const [],
+    super.attendance = const [],
   });
 
   factory Sf9ResponseModel.fromJson(Map<String, dynamic> json) {
@@ -36,9 +38,9 @@ class Sf9ResponseModel extends Sf9Response {
     final trackStrand = json['track_strand'] as String?;
     final curriculum = json['curriculum'] as String?;
     final teacherName = json['teacher_name'] as String?;
-    final gradingPeriodType = json['grading_period_type'] as String?;
+    final termType = json['term_type'] as String?;
 
-    log.log('Sf9ResponseModel.fromJson: grade_level=$gradeLevel school_year=$schoolYear section=$section lrn=$lrn age=$age sex=$sex track_strand=$trackStrand curriculum=$curriculum teacher_name=$teacherName grading_period_type=$gradingPeriodType');
+    log.log('Sf9ResponseModel.fromJson: grade_level=$gradeLevel school_year=$schoolYear section=$section lrn=$lrn age=$age sex=$sex track_strand=$trackStrand curriculum=$curriculum teacher_name=$teacherName term_type=$termType');
 
     final subjectsRaw = json['subjects'] as List<dynamic>? ?? [];
     log.log('Sf9ResponseModel.fromJson: subjects raw count = ${subjectsRaw.length}');
@@ -47,9 +49,19 @@ class Sf9ResponseModel extends Sf9Response {
         .toList();
 
     final generalAverage = json['general_average'] != null
-        ? Sf9PeriodAveragesModel.fromJson(Map<String, dynamic>.from(json['general_average'] as Map))
+        ? Sf9TermAveragesModel.fromJson(Map<String, dynamic>.from(json['general_average'] as Map))
         : null;
     log.log('Sf9ResponseModel.fromJson: general_average = ${generalAverage != null ? 'present' : 'null'}');
+
+    final coreValuesRaw = json['core_values'] as List<dynamic>? ?? [];
+    final coreValues = coreValuesRaw
+        .map((e) => Sf9CoreValueMarkingModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+
+    final attendanceRaw = json['attendance'] as List<dynamic>? ?? [];
+    final attendance = attendanceRaw
+        .map((e) => Sf9AttendanceRecordModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
 
     return Sf9ResponseModel(
       studentId: studentId,
@@ -63,9 +75,11 @@ class Sf9ResponseModel extends Sf9Response {
       trackStrand: trackStrand,
       curriculum: curriculum,
       teacherName: teacherName,
-      gradingPeriodType: gradingPeriodType,
+      termType: termType,
       subjects: subjects,
       generalAverage: generalAverage,
+      coreValues: coreValues,
+      attendance: attendance,
     );
   }
 
@@ -82,11 +96,13 @@ class Sf9ResponseModel extends Sf9Response {
       'track_strand': trackStrand,
       'curriculum': curriculum,
       'teacher_name': teacherName,
-      'grading_period_type': gradingPeriodType,
+      'term_type': termType,
       'subjects': subjects.map((s) => (s as Sf9SubjectRowModel).toJson()).toList(),
       'general_average': generalAverage != null
-          ? (generalAverage as Sf9PeriodAveragesModel).toJson()
+          ? (generalAverage as Sf9TermAveragesModel).toJson()
           : null,
+      'core_values': coreValues.map((v) => (v as Sf9CoreValueMarkingModel).toJson()).toList(),
+      'attendance': attendance.map((a) => (a as Sf9AttendanceRecordModel).toJson()).toList(),
     };
   }
 }
@@ -95,7 +111,7 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
   const Sf9SubjectRowModel({
     required super.classTitle,
     super.subjectGroup,
-    super.periodGrades,
+    super.termGrades,
     super.finalGrade,
     super.descriptor,
   });
@@ -104,7 +120,7 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
     return Sf9SubjectRowModel(
       classTitle: json['class_title'] as String,
       subjectGroup: json['subject_group'] as String?,
-      periodGrades: _parsePeriodGrades(json['period_grades']),
+      termGrades: _parseTermGrades(json['term_grades']),
       finalGrade: json['final_grade'] as int?,
       descriptor: json['descriptor'] as String?,
     );
@@ -114,23 +130,23 @@ class Sf9SubjectRowModel extends Sf9SubjectRow {
     return {
       'class_title': classTitle,
       'subject_group': subjectGroup,
-      'period_grades': periodGrades,
+      'term_grades': termGrades,
       'final_grade': finalGrade,
       'descriptor': descriptor,
     };
   }
 }
 
-class Sf9PeriodAveragesModel extends Sf9PeriodAverages {
-  const Sf9PeriodAveragesModel({
-    super.periodGrades,
+class Sf9TermAveragesModel extends Sf9TermAverages {
+  const Sf9TermAveragesModel({
+    super.termGrades,
     super.finalAverage,
     super.descriptor,
   });
 
-  factory Sf9PeriodAveragesModel.fromJson(Map<String, dynamic> json) {
-    return Sf9PeriodAveragesModel(
-      periodGrades: _parsePeriodGrades(json['period_grades']),
+  factory Sf9TermAveragesModel.fromJson(Map<String, dynamic> json) {
+    return Sf9TermAveragesModel(
+      termGrades: _parseTermGrades(json['term_grades']),
       finalAverage: json['final_average'] as int?,
       descriptor: json['descriptor'] as String?,
     );
@@ -138,17 +154,65 @@ class Sf9PeriodAveragesModel extends Sf9PeriodAverages {
 
   Map<String, dynamic> toJson() {
     return {
-      'period_grades': periodGrades,
+      'term_grades': termGrades,
       'final_average': finalAverage,
       'descriptor': descriptor,
     };
   }
 }
 
-List<int?> _parsePeriodGrades(dynamic value) {
+List<int?> _parseTermGrades(dynamic value) {
   if (value == null) return const [];
   if (value is List) {
     return value.map((e) => e as int?).toList();
   }
   return const [];
+}
+
+class Sf9AttendanceRecordModel extends Sf9AttendanceRecord {
+  const Sf9AttendanceRecordModel({
+    required super.month,
+    required super.schoolDays,
+    required super.daysPresent,
+  });
+
+  factory Sf9AttendanceRecordModel.fromJson(Map<String, dynamic> json) {
+    return Sf9AttendanceRecordModel(
+      month: json['month'] as String,
+      schoolDays: json['school_days'] as int,
+      daysPresent: json['days_present'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'month': month,
+      'school_days': schoolDays,
+      'days_present': daysPresent,
+    };
+  }
+}
+
+class Sf9CoreValueMarkingModel extends Sf9CoreValueMarking {
+  const Sf9CoreValueMarkingModel({
+    required super.coreValueId,
+    required super.termNumber,
+    required super.marking,
+  });
+
+  factory Sf9CoreValueMarkingModel.fromJson(Map<String, dynamic> json) {
+    return Sf9CoreValueMarkingModel(
+      coreValueId: json['core_value_id'] as int,
+      termNumber: json['term_number'] as int,
+      marking: json['marking'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'core_value_id': coreValueId,
+      'term_number': termNumber,
+      'marking': marking,
+    };
+  }
 }

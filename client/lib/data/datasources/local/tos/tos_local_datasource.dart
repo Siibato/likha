@@ -20,7 +20,7 @@ abstract class TosLocalDataSource {
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? query,
     int limit = 30,
     int offset = 0,
@@ -79,7 +79,7 @@ class TosLocalDataSourceImpl implements TosLocalDataSource {
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? query,
     int limit = 30,
     int offset = 0,
@@ -88,7 +88,7 @@ class TosLocalDataSourceImpl implements TosLocalDataSource {
         localDatabase,
         subject: subject,
         gradeLevel: gradeLevel,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         query: query,
         limit: limit,
         offset: offset,

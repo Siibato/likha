@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  server:
+    image: ${LIKHA_SERVER_IMAGE:-likha-server:latest}
+    container_name: likha-server
+    restart: unless-stopped
+    env_file:
+      - /opt/likha/server/.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - db_data:/app/data
+      - file_storage:/app/storage
+
+  redis:
+    image: redis:7-alpine
+    container_name: likha-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+volumes:
+  db_data:
+  file_storage:
+  redis_data:

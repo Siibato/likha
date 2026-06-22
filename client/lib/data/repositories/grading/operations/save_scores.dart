@@ -44,9 +44,15 @@ ResultFuture<MutationResult<void>> saveScores(
       );
     }).toList();
 
+    RepoLogger.instance.log('saveScores() - Built ${models.length} score models: '
+        '${models.map((m) => 'student=${m.studentId},score=${m.score},id=${m.id}').join(', ')}');
+
     final db = await localDataSource.localDatabase.database;
+    RepoLogger.instance.log('saveScores() - Starting DB transaction for upsert + enqueue');
     await db.transaction((txn) async {
+      RepoLogger.instance.log('saveScores() - Calling upsertScoresByItem for gradeItemId=$gradeItemId');
       await localDataSource.upsertScoresByItem(gradeItemId, models, txn: txn);
+      RepoLogger.instance.log('saveScores() - upsertScoresByItem completed, now enqueuing sync entry');
       await syncQueue.enqueue(
         SyncQueueEntry(
           id: queueEntryId,
@@ -65,8 +71,10 @@ ResultFuture<MutationResult<void>> saveScores(
       );
     });
 
+    RepoLogger.instance.log('saveScores() - Transaction committed successfully, queueEntryId=$queueEntryId');
     return const Right(MutationResult(entity: null, status: SyncStatus.pending));
-  } catch (e) {
+  } catch (e, st) {
+    RepoLogger.instance.error('saveScores() - FAILED: $e', st);
     return Left(ServerFailure(e.toString()));
   }
 }

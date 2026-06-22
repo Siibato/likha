@@ -23,12 +23,20 @@ impl crate::modules::grading::service::GradeComputationService {
         let class = self.class_repo.find_by_id(class_id).await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
+        let mut enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
+        enrolled_students.sort_by(|a, b| {
+            let last_cmp = a.2.cmp(&b.2);
+            if last_cmp != std::cmp::Ordering::Equal {
+                return last_cmp;
+            }
+            a.1.cmp(&b.1)
+        });
         let school_year = class.school_year.as_deref();
 
         // Process sequentially to avoid SQLite contention with the 5-connection pool.
         let mut students = Vec::new();
-        for (student_id, student_name) in &enrolled_students {
+        for (student_id, first_name, last_name) in &enrolled_students {
+            let student_name = format!("{}, {}", last_name, first_name);
             tracing::info!(student_id = %student_id, "Computing general average for student");
             let sga = self
                 .compute_student_general_average(*student_id, student_name.clone(), school_year)
@@ -63,11 +71,11 @@ impl crate::modules::grading::service::GradeComputationService {
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
-            let period_grades = self.repo.get_period_grades_for_student_class(
+            let term_grades = self.repo.get_term_grades_for_student_class(
                 student_id, ec.class_id,
             ).await?;
 
-            let transmuted: Vec<i32> = period_grades
+            let transmuted: Vec<i32> = term_grades
                 .iter()
                 .filter_map(|qg| qg.transmuted_grade)
                 .collect();

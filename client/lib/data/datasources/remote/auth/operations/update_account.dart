@@ -7,13 +7,15 @@ import 'package:likha/data/models/auth/user_model.dart';
 Future<UserModel> updateAccount(
   DioClient dioClient, {
   required String userId,
-  String? fullName,
+  String? firstName,
+  String? lastName,
   String? role,
   String? idempotencyKey,
 }) async {
   try {
     final data = <String, dynamic>{};
-    if (fullName != null) data['full_name'] = fullName;
+    if (firstName != null) data['first_name'] = firstName;
+    if (lastName != null) data['last_name'] = lastName;
     if (role != null) data['role'] = role;
 
     return await dioClient.putTyped(

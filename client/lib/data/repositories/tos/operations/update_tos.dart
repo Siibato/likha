@@ -26,7 +26,7 @@ ResultFuture<MutationResult<TableOfSpecifications>> updateTos(
     final optimisticModel = TosModel(
       id: current.id,
       classId: current.classId,
-      gradingPeriodNumber: current.gradingPeriodNumber,
+      termNumber: current.termNumber,
       title: data['title'] as String? ?? current.title,
       classificationMode: data['classification_mode'] as String? ?? current.classificationMode,
       totalItems: data['total_items'] != null ? (data['total_items'] as num).toInt() : current.totalItems,

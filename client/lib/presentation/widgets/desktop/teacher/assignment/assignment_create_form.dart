@@ -15,7 +15,7 @@ class AssignmentCreateForm extends StatelessWidget {
   final TextEditingController totalPointsController;
   final String submissionType;
   final DateTime dueAt;
-  final int? quarter;
+  final int? termNumber;
   final String? component;
   final bool isPublished;
   final String? formError;
@@ -23,7 +23,7 @@ class AssignmentCreateForm extends StatelessWidget {
   final VoidCallback onSave;
   final ValueChanged<String> onSubmissionTypeChanged;
   final VoidCallback onPickDueDate;
-  final ValueChanged<int?> onQuarterChanged;
+  final ValueChanged<int?> onTermChanged;
   final ValueChanged<String?> onComponentChanged;
   final ValueChanged<bool> onPublishChanged;
 
@@ -35,7 +35,7 @@ class AssignmentCreateForm extends StatelessWidget {
     required this.totalPointsController,
     required this.submissionType,
     required this.dueAt,
-    required this.quarter,
+    required this.termNumber,
     required this.component,
     required this.isPublished,
     this.formError,
@@ -43,7 +43,7 @@ class AssignmentCreateForm extends StatelessWidget {
     required this.onSave,
     required this.onSubmissionTypeChanged,
     required this.onPickDueDate,
-    required this.onQuarterChanged,
+    required this.onTermChanged,
     required this.onComponentChanged,
     required this.onPublishChanged,
   });
@@ -131,22 +131,22 @@ class AssignmentCreateForm extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Quarter
+            // Term
             DropdownButtonFormField<int?>(
-              initialValue: quarter,
+              initialValue: termNumber,
               decoration: assessmentInputDecoration(
-                'Quarter (optional)',
+                'Term (optional)',
                 focusedBorderColor: AppColors.foregroundPrimary,
                 labelColor: AppColors.foregroundSecondary,
               ),
               items: const [
                 DropdownMenuItem(value: null, child: Text('None')),
-                DropdownMenuItem(value: 1, child: Text('Quarter 1')),
-                DropdownMenuItem(value: 2, child: Text('Quarter 2')),
-                DropdownMenuItem(value: 3, child: Text('Quarter 3')),
-                DropdownMenuItem(value: 4, child: Text('Quarter 4')),
+                DropdownMenuItem(value: 1, child: Text('Term 1')),
+                DropdownMenuItem(value: 2, child: Text('Term 2')),
+                DropdownMenuItem(value: 3, child: Text('Term 3')),
+                DropdownMenuItem(value: 4, child: Text('Term 4')),
               ],
-              onChanged: onQuarterChanged,
+              onChanged: onTermChanged,
             ),
             const SizedBox(height: 16),
 

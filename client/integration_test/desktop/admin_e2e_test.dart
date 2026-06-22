@@ -9,7 +9,7 @@ import 'support/flows/admin/admin_setup_flow.dart';
 import 'support/flows/admin/class_create_add_students_flow.dart';
 import 'support/flows/admin/class_delete_flow.dart';
 import 'support/flows/admin/class_reassign_teacher_flow.dart';
-import 'support/flows/admin/school_settings_flow.dart';
+import 'support/flows/admin/school_details_flow.dart';
 import 'support/flows/admin/student_activation_flow.dart';
 import 'support/desktop_pages.dart';
 import '../mobile/support/test_setup_helper.dart';
@@ -292,7 +292,7 @@ void main() {
     });
   });
 
-  group('Admin School Settings E2E Flow', () {
+  group('Admin School Details E2E Flow', () {
     testWidgets('admin changes school details and code', (tester) async {
       app.main();
       await tester.pump(const Duration(seconds: 2));
@@ -304,8 +304,8 @@ void main() {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final newCode = 'E2E${timestamp.toString().substring(timestamp.toString().length - 3)}';
 
-      final settingsFlow = SchoolSettingsFlow(pages);
-      await settingsFlow.updateSchoolSettings(
+      final settingsFlow = SchoolDetailsFlow(pages);
+      await settingsFlow.updateSchoolDetails(
         schoolName: 'E2E School $timestamp',
         region: 'E2E Region',
         division: 'E2E Division',
@@ -314,7 +314,7 @@ void main() {
       );
 
       // Change code back to original so other tests aren't affected
-      await settingsFlow.updateSchoolSettings(
+      await settingsFlow.updateSchoolDetails(
         schoolName: 'E2E School $timestamp',
         schoolCode: 'E2ETST',
       );

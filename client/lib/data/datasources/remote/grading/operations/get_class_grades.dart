@@ -8,12 +8,12 @@ import 'package:likha/data/models/grading/grade_score_model.dart';
 Future<Map<String, dynamic>> getClassGrades(
   DioClient dioClient, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     final response = await dioClient.dio.get(
       ApiEndpoints.gradeData(classId).path,
-      queryParameters: {'grading_period_number': gradingPeriodNumber},
+      queryParameters: {'term_number': termNumber},
     );
     final data = response.data['data'] ?? response.data;
     return data as Map<String, dynamic>;

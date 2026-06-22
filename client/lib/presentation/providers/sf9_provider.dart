@@ -124,6 +124,8 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   final GetSf10 _getSf10;
   late StreamSubscription<String> _sf9Sub;
   late StreamSubscription<String> _sf10Sub;
+  late StreamSubscription<String> _attendanceSub;
+  late StreamSubscription<String> _coreValuesSub;
   String? _currentClassId;
   String? _currentStudentId;
 
@@ -139,15 +141,29 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
         loadSf10(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
       }
     });
+    _attendanceSub = sl<DataEventBus>().onAttendanceChanged.listen((studentId) {
+      if (_currentStudentId != null && _currentStudentId == studentId && _currentClassId != null) {
+        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
+      }
+    });
+    _coreValuesSub = sl<DataEventBus>().onCoreValuesChanged.listen((studentId) {
+      if (_currentStudentId != null && _currentStudentId == studentId && _currentClassId != null) {
+        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
+      }
+    });
   }
 
   Future<void> loadSf9(String classId, String studentId, {bool skipBackgroundRefresh = false}) async {
     final log = Sf9Logger.instance;
-    final hasCached = state.currentSf9 != null && _currentClassId == classId && _currentStudentId == studentId;
-    log.log('loadSf9: classId=$classId studentId=$studentId hasCached=$hasCached skipBackgroundRefresh=$skipBackgroundRefresh');
+    final isSameStudent = _currentClassId == classId && _currentStudentId == studentId;
+    log.log('loadSf9: classId=$classId studentId=$studentId isSameStudent=$isSameStudent skipBackgroundRefresh=$skipBackgroundRefresh');
     _currentClassId = classId;
     _currentStudentId = studentId;
-    state = state.copyWith(isLoading: !hasCached, clearError: true);
+    if (!isSameStudent) {
+      state = state.copyWith(clearSf9: true, clearError: true);
+    } else {
+      state = state.copyWith(isLoading: state.currentSf9 == null, clearError: true);
+    }
     final result = await _getSf9(GetSf9Params(classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh));
     // Ignore stale results if user navigated to a different student
     if (_currentClassId != classId || _currentStudentId != studentId) {
@@ -170,10 +186,14 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   }
 
   Future<void> loadSf10(String classId, String studentId, {bool skipBackgroundRefresh = false}) async {
-    final hasCached = state.currentSf9 != null && _currentClassId == classId && _currentStudentId == studentId;
+    final isSameStudent = _currentClassId == classId && _currentStudentId == studentId;
     _currentClassId = classId;
     _currentStudentId = studentId;
-    state = state.copyWith(isLoading: !hasCached, clearError: true);
+    if (!isSameStudent) {
+      state = state.copyWith(clearSf9: true, clearError: true);
+    } else {
+      state = state.copyWith(isLoading: state.currentSf9 == null, clearError: true);
+    }
     final result = await _getSf10(GetSf10Params(classId: classId, studentId: studentId, skipBackgroundRefresh: skipBackgroundRefresh));
     // Ignore stale results if user navigated to a different student
     if (_currentClassId != classId || _currentStudentId != studentId) return;
@@ -196,6 +216,8 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   void dispose() {
     _sf9Sub.cancel();
     _sf10Sub.cancel();
+    _attendanceSub.cancel();
+    _coreValuesSub.cancel();
     super.dispose();
   }
 }

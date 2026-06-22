@@ -17,7 +17,7 @@ abstract class AssessmentRepository {
     bool? showResultsImmediately,
     bool isPublished = true,
     List<Map<String, dynamic>>? questions,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
     String? tosId,
   });
@@ -34,7 +34,7 @@ abstract class AssessmentRepository {
     String? openAt,
     String? closeAt,
     bool? showResultsImmediately,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
   });
 

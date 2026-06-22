@@ -44,7 +44,7 @@ abstract class TosRepository {
   ResultFuture<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? query,
     int limit = 30,
     int offset = 0,

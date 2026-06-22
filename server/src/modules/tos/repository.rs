@@ -22,7 +22,7 @@ impl TosRepository {
         &self,
         id: Uuid,
         class_id: Uuid,
-        grading_period_number: i32,
+        term_number: i32,
         title: &str,
         classification_mode: &str,
         total_items: i32,
@@ -38,7 +38,7 @@ impl TosRepository {
         creating_percentage: f64,
     ) -> AppResult<table_of_specifications::Model> {
         ops::create_tos(
-            &self.db, id, class_id, grading_period_number, title, classification_mode,
+            &self.db, id, class_id, term_number, title, classification_mode,
             total_items, time_unit, easy_percentage, medium_percentage, hard_percentage,
             remembering_percentage, understanding_percentage, applying_percentage,
             analyzing_percentage, evaluating_percentage, creating_percentage,
@@ -56,9 +56,9 @@ impl TosRepository {
     pub async fn find_tos_by_class_and_period(
         &self,
         class_id: Uuid,
-        grading_period_number: i32,
+        term_number: i32,
     ) -> AppResult<Vec<table_of_specifications::Model>> {
-        ops::find_tos_by_class_and_period(&self.db, class_id, grading_period_number).await
+        ops::find_tos_by_class_and_period(&self.db, class_id, term_number).await
     }
 
     pub async fn update_tos(

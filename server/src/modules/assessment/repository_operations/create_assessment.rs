@@ -17,10 +17,17 @@ pub async fn create_assessment(
     order_index: i32,
     client_id: Option<Uuid>,
     is_published: bool,
-    grading_period_number: Option<i32>,
+    term_number: Option<i32>,
     component: Option<String>,
     tos_id: Option<String>,
 ) -> AppResult<assessments::Model> {
+    let tos_id = match tos_id {
+        Some(s) if !s.is_empty() => Some(
+            Uuid::parse_str(&s)
+                .map_err(|e| AppError::BadRequest(format!("Invalid tos_id UUID: {}", e)))?,
+        ),
+        _ => None,
+    };
     let assessment = assessments::ActiveModel {
         id: Set(client_id.unwrap_or_else(Uuid::new_v4)),
         class_id: Set(class_id),
@@ -37,7 +44,7 @@ pub async fn create_assessment(
         created_at: Set(Utc::now().naive_utc()),
         updated_at: Set(Utc::now().naive_utc()),
         deleted_at: Set(None),
-        grading_period_number: Set(grading_period_number),
+        term_number: Set(term_number),
         component: Set(component),
         tos_id: Set(tos_id),
     };

@@ -24,7 +24,7 @@ void main() {
     const tData = {
       'title': 'New Quiz',
       'component': 'written_work',
-      'gradingPeriodNumber': 1,
+      'termNumber': 1,
       'totalPoints': 50.0,
     };
     final tCreatedItem = GradeItem(
@@ -32,7 +32,7 @@ void main() {
       classId: tClassId,
       title: 'New Quiz',
       component: 'written_work',
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       totalPoints: 50.0,
       sourceType: 'manual',
       orderIndex: 0,

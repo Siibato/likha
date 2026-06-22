@@ -26,11 +26,13 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     // Teachers (5)
     for i in 1..=5 {
         let username = teacher_username(i);
-        let full_name = teacher_full_name(i);
+        let first_name = teacher_first_name(i);
+        let last_name = teacher_last_name(i);
         users.push(UserSpec {
             id: user_id(&username),
             username: username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role: "teacher".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_TEACHER, 4).unwrap()),
             account_status: "active".into(),
@@ -43,11 +45,13 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     // Students (70)
     for i in 1..=70 {
         let username = student_username(i);
-        let full_name = student_full_name(i);
+        let first_name = student_first_name(i);
+        let last_name = student_last_name(i);
         users.push(UserSpec {
             id: user_id(&username),
             username: username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),
@@ -61,7 +65,8 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     users.push(UserSpec {
         id: user_id("student_deleted_99"),
         username: "student_deleted_99".into(),
-        full_name: "Student Deleted 99".into(),
+        first_name: "Student".into(),
+        last_name: "Deleted 99".into(),
         role: "student".into(),
         password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
         account_status: "active".into(),
@@ -78,7 +83,7 @@ pub fn manual_classes(ctx: &SeedContext) -> Vec<ClassSpec> {
     let deleted = ctx.days_ago(5);
 
     vec![
-        // Classes 1-3: Grade 8, teacher_01, quarter
+        // Classes 1-3: Grade 8, teacher_01, term
         ClassSpec {
             id: class_id("math_8a"),
             title: "Mathematics 8A".into(),
@@ -112,7 +117,7 @@ pub fn manual_classes(ctx: &SeedContext) -> Vec<ClassSpec> {
             created_at: created,
             deleted_at: None,
         },
-        // Classes 4-6: Grade 10, teacher_02, quarter
+        // Classes 4-6: Grade 10, teacher_02, term
         ClassSpec {
             id: class_id("math_10a"),
             title: "Mathematics 10A".into(),
@@ -180,7 +185,7 @@ pub fn manual_classes(ctx: &SeedContext) -> Vec<ClassSpec> {
             created_at: created,
             deleted_at: None,
         },
-        // Classes 10-12: Grade 8B, teacher_04, quarter
+        // Classes 10-12: Grade 8B, teacher_04, term
         ClassSpec {
             id: class_id("math_8b"),
             title: "Mathematics 8B".into(),
@@ -392,15 +397,15 @@ pub fn manual_tos() -> Vec<TosSpec> {
 
     let mut tos_list = Vec::with_capacity(15);
 
-    for (class_key, class_title, period, template_type) in class_names.iter() {
+    for (class_key, class_title, term, template_type) in class_names.iter() {
         let id = tos_id(&format!("{}_tos", class_key));
         let class_id = class_id(class_key);
 
         tos_list.push(TosSpec {
             id,
             class_id,
-            period: *period,
-            title: format!("TOS for {} - Q{}", class_title, period),
+            term_number: *term,
+            title: format!("TOS for {} - T{}", class_title, term),
             template_type: template_type.to_string(),
             total_items: 30,
             time_limit_unit: "days".into(),
@@ -535,39 +540,39 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(20);
     let now = ctx.now();
 
-    // Class configs: (class_key, class_id, tos_id, period, component_base)
+    // Class configs: (class_key, class_id, tos_id, term, component_base)
     let class_configs = [
-        // Q1
+        // T1
         ("math_8a", class_id("math_8a"), tos_id("math_8a_tos"), 1, "written_work"),
         ("science_8a", class_id("science_8a"), tos_id("science_8a_tos"), 1, "written_work"),
         ("english_8a", class_id("english_8a"), tos_id("english_8a_tos"), 1, "performance_task"),
-        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 1, "period_assessment"),
+        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 1, "term_assessment"),
         ("science_10a", class_id("science_10a"), tos_id("science_10a_tos"), 1, "written_work"),
         ("english_10a", class_id("english_10a"), tos_id("english_10a_tos"), 1, "performance_task"),
         ("math_12a", class_id("math_12a"), tos_id("math_12a_tos"), 1, "written_work"),
-        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 1, "period_assessment"),
+        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 1, "term_assessment"),
         ("english_12a", class_id("english_12a"), tos_id("english_12a_tos"), 1, "performance_task"),
-        // Q2
+        // T2
         ("math_8b", class_id("math_8b"), tos_id("math_8b_tos"), 2, "written_work"),
         ("science_8b", class_id("science_8b"), tos_id("science_8b_tos"), 2, "performance_task"),
-        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 2, "period_assessment"),
+        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 2, "term_assessment"),
         ("advisory_8a", class_id("advisory_8a"), tos_id("advisory_8a_tos"), 2, "written_work"),
         ("advisory_10a", class_id("advisory_10a"), tos_id("advisory_10a_tos"), 2, "performance_task"),
         ("math_10b_archived", class_id("math_10b_archived"), tos_id("math_10b_archived_tos"), 2, "written_work"),
-        // Q3
+        // T3
         ("math_8a", class_id("math_8a"), tos_id("math_8a_tos"), 3, "written_work"),
         ("science_8a", class_id("science_8a"), tos_id("science_8a_tos"), 3, "written_work"),
         ("english_8a", class_id("english_8a"), tos_id("english_8a_tos"), 3, "performance_task"),
-        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 3, "period_assessment"),
+        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 3, "term_assessment"),
         ("science_10a", class_id("science_10a"), tos_id("science_10a_tos"), 3, "written_work"),
         ("english_10a", class_id("english_10a"), tos_id("english_10a_tos"), 3, "performance_task"),
         ("math_12a", class_id("math_12a"), tos_id("math_12a_tos"), 3, "written_work"),
-        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 3, "period_assessment"),
+        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 3, "term_assessment"),
         ("english_12a", class_id("english_12a"), tos_id("english_12a_tos"), 3, "performance_task"),
-        // Q4
+        // T4
         ("math_8b", class_id("math_8b"), tos_id("math_8b_tos"), 4, "written_work"),
         ("science_8b", class_id("science_8b"), tos_id("science_8b_tos"), 4, "performance_task"),
-        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 4, "period_assessment"),
+        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 4, "term_assessment"),
         ("advisory_8a", class_id("advisory_8a"), tos_id("advisory_8a_tos"), 4, "written_work"),
         ("advisory_10a", class_id("advisory_10a"), tos_id("advisory_10a_tos"), 4, "performance_task"),
         ("math_10b_archived", class_id("math_10b_archived"), tos_id("math_10b_archived_tos"), 4, "written_work"),
@@ -576,7 +581,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let mut assessments = Vec::with_capacity(45);
     let mut assessment_counter = 0;
 
-    for (class_idx, (class_key, class_id, tos_id, period, _base_component)) in class_configs.iter().enumerate() {
+    for (class_idx, (class_key, class_id, tos_id, term, _base_component)) in class_configs.iter().enumerate() {
         // 1-3 assessments per class (deterministic: 1 + class_idx % 3)
         let num_assessments = 1 + (class_idx % 3);
 
@@ -607,20 +612,20 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 class_key,
                 class_idx,
                 assess_idx,
-                *period,
+                *term,
                 question_count,
             );
 
             let total_points: i32 = questions.iter().map(|q| q.points).sum();
 
             // Component rotates
-            let components = ["written_work", "performance_task", "period_assessment"];
+            let components = ["written_work", "performance_task", "term_assessment"];
             let component = components[(class_idx + assess_idx) % 3].to_string();
 
             // Time limit: 30, 45, or 60 minutes
             let time_limit = 30 + ((class_idx + assess_idx) % 3) * 15;
 
-            let assess_id = assessment_id(&format!("{}_q{}_assess_{}", class_key, period, assess_idx));
+            let assess_id = assessment_id(&format!("{}_t{}_assess_{}", class_key, term, assess_idx));
 
             assessments.push(AssessmentSpec {
                 id: assess_id,
@@ -639,7 +644,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
                 deleted_at: None,
                 is_published,
                 results_released,
-                grading_period_number: *period,
+                term_number: *term,
                 questions,
             });
         }
@@ -667,7 +672,7 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
         deleted_at: Some(ctx.days_ago(4)),
         is_published: false,
         results_released: false,
-        grading_period_number: 1,
+        term_number: 1,
         questions: deleted_questions,
     });
 
@@ -679,7 +684,7 @@ fn generate_questions(
     class_key: &str,
     class_idx: usize,
     assess_idx: usize,
-    period: i32,
+    term_number: i32,
     count: usize,
 ) -> Vec<QuestionSpec> {
     let mut questions = Vec::with_capacity(count);
@@ -724,11 +729,11 @@ fn generate_questions(
         // Competency assignment
         let tos_competency_id = comp_ids.get(q_idx % comp_ids.len()).copied();
 
-        let q_id = question_id(&format!("{}_q{}_assess_{}", class_key, period, assess_idx), q_idx as u32);
+        let q_id = question_id(&format!("{}_t{}_assess_{}", class_key, term_number, assess_idx), q_idx as u32);
 
         // Generate choices for MCQ
         let choices = if has_choices {
-            let q_id_str = format!("{}_q{}_assess_{}_q{}", class_key, period, assess_idx, q_idx);
+            let q_id_str = format!("{}_t{}_assess_{}_q{}", class_key, term_number, assess_idx, q_idx);
             vec![
                 ChoiceSpec { id: choice_id(&q_id_str, 0), text: "Option A".into(), is_correct: true, order: 0 },
                 ChoiceSpec { id: choice_id(&q_id_str, 1), text: "Option B".into(), is_correct: false, order: 1 },
@@ -760,9 +765,9 @@ fn generate_questions(
 pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     let created = ctx.days_ago(18);
 
-    // Class configs: (class_key, class_id, period)
+    // Class configs: (class_key, class_id, term)
     let class_configs = [
-        // Q1
+        // T1
         ("math_8a", class_id("math_8a"), 1),
         ("science_8a", class_id("science_8a"), 1),
         ("english_8a", class_id("english_8a"), 1),
@@ -772,14 +777,14 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
         ("math_12a", class_id("math_12a"), 1),
         ("science_12a", class_id("science_12a"), 1),
         ("english_12a", class_id("english_12a"), 1),
-        // Q2
+        // T2
         ("math_8b", class_id("math_8b"), 2),
         ("science_8b", class_id("science_8b"), 2),
         ("english_8b", class_id("english_8b"), 2),
         ("advisory_8a", class_id("advisory_8a"), 2),
         ("advisory_10a", class_id("advisory_10a"), 2),
         ("math_10b_archived", class_id("math_10b_archived"), 2),
-        // Q3
+        // T3
         ("math_8a", class_id("math_8a"), 3),
         ("science_8a", class_id("science_8a"), 3),
         ("english_8a", class_id("english_8a"), 3),
@@ -789,7 +794,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
         ("math_12a", class_id("math_12a"), 3),
         ("science_12a", class_id("science_12a"), 3),
         ("english_12a", class_id("english_12a"), 3),
-        // Q4
+        // T4
         ("math_8b", class_id("math_8b"), 4),
         ("science_8b", class_id("science_8b"), 4),
         ("english_8b", class_id("english_8b"), 4),
@@ -801,7 +806,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     let mut assignments = Vec::with_capacity(45);
     let mut assignment_counter = 0;
 
-    for (class_idx, (class_key, class_id, period)) in class_configs.iter().enumerate() {
+    for (class_idx, (class_key, class_id, term)) in class_configs.iter().enumerate() {
         // 1-3 assignments per class
         let num_assignments = 1 + (class_idx % 3);
 
@@ -827,7 +832,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
                 _ => 50,
             };
 
-            let assign_id = assignment_id(&format!("{}_q{}_assign_{}", class_key, period, assign_idx));
+            let assign_id = assignment_id(&format!("{}_t{}_assign_{}", class_key, term, assign_idx));
 
             assignments.push(AssignmentSpec {
                 id: assign_id,
@@ -842,7 +847,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
                 created_at: created,
                 deleted_at: None,
                 is_published: true,
-                grading_period_number: *period,
+                term_number: *term,
             });
         }
     }
@@ -861,7 +866,7 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
         created_at: ctx.days_ago(15),
         deleted_at: Some(ctx.days_ago(3)),
         is_published: false,
-        grading_period_number: 1,
+        term_number: 1,
     });
 
     assignments
@@ -917,9 +922,9 @@ pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
     materials
 }
 
-pub fn manual_school_settings(_ctx: &SeedContext) -> SchoolSettingsSpec {
+pub fn manual_school_details(_ctx: &SeedContext) -> SchoolDetailsSpec {
     let school_code = std::env::var("SCHOOL_CODE").unwrap_or_else(|_| "SEED-SCHOOL".to_string());
-    SchoolSettingsSpec {
+    SchoolDetailsSpec {
         id: 1,
         school_code,
         school_name: Some("Likha Test School".into()),
@@ -953,6 +958,16 @@ pub fn manual_learner_details() -> Vec<LearnerDetailsSpec> {
             sex: Some(sex.into()),
             track_strand: Some(track.into()),
             curriculum: Some(curriculum.into()),
+            birthdate: None,
+            birthplace: None,
+            home_address: None,
+            father_name: None,
+            father_contact: None,
+            mother_name: None,
+            mother_contact: None,
+            guardian_name: None,
+            guardian_contact: None,
+            date_admitted: None,
         });
     }
 

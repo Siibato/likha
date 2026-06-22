@@ -13,7 +13,7 @@ async fn test_sync_create_assignment_lands_in_db() {
 
     // Create prerequisite data
     let user = UserRepository::new(db.clone())
-        .create_account("sync_teacher".to_string(), "Sync Teacher".to_string(), "teacher".to_string(), None)
+        .create_account("sync_teacher".to_string(), "Sync".to_string(), "Teacher".to_string(), "teacher".to_string(), None)
         .await
         .expect("user");
 

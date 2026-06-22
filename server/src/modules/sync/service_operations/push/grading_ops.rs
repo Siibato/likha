@@ -28,7 +28,7 @@ impl super::SyncPushService {
             }
             "update" => {
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
-                let period = extract_field!(self, op, parse_i32_field, "grading_period_number");
+                let term_number = extract_field!(self, op, parse_i32_field, "term_number");
                 let ww_weight = op.payload.get("ww_weight")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(0.0);
@@ -40,7 +40,7 @@ impl super::SyncPushService {
                     .unwrap_or(0.0);
 
                 match self.grade_computation_service.update_grading_config(
-                    class_id, period, ww_weight, pt_weight, qa_weight,
+                    class_id, term_number, ww_weight, pt_weight, qa_weight,
                 ).await {
                     Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => self.error_result(op, &e.to_string()),
@@ -61,7 +61,7 @@ impl super::SyncPushService {
                 let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
                 let title = extract_field!(self, op, parse_str_field, "title");
                 let component = extract_field!(self, op, parse_str_field, "component");
-                let period = extract_field!(self, op, parse_i32_field, "grading_period_number");
+                let term_number = extract_field!(self, op, parse_i32_field, "term_number");
                 let total_points = op.payload.get("total_points")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(100.0);
@@ -71,7 +71,7 @@ impl super::SyncPushService {
                 let request = CreateGradeItemRequest {
                     title,
                     component,
-                    grading_period_number: Some(period),
+                    term_number: Some(term_number),
                     total_points,
                     source_type: op.payload.get("source_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     source_id: op.payload.get("source_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -142,7 +142,7 @@ impl super::SyncPushService {
 
                 match self.grade_computation_service.save_scores(grade_item_id, parsed_scores).await {
                     Ok(_) => {
-                        // Trigger recomputation for affected class+period
+                        // Trigger recomputation for affected class+term
                         self.recompute_after_score_change(grade_item_id).await;
                         self.success_result(op, None, Some(Utc::now().to_rfc3339()))
                     }
@@ -194,15 +194,15 @@ impl super::SyncPushService {
         }
     }
 
-    /// After any score change, recompute period grades for the affected class+period.
+    /// After any score change, recompute term grades for the affected class+term.
     async fn recompute_after_score_change(&self, grade_item_id: Uuid) {
         if let Ok(Some(item)) = self.grade_computation_service.repo.find_item(grade_item_id).await {
             if let Err(e) = self.grade_computation_service
-                .compute_class_period(item.class_id, item.grading_period_number.unwrap_or(1))
+                .compute_class_term(item.class_id, item.term_number.unwrap_or(1))
                 .await
             {
                 tracing::warn!(
-                    "Failed to recompute period grades after score change for item {}: {}",
+                    "Failed to recompute term grades after score change for item {}: {}",
                     grade_item_id, e
                 );
             }

@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 12 (v11 → v12: added deleted_at column to material_files)
+/// SCHEMA VERSION: 20 (v19 → v20: Add UNIQUE constraint on core_values_records)
 /// TOTAL TABLES: 37
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -18,17 +18,17 @@ import 'package:likha/core/logging/core_logger.dart';
 /// - Upgrades/Downgrades: Drop all tables and recreate (users must resync)
 ///
 /// TABLE CATEGORIES:
-/// - Core: users, refresh_tokens, login_attempts, activity_logs
+/// - Core: users, refresh_tokens, activity_logs
 /// - Classes: classes, class_participants
 /// - Assessments: assessments, assessment_questions, answer_keys,
 ///   answer_key_acceptable_answers, question_choices, assessment_submissions,
 ///   submission_answers, submission_answer_items
 /// - Assignments: assignments, assignment_submissions, submission_files
 /// - Materials: learning_materials, material_files
-/// - Grading: grade_record, grade_items, grade_scores, period_grades
+/// - Grading: grade_record, grade_items, grade_scores, term_grades
 /// - TOS: table_of_specifications, tos_competencies, melcs
 /// - Sync: sync_queue, sync_metadata, student_results_cache, validation_metadata
-/// - Setup: school_settings
+/// - Setup: school_details
 ///
 /// INDEXES: 40+ indexes for query performance on foreign keys and common filters
 class LocalDatabase {
@@ -59,6 +59,7 @@ class LocalDatabase {
     if (kIsWeb) return '';
     const storage = FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
+      mOptions: MacOsOptions(useDataProtectionKeyChain: false),
     );
     String? existing = await storage.read(key: _passwordStorageKey);
     if (existing != null && existing.isNotEmpty) return existing;
@@ -85,7 +86,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 12,
+            version: 20,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -106,7 +107,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 11,
+        version: 18,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -155,7 +156,8 @@ class LocalDatabase {
         CREATE TABLE IF NOT EXISTS users (
           id TEXT PRIMARY KEY,
           username TEXT UNIQUE NOT NULL,
-          full_name TEXT NOT NULL,
+          first_name TEXT NOT NULL DEFAULT '',
+          last_name TEXT NOT NULL DEFAULT '',
           role TEXT NOT NULL,
           account_status TEXT NOT NULL DEFAULT 'pending_activation',
           activated_at TEXT,
@@ -176,18 +178,6 @@ class LocalDatabase {
           expires_at TEXT NOT NULL,
           is_revoked INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        )
-      ''');
-
-      // Login attempts table
-      await txn.execute('''
-        CREATE TABLE IF NOT EXISTS login_attempts (
-          id TEXT PRIMARY KEY,
-          user_id TEXT,
-          ip_address TEXT NOT NULL,
-          attempted_at TEXT NOT NULL,
-          success INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
         )
       ''');
 
@@ -218,7 +208,7 @@ class LocalDatabase {
           student_count INTEGER NOT NULL DEFAULT 0,
           grade_level TEXT,
           school_year TEXT,
-          grading_period_type TEXT NOT NULL DEFAULT 'quarter',
+          term_type TEXT NOT NULL DEFAULT 'term',
           is_advisory INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
@@ -262,14 +252,15 @@ class LocalDatabase {
           question_count INTEGER NOT NULL DEFAULT 0,
           submission_count INTEGER NOT NULL DEFAULT 0,
           tos_id TEXT,
-          grading_period_number INTEGER,
+          term_number INTEGER,
           component TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          FOREIGN KEY(tos_id) REFERENCES table_of_specifications(id) ON DELETE SET NULL
         )
       ''');
 
@@ -291,7 +282,8 @@ class LocalDatabase {
           deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
-          FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE
+          FOREIGN KEY(assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
+          FOREIGN KEY(tos_competency_id) REFERENCES tos_competencies(id) ON DELETE SET NULL
         )
       ''');
 
@@ -403,7 +395,7 @@ class LocalDatabase {
           due_at TEXT NOT NULL,
           is_published INTEGER NOT NULL DEFAULT 0,
           order_index INTEGER NOT NULL DEFAULT 0,
-          grading_period_number INTEGER,
+          term_number INTEGER,
           component TEXT,
           submission_count INTEGER NOT NULL DEFAULT 0,
           graded_count INTEGER NOT NULL DEFAULT 0,
@@ -534,7 +526,7 @@ class LocalDatabase {
         CREATE TABLE IF NOT EXISTS grade_record (
           id TEXT PRIMARY KEY,
           class_id TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
+          term_number INTEGER NOT NULL,
           ww_weight REAL NOT NULL DEFAULT 30.0,
           pt_weight REAL NOT NULL DEFAULT 50.0,
           qa_weight REAL NOT NULL DEFAULT 20.0,
@@ -544,7 +536,7 @@ class LocalDatabase {
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
-          UNIQUE(class_id, grading_period_number)
+          UNIQUE(class_id, term_number)
         )
       ''');
 
@@ -555,7 +547,7 @@ class LocalDatabase {
           class_id TEXT NOT NULL,
           title TEXT NOT NULL,
           component TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
+          term_number INTEGER NOT NULL,
           total_points REAL NOT NULL,
           source_type TEXT NOT NULL DEFAULT 'manual',
           source_id TEXT,
@@ -589,17 +581,16 @@ class LocalDatabase {
         )
       ''');
 
-      // Period grades table
+      // Term grades table (renamed from term_grades)
       await txn.execute('''
-        CREATE TABLE IF NOT EXISTS period_grades (
+        CREATE TABLE IF NOT EXISTS term_grades (
           id TEXT PRIMARY KEY,
           class_id TEXT NOT NULL,
           student_id TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
+          term_number INTEGER NOT NULL,
           initial_grade REAL,
           transmuted_grade INTEGER,
           is_locked INTEGER NOT NULL DEFAULT 0,
-          computed_at TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -607,7 +598,7 @@ class LocalDatabase {
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          UNIQUE(class_id, student_id, grading_period_number)
+          UNIQUE(class_id, student_id, term_number)
         )
       ''');
 
@@ -616,7 +607,7 @@ class LocalDatabase {
         CREATE TABLE IF NOT EXISTS table_of_specifications (
           id TEXT PRIMARY KEY,
           class_id TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
+          term_number INTEGER NOT NULL,
           title TEXT NOT NULL,
           classification_mode TEXT NOT NULL,
           total_items INTEGER NOT NULL,
@@ -690,9 +681,9 @@ class LocalDatabase {
         )
       ''');
 
-      // School settings table
+      // School details table
       await txn.execute('''
-        CREATE TABLE IF NOT EXISTS school_settings (
+        CREATE TABLE IF NOT EXISTS school_details (
           id TEXT PRIMARY KEY,
           school_name TEXT NOT NULL DEFAULT '',
           school_region TEXT NOT NULL DEFAULT '',
@@ -721,11 +712,36 @@ class LocalDatabase {
           birthplace TEXT,
           home_address TEXT,
           father_name TEXT,
+          father_contact TEXT,
           mother_name TEXT,
+          mother_contact TEXT,
           guardian_name TEXT,
           guardian_contact TEXT,
           date_admitted TEXT,
-          admitted_to_grade TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Teacher details table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS teacher_details (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL UNIQUE,
+          license_id TEXT,
+          rank TEXT,
+          position TEXT,
+          sex TEXT,
+          birthdate TEXT,
+          home_address TEXT,
+          date_hired TEXT,
+          education_level TEXT,
+          specialization TEXT,
+          contact_number TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           deleted_at TEXT,
@@ -745,9 +761,9 @@ class LocalDatabase {
           month TEXT NOT NULL,
           school_days INTEGER NOT NULL DEFAULT 0,
           days_present INTEGER NOT NULL DEFAULT 0,
-          days_absent INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -763,16 +779,17 @@ class LocalDatabase {
           student_id TEXT NOT NULL,
           class_id TEXT NOT NULL,
           school_year TEXT NOT NULL,
-          grading_period_number INTEGER NOT NULL,
-          core_value TEXT NOT NULL,
-          behavior_statement TEXT NOT NULL,
+          term_number INTEGER NOT NULL,
+          core_value_id INTEGER NOT NULL,
           marking TEXT NOT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+          FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE,
+          UNIQUE(student_id, class_id, school_year, term_number, core_value_id)
         )
       ''');
 
@@ -791,6 +808,7 @@ class LocalDatabase {
           record_type TEXT NOT NULL DEFAULT 'previous',
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
@@ -805,18 +823,33 @@ class LocalDatabase {
           school_history_id TEXT NOT NULL,
           subject_name TEXT NOT NULL,
           subject_group TEXT,
-          q1_grade INTEGER,
-          q2_grade INTEGER,
-          q3_grade INTEGER,
-          q4_grade INTEGER,
+          term_type TEXT NOT NULL DEFAULT 'quarterly',
           final_grade INTEGER,
           descriptor TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY(school_history_id) REFERENCES student_school_history(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Previous school term grades table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS previous_school_term_grades (
+          id TEXT PRIMARY KEY,
+          subject_id TEXT NOT NULL,
+          term_number INTEGER NOT NULL,
+          grade INTEGER,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          cached_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          FOREIGN KEY(subject_id) REFERENCES previous_school_subjects(id) ON DELETE CASCADE,
+          UNIQUE(subject_id, term_number)
         )
       ''');
 
@@ -830,9 +863,9 @@ class LocalDatabase {
           month TEXT NOT NULL,
           school_days INTEGER NOT NULL DEFAULT 0,
           days_present INTEGER NOT NULL DEFAULT 0,
-          days_absent INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
+          deleted_at TEXT,
           cached_at TEXT,
           sync_status TEXT NOT NULL DEFAULT 'synced',
           FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -879,10 +912,10 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_student_id ON grade_scores(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_updated_at ON grade_scores(updated_at)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_grade_scores_deleted_at ON grade_scores(deleted_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_class_id ON period_grades(class_id)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_student_id ON period_grades(student_id)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_updated_at ON period_grades(updated_at)');
-      await txn.execute('CREATE INDEX IF NOT EXISTS idx_period_grades_deleted_at ON period_grades(deleted_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_term_grades_class_id ON term_grades(class_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_term_grades_student_id ON term_grades(student_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_term_grades_updated_at ON term_grades(updated_at)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_term_grades_deleted_at ON term_grades(deleted_at)');
 
       // Student records indexes
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_learner_details_user_id ON learner_details(user_id)');
@@ -894,18 +927,19 @@ class LocalDatabase {
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_student_school_history_student_id ON student_school_history(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_student_id ON previous_school_subjects(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_subjects_school_history_id ON previous_school_subjects(school_history_id)');
+      await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_term_grades_subject_id ON previous_school_term_grades(subject_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_student_id ON previous_school_attendance(student_id)');
       await txn.execute('CREATE INDEX IF NOT EXISTS idx_previous_school_attendance_school_history_id ON previous_school_attendance(school_history_id)');
     });
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
-    // Targeted migration: add school_head_name and school_head_position to school_settings
+    // Targeted migration: add school_head_name and school_head_position to school_details
     // Web path: 9 → 10; Mobile path: 8 → 9
     if ((oldVersion == 9 && newVersion == 10) || (oldVersion == 8 && newVersion == 9)) {
       await db.transaction((txn) async {
-        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_name TEXT');
-        await txn.execute('ALTER TABLE school_settings ADD COLUMN school_head_position TEXT');
+        await txn.execute('ALTER TABLE school_details ADD COLUMN school_head_name TEXT');
+        await txn.execute('ALTER TABLE school_details ADD COLUMN school_head_position TEXT');
       });
       return;
     }
@@ -965,6 +999,51 @@ class LocalDatabase {
       return;
     }
 
+    // Targeted migration: Split users.full_name into first_name and last_name
+    // Web path: 17 → 18; Mobile path: 16 → 17
+    if ((oldVersion == 17 && newVersion == 18) || (oldVersion == 16 && newVersion == 17)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
+      return;
+    }
+
+    // Targeted migration: Rename period_assessment component to term_assessment
+    // Web path: 16 → 17; Mobile path: 15 → 16
+    if ((oldVersion == 16 && newVersion == 17) || (oldVersion == 15 && newVersion == 16)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
+      return;
+    }
+
+    // Targeted migration: Phase 4 FK constraints — assessments.tos_id, assessment_questions.tos_competency_id
+    // Web path: 15 → 16; Mobile path: 14 → 15
+    if ((oldVersion == 15 && newVersion == 16) || (oldVersion == 14 && newVersion == 15)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
+      return;
+    }
+
+    // Targeted migration: Phase 3 normalization — previous school term grades, drop q1-q4 and days_absent
+    // Web path: 14 → 15; Mobile path: 13 → 14
+    if ((oldVersion == 14 && newVersion == 15) || (oldVersion == 13 && newVersion == 14)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
+      return;
+    }
+
+    // Targeted migration: term renames — term_* → term_*, term_grades → term_grades
+    // Web path: 13 → 14; Mobile path: 12 → 13
+    if ((oldVersion == 13 && newVersion == 14) || (oldVersion == 12 && newVersion == 13)) {
+      // Nuclear reset: all schema changes applied via _createTables
+      await _dropAllTables(db);
+      await _createTables(db, newVersion);
+      return;
+    }
+
     // Targeted migration: add deleted_at column to material_files
     // Web path: 11 → 12; Mobile path: 10 → 11
     if ((oldVersion == 11 && newVersion == 12) || (oldVersion == 10 && newVersion == 11)) {
@@ -1006,7 +1085,6 @@ class LocalDatabase {
       'learning_materials',
       'class_participants',
       'activity_logs',
-      'login_attempts',
       'refresh_tokens',
       'classes',
       'users',
@@ -1014,14 +1092,15 @@ class LocalDatabase {
       'sync_metadata',
       'student_results_cache',
       'validation_metadata',
-      'period_grades',
+      'term_grades',
       'grade_scores',
       'grade_items',
       'grade_record',
       'tos_competencies',
       'table_of_specifications',
       'melcs',
-      'school_settings',
+      'school_details',
+      'previous_school_term_grades',
       'previous_school_attendance',
       'previous_school_subjects',
       'student_school_history',

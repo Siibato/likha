@@ -10,14 +10,14 @@ String _getDescriptor(int grade) {
   return 'Did Not Meet Expectations';
 }
 
-int _periodCount(String gradingPeriodType) {
-  switch (gradingPeriodType) {
+int _termCount(String termType) {
+  switch (termType) {
     case 'semester':
       return 2;
     case 'trimester':
       return 3;
     default:
-      return 4;
+      return 3;
   }
 }
 
@@ -44,21 +44,23 @@ Future<Sf10ResponseModel?> assembleSf10Local(
   final schoolYear = classRow[ClassesCols.schoolYear] as String?;
   final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
   final section = classRow[ClassesCols.title] as String?;
-  final gradingPeriodType =
-      classRow[ClassesCols.gradingPeriodType] as String? ?? 'quarter';
-  final numPeriods = _periodCount(gradingPeriodType);
+  final termType =
+      classRow[ClassesCols.termType] as String? ?? 'term';
+  final numTerms = _termCount(termType);
 
   // 2. Get student name
   final userRows = await db.query(
     DbTables.users,
-    columns: [UsersCols.fullName],
+    columns: [UsersCols.firstName, UsersCols.lastName],
     where: '${CommonCols.id} = ?',
     whereArgs: [studentId],
     limit: 1,
   );
   if (userRows.isEmpty) return null;
-  final studentName =
-      userRows.first[UsersCols.fullName] as String? ?? 'Unknown Student';
+  final firstName = userRows.first[UsersCols.firstName] as String? ?? '';
+  final lastName = userRows.first[UsersCols.lastName] as String? ?? '';
+  final studentName = '$firstName $lastName'.trim();
+  if (studentName.isEmpty) return null;
 
   // 3. Get learner details
   final learnerRows = await db.query(
@@ -90,6 +92,7 @@ Future<Sf10ResponseModel?> assembleSf10Local(
     'SELECT ${CommonCols.id}, ${ClassesCols.title} FROM ${DbTables.classes} '
     'WHERE ${CommonCols.id} IN ($classIdPlaceholders) '
     'AND ${ClassesCols.schoolYear} = ? '
+    'AND ${ClassesCols.isAdvisory} = 0 '
     'AND ${CommonCols.deletedAt} IS NULL',
     [...enrolledClassIds, schoolYear],
   );
@@ -103,25 +106,25 @@ Future<Sf10ResponseModel?> assembleSf10Local(
     final ctitle = classMatch[ClassesCols.title] as String? ?? '';
 
     final pgRows = await db.query(
-      DbTables.periodGrades,
+      DbTables.termGrades,
       where:
-          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
+          '${TermGradesCols.classId} = ? AND ${TermGradesCols.studentId} = ?',
       whereArgs: [cid, studentId],
     );
 
-    final periodVals = List<int?>.filled(numPeriods, null);
+    final termVals = List<int?>.filled(numTerms, null);
     for (final pg in pgRows) {
-      final periodNum = pg[PeriodGradesCols.gradingPeriodNumber] as int?;
-      final transmuted = pg[PeriodGradesCols.transmutedGrade] as int?;
-      if (periodNum != null && transmuted != null) {
-        final idx = periodNum - 1;
-        if (idx >= 0 && idx < numPeriods) {
-          periodVals[idx] = transmuted;
+      final termNum = pg[TermGradesCols.termNumber] as int?;
+      final transmuted = pg[TermGradesCols.transmutedGrade] as int?;
+      if (termNum != null && transmuted != null) {
+        final idx = termNum - 1;
+        if (idx >= 0 && idx < numTerms) {
+          termVals[idx] = transmuted;
         }
       }
     }
 
-    final transmuted = periodVals.whereType<int>().toList();
+    final transmuted = termVals.whereType<int>().toList();
     final int? finalGrade;
     if (transmuted.isEmpty) {
       finalGrade = null;
@@ -138,7 +141,7 @@ Future<Sf10ResponseModel?> assembleSf10Local(
 
     subjects.add(Sf10SubjectRowModel(
       classTitle: ctitle,
-      periodGrades: periodVals,
+      termGrades: termVals,
       finalGrade: finalGrade,
       descriptor: descriptor,
     ));
@@ -157,7 +160,6 @@ Future<Sf10ResponseModel?> assembleSf10Local(
             month: a[AttendanceRecordsCols.month] as String? ?? '',
             schoolDays: a[AttendanceRecordsCols.schoolDays] as int? ?? 0,
             daysPresent: a[AttendanceRecordsCols.daysPresent] as int? ?? 0,
-            daysAbsent: a[AttendanceRecordsCols.daysAbsent] as int? ?? 0,
           ))
       .toList();
 
@@ -205,21 +207,26 @@ Future<Sf10ResponseModel?> assembleSf10Local(
       whereArgs: [historyId],
     );
 
-    final prevSubjects = prevSubjectRows
-        .map((s) => Sf10PreviousSubjectModel(
-              subjectName:
-                  s[PreviousSchoolSubjectsCols.subjectName] as String? ?? '',
-              subjectGroup:
-                  s[PreviousSchoolSubjectsCols.subjectGroup] as String?,
-              q1Grade: s[PreviousSchoolSubjectsCols.q1Grade] as int?,
-              q2Grade: s[PreviousSchoolSubjectsCols.q2Grade] as int?,
-              q3Grade: s[PreviousSchoolSubjectsCols.q3Grade] as int?,
-              q4Grade: s[PreviousSchoolSubjectsCols.q4Grade] as int?,
-              finalGrade: s[PreviousSchoolSubjectsCols.finalGrade] as int?,
-              descriptor:
-                  s[PreviousSchoolSubjectsCols.descriptor] as String?,
-            ))
-        .toList();
+    final prevSubjects = <Sf10PreviousSubjectModel>[];
+    for (final s in prevSubjectRows) {
+      final subjectId = s[CommonCols.id] as String;
+      final termGradeRows = await db.query(
+        DbTables.previousSchoolTermGrades,
+        where: '${PreviousSchoolTermGradesCols.subjectId} = ?',
+        whereArgs: [subjectId],
+      );
+      final termGrades = termGradeRows
+          .map((tg) => tg[PreviousSchoolTermGradesCols.grade] as int?)
+          .toList();
+      prevSubjects.add(Sf10PreviousSubjectModel(
+        subjectName: s[PreviousSchoolSubjectsCols.subjectName] as String? ?? '',
+        subjectGroup: s[PreviousSchoolSubjectsCols.subjectGroup] as String?,
+        termType: s[PreviousSchoolSubjectsCols.termType] as String?,
+        termGrades: termGrades,
+        finalGrade: s[PreviousSchoolSubjectsCols.finalGrade] as int?,
+        descriptor: s[PreviousSchoolSubjectsCols.descriptor] as String?,
+      ));
+    }
 
     // Get previous attendance for this school history entry
     final prevAttendanceRows = await db.query(
@@ -237,8 +244,6 @@ Future<Sf10ResponseModel?> assembleSf10Local(
                   a[PreviousSchoolAttendanceCols.schoolDays] as int? ?? 0,
               daysPresent:
                   a[PreviousSchoolAttendanceCols.daysPresent] as int? ?? 0,
-              daysAbsent:
-                  a[PreviousSchoolAttendanceCols.daysAbsent] as int? ?? 0,
             ))
         .toList();
 
@@ -269,17 +274,22 @@ Future<Sf10ResponseModel?> assembleSf10Local(
       final fg = s[PreviousSchoolSubjectsCols.finalGrade] as int?;
       if (fg != null) prevFinals.add(fg);
 
+      final subjectId = s[CommonCols.id] as String;
+      final termGradeRows = await db.query(
+        DbTables.previousSchoolTermGrades,
+        where: '${PreviousSchoolTermGradesCols.subjectId} = ?',
+        whereArgs: [subjectId],
+      );
+      final termGrades = termGradeRows
+          .map((tg) => tg[PreviousSchoolTermGradesCols.grade] as int?)
+          .toList();
+
       prevScholasticSubjects.add(Sf10SubjectRowModel(
         classTitle:
             s[PreviousSchoolSubjectsCols.subjectName] as String? ?? '',
         subjectGroup:
             s[PreviousSchoolSubjectsCols.subjectGroup] as String?,
-        periodGrades: [
-          s[PreviousSchoolSubjectsCols.q1Grade] as int?,
-          s[PreviousSchoolSubjectsCols.q2Grade] as int?,
-          s[PreviousSchoolSubjectsCols.q3Grade] as int?,
-          s[PreviousSchoolSubjectsCols.q4Grade] as int?,
-        ],
+        termGrades: termGrades,
         finalGrade: fg,
         descriptor: fg != null ? _getDescriptor(fg) : null,
       ));

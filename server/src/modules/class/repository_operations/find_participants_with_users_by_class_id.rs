@@ -12,13 +12,12 @@ pub async fn find_participants_with_users_by_class_id(
     let participant_with_user = class_participants::Entity::find()
         .filter(class_participants::Column::ClassId.eq(class_id))
         .filter(class_participants::Column::RemovedAt.is_null())
-        .order_by_asc(class_participants::Column::JoinedAt)
         .find_also_related(users::Entity)
         .all(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-    let result: Vec<(class_participants::Model, users::Model)> = if let Some(role_filter) = role {
+    let mut result: Vec<(class_participants::Model, users::Model)> = if let Some(role_filter) = role {
         participant_with_user
             .into_iter()
             .filter_map(|(participant, user)| {
@@ -34,6 +33,14 @@ pub async fn find_participants_with_users_by_class_id(
             })
             .collect()
     };
+
+    result.sort_by(|a, b| {
+        let last_cmp = a.1.last_name.cmp(&b.1.last_name);
+        if last_cmp != std::cmp::Ordering::Equal {
+            return last_cmp;
+        }
+        a.1.first_name.cmp(&b.1.first_name)
+    });
 
     Ok(result)
 }

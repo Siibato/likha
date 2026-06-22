@@ -4,7 +4,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/setup/entities/school_settings.dart';
+import 'package:likha/domain/setup/entities/school_details.dart';
 import 'package:likha/services/excel/grade_excel_generator.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/services/pdf/grade_pdf_generator.dart';
@@ -71,8 +71,8 @@ class GradeExportContext {
   final String? section;
   final String? subject;
   final String? teacherName;
-  final int quarter;
-  final SchoolSettings? schoolSettings;
+  final int termNumber;
+  final SchoolDetails? schoolDetails;
   final GradeConfig? config;
   final SectionInfo ww;
   final SectionInfo pt;
@@ -85,8 +85,8 @@ class GradeExportContext {
     this.section,
     this.subject,
     this.teacherName,
-    required this.quarter,
-    this.schoolSettings,
+    required this.termNumber,
+    this.schoolDetails,
     this.config,
     required this.ww,
     required this.pt,
@@ -94,20 +94,17 @@ class GradeExportContext {
     required this.studentRows,
   });
 
-  String get quarterLabel {
-    final q = quarter;
-    if (q >= 1 && q <= 4) {
-      return 'QUARTER $q';
-    }
-    return 'QUARTER $q';
+  String get termLabel {
+    final t = termNumber;
+    return 'TERM $t';
   }
 
-  String? get schoolName => schoolSettings?.schoolName;
-  String? get region => schoolSettings?.schoolRegion;
-  String? get division => schoolSettings?.schoolDivision;
-  String? get district => schoolSettings?.schoolDistrict;
-  String? get schoolId => schoolSettings?.schoolCode;
-  String? get schoolYear => schoolSettings?.schoolYear;
+  String? get schoolName => schoolDetails?.schoolName;
+  String? get region => schoolDetails?.schoolRegion;
+  String? get division => schoolDetails?.schoolDivision;
+  String? get district => schoolDetails?.schoolDistrict;
+  String? get schoolId => schoolDetails?.schoolCode;
+  String? get schoolYear => schoolDetails?.schoolYear;
 }
 
 /// Service for exporting grade data to different formats
@@ -125,13 +122,13 @@ class GradeExportService {
   Future<void> exportToExcel({
     required String classId,
     required String className,
-    required int quarter,
+    required int termNumber,
     required List<Participant> students,
     required List<GradeItem> gradeItems,
     required Map<String, List<GradeScore>> scoresByItem,
     required GradeConfig? config,
     required List<Map<String, dynamic>>? summary,
-    SchoolSettings? schoolSettings,
+    SchoolDetails? schoolDetails,
     String? teacherName,
     String? gradeLevel,
     String? section,
@@ -139,13 +136,13 @@ class GradeExportService {
   }) async {
     final ctx = _buildContext(
       className: className,
-      quarter: quarter,
+      termNumber: termNumber,
       students: students,
       gradeItems: gradeItems,
       scoresByItem: scoresByItem,
       config: config,
       summary: summary,
-      schoolSettings: schoolSettings,
+      schoolDetails: schoolDetails,
       teacherName: teacherName,
       gradeLevel: gradeLevel,
       section: section,
@@ -158,34 +155,34 @@ class GradeExportService {
   Future<void> exportToPdf({
     required String classId,
     required String className,
-    required int quarter,
+    required int termNumber,
     required List<Participant> students,
     required List<GradeItem> gradeItems,
     required Map<String, List<GradeScore>> scoresByItem,
     required GradeConfig? config,
     required List<Map<String, dynamic>>? summary,
-    SchoolSettings? schoolSettings,
+    SchoolDetails? schoolDetails,
     String? teacherName,
     String? gradeLevel,
     String? section,
     String? subject,
   }) async {
-    ServiceLogger.instance.log('exportToPdf: Building context with schoolSettings=${schoolSettings != null}');
-    if (schoolSettings != null) {
-      ServiceLogger.instance.log('exportToPdf: schoolSettings in context - name="${schoolSettings.schoolName}", region="${schoolSettings.schoolRegion}", division="${schoolSettings.schoolDivision}", code="${schoolSettings.schoolCode}", year="${schoolSettings.schoolYear}"');
+    ServiceLogger.instance.log('exportToPdf: Building context with schoolDetails=${schoolDetails != null}');
+    if (schoolDetails != null) {
+      ServiceLogger.instance.log('exportToPdf: schoolDetails in context - name="${schoolDetails.schoolName}", region="${schoolDetails.schoolRegion}", division="${schoolDetails.schoolDivision}", code="${schoolDetails.schoolCode}", year="${schoolDetails.schoolYear}"');
     } else {
-      ServiceLogger.instance.warn('exportToPdf: schoolSettings is NULL in exportToPdf');
+      ServiceLogger.instance.warn('exportToPdf: schoolDetails is NULL in exportToPdf');
     }
     
     final ctx = _buildContext(
       className: className,
-      quarter: quarter,
+      termNumber: termNumber,
       students: students,
       gradeItems: gradeItems,
       scoresByItem: scoresByItem,
       config: config,
       summary: summary,
-      schoolSettings: schoolSettings,
+      schoolDetails: schoolDetails,
       teacherName: teacherName,
       gradeLevel: gradeLevel,
       section: section,
@@ -200,33 +197,33 @@ class GradeExportService {
   /// Build export context with all computed values
   GradeExportContext _buildContext({
     required String className,
-    required int quarter,
+    required int termNumber,
     required List<Participant> students,
     required List<GradeItem> gradeItems,
     required Map<String, List<GradeScore>> scoresByItem,
     required GradeConfig? config,
     required List<Map<String, dynamic>>? summary,
-    SchoolSettings? schoolSettings,
+    SchoolDetails? schoolDetails,
     String? teacherName,
     String? gradeLevel,
     String? section,
     String? subject,
   }) {
-    // Filter grade items by quarter
-    final quarterItems = gradeItems
-        .where((item) => item.gradingPeriodNumber == quarter)
+    // Filter grade items by term
+    final termItems = gradeItems
+        .where((item) => item.termNumber == termNumber)
         .toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
     // Group items by component
-    final wwItems = quarterItems
+    final wwItems = termItems
         .where((i) => i.component == 'ww' || i.component == 'written_work')
         .toList();
-    final ptItems = quarterItems
+    final ptItems = termItems
         .where((i) => i.component == 'pt' || i.component == 'performance_task')
         .toList();
-    final qaItems = quarterItems
-        .where((i) => i.component == 'qa' || i.component == 'period_assessment')
+    final qaItems = termItems
+        .where((i) => i.component == 'qa' || i.component == 'term_assessment')
         .toList();
 
     // Build score lookup: studentId -> gradeItemId -> GradeScore
@@ -279,7 +276,7 @@ class GradeExportService {
       hpsTotal: ptHps,
     );
     final qaSection = SectionInfo(
-      label: 'Quarterly Assessment',
+      label: 'Term Assessment',
       abbreviation: 'QA',
       weight: config?.qaWeight ?? 20,
       items: qaItems,
@@ -320,8 +317,8 @@ class GradeExportService {
       section: section,
       subject: subject,
       teacherName: teacherName,
-      quarter: quarter,
-      schoolSettings: schoolSettings,
+      termNumber: termNumber,
+      schoolDetails: schoolDetails,
       config: config,
       ww: wwSection,
       pt: ptSection,

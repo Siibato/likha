@@ -1,5 +1,35 @@
 import 'package:equatable/equatable.dart';
 
+class Sf9AttendanceRecord extends Equatable {
+  final String month;
+  final int schoolDays;
+  final int daysPresent;
+
+  const Sf9AttendanceRecord({
+    required this.month,
+    required this.schoolDays,
+    required this.daysPresent,
+  });
+
+  @override
+  List<Object?> get props => [month];
+}
+
+class Sf9CoreValueMarking extends Equatable {
+  final int coreValueId;
+  final int termNumber;
+  final String marking;
+
+  const Sf9CoreValueMarking({
+    required this.coreValueId,
+    required this.termNumber,
+    required this.marking,
+  });
+
+  @override
+  List<Object?> get props => [coreValueId, termNumber];
+}
+
 class Sf9Response extends Equatable {
   final String studentId;
   final String studentName;
@@ -12,9 +42,11 @@ class Sf9Response extends Equatable {
   final String? trackStrand;
   final String? curriculum;
   final String? teacherName;
-  final String? gradingPeriodType;
+  final String? termType;
   final List<Sf9SubjectRow> subjects;
-  final Sf9PeriodAverages? generalAverage;
+  final Sf9TermAverages? generalAverage;
+  final List<Sf9CoreValueMarking> coreValues;
+  final List<Sf9AttendanceRecord> attendance;
 
   const Sf9Response({
     required this.studentId,
@@ -28,9 +60,11 @@ class Sf9Response extends Equatable {
     this.trackStrand,
     this.curriculum,
     this.teacherName,
-    this.gradingPeriodType,
+    this.termType,
     required this.subjects,
     this.generalAverage,
+    this.coreValues = const [],
+    this.attendance = const [],
   });
 
   @override
@@ -40,14 +74,14 @@ class Sf9Response extends Equatable {
 class Sf9SubjectRow extends Equatable {
   final String classTitle;
   final String? subjectGroup;
-  final List<int?> periodGrades;
+  final List<int?> termGrades;
   final int? finalGrade;
   final String? descriptor;
 
   const Sf9SubjectRow({
     required this.classTitle,
     this.subjectGroup,
-    this.periodGrades = const [],
+    this.termGrades = const [],
     this.finalGrade,
     this.descriptor,
   });
@@ -56,13 +90,13 @@ class Sf9SubjectRow extends Equatable {
   List<Object?> get props => [classTitle, finalGrade];
 }
 
-class Sf9PeriodAverages extends Equatable {
-  final List<int?> periodGrades;
+class Sf9TermAverages extends Equatable {
+  final List<int?> termGrades;
   final int? finalAverage;
   final String? descriptor;
 
-  const Sf9PeriodAverages({
-    this.periodGrades = const [],
+  const Sf9TermAverages({
+    this.termGrades = const [],
     this.finalAverage,
     this.descriptor,
   });

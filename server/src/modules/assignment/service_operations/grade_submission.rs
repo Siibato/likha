@@ -64,9 +64,9 @@ pub async fn grade_submission(
 
     if let Some(inv) = invalidator {
         inv.invalidate_assignment_detail(submission.assignment_id).await;
-        if let Some(period) = assignment.grading_period_number {
-            inv.invalidate_class_grades(assignment.class_id, period).await;
-            inv.invalidate_student_grades(assignment.class_id, submission.student_id, period).await;
+        if let Some(term) = assignment.term_number {
+            inv.invalidate_class_grades(assignment.class_id, term).await;
+            inv.invalidate_student_grades(assignment.class_id, submission.student_id, term).await;
         }
         if let Some(item_id) = grade_item_id {
             inv.invalidate_item_scores(item_id).await;
@@ -82,8 +82,8 @@ pub async fn grade_submission(
         )),
     ).await;
 
-    let student_name = assignment_repo.find_student_name(graded.student_id).await?;
+    let (student_first_name, student_last_name) = assignment_repo.find_student_name(graded.student_id).await?;
     let files = assignment_repo.find_files_by_submission(submission_id).await?;
 
-    Ok(build_submission_response(graded, student_name, files))
+    Ok(build_submission_response(graded, student_first_name, student_last_name, files))
 }

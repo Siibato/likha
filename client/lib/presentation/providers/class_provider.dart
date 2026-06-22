@@ -339,7 +339,14 @@ class ClassNotifier extends StateNotifier<ClassState> {
               student: user,
               joinedAt: user.createdAt,
             );
-          }).toList();
+          }).toList()
+            ..sort((a, b) {
+              final lastCmp = a.student.lastName.toLowerCase().compareTo(
+                  b.student.lastName.toLowerCase());
+              if (lastCmp != 0) return lastCmp;
+              return a.student.firstName.toLowerCase().compareTo(
+                  b.student.firstName.toLowerCase());
+            });
           state = state.copyWith(
             currentClassDetail: ClassDetail(
               id: currentDetail.id,

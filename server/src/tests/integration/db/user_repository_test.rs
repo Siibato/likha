@@ -7,12 +7,13 @@ async fn test_create_and_find_user_by_id() {
     let repo = UserRepository::new(db);
 
     let user = repo
-        .create_account("alice".to_string(), "Alice Smith".to_string(), "teacher".to_string(), None)
+        .create_account("alice".to_string(), "Alice".to_string(), "Smith".to_string(), "teacher".to_string(), None)
         .await
         .expect("create_account failed");
 
     assert_eq!(user.username, "alice");
-    assert_eq!(user.full_name, "Alice Smith");
+    assert_eq!(user.first_name, "Alice");
+    assert_eq!(user.last_name, "Smith");
     assert_eq!(user.role, "teacher");
     assert_eq!(user.account_status, "pending_activation");
 
@@ -26,7 +27,7 @@ async fn test_find_by_username() {
     let db = test_db().await;
     let repo = UserRepository::new(db);
 
-    repo.create_account("bob".to_string(), "Bob Jones".to_string(), "student".to_string(), None)
+    repo.create_account("bob".to_string(), "Bob".to_string(), "Jones".to_string(), "student".to_string(), None)
         .await
         .expect("create_account failed");
 
@@ -50,7 +51,7 @@ async fn test_update_account_status() {
     let repo = UserRepository::new(db);
 
     let user = repo
-        .create_account("carol".to_string(), "Carol Lee".to_string(), "teacher".to_string(), None)
+        .create_account("carol".to_string(), "Carol".to_string(), "Lee".to_string(), "teacher".to_string(), None)
         .await
         .expect("create_account failed");
 

@@ -4,19 +4,21 @@ use uuid::Uuid;
 
 use ::entity::{
     class_participants, users,
-    grade_record, grade_items, grade_scores, period_grades,
+    grade_record, grade_items, grade_scores, term_grades,
     table_of_specifications, tos_competencies,
     learner_details, attendance_records, core_values_records,
     student_school_history, previous_school_subjects, previous_school_attendance,
+    previous_school_term_grades,
+    teacher_details,
 };
 use crate::utils::{AppError, AppResult};
 use super::{ManifestEntry, PaginatedRecords};
 
-/// Build a map of class_id -> (teacher_id, teacher_username, teacher_full_name)
+/// Build a map of class_id -> (teacher_id, teacher_username, teacher_first_name, teacher_last_name)
 pub async fn build_teacher_map(
     db: &DatabaseConnection,
     class_ids: &[Uuid],
-) -> AppResult<std::collections::HashMap<Uuid, (Uuid, String, String)>> {
+) -> AppResult<std::collections::HashMap<Uuid, (Uuid, String, String, String)>> {
     let participants = class_participants::Entity::find()
         .filter(class_participants::Column::ClassId.is_in(class_ids.to_vec()))
         .filter(class_participants::Column::RemovedAt.is_null())
@@ -34,7 +36,7 @@ pub async fn build_teacher_map(
             if user.role == "teacher" {
                 map.insert(
                     participant.class_id,
-                    (user.id, user.username.clone(), user.full_name.clone()),
+                    (user.id, user.username.clone(), user.first_name.clone(), user.last_name.clone()),
                 );
             }
         }
@@ -74,7 +76,7 @@ pub fn grade_config_to_json(r: grade_record::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "ww_weight": r.ww_weight,
         "pt_weight": r.pt_weight,
         "qa_weight": r.qa_weight,
@@ -88,7 +90,7 @@ pub fn tos_to_json(r: table_of_specifications::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "title": r.title,
         "classification_mode": r.classification_mode,
         "total_items": r.total_items,
@@ -137,7 +139,7 @@ pub fn grade_item_to_json(r: grade_items::Model) -> Value {
         "class_id": r.class_id.to_string(),
         "title": r.title,
         "component": r.component,
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "total_points": r.total_points,
         "source_type": r.source_type,
         "source_id": r.source_id,
@@ -162,16 +164,15 @@ pub fn grade_score_to_json(r: grade_scores::Model) -> Value {
     })
 }
 
-pub fn period_grade_to_json(r: period_grades::Model) -> Value {
+pub fn term_grade_to_json(r: term_grades::Model) -> Value {
     serde_json::json!({
         "id": r.id.to_string(),
         "class_id": r.class_id.to_string(),
         "student_id": r.student_id.to_string(),
-        "grading_period_number": r.grading_period_number,
+        "term_number": r.term_number,
         "initial_grade": r.initial_grade,
         "transmuted_grade": r.transmuted_grade,
         "is_locked": r.is_locked,
-        "computed_at": r.computed_at.map(|d| d.to_string()),
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
         "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -191,11 +192,32 @@ pub fn learner_details_to_json(r: learner_details::Model) -> Value {
         "birthplace": r.birthplace,
         "home_address": r.home_address,
         "father_name": r.father_name,
+        "father_contact": r.father_contact,
         "mother_name": r.mother_name,
+        "mother_contact": r.mother_contact,
         "guardian_name": r.guardian_name,
         "guardian_contact": r.guardian_contact,
         "date_admitted": r.date_admitted.map(|d| d.to_string()),
-        "admitted_to_grade": r.admitted_to_grade,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
+    })
+}
+
+pub fn teacher_details_to_json(r: teacher_details::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "user_id": r.user_id.to_string(),
+        "license_id": r.license_id,
+        "rank": r.rank,
+        "position": r.position,
+        "sex": r.sex,
+        "birthdate": r.birthdate.map(|d| d.to_string()),
+        "home_address": r.home_address,
+        "date_hired": r.date_hired.map(|d| d.to_string()),
+        "education_level": r.education_level,
+        "specialization": r.specialization,
+        "contact_number": r.contact_number,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
         "deleted_at": r.deleted_at.map(|d| d.to_string()),
@@ -211,9 +233,9 @@ pub fn attendance_record_to_json(r: attendance_records::Model) -> Value {
         "month": r.month,
         "school_days": r.school_days,
         "days_present": r.days_present,
-        "days_absent": r.days_absent,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
     })
 }
 
@@ -223,9 +245,8 @@ pub fn core_values_record_to_json(r: core_values_records::Model) -> Value {
         "student_id": r.student_id.to_string(),
         "class_id": r.class_id.to_string(),
         "school_year": r.school_year,
-        "grading_period_number": r.grading_period_number,
-        "core_value": r.core_value,
-        "behavior_statement": r.behavior_statement,
+        "term_number": r.term_number,
+        "core_value_id": r.core_value_id,
         "marking": r.marking,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
@@ -256,14 +277,24 @@ pub fn previous_school_subject_to_json(r: previous_school_subjects::Model) -> Va
         "school_history_id": r.school_history_id.to_string(),
         "subject_name": r.subject_name,
         "subject_group": r.subject_group,
-        "q1_grade": r.q1_grade,
-        "q2_grade": r.q2_grade,
-        "q3_grade": r.q3_grade,
-        "q4_grade": r.q4_grade,
+        "term_type": r.term_type,
         "final_grade": r.final_grade,
         "descriptor": r.descriptor,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
+    })
+}
+
+pub fn previous_school_term_grade_to_json(r: previous_school_term_grades::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "subject_id": r.subject_id.to_string(),
+        "term_number": r.term_number,
+        "grade": r.grade,
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
     })
 }
 
@@ -276,9 +307,9 @@ pub fn previous_school_attendance_to_json(r: previous_school_attendance::Model) 
         "month": r.month,
         "school_days": r.school_days,
         "days_present": r.days_present,
-        "days_absent": r.days_absent,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
     })
 }
 

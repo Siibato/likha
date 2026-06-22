@@ -18,14 +18,16 @@ Future<void> cacheClassDetail(
       if (classDetail.teacherId.isNotEmpty) {
         final teacherRows = await txn.query(
           'users',
-          columns: ['username', 'full_name'],
+          columns: ['username', 'first_name', 'last_name'],
           where: 'id = ?',
           whereArgs: [classDetail.teacherId],
           limit: 1,
         );
         if (teacherRows.isNotEmpty) {
           teacherUsername = teacherRows.first['username'] as String? ?? '';
-          teacherFullName = teacherRows.first['full_name'] as String? ?? '';
+          final firstName = teacherRows.first['first_name'] as String? ?? '';
+          final lastName = teacherRows.first['last_name'] as String? ?? '';
+          teacherFullName = '$lastName, $firstName'.trim();
         }
       }
 

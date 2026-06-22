@@ -6,12 +6,12 @@ import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.
 ResultVoid computeGrades(
   GradingRemoteDataSource remoteDataSource, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     await remoteDataSource.computeGrades(
       classId: classId,
-      gradingPeriodNumber: gradingPeriodNumber,
+      termNumber: termNumber,
     );
     return const Right(null);
   } on ServerFailure catch (e) {

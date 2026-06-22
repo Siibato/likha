@@ -97,7 +97,7 @@ class ExcelTableBuilder {
 
     if (qaCols > 0) {
       ExcelStyleUtils.setCell(sheet, row, qaStart,
-          'QUARTERLY ASSESSMENT(${qa.weight.toStringAsFixed(0)}%)',
+          'TERM ASSESSMENT(${qa.weight.toStringAsFixed(0)}%)',
           bold: true, fontSize: 8, hAlign: HorizontalAlign.Center,
           bgColor: '#D9D9D9', allBorders: true);
       ExcelStyleUtils.merge(sheet, row, qaStart, row, qaStart + qaCols - 1);
@@ -107,7 +107,7 @@ class ExcelTableBuilder {
         bold: true, fontSize: 8, hAlign: HorizontalAlign.Center,
         vAlign: VerticalAlign.Center, bgColor: '#D9D9D9',
         allBorders: true);
-    ExcelStyleUtils.setCell(sheet, row, qgCol, 'Quarterly Grade',
+    ExcelStyleUtils.setCell(sheet, row, qgCol, 'Term Grade',
         bold: true, fontSize: 8, hAlign: HorizontalAlign.Center,
         vAlign: VerticalAlign.Center, bgColor: '#D9D9D9',
         allBorders: true);

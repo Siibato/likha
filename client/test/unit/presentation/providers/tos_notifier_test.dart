@@ -116,7 +116,7 @@ void main() {
 
         final result = await notifier.createTos('c-1', {
           'title': 'Q1 TOS',
-          'grading_period_number': 1,
+          'term_number': 1,
           'classification_mode': 'difficulty',
           'total_items': 40,
         });

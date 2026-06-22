@@ -66,8 +66,8 @@ class FullSyncResponseModel {
   @JsonKey(name: 'grade_scores', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> gradeScores;
 
-  @JsonKey(name: 'period_grades', defaultValue: <Map<String, dynamic>>[])
-  final List<Map<String, dynamic>> periodGrades;
+  @JsonKey(name: 'term_grades', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> termGrades;
 
   @JsonKey(name: 'table_of_specifications', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> tableOfSpecifications;
@@ -86,11 +86,14 @@ class FullSyncResponseModel {
   @JsonKey(name: 'sync_plan')
   final SyncPlanModel? syncPlan;
 
-  @JsonKey(name: 'school_settings')
-  final Map<String, dynamic>? schoolSettings;
+  @JsonKey(name: 'school_details')
+  final Map<String, dynamic>? schoolDetails;
 
   @JsonKey(name: 'learner_details', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> learnerDetails;
+
+  @JsonKey(name: 'teacher_details', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> teacherDetails;
 
   @JsonKey(name: 'attendance_records', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> attendanceRecords;
@@ -103,6 +106,9 @@ class FullSyncResponseModel {
 
   @JsonKey(name: 'previous_school_subjects', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> previousSchoolSubjects;
+
+  @JsonKey(name: 'previous_school_term_grades', defaultValue: <Map<String, dynamic>>[])
+  final List<Map<String, dynamic>> previousSchoolTermGrades;
 
   @JsonKey(name: 'previous_school_attendance', defaultValue: <Map<String, dynamic>>[])
   final List<Map<String, dynamic>> previousSchoolAttendance;
@@ -125,19 +131,21 @@ class FullSyncResponseModel {
     this.gradeConfigs = const [],
     this.gradeItems = const [],
     this.gradeScores = const [],
-    this.periodGrades = const [],
+    this.termGrades = const [],
     this.tableOfSpecifications = const [],
     this.tosCompetencies = const [],
     this.activityLogs = const [],
     this.user,
     this.enrolledStudents,
     this.syncPlan,
-    this.schoolSettings,
+    this.schoolDetails,
     this.learnerDetails = const [],
+    this.teacherDetails = const [],
     this.attendanceRecords = const [],
     this.coreValuesRecords = const [],
     this.studentSchoolHistory = const [],
     this.previousSchoolSubjects = const [],
+    this.previousSchoolTermGrades = const [],
     this.previousSchoolAttendance = const [],
   });
 

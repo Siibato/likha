@@ -8,7 +8,7 @@ import 'package:likha/core/errors/exceptions.dart';
 Future<void> cacheGradeSummary(
   LocalDatabase localDatabase,
   String classId,
-  int gradingPeriodNumber,
+  int termNumber,
   List<Map<String, dynamic>> summary,
 ) async {
   try {
@@ -16,7 +16,7 @@ Future<void> cacheGradeSummary(
     await db.insert(
       DbTables.syncMetadata,
       {
-        SyncMetadataCols.key: 'grade_summary:$classId:$gradingPeriodNumber',
+        SyncMetadataCols.key: 'grade_summary:$classId:$termNumber',
         SyncMetadataCols.value: jsonEncode(summary),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,

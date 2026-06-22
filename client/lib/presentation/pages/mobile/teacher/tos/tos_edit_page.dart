@@ -32,7 +32,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
   late final TextEditingController _analyzingPctController;
   late final TextEditingController _evaluatingPctController;
   late final TextEditingController _creatingPctController;
-  late int _selectedQuarter;
+  late int _selectedTerm;
   late String _classificationMode;
   late String _timeUnit;
 
@@ -60,7 +60,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
         TextEditingController(text: '${widget.tos.evaluatingPercentage}');
     _creatingPctController =
         TextEditingController(text: '${widget.tos.creatingPercentage}');
-    _selectedQuarter = widget.tos.gradingPeriodNumber;
+    _selectedTerm = widget.tos.termNumber;
     _classificationMode = widget.tos.classificationMode;
     _timeUnit = widget.tos.timeUnit;
   }
@@ -88,7 +88,7 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
       widget.tos.id,
       {
         'title': _titleController.text.trim(),
-        'quarter': _selectedQuarter,
+        'term_number': _selectedTerm,
         'classification_mode': _classificationMode,
         'total_items': int.tryParse(_totalItemsController.text.trim()) ?? 50,
         'time_unit': _timeUnit,
@@ -163,9 +163,9 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                           border: Border.all(color: AppColors.borderLight),
                         ),
                         child: DropdownButtonFormField<int>(
-                          initialValue: _selectedQuarter,
+                          initialValue: _selectedTerm,
                           decoration: const InputDecoration(
-                            labelText: 'Quarter',
+                            labelText: 'Term',
                             prefixIcon: Icon(Icons.calendar_month_outlined,
                                 color: AppColors.foregroundTertiary, size: 20),
                             border: InputBorder.none,
@@ -175,11 +175,11 @@ class _EditTosPageState extends ConsumerState<EditTosPage> {
                           items: [1, 2, 3, 4]
                               .map((q) => DropdownMenuItem(
                                     value: q,
-                                    child: Text('Quarter $q'),
+                                    child: Text('Term $q'),
                                   ))
                               .toList(),
                           onChanged: (v) {
-                            if (v != null) setState(() => _selectedQuarter = v);
+                            if (v != null) setState(() => _selectedTerm = v);
                           },
                         ),
                       ),

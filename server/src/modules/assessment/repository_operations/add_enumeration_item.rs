@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
@@ -12,6 +13,7 @@ pub async fn add_enumeration_item(
     let new_key = answer_keys::ActiveModel {
         id: Set(Uuid::new_v4()),
         question_id: Set(question_id),
+        updated_at: Set(Utc::now().naive_utc()),
     };
     let inserted = new_key
         .insert(db)

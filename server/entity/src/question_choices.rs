@@ -10,6 +10,7 @@ pub struct Model {
     pub choice_text: String,
     pub is_correct: bool,
     pub order_index: i32,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -10,14 +10,12 @@ pub struct Model {
     pub school_history_id: Uuid,
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -34,6 +32,12 @@ pub enum Relation {
         to = "super::student_school_history::Column::Id"
     )]
     SchoolHistory,
+    #[sea_orm(
+        has_many = "super::previous_school_term_grades::Entity",
+        from = "Column::Id",
+        to = "super::previous_school_term_grades::Column::SubjectId"
+    )]
+    TermGrades,
 }
 
 impl Related<super::users::Entity> for Entity {
@@ -45,6 +49,12 @@ impl Related<super::users::Entity> for Entity {
 impl Related<super::student_school_history::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::SchoolHistory.def()
+    }
+}
+
+impl Related<super::previous_school_term_grades::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TermGrades.def()
     }
 }
 

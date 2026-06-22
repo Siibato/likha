@@ -20,7 +20,7 @@ void main() {
   group('GetGradeItems', () {
     final tParams = GetGradeItemsParams(
       classId: 'class-1',
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       component: 'written_work',
     );
     final tGradeItems = [
@@ -29,7 +29,7 @@ void main() {
         classId: 'class-1',
         title: 'Quiz 1',
         component: 'written_work',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         totalPoints: 100.0,
         sourceType: 'manual',
         orderIndex: 0,
@@ -41,7 +41,7 @@ void main() {
         classId: 'class-1',
         title: 'Quiz 2',
         component: 'written_work',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         totalPoints: 100.0,
         sourceType: 'manual',
         orderIndex: 1,
@@ -53,7 +53,7 @@ void main() {
     test('should get grade items successfully', () async {
       when(() => mockRepository.getGradeItems(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
       )).thenAnswer((_) async => Right(tGradeItems));
 
@@ -63,7 +63,7 @@ void main() {
       expect(result.getOrElse(() => []).length, 2);
       verify(() => mockRepository.getGradeItems(
         classId: 'class-1',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         component: 'written_work',
       )).called(1);
     });
@@ -71,12 +71,12 @@ void main() {
     test('should get all grade items without component filter', () async {
       final params = GetGradeItemsParams(
         classId: 'class-1',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
       );
 
       when(() => mockRepository.getGradeItems(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
       )).thenAnswer((_) async => Right(tGradeItems));
 
@@ -85,7 +85,7 @@ void main() {
       expect(result.isRight(), true);
       verify(() => mockRepository.getGradeItems(
         classId: 'class-1',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         component: null,
       )).called(1);
     });
@@ -93,12 +93,12 @@ void main() {
     test('should return ServerFailure when class not found', () async {
       final params = GetGradeItemsParams(
         classId: 'nonexistent-id',
-        gradingPeriodNumber: 1,
+        termNumber: 1,
       );
 
       when(() => mockRepository.getGradeItems(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
       )).thenAnswer((_) async => const Left(ServerFailure('Class not found')));
 
@@ -114,7 +114,7 @@ void main() {
     test('should return ServerFailure when server error occurs', () async {
       when(() => mockRepository.getGradeItems(
         classId: any(named: 'classId'),
-        gradingPeriodNumber: any(named: 'gradingPeriodNumber'),
+        termNumber: any(named: 'termNumber'),
         component: any(named: 'component'),
       )).thenAnswer((_) async => const Left(ServerFailure('Server error')));
 

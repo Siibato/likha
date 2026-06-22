@@ -1,3 +1,4 @@
+pub mod advisory;
 pub mod demo;
 pub mod e2e;
 pub mod manual;

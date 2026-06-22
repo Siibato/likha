@@ -30,7 +30,8 @@ ResultFuture<MutationResult<User>> resetAccount(
         ? UserModel(
             id: existingUser.id,
             username: existingUser.username,
-            fullName: existingUser.fullName,
+            firstName: existingUser.firstName,
+            lastName: existingUser.lastName,
             role: existingUser.role,
             accountStatus: 'pending_activation',
             isActive: false,
@@ -43,7 +44,8 @@ ResultFuture<MutationResult<User>> resetAccount(
         : UserModel(
             id: userId,
             username: '',
-            fullName: '(Unknown)',
+            firstName: '(Unknown)',
+            lastName: '',
             role: '',
             accountStatus: 'pending_activation',
             isActive: false,

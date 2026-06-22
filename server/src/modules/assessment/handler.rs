@@ -386,11 +386,7 @@ pub async fn get_student_results(
     auth_user: AuthUser,
     Path(submission_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    if let Err(r) = require_student(&auth_user) {
-        return r;
-    }
-
-    match service.get_student_results_cached(submission_id, auth_user.user_id).await {
+    match service.get_student_results_cached(submission_id, auth_user.user_id, &auth_user.role).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

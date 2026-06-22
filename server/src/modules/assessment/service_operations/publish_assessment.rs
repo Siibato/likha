@@ -33,10 +33,10 @@ impl crate::modules::assessment::service::AssessmentService {
         self.assessment_repo.update_total_points(assessment_id).await?;
         let published = self.assessment_repo.publish_assessment(assessment_id).await?;
 
-        if let (Some(period), Some(ref component)) = (published.grading_period_number, &published.component) {
+        if let (Some(term), Some(ref component)) = (published.term_number, &published.component) {
             let _ = auto_populate::create_linked_grade_item(
                 &self.grade_computation_repo, "assessment", published.id, published.class_id,
-                &published.title, component, period,
+                &published.title, component, term,
                 published.total_points as f64,
             ).await;
         }
@@ -64,9 +64,9 @@ impl crate::modules::assessment::service::AssessmentService {
             total_points: published.total_points,
             question_count,
             submission_count,
-            grading_period_number: published.grading_period_number,
+            term_number: published.term_number,
             component: published.component.clone(),
-            tos_id: published.tos_id.clone(),
+            tos_id: published.tos_id.map(|u| u.to_string()),
             created_at: fmt_utc(published.created_at),
             updated_at: fmt_utc(published.updated_at),
         })

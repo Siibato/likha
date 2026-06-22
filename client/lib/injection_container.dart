@@ -1,6 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,6 +76,7 @@ import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
+import 'package:likha/domain/auth/usecases/get_account_details.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/get_current_user.dart';
@@ -85,6 +85,7 @@ import 'package:likha/domain/auth/usecases/login.dart';
 import 'package:likha/domain/auth/usecases/logout.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
+import 'package:likha/domain/auth/usecases/upsert_account_details.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/repositories/classes/class_repository_impl.dart';
@@ -128,7 +129,7 @@ import 'package:likha/domain/grading/usecases/get_grade_summary.dart';
 import 'package:likha/domain/grading/usecases/get_grading_config.dart';
 import 'package:likha/domain/grading/usecases/get_my_grade_detail.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
-import 'package:likha/domain/grading/usecases/get_period_grades.dart';
+import 'package:likha/domain/grading/usecases/get_term_grades.dart';
 import 'package:likha/domain/grading/usecases/get_scores_by_item.dart';
 import 'package:likha/domain/grading/usecases/save_scores.dart';
 import 'package:likha/domain/grading/usecases/set_score_override.dart';
@@ -138,7 +139,7 @@ import 'package:likha/domain/grading/usecases/update_grading_config.dart';
 import 'package:likha/domain/grading/usecases/get_general_averages.dart';
 import 'package:likha/domain/grading/usecases/get_sf9.dart';
 import 'package:likha/domain/grading/usecases/get_sf10.dart';
-import 'package:likha/domain/grading/usecases/update_period_grade.dart';
+import 'package:likha/domain/grading/usecases/update_term_grade.dart';
 import 'package:likha/domain/grading/services/score_generation_service.dart';
 import 'package:likha/domain/grading/usecases/generate_scores.dart';
 import 'package:likha/domain/grading/usecases/get_class_grades.dart';
@@ -161,8 +162,8 @@ import 'package:likha/data/datasources/local/setup/setup_local_datasource.dart';
 import 'package:likha/data/datasources/remote/setup/setup_remote_datasource.dart';
 import 'package:likha/data/repositories/setup/setup_repository_impl.dart';
 import 'package:likha/domain/setup/repositories/setup_repository.dart';
-import 'package:likha/domain/setup/usecases/get_school_settings.dart';
-import 'package:likha/domain/setup/usecases/update_school_settings.dart';
+import 'package:likha/domain/setup/usecases/get_school_details.dart';
+import 'package:likha/domain/setup/usecases/update_school_details.dart';
 import 'package:likha/domain/setup/usecases/update_school_code.dart';
 import 'package:likha/domain/document_exports/repositories/document_export_repository.dart';
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
@@ -174,6 +175,10 @@ import 'package:likha/data/datasources/remote/student_records/student_records_re
 import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
 import 'package:likha/data/repositories/student_records/student_records_repository_impl.dart';
 import 'package:likha/domain/student_records/repositories/student_records_repository.dart';
+import 'package:likha/data/datasources/remote/import/import_remote_datasource.dart';
+import 'package:likha/domain/repositories/import_repository.dart';
+
+// Student Records use cases
 import 'package:likha/domain/student_records/usecases/get_learner_details.dart';
 import 'package:likha/domain/student_records/usecases/upsert_learner_details.dart';
 import 'package:likha/domain/student_records/usecases/get_attendance.dart';
@@ -236,9 +241,10 @@ Future<void> init() async {
   sl.registerSingleton<DataEventBus>(DataEventBus());
 
   // Core - General
-  sl.registerLazySingleton(() => kIsWeb
-      ? StorageService(sl<FlutterSecureStorage>(), sl<SharedPreferences>())
-      : StorageService(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton(() => StorageService(
+        sl<FlutterSecureStorage>(),
+        sl<SharedPreferences>(),
+      ));
 
   // Core - Server Reachability (must be before DioClient to avoid circular dependency)
   // Standalone Dio for health checks — does NOT go through DioClient.
@@ -456,6 +462,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetActivityLogs(sl()));
   sl.registerLazySingleton(() => UpdateAccount(sl()));
   sl.registerLazySingleton(() => DeleteAccount(sl()));
+  sl.registerLazySingleton(() => GetAccountDetails(sl()));
+  sl.registerLazySingleton(() => UpsertAccountDetails(sl()));
 
   // Class use cases
   sl.registerLazySingleton(() => CreateClass(sl()));
@@ -549,11 +557,11 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SaveScores(sl()));
   sl.registerLazySingleton(() => SetScoreOverride(sl()));
   sl.registerLazySingleton(() => ClearScoreOverride(sl()));
-  sl.registerLazySingleton(() => GetPeriodGrades(sl()));
+  sl.registerLazySingleton(() => GetTermGrades(sl()));
   sl.registerLazySingleton(() => ComputeGrades(sl()));
   sl.registerLazySingleton(() => GetGradeSummary(sl()));
   sl.registerLazySingleton(() => GetFinalGrades(sl()));
-  sl.registerLazySingleton(() => UpdatePeriodGrade(sl()));
+  sl.registerLazySingleton(() => UpdateTermGrade(sl()));
   sl.registerLazySingleton(() => GetMyGrades(sl()));
   sl.registerLazySingleton(() => GetMyGradeDetail(sl()));
 
@@ -613,8 +621,8 @@ Future<void> init() async {
   );
 
   // Setup use cases
-  sl.registerLazySingleton(() => GetSchoolSettings(sl()));
-  sl.registerLazySingleton(() => UpdateSchoolSettings(sl()));
+  sl.registerLazySingleton(() => GetSchoolDetails(sl()));
+  sl.registerLazySingleton(() => UpdateSchoolDetails(sl()));
   sl.registerLazySingleton(() => UpdateSchoolCode(sl()));
 
   // TOS use cases
@@ -651,4 +659,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpsertPreviousSubject(sl()));
   sl.registerLazySingleton(() => GetPreviousAttendance(sl()));
   sl.registerLazySingleton(() => UpsertPreviousAttendance(sl()));
+
+  // Import datasource and repository
+  sl.registerLazySingleton<ImportRemoteDataSource>(
+    () => ImportRemoteDataSourceImpl(sl<DioClient>()),
+  );
+  sl.registerLazySingleton(() => ImportRepository(sl<ImportRemoteDataSource>()));
 }

@@ -47,8 +47,8 @@ class DeltaPayload {
   @JsonKey(name: 'grade_scores')
   final EntityDeltas gradeScores;
 
-  @JsonKey(name: 'period_grades')
-  final EntityDeltas periodGrades;
+  @JsonKey(name: 'term_grades')
+  final EntityDeltas termGrades;
 
   @JsonKey(name: 'table_of_specifications')
   final EntityDeltas tableOfSpecifications;
@@ -59,11 +59,14 @@ class DeltaPayload {
   @JsonKey(name: 'activity_logs')
   final EntityDeltas activityLogs;
 
-  @JsonKey(name: 'school_settings')
-  final EntityDeltas schoolSettings;
+  @JsonKey(name: 'school_details')
+  final EntityDeltas schoolDetails;
 
   @JsonKey(name: 'learner_details')
   final EntityDeltas learnerDetails;
+
+  @JsonKey(name: 'teacher_details')
+  final EntityDeltas teacherDetails;
 
   @JsonKey(name: 'attendance_records')
   final EntityDeltas attendanceRecords;
@@ -76,6 +79,9 @@ class DeltaPayload {
 
   @JsonKey(name: 'previous_school_subjects')
   final EntityDeltas previousSchoolSubjects;
+
+  @JsonKey(name: 'previous_school_term_grades')
+  final EntityDeltas previousSchoolTermGrades;
 
   @JsonKey(name: 'previous_school_attendance')
   final EntityDeltas previousSchoolAttendance;
@@ -92,16 +98,18 @@ class DeltaPayload {
     required this.gradeConfigs,
     required this.gradeItems,
     required this.gradeScores,
-    required this.periodGrades,
+    required this.termGrades,
     required this.tableOfSpecifications,
     required this.tosCompetencies,
     required this.activityLogs,
-    required this.schoolSettings,
+    required this.schoolDetails,
     required this.learnerDetails,
+    required this.teacherDetails,
     required this.attendanceRecords,
     required this.coreValuesRecords,
     required this.studentSchoolHistory,
     required this.previousSchoolSubjects,
+    required this.previousSchoolTermGrades,
     required this.previousSchoolAttendance,
   });
 

@@ -113,7 +113,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     DateTime? openAt,
     DateTime? closeAt,
     bool? showResultsImmediately,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
   }) {
     return Assessment(
@@ -133,7 +133,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
       submissionCount: a.submissionCount,
       isSubmitted: a.isSubmitted,
       tosId: a.tosId,
-      gradingPeriodNumber: gradingPeriodNumber ?? a.gradingPeriodNumber,
+      termNumber: termNumber ?? a.termNumber,
       component: component ?? a.component,
       createdAt: a.createdAt,
       updatedAt: DateTime.now(),
@@ -206,7 +206,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
     switch (c) {
       case 'written_work': return 'ww';
       case 'performance_task': return 'pt';
-      case 'period_assessment': return 'qa';
+      case 'term_assessment': return 'qa';
       default: return c;
     }
   }
@@ -232,14 +232,14 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
           currentAssessment: assessment,
           successMessage: 'Assessment created',
         );
-        // Auto-create linked grade item when component + gradingPeriodNumber are set
-        if (assessment.component != null && assessment.gradingPeriodNumber != null) {
+        // Auto-create linked grade item when component + termNumber are set
+        if (assessment.component != null && assessment.termNumber != null) {
           sl<GradingRepository>().createGradeItem(
             classId: params.classId,
             data: {
               'title': assessment.title,
               'component': _toGradeComponent(assessment.component!),
-              'grading_period_number': assessment.gradingPeriodNumber!,
+              'term_number': assessment.termNumber!,
               'total_points': assessment.totalPoints.toDouble(),
               'source_type': 'assessment',
               'source_id': assessment.id,
@@ -470,7 +470,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
                 submissionCount: state.currentAssessment!.submissionCount,
                 isSubmitted: state.currentAssessment!.isSubmitted,
                 tosId: state.currentAssessment!.tosId,
-                gradingPeriodNumber: state.currentAssessment!.gradingPeriodNumber,
+                termNumber: state.currentAssessment!.termNumber,
                 component: state.currentAssessment!.component,
                 createdAt: state.currentAssessment!.createdAt,
                 updatedAt: state.currentAssessment!.updatedAt,
@@ -504,7 +504,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         openAt: params.openAt != null ? DateTime.tryParse(params.openAt!) : null,
         closeAt: params.closeAt != null ? DateTime.tryParse(params.closeAt!) : null,
         showResultsImmediately: params.showResultsImmediately,
-        gradingPeriodNumber: params.gradingPeriodNumber,
+        termNumber: params.termNumber,
         component: params.component,
       );
       state = state.copyWith(
@@ -598,7 +598,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
           submissionCount: state.currentAssessment!.submissionCount,
           isSubmitted: state.currentAssessment!.isSubmitted,
           tosId: state.currentAssessment!.tosId,
-          gradingPeriodNumber: state.currentAssessment!.gradingPeriodNumber,
+          termNumber: state.currentAssessment!.termNumber,
           component: state.currentAssessment!.component,
           createdAt: state.currentAssessment!.createdAt,
           updatedAt: state.currentAssessment!.updatedAt,
@@ -665,7 +665,7 @@ class TeacherAssessmentNotifier extends StateNotifier<TeacherAssessmentState> {
         submissionCount: state.currentAssessment!.submissionCount,
         isSubmitted: state.currentAssessment!.isSubmitted,
         tosId: state.currentAssessment!.tosId,
-        gradingPeriodNumber: state.currentAssessment!.gradingPeriodNumber,
+        termNumber: state.currentAssessment!.termNumber,
         component: state.currentAssessment!.component,
         createdAt: state.currentAssessment!.createdAt,
         updatedAt: state.currentAssessment!.updatedAt,

@@ -11,7 +11,7 @@ pub async fn find_tos_by_class(
     table_of_specifications::Entity::find()
         .filter(table_of_specifications::Column::ClassId.eq(class_id))
         .filter(table_of_specifications::Column::DeletedAt.is_null())
-        .order_by_asc(table_of_specifications::Column::GradingPeriodNumber)
+        .order_by_asc(table_of_specifications::Column::TermNumber)
         .all(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))

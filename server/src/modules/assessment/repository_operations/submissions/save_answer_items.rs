@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
@@ -16,6 +17,7 @@ pub async fn save_answer_items(
         .map_err(|e| AppError::InternalServerError(format!("Failed to clear answer items: {}", e)))?;
 
     for (answer_key_id, choice_id, answer_text, is_correct) in items {
+        let now = Utc::now().naive_utc();
         let item = submission_answer_items::ActiveModel {
             id: Set(Uuid::new_v4()),
             submission_answer_id: Set(submission_answer_id),
@@ -23,6 +25,7 @@ pub async fn save_answer_items(
             choice_id: Set(choice_id),
             answer_text: Set(answer_text),
             is_correct: Set(is_correct),
+            updated_at: Set(now),
         };
         item.insert(db)
             .await

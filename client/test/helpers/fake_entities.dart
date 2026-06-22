@@ -11,7 +11,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
@@ -24,14 +24,16 @@ class FakeEntities {
   static User user({
     String? id,
     String? username,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
     String? accountStatus,
     bool? isActive,
   }) => User(
     id: id ?? 'user-1',
     username: username ?? 'testuser',
-    fullName: fullName ?? 'Test User',
+    firstName: firstName ?? 'Test',
+    lastName: lastName ?? 'User',
     role: role ?? 'student',
     accountStatus: accountStatus ?? 'activated',
     isActive: isActive ?? true,
@@ -53,11 +55,13 @@ class FakeEntities {
   static CheckUsernameResult checkUsernameResult({
     String? username,
     String? accountStatus,
-    String? fullName,
+    String? firstName,
+    String? lastName,
   }) => CheckUsernameResult(
     username: username ?? 'testuser',
     accountStatus: accountStatus ?? 'pending_activation',
-    fullName: fullName,
+    firstName: firstName,
+    lastName: lastName,
   );
 
   static ActivityLog activityLog({
@@ -298,14 +302,14 @@ class FakeEntities {
   static GradeConfig gradeConfig({
     String? id,
     String? classId,
-    int? gradingPeriodNumber,
+    int? termNumber,
     double? wwWeight,
     double? ptWeight,
     double? qaWeight,
   }) => GradeConfig(
     id: id ?? 'config-1',
     classId: classId ?? 'class-1',
-    gradingPeriodNumber: gradingPeriodNumber ?? 1,
+    termNumber: termNumber ?? 1,
     wwWeight: wwWeight ?? 30.0,
     ptWeight: ptWeight ?? 50.0,
     qaWeight: qaWeight ?? 20.0,
@@ -316,7 +320,7 @@ class FakeEntities {
     String? classId,
     String? title,
     String? component,
-    int? gradingPeriodNumber,
+    int? termNumber,
     double? totalPoints,
     String? sourceType,
     String? sourceId,
@@ -325,7 +329,7 @@ class FakeEntities {
     classId: classId ?? 'class-1',
     title: title ?? 'Quiz 1',
     component: component ?? 'written_work',
-    gradingPeriodNumber: gradingPeriodNumber ?? 1,
+    termNumber: termNumber ?? 1,
     totalPoints: totalPoints ?? 100.0,
     sourceType: sourceType ?? 'manual',
     sourceId: sourceId,
@@ -350,25 +354,24 @@ class FakeEntities {
     overrideScore: overrideScore,
   );
 
-  static PeriodGrade periodGrade({
+  static TermGrade termGrade({
     String? id,
     String? classId,
     String? studentId,
-    int? gradingPeriodNumber,
+    int? termNumber,
     double? initialGrade,
     int? transmutedGrade,
     bool? isLocked,
     bool? isPreview,
-  }) => PeriodGrade(
+  }) => TermGrade(
     id: id ?? 'grade-1',
     classId: classId ?? 'class-1',
     studentId: studentId ?? 'student-1',
-    gradingPeriodNumber: gradingPeriodNumber ?? 1,
+    termNumber: termNumber ?? 1,
     initialGrade: initialGrade ?? 85.0,
     transmutedGrade: transmutedGrade ?? 88,
     isLocked: isLocked ?? false,
     isPreview: isPreview ?? false,
-    computedAt: DateTime(2024, 1, 15),
   );
 
   // ===== TOS Entities =====
@@ -376,7 +379,7 @@ class FakeEntities {
   static TableOfSpecifications tos({
     String? id,
     String? classId,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? title,
     String? classificationMode,
     int? totalItems,
@@ -384,7 +387,7 @@ class FakeEntities {
   }) => TableOfSpecifications(
     id: id ?? 'tos-1',
     classId: classId ?? 'class-1',
-    gradingPeriodNumber: gradingPeriodNumber ?? 1,
+    termNumber: termNumber ?? 1,
     title: title ?? 'TOS for Q1',
     classificationMode: classificationMode ?? 'traditional',
     totalItems: totalItems ?? 50,

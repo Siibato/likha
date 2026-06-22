@@ -7,12 +7,12 @@ use crate::utils::{AppError, AppResult};
 pub async fn get_items_by_component(
     db: &DatabaseConnection,
     class_id: Uuid,
-    grading_period_number: i32,
+    term_number: i32,
     component: &str,
 ) -> AppResult<Vec<grade_items::Model>> {
     grade_items::Entity::find()
         .filter(grade_items::Column::ClassId.eq(class_id))
-        .filter(grade_items::Column::GradingPeriodNumber.eq(grading_period_number))
+        .filter(grade_items::Column::TermNumber.eq(term_number))
         .filter(grade_items::Column::Component.eq(component))
         .filter(grade_items::Column::DeletedAt.is_null())
         .order_by_asc(grade_items::Column::OrderIndex)

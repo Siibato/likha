@@ -48,7 +48,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     bool? showResultsImmediately,
     bool isPublished = true,
     List<Map<String, dynamic>>? questions,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
     String? tosId,
   }) =>
@@ -64,7 +64,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
         showResultsImmediately: showResultsImmediately,
         isPublished: isPublished,
         questions: questions,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         component: component,
         tosId: tosId,
       );
@@ -106,7 +106,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     String? openAt,
     String? closeAt,
     bool? showResultsImmediately,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? component,
   }) =>
       ops.updateAssessment(
@@ -119,7 +119,7 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
         openAt: openAt,
         closeAt: closeAt,
         showResultsImmediately: showResultsImmediately,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         component: component,
       );
 

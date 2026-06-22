@@ -108,7 +108,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         showResultsImmediately:
                             _controller.showResultsImmediately,
                         isPublished: _controller.isPublished,
-                        quarter: _controller.quarter,
+                        termNumber: _controller.termNumber,
                         component: _controller.component,
                         isDepartmentalExam:
                             _controller.isDepartmentalExam,
@@ -131,8 +131,8 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                           _controller.setIsPublished(v);
                           _controller.scheduleAutoSave();
                         },
-                        onQuarterChanged: (v) {
-                          _controller.setQuarter(v);
+                        onTermChanged: (v) {
+                          _controller.setTermNumber(v);
                           _controller.scheduleAutoSave();
                         },
                         onComponentChanged: (v) {

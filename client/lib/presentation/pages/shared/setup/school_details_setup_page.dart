@@ -9,7 +9,7 @@ import 'package:likha/core/utils/platform_detector.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_auth_layout.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_auth_layout.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
-import 'package:likha/presentation/widgets/shared/forms/school_settings_form.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_details_form.dart';
 import 'package:likha/presentation/widgets/auth_wrapper.dart';
 
 /// Shown after admin's first login when school_name is null.
@@ -28,7 +28,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
   final _districtController = TextEditingController();
   final _schoolHeadNameController = TextEditingController();
   final _schoolHeadPositionController = TextEditingController();
-  final _schoolYearController = TextEditingController();
+  String? _selectedSchoolYear;
   bool _isSaving = false;
   String? _error;
 
@@ -40,7 +40,6 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
     _districtController.dispose();
     _schoolHeadNameController.dispose();
     _schoolHeadPositionController.dispose();
-    _schoolYearController.dispose();
     super.dispose();
   }
 
@@ -77,9 +76,9 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           'school_head_position': _schoolHeadPositionController.text.trim().isEmpty
               ? null
               : _schoolHeadPositionController.text.trim(),
-          'school_year': _schoolYearController.text.trim().isEmpty
+          'school_year': _selectedSchoolYear?.trim().isEmpty ?? true
               ? null
-              : _schoolYearController.text.trim(),
+              : _selectedSchoolYear!.trim(),
         },
       );
 
@@ -137,14 +136,15 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
           const SizedBox(height: 32),
           if (_error != null)
             FormMessage(message: _error, severity: MessageSeverity.error),
-          SchoolSettingsForm(
+          SchoolDetailsForm(
             schoolNameController: _schoolNameController,
             regionController: _regionController,
             divisionController: _divisionController,
             districtController: _districtController,
             schoolHeadNameController: _schoolHeadNameController,
             schoolHeadPositionController: _schoolHeadPositionController,
-            schoolYearController: _schoolYearController,
+            selectedSchoolYear: _selectedSchoolYear,
+            onSchoolYearChanged: (v) => setState(() => _selectedSchoolYear = v),
             enabled: !_isSaving,
             onSchoolNameChanged: (_) => setState(() => _error = null),
           ),

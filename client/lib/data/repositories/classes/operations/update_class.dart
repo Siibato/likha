@@ -39,7 +39,7 @@ ResultFuture<MutationResult<ClassEntity>> updateClass(
       isArchived: current.isArchived,
       isAdvisory: isAdvisory ?? current.isAdvisory,
       studentCount: current.studentCount,
-      gradingPeriodType: current.gradingPeriodType,
+      termType: current.termType,
       createdAt: current.createdAt,
       updatedAt: now,
       syncStatus: SyncStatus.pending,

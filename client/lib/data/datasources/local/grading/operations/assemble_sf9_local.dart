@@ -10,14 +10,14 @@ String _getDescriptor(int grade) {
   return 'Did Not Meet Expectations';
 }
 
-int _periodCount(String gradingPeriodType) {
-  switch (gradingPeriodType) {
+int _termCount(String termType) {
+  switch (termType) {
     case 'semester':
       return 2;
     case 'trimester':
       return 3;
     default:
-      return 4;
+      return 3;
   }
 }
 
@@ -35,30 +35,32 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     whereArgs: [classId],
     limit: 1,
   );
-  if (classRows.isEmpty) return null;
 
-  final classRow = classRows.first;
-  final isAdvisory = (classRow[ClassesCols.isAdvisory] as int?) == 1;
-  if (!isAdvisory) return null;
-
-  final schoolYear = classRow[ClassesCols.schoolYear] as String?;
-  final gradeLevel = classRow[ClassesCols.gradeLevel] as String?;
-  final section = classRow[ClassesCols.title] as String?;
-  final gradingPeriodType =
-      classRow[ClassesCols.gradingPeriodType] as String? ?? 'quarter';
-  final teacherName = classRow[ClassesCols.teacherFullName] as String?;
-  final numPeriods = _periodCount(gradingPeriodType);
+  final classRow = classRows.isNotEmpty ? classRows.first : null;
+  final schoolYear = classRow?[ClassesCols.schoolYear] as String?;
+  final gradeLevel = classRow?[ClassesCols.gradeLevel] as String?;
+  final section = classRow?[ClassesCols.title] as String?;
+  final termType = classRow?[ClassesCols.termType] as String? ?? 'term';
+  final teacherName = classRow?[ClassesCols.teacherFullName] as String?;
+  final numTerms = _termCount(termType);
 
   // 2. Get student name from users table
   final userRows = await db.query(
     DbTables.users,
-    columns: [UsersCols.fullName],
+    columns: [UsersCols.firstName, UsersCols.lastName],
     where: '${CommonCols.id} = ?',
     whereArgs: [studentId],
     limit: 1,
   );
-  if (userRows.isEmpty) return null;
-  final studentName = userRows.first[UsersCols.fullName] as String? ?? 'Unknown Student';
+  final firstName = userRows.isNotEmpty
+      ? (userRows.first[UsersCols.firstName] as String? ?? '')
+      : '';
+  final lastName = userRows.isNotEmpty
+      ? (userRows.first[UsersCols.lastName] as String? ?? '')
+      : '';
+  const fallbackName = 'Unknown Student';
+  final rawStudentName = '$firstName $lastName'.trim();
+  final studentName = rawStudentName.isEmpty ? fallbackName : rawStudentName;
 
   // 3. Get learner details
   final learnerRows = await db.query(
@@ -77,7 +79,6 @@ Future<Sf9ResponseModel?> assembleSf9Local(
         '${ClassParticipantsCols.userId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
     whereArgs: [studentId],
   );
-  if (participantRows.isEmpty) return null;
 
   final enrolledClassIds = participantRows
       .map((r) => r[ClassParticipantsCols.classId] as String?)
@@ -86,20 +87,26 @@ Future<Sf9ResponseModel?> assembleSf9Local(
       .cast<String>();
 
   // 5. Filter class IDs by matching school_year
-  final classIdPlaceholders = enrolledClassIds.map((_) => '?').join(', ');
-  final classMatches = await db.rawQuery(
-    'SELECT ${CommonCols.id}, ${ClassesCols.title} FROM ${DbTables.classes} '
-    'WHERE ${CommonCols.id} IN ($classIdPlaceholders) '
-    'AND ${ClassesCols.schoolYear} = ? '
-    'AND ${CommonCols.deletedAt} IS NULL',
-    [...enrolledClassIds, schoolYear],
-  );
+  List<Map<String, Object?>> classMatches = [];
+  if (enrolledClassIds.isNotEmpty) {
+    final placeholders = List.filled(enrolledClassIds.length, '?').join(', ');
+    final buffer = StringBuffer(
+      'SELECT ${CommonCols.id}, ${ClassesCols.title} FROM ${DbTables.classes} '
+      'WHERE ${CommonCols.id} IN ($placeholders) '
+      'AND ${ClassesCols.isAdvisory} = 0 '
+      'AND ${CommonCols.deletedAt} IS NULL ',
+    );
+    final args = [...enrolledClassIds];
+    if (schoolYear != null && schoolYear.isNotEmpty) {
+      buffer.write('AND ${ClassesCols.schoolYear} = ? ');
+      args.add(schoolYear);
+    }
+    classMatches = await db.rawQuery(buffer.toString(), args);
+  }
 
-  if (classMatches.isEmpty) return null;
-
-  // 6. For each enrolled class, get period_grades
+  // 6. For each enrolled class, get term_grades
   final subjects = <Sf9SubjectRowModel>[];
-  final periodSums = List<List<int>>.generate(numPeriods, (_) => []);
+  final termSums = List<List<int>>.generate(numTerms, (_) => []);
   final finalGrades = <int>[];
 
   for (final classMatch in classMatches) {
@@ -107,26 +114,26 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     final ctitle = classMatch[ClassesCols.title] as String? ?? '';
 
     final pgRows = await db.query(
-      DbTables.periodGrades,
+      DbTables.termGrades,
       where:
-          '${PeriodGradesCols.classId} = ? AND ${PeriodGradesCols.studentId} = ?',
+          '${TermGradesCols.classId} = ? AND ${TermGradesCols.studentId} = ?',
       whereArgs: [cid, studentId],
     );
 
-    final periodVals = List<int?>.filled(numPeriods, null);
+    final termVals = List<int?>.filled(numTerms, null);
     for (final pg in pgRows) {
-      final periodNum = pg[PeriodGradesCols.gradingPeriodNumber] as int?;
-      final transmuted = pg[PeriodGradesCols.transmutedGrade] as int?;
-      if (periodNum != null && transmuted != null) {
-        final idx = periodNum - 1;
-        if (idx >= 0 && idx < numPeriods) {
-          periodVals[idx] = transmuted;
-          periodSums[idx].add(transmuted);
+      final termNum = pg[TermGradesCols.termNumber] as int?;
+      final transmuted = pg[TermGradesCols.transmutedGrade] as int?;
+      if (termNum != null && transmuted != null) {
+        final idx = termNum - 1;
+        if (idx >= 0 && idx < numTerms) {
+          termVals[idx] = transmuted;
+          termSums[idx].add(transmuted);
         }
       }
     }
 
-    final transmuted = periodVals.whereType<int>().toList();
+    final transmuted = termVals.whereType<int>().toList();
     final int? finalGrade;
     if (transmuted.isEmpty) {
       finalGrade = null;
@@ -143,7 +150,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
 
     subjects.add(Sf9SubjectRowModel(
       classTitle: ctitle,
-      periodGrades: periodVals,
+      termGrades: termVals,
       finalGrade: finalGrade,
       descriptor: descriptor,
     ));
@@ -160,11 +167,41 @@ Future<Sf9ResponseModel?> assembleSf9Local(
   final gaDescriptor =
       finalAverage != null ? _getDescriptor(finalAverage) : null;
 
-  final generalAverage = Sf9PeriodAveragesModel(
-    periodGrades: periodSums.map((s) => computeAvg(s)).toList(),
+  final generalAverage = Sf9TermAveragesModel(
+    termGrades: termSums.map((s) => computeAvg(s)).toList(),
     finalAverage: finalAverage,
     descriptor: gaDescriptor,
   );
+
+  // 8. Get core values (same pattern as getCachedCoreValues)
+  final coreValuesRows = await db.query(
+    DbTables.coreValuesRecords,
+    where:
+        '${CoreValuesRecordsCols.studentId} = ? AND ${CoreValuesRecordsCols.classId} = ?',
+    whereArgs: [studentId, classId],
+  );
+  final coreValues = coreValuesRows
+      .map((row) => Sf9CoreValueMarkingModel(
+            coreValueId: row[CoreValuesRecordsCols.coreValueId] as int,
+            termNumber: row[CoreValuesRecordsCols.termNumber] as int,
+            marking: row[CoreValuesRecordsCols.marking] as String,
+          ))
+      .toList();
+
+  // 9. Get attendance (same pattern as getCachedAttendance)
+  final attendanceRows = await db.query(
+    DbTables.attendanceRecords,
+    where:
+        '${AttendanceRecordsCols.studentId} = ? AND ${AttendanceRecordsCols.classId} = ?',
+    whereArgs: [studentId, classId],
+  );
+  final attendance = attendanceRows
+      .map((row) => Sf9AttendanceRecordModel(
+            month: row[AttendanceRecordsCols.month] as String,
+            schoolDays: row[AttendanceRecordsCols.schoolDays] as int,
+            daysPresent: row[AttendanceRecordsCols.daysPresent] as int,
+          ))
+      .toList();
 
   return Sf9ResponseModel(
     studentId: studentId,
@@ -178,8 +215,10 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     trackStrand: learner?[LearnerDetailsCols.trackStrand] as String?,
     curriculum: learner?[LearnerDetailsCols.curriculum] as String?,
     teacherName: teacherName,
-    gradingPeriodType: gradingPeriodType,
+    termType: termType,
     subjects: subjects,
     generalAverage: generalAverage,
+    coreValues: coreValues,
+    attendance: attendance,
   );
 }

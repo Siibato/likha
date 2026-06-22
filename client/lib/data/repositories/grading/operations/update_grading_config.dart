@@ -21,7 +21,7 @@ ResultFuture<MutationResult<void>> updateGradingConfig(
     final models = configs.map((c) => GradeConfigModel(
       id: c['id'] as String? ?? const Uuid().v4(),
       classId: classId,
-      gradingPeriodNumber: (c['grading_period_number'] as num?)?.toInt() ?? (c['quarter'] as num).toInt(),
+      termNumber: (c['term_number'] as num?)?.toInt() ?? 1,
       wwWeight: (c['ww_weight'] as num).toDouble(),
       ptWeight: (c['pt_weight'] as num).toDouble(),
       qaWeight: (c['qa_weight'] as num).toDouble(),

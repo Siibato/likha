@@ -13,7 +13,7 @@ abstract class TosRemoteDataSource {
   Future<CompetencyModel> updateCompetency({required String competencyId, required Map<String, dynamic> data, String? idempotencyKey});
   Future<void> deleteCompetency({required String competencyId, String? idempotencyKey});
   Future<List<CompetencyModel>> bulkAddCompetencies({required String tosId, required List<Map<String, dynamic>> competencies, String? idempotencyKey});
-  Future<List<MelcEntryModel>> searchMelcs({String? subject, String? gradeLevel, int? quarter, String? query, int limit = 30, int offset = 0});
+  Future<List<MelcEntryModel>> searchMelcs({String? subject, String? gradeLevel, int? termNumber, String? query, int limit = 30, int offset = 0});
 }
 
 class TosRemoteDataSourceImpl implements TosRemoteDataSource {
@@ -120,7 +120,7 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
   Future<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? quarter,
+    int? termNumber,
     String? query,
     int limit = 30,
     int offset = 0,
@@ -129,7 +129,7 @@ class TosRemoteDataSourceImpl implements TosRemoteDataSource {
         _dioClient,
         subject: subject,
         gradeLevel: gradeLevel,
-        quarter: quarter,
+        termNumber: termNumber,
         query: query,
         limit: limit,
         offset: offset,

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 
-/// Quarter and grade-component dropdowns for assignment grading linkage.
+/// Term and grade-component dropdowns for assignment grading linkage.
 class AssignmentGradeSettings extends StatelessWidget {
-  final int? quarter;
+  final int? termNumber;
   final String? component;
   final bool enabled;
-  final void Function(int?) onQuarterChanged;
+  final void Function(int?) onTermChanged;
   final void Function(String?) onComponentChanged;
 
   const AssignmentGradeSettings({
     super.key,
-    required this.quarter,
+    required this.termNumber,
     required this.component,
     required this.enabled,
-    required this.onQuarterChanged,
+    required this.onTermChanged,
     required this.onComponentChanged,
   });
 
@@ -49,19 +49,19 @@ class AssignmentGradeSettings extends StatelessWidget {
     return Column(
       children: [
         DropdownButtonFormField<int?>(
-          initialValue: quarter,
-          decoration: _decoration('Quarter (for grading)'),
+          initialValue: termNumber,
+          decoration: _decoration('Term (for grading)'),
           items: [
             const DropdownMenuItem(value: null, child: Text('None')),
             ...List.generate(
               4,
               (i) => DropdownMenuItem(
                 value: i + 1,
-                child: Text('Quarter ${i + 1}'),
+                child: Text('Term ${i + 1}'),
               ),
             ),
           ],
-          onChanged: enabled ? onQuarterChanged : null,
+          onChanged: enabled ? onTermChanged : null,
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String?>(
@@ -75,8 +75,8 @@ class AssignmentGradeSettings extends StatelessWidget {
               child: Text('Performance Task'),
             ),
             DropdownMenuItem(
-              value: 'period_assessment',
-              child: Text('Quarterly Assessment'),
+              value: 'term_assessment',
+              child: Text('Term Assessment'),
             ),
           ],
           onChanged: enabled ? onComponentChanged : null,

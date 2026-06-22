@@ -83,7 +83,7 @@ class TosRepositoryImpl implements TosRepository {
   ResultFuture<List<MelcEntryModel>> searchMelcs({
     String? subject,
     String? gradeLevel,
-    int? gradingPeriodNumber,
+    int? termNumber,
     String? query,
     int limit = 30,
     int offset = 0,
@@ -95,7 +95,7 @@ class TosRepositoryImpl implements TosRepository {
         _dataEventBus,
         subject: subject,
         gradeLevel: gradeLevel,
-        gradingPeriodNumber: gradingPeriodNumber,
+        termNumber: termNumber,
         query: query,
         limit: limit,
         offset: offset,

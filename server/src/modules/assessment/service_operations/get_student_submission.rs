@@ -30,7 +30,8 @@ impl crate::modules::assessment::service::AssessmentService {
             Some(SubmissionSummaryResponse {
                 id: sub.id,
                 student_id: sub.user_id,
-                student_name: student.full_name,
+                student_first_name: student.first_name,
+                student_last_name: student.last_name,
                 student_username: student.username,
                 started_at: sub.started_at.to_string(),
                 submitted_at: sub.submitted_at.map(|dt| dt.to_string()),

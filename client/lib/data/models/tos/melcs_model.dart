@@ -2,7 +2,7 @@ class MelcEntryModel {
   final int id;
   final String subject;
   final String gradeLevel;
-  final int? quarter;
+  final int? termNumber;
   final String competencyCode;
   final String competencyText;
   final String? domain;
@@ -11,7 +11,7 @@ class MelcEntryModel {
     required this.id,
     required this.subject,
     required this.gradeLevel,
-    this.quarter,
+    this.termNumber,
     required this.competencyCode,
     required this.competencyText,
     this.domain,
@@ -22,7 +22,7 @@ class MelcEntryModel {
       id: json['id'] as int,
       subject: json['subject'] as String,
       gradeLevel: json['grade_level'] as String,
-      quarter: json['quarter'] as int?,
+      termNumber: json["quarter"] as int?,
       competencyCode: json['competency_code'] as String,
       competencyText: json['competency_text'] as String,
       domain: json['domain'] as String?,

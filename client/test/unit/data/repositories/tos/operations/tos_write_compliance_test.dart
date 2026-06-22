@@ -26,13 +26,13 @@ TosModel _fakeTos({
   String id = 'tos-1',
   String classId = 'class-1',
   String title = 'Test TOS',
-  int gradingPeriodNumber = 1,
+  int termNumber = 1,
 }) {
   final now = DateTime.now();
   return TosModel(
     id: id,
     classId: classId,
-    gradingPeriodNumber: gradingPeriodNumber,
+    termNumber: termNumber,
     title: title,
     classificationMode: 'cognitive',
     totalItems: 50,
@@ -159,7 +159,7 @@ void main() {
         syncQueue,
         classId: 'class-1',
         data: {
-          'grading_period_number': 1,
+          'term_number': 1,
           'title': 'New TOS',
           'classification_mode': 'cognitive',
           'total_items': 50,

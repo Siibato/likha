@@ -7,7 +7,6 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
-import 'package:likha/data/models/grading/grade_score_model.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 
 import '_helpers.dart' as helpers;
@@ -29,7 +28,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       classId: classId,
       title: data['title'] as String,
       component: data['component'] as String,
-      gradingPeriodNumber: (data['grading_period_number'] as num?)?.toInt() ?? (data['quarter'] as num?)?.toInt() ?? 1,
+      termNumber: (data['term_number'] as num?)?.toInt() ?? 1,
       totalPoints: (data['total_points'] as num).toDouble(),
       sourceType: (data['source_type'] as String?) ?? 'manual',
       sourceId: data['source_id'] as String?,
@@ -49,7 +48,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
           payload: {
             'id': id,
             'class_id': classId,
-            'grading_period_number': model.gradingPeriodNumber,
+            'term_number': model.termNumber,
             ...data,
           },
           status: SyncStatus.pending,
@@ -60,21 +59,6 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
         txn: txn,
       );
 
-      final students = await localDataSource.getEnrolledStudents(classId, txn: txn);
-      final scores = students.map((student) {
-        final studentId = student['id'] as String;
-        return GradeScoreModel(
-          id: const Uuid().v4(),
-          gradeItemId: id,
-          studentId: studentId,
-          score: 0.0,
-          isAutoPopulated: true,
-          overrideScore: null,
-          createdAt: now.toIso8601String(),
-          updatedAt: now.toIso8601String(),
-        );
-      }).toList();
-      await localDataSource.saveScores(scores, txn: txn);
     });
 
     dataEventBus.notifyGradesChanged(classId);

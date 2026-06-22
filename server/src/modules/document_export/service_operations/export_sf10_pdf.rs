@@ -41,7 +41,7 @@ pub async fn run(
     let sf10 = student_records_service
         .get_sf10(class_id, student_id, teacher_id)
         .await?;
-    let settings = setup_service.get_school_settings().await?;
+    let settings = setup_service.get_school_details().await?;
 
     let engine = PdfEngine::new("SF10")
         .map_err(|e| AppError::InternalServerError(format!("PDF init: {}", e)))?;
@@ -82,12 +82,12 @@ pub async fn run(
             engine.draw_text(
                 &layer,
                 &format!(
-                    "  {} — Q1:{} Q2:{} Q3:{} Q4:{} Final:{}",
+                    "  {} — T1:{} T2:{} T3:{} T4:{} Final:{}",
                     subject.class_title,
-                    subject.period_grades.first().and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.period_grades.get(1).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.period_grades.get(2).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.period_grades.get(3).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
+                    subject.term_grades.first().and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
+                    subject.term_grades.get(1).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
+                    subject.term_grades.get(2).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
+                    subject.term_grades.get(3).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
                     subject.final_grade.map(|f| f.to_string()).unwrap_or_else(|| "-".to_string()),
                 ),
                 9.0,

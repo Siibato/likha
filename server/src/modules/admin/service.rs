@@ -3,11 +3,13 @@ use uuid::Uuid;
 use crate::cache::{CacheInvalidator, RedisCache};
 use crate::utils::AppResult;
 use crate::modules::auth::schema::UserResponse;
-use crate::modules::admin::schema::{AccountListResponse, CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest};
+use crate::modules::admin::schema::{AccountListResponse, CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest, AccountDetailResponse, UpdateAccountDetailsRequest};
 use crate::modules::admin::repository::AdminRepository;
 use crate::modules::admin::service_operations::{
     create_account, update_account, reset_account, get_account, get_all_accounts,
     lock_account, delete_account, get_activity_logs, search_students,
+    get_account_details, upsert_account_details,
+    bulk_import,
 };
 use ::entity::activity_logs;
 
@@ -39,6 +41,7 @@ impl AdminService {
         client_id: Option<Uuid>,
     ) -> AppResult<UserResponse> {
         create_account(
+            &self.repository.db,
             &self.repository.user_repo,
             &self.repository.activity_log_repo,
             request,
@@ -122,5 +125,40 @@ impl AdminService {
 
     pub async fn search_students(&self, query: &str) -> AppResult<Vec<UserResponse>> {
         search_students(&self.repository.user_repo, query).await
+    }
+
+    pub async fn get_account_details(&self, user_id: Uuid) -> AppResult<AccountDetailResponse> {
+        get_account_details(
+            &self.repository.db,
+            &self.repository.user_repo,
+            user_id,
+        ).await
+    }
+
+    pub async fn upsert_account_details(
+        &self,
+        user_id: Uuid,
+        request: UpdateAccountDetailsRequest,
+    ) -> AppResult<AccountDetailResponse> {
+        let user = self.repository.user_repo.find_by_id(user_id).await?
+            .ok_or_else(|| crate::utils::error::AppError::NotFound("User not found".to_string()))?;
+
+        upsert_account_details(
+            &self.repository.db,
+            user_id,
+            &user.role,
+            request.learner_details,
+            request.teacher_details,
+        ).await?;
+
+        self.get_account_details(user_id).await
+    }
+
+    pub async fn preview_student_import(&self, csv_bytes: &[u8]) -> AppResult<crate::modules::admin::import_schema::PreviewResponse> {
+        bulk_import::preview_students(&self.repository.db, &self.repository.user_repo, csv_bytes).await
+    }
+
+    pub async fn import_students(&self, rows: Vec<serde_json::Value>) -> AppResult<crate::modules::admin::import_schema::ImportResultResponse> {
+        bulk_import::import_students(&self.repository.db, &self.repository.user_repo, &rows).await
     }
 }

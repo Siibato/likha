@@ -13,11 +13,12 @@ pub struct UpsertLearnerDetailsRequest {
     pub birthplace: Option<String>,
     pub home_address: Option<String>,
     pub father_name: Option<String>,
+    pub father_contact: Option<String>,
     pub mother_name: Option<String>,
+    pub mother_contact: Option<String>,
     pub guardian_name: Option<String>,
     pub guardian_contact: Option<String>,
     pub date_admitted: Option<String>,
-    pub admitted_to_grade: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -27,16 +28,14 @@ pub struct UpsertAttendanceRequest {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpsertCoreValuesRequest {
     pub class_id: String,
     pub school_year: String,
-    pub grading_period_number: i32,
-    pub core_value: String,
-    pub behavior_statement: String,
+    pub term_number: i32,
+    pub core_value_id: i32,
     pub marking: String,
 }
 
@@ -69,10 +68,8 @@ pub struct UpsertPreviousSubjectRequest {
     pub school_history_id: String,
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -84,7 +81,6 @@ pub struct UpsertPreviousAttendanceRequest {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,11 +110,12 @@ pub struct LearnerDetailsResponse {
     pub birthplace: Option<String>,
     pub home_address: Option<String>,
     pub father_name: Option<String>,
+    pub father_contact: Option<String>,
     pub mother_name: Option<String>,
+    pub mother_contact: Option<String>,
     pub guardian_name: Option<String>,
     pub guardian_contact: Option<String>,
     pub date_admitted: Option<String>,
-    pub admitted_to_grade: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -130,7 +127,6 @@ pub struct AttendanceResponse {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -139,9 +135,8 @@ pub struct CoreValuesResponse {
     pub student_id: String,
     pub class_id: String,
     pub school_year: String,
-    pub grading_period_number: i32,
-    pub core_value: String,
-    pub behavior_statement: String,
+    pub term_number: i32,
+    pub core_value_id: i32,
     pub marking: String,
 }
 
@@ -166,10 +161,8 @@ pub struct PreviousSubjectResponse {
     pub school_history_id: String,
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -183,7 +176,6 @@ pub struct PreviousAttendanceResponse {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 // ===== SF10 AGGREGATE SCHEMAS =====
@@ -242,7 +234,7 @@ pub struct Sf10YearRecord {
 pub struct Sf10SubjectRow {
     pub class_title: String,
     pub subject_group: Option<String>,
-    pub period_grades: Vec<Option<i32>>,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -251,10 +243,8 @@ pub struct Sf10SubjectRow {
 pub struct Sf10PreviousSubject {
     pub subject_name: String,
     pub subject_group: Option<String>,
-    pub q1_grade: Option<i32>,
-    pub q2_grade: Option<i32>,
-    pub q3_grade: Option<i32>,
-    pub q4_grade: Option<i32>,
+    pub term_type: String,
+    pub term_grades: Vec<Option<i32>>,
     pub final_grade: Option<i32>,
     pub descriptor: Option<String>,
 }
@@ -264,7 +254,6 @@ pub struct Sf10AttendanceMonth {
     pub month: String,
     pub school_days: i32,
     pub days_present: i32,
-    pub days_absent: i32,
 }
 
 // ===== FROM CONVERSIONS =====
@@ -283,11 +272,12 @@ impl From<::entity::learner_details::Model> for LearnerDetailsResponse {
             birthplace: m.birthplace,
             home_address: m.home_address,
             father_name: m.father_name,
+            father_contact: m.father_contact,
             mother_name: m.mother_name,
+            mother_contact: m.mother_contact,
             guardian_name: m.guardian_name,
             guardian_contact: m.guardian_contact,
             date_admitted: m.date_admitted.map(|d| d.to_string()),
-            admitted_to_grade: m.admitted_to_grade,
         }
     }
 }
@@ -302,7 +292,6 @@ impl From<::entity::attendance_records::Model> for AttendanceResponse {
             month: m.month,
             school_days: m.school_days,
             days_present: m.days_present,
-            days_absent: m.days_absent,
         }
     }
 }
@@ -314,9 +303,8 @@ impl From<::entity::core_values_records::Model> for CoreValuesResponse {
             student_id: m.student_id.to_string(),
             class_id: m.class_id.to_string(),
             school_year: m.school_year,
-            grading_period_number: m.grading_period_number,
-            core_value: m.core_value,
-            behavior_statement: m.behavior_statement,
+            term_number: m.term_number,
+            core_value_id: m.core_value_id,
             marking: m.marking,
         }
     }
@@ -339,18 +327,19 @@ impl From<::entity::student_school_history::Model> for SchoolHistoryResponse {
     }
 }
 
-impl From<::entity::previous_school_subjects::Model> for PreviousSubjectResponse {
-    fn from(m: ::entity::previous_school_subjects::Model) -> Self {
+impl PreviousSubjectResponse {
+    pub fn from_with_term_grades(
+        m: ::entity::previous_school_subjects::Model,
+        term_grades: Vec<Option<i32>>,
+    ) -> Self {
         Self {
             id: m.id.to_string(),
             student_id: m.student_id.to_string(),
             school_history_id: m.school_history_id.to_string(),
             subject_name: m.subject_name,
             subject_group: m.subject_group,
-            q1_grade: m.q1_grade,
-            q2_grade: m.q2_grade,
-            q3_grade: m.q3_grade,
-            q4_grade: m.q4_grade,
+            term_type: m.term_type,
+            term_grades,
             final_grade: m.final_grade,
             descriptor: m.descriptor,
         }
@@ -367,7 +356,6 @@ impl From<::entity::previous_school_attendance::Model> for PreviousAttendanceRes
             month: m.month,
             school_days: m.school_days,
             days_present: m.days_present,
-            days_absent: m.days_absent,
         }
     }
 }

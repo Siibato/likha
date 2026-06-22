@@ -12,11 +12,12 @@ class LearnerDetails extends Equatable {
   final String? birthplace;
   final String? homeAddress;
   final String? fatherName;
+  final String? fatherContact;
   final String? motherName;
+  final String? motherContact;
   final String? guardianName;
   final String? guardianContact;
   final String? dateAdmitted;
-  final String? admittedToGrade;
 
   const LearnerDetails({
     required this.id,
@@ -30,11 +31,12 @@ class LearnerDetails extends Equatable {
     this.birthplace,
     this.homeAddress,
     this.fatherName,
+    this.fatherContact,
     this.motherName,
+    this.motherContact,
     this.guardianName,
     this.guardianContact,
     this.dateAdmitted,
-    this.admittedToGrade,
   });
 
   @override

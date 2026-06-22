@@ -7,6 +7,7 @@ import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
+import 'package:likha/data/datasources/local/grading/operations/assemble_general_averages_local.dart';
 import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.dart';
 import 'package:likha/data/models/grading/general_average_model.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
@@ -18,6 +19,43 @@ ResultFuture<GeneralAverageResponse> getGeneralAverages(
   required String classId,
 }) async {
   try {
+    // 1. Try local assembly from synced DB tables first
+    try {
+      final assembled = await assembleGeneralAveragesLocal(
+        localDataSource.localDatabase,
+        classId,
+      );
+
+      if (assembled != null) {
+        final hasRealStudents = assembled.students.any(
+          (s) => s.studentName != 'Unknown Student',
+        );
+        if (hasRealStudents) {
+          fireRemoteFetch(
+            dedupKey: 'grading/generalAverages/$classId/bg',
+            remote: () => remoteDataSource.getGeneralAverages(classId: classId),
+            onSuccess: (fresh) async {
+              try {
+                final current = await localDataSource.getCachedGeneralAverages(classId);
+                if (_generalAveragesHaveChanged(current, fresh.toJson())) {
+                  await localDataSource.cacheGeneralAverages(classId, fresh.toJson());
+                  dataEventBus.notifyGeneralAveragesChanged(classId);
+                }
+              } catch (_) {
+                await localDataSource.cacheGeneralAverages(classId, fresh.toJson());
+                dataEventBus.notifyGeneralAveragesChanged(classId);
+              }
+            },
+          );
+
+          return Right(assembled);
+        }
+      }
+    } catch (_) {
+      // Local assembly failed, fall through to cache
+    }
+
+    // 2. Fall back to syncMetadata cache
     try {
       final cached = await localDataSource.getCachedGeneralAverages(classId);
 
@@ -55,6 +93,7 @@ ResultFuture<GeneralAverageResponse> getGeneralAverages(
 
       return Right(GeneralAverageResponseModel.fromJson(cached));
     } on CacheException {
+      // 3. Fall back to blocking remote fetch
       final fresh = await remoteFetch(
         dedupKey: 'grading/generalAverages/$classId',
         remote: () => remoteDataSource.getGeneralAverages(classId: classId),

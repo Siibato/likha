@@ -32,7 +32,7 @@ fn test_create_assessment_request_optional_fields_absent_are_none() {
     assert!(req.description.is_none());
     assert!(req.show_results_immediately.is_none());
     assert!(req.questions.is_none());
-    assert!(req.grading_period_number.is_none());
+    assert!(req.term_number.is_none());
     assert!(req.component.is_none());
     assert!(req.tos_id.is_none());
 }
@@ -45,13 +45,13 @@ fn test_create_assessment_request_with_description_and_component() {
         "time_limit_minutes": 90,
         "open_at": "2024-06-01T08:00:00",
         "close_at": "2024-06-01T10:30:00",
-        "grading_period_number": 2,
-        "component": "period_assessment"
+        "term_number": 2,
+        "component": "term_assessment"
     }"#;
     let req: CreateAssessmentRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.description.as_deref(), Some("Covers chapters 1-5"));
-    assert_eq!(req.grading_period_number, Some(2));
-    assert_eq!(req.component.as_deref(), Some("period_assessment"));
+    assert_eq!(req.term_number, Some(2));
+    assert_eq!(req.component.as_deref(), Some("term_assessment"));
 }
 
 // ===== UpdateAssessmentRequest =====

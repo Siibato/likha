@@ -4,9 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
   final FlutterSecureStorage _secureStorage;
-  final SharedPreferences? _webPrefs;
+  final SharedPreferences _prefs;
 
-  StorageService(this._secureStorage, [this._webPrefs]);
+  StorageService(this._secureStorage, this._prefs);
 
   // Storage keys
   static const String _accessTokenKey = 'access_token';
@@ -78,29 +78,46 @@ class StorageService {
 
   // Platform-aware storage helpers.
   // Web: uses SharedPreferences (plain localStorage, no Web Crypto).
-  // Mobile/desktop: uses FlutterSecureStorage (OS keychain/keystore).
+  // Mobile/desktop: prefers FlutterSecureStorage, falls back to SharedPreferences
+  // if the OS keychain/keystore is unavailable (common in macOS debug builds).
 
   Future<void> _write(String key, String value) async {
     if (kIsWeb) {
-      await _webPrefs!.setString(key, value);
-    } else {
-      await _secureStorage.write(key: key, value: value);
+      await _prefs.setString(key, value);
+      return;
     }
+    try {
+      await _secureStorage.write(key: key, value: value);
+    } catch (_) {
+      // Secure storage failed — prefs will hold the value below.
+    }
+    // Always mirror to prefs so _read has a working fallback.
+    await _prefs.setString(key, value);
   }
 
   Future<String?> _read(String key) async {
     if (kIsWeb) {
-      return _webPrefs!.getString(key);
-    } else {
-      return await _secureStorage.read(key: key);
+      return _prefs.getString(key);
     }
+    try {
+      final value = await _secureStorage.read(key: key);
+      if (value != null) return value;
+    } catch (_) {
+      // Secure storage failed — fall through to prefs.
+    }
+    return _prefs.getString(key);
   }
 
   Future<void> _delete(String key) async {
     if (kIsWeb) {
-      await _webPrefs!.remove(key);
-    } else {
-      await _secureStorage.delete(key: key);
+      await _prefs.remove(key);
+      return;
     }
+    try {
+      await _secureStorage.delete(key: key);
+    } catch (_) {
+      // Secure storage failed — still clear prefs below.
+    }
+    await _prefs.remove(key);
   }
 }

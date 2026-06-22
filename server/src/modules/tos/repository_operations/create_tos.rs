@@ -9,7 +9,7 @@ pub async fn create_tos(
     db: &DatabaseConnection,
     id: Uuid,
     class_id: Uuid,
-    grading_period_number: i32,
+    term_number: i32,
     title: &str,
     classification_mode: &str,
     total_items: i32,
@@ -28,7 +28,7 @@ pub async fn create_tos(
     let tos = table_of_specifications::ActiveModel {
         id: Set(id),
         class_id: Set(class_id),
-        grading_period_number: Set(grading_period_number),
+        term_number: Set(term_number),
         title: Set(title.to_string()),
         classification_mode: Set(classification_mode.to_string()),
         total_items: Set(total_items),

@@ -35,6 +35,8 @@ class StyledDialog extends StatelessWidget {
   /// When set, the right-side [actions] lose their Expanded stretch and become
   /// content-sized, creating a [Delete]      [Cancel][Save] layout.
   final StyledDialogAction? leadingAction;
+  final double? maxWidth;
+  final VoidCallback? onClose;
 
   const StyledDialog({
     super.key,
@@ -44,6 +46,8 @@ class StyledDialog extends StatelessWidget {
     required this.actions,
     this.warningBox,
     this.leadingAction,
+    this.maxWidth,
+    this.onClose,
   });
 
   @override
@@ -52,7 +56,7 @@ class StyledDialog extends StatelessWidget {
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
+        constraints: BoxConstraints(maxWidth: maxWidth ?? 360),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -70,30 +74,45 @@ class StyledDialog extends StatelessWidget {
           children: [
             // Header Section
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(24, 24, 16, 0),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.foregroundDark,
-                      letterSpacing: -0.4,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.foregroundDark,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.foregroundTertiary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle!,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.foregroundTertiary,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  if (onClose != null)
+                    IconButton(
+                      onPressed: onClose,
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      color: AppColors.foregroundTertiary,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
-                  ],
                 ],
               ),
             ),

@@ -8,12 +8,12 @@ class ExportClassGrades {
 
   ResultFuture<List<int>> call({
     required String classId,
-    required int period,
+    required int termNumber,
     required bool isPdf,
   }) {
     if (isPdf) {
-      return _repository.exportClassGradesPdf(classId: classId, period: period);
+      return _repository.exportClassGradesPdf(classId: classId, termNumber: termNumber);
     }
-    return _repository.exportClassGradesExcel(classId: classId, period: period);
+    return _repository.exportClassGradesExcel(classId: classId, termNumber: termNumber);
   }
 }

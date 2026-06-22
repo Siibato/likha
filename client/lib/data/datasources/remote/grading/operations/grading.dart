@@ -11,7 +11,7 @@ export 'get_scores_by_item.dart';
 export 'save_scores.dart';
 export 'set_score_override.dart';
 export 'clear_score_override.dart';
-export 'get_period_grades.dart';
+export 'get_term_grades.dart';
 export 'compute_grades.dart';
 export 'get_grade_summary.dart';
 export 'get_final_grades.dart';

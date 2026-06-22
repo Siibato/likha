@@ -11,7 +11,7 @@ Future<AssignmentSubmissionModel?> getCachedSubmission(
   try {
     final db = await localDatabase.database;
     final results = await db.rawQuery('''
-      SELECT s.*, u.full_name as student_name
+      SELECT s.*, u.first_name || ' ' || u.last_name as student_name
       FROM ${DbTables.assignmentSubmissions} s
       LEFT JOIN ${DbTables.users} u ON u.id = s.student_id
       WHERE s.id = ?

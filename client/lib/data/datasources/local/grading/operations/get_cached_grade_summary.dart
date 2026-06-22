@@ -7,7 +7,7 @@ import 'package:likha/core/errors/exceptions.dart';
 Future<List<Map<String, dynamic>>> getCachedGradeSummary(
   LocalDatabase localDatabase,
   String classId,
-  int gradingPeriodNumber,
+  int termNumber,
 ) async {
   try {
     final db = await localDatabase.database;
@@ -15,7 +15,7 @@ Future<List<Map<String, dynamic>>> getCachedGradeSummary(
       DbTables.syncMetadata,
       columns: [SyncMetadataCols.value],
       where: '${SyncMetadataCols.key} = ?',
-      whereArgs: ['grade_summary:$classId:$gradingPeriodNumber'],
+      whereArgs: ['grade_summary:$classId:$termNumber'],
     );
     if (result.isEmpty) {
       throw CacheException('Grade summary not found in cache');

@@ -23,7 +23,8 @@ void main() {
     final tResetUser = User(
       id: 'user-1',
       username: 'testuser',
-      fullName: 'Test User',
+      firstName: 'Test',
+    lastName: 'User',
       role: 'student',
       accountStatus: 'pending_activation',
       isActive: false,

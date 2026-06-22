@@ -42,9 +42,9 @@ impl crate::modules::assessment::service::AssessmentService {
                 total_points: a.total_points,
                 question_count,
                 submission_count,
-                grading_period_number: a.grading_period_number,
+                term_number: a.term_number,
                 component: a.component.clone(),
-                tos_id: a.tos_id.clone(),
+                tos_id: a.tos_id.map(|u| u.to_string()),
                 created_at: fmt_utc(a.created_at),
                 updated_at: fmt_utc(a.updated_at),
             });

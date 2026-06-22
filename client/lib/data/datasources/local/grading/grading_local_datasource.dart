@@ -3,7 +3,7 @@ import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/models/grading/grade_config_model.dart';
 import 'package:likha/data/models/grading/grade_item_model.dart';
 import 'package:likha/data/models/grading/grade_score_model.dart';
-import 'package:likha/data/models/grading/period_grade_model.dart';
+import 'package:likha/data/models/grading/term_grade_model.dart';
 import 'operations/grading.dart' as ops;
 
 abstract class GradingLocalDataSource {
@@ -14,9 +14,9 @@ abstract class GradingLocalDataSource {
   Future<void> saveConfigs(List<GradeConfigModel> configs, {Transaction? txn});
 
   // Grade Items
-  Future<List<GradeItemModel>> getItemsByClassQuarter(
+  Future<List<GradeItemModel>> getItemsByClassTerm(
     String classId,
-    int quarter, {
+    int term, {
     String? component,
   });
   Future<void> saveItems(List<GradeItemModel> items);
@@ -29,7 +29,7 @@ abstract class GradingLocalDataSource {
 
   // Grade Scores
   Future<List<GradeScoreModel>> getScoresByItem(String gradeItemId);
-  Future<List<GradeScoreModel>> getScoresForClassQuarter(String classId, int quarter);
+  Future<List<GradeScoreModel>> getScoresForClassTerm(String classId, int term);
   Future<void> saveScores(List<GradeScoreModel> scores, {Transaction? txn});
   Future<void> upsertScoresByItem(
       String gradeItemId, List<GradeScoreModel> scores, {required Transaction txn});
@@ -38,30 +38,30 @@ abstract class GradingLocalDataSource {
   Future<List<Map<String, dynamic>>> getEnrolledStudents(String classId, {Transaction? txn});
 
   // Period Grades
-  Future<List<PeriodGradeModel>> getPeriodGradesByClass(
+  Future<List<TermGradeModel>> getTermGradesByClass(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
   );
-  Future<List<PeriodGradeModel>> getStudentAllPeriods(
+  Future<List<TermGradeModel>> getStudentAllTerms(
     String classId,
     String studentId,
   );
-  Future<void> savePeriodGrades(List<PeriodGradeModel> grades);
+  Future<void> saveTermGrades(List<TermGradeModel> grades);
   Future<void> updateTransmutedGrade(
     String classId,
     String studentId,
-    int gradingPeriodNumber,
+    int termNumber,
     int transmutedGrade, {
     Transaction? txn,
   });
 
   Future<List<Map<String, dynamic>>> getCachedGradeSummary(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
   );
   Future<void> cacheGradeSummary(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
     List<Map<String, dynamic>> summary,
   );
 
@@ -76,11 +76,11 @@ abstract class GradingLocalDataSource {
   // My Grade Detail Cache
   Future<Map<String, dynamic>> getCachedMyGradeDetail(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
   );
   Future<void> cacheMyGradeDetail(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
     Map<String, dynamic> data,
   );
 
@@ -111,12 +111,12 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       ops.saveConfigs(localDatabase, configs, txn: txn);
 
   @override
-  Future<List<GradeItemModel>> getItemsByClassQuarter(
+  Future<List<GradeItemModel>> getItemsByClassTerm(
     String classId,
-    int quarter, {
+    int term, {
     String? component,
   }) =>
-      ops.getItemsByClassQuarter(localDatabase, classId, quarter, component: component);
+      ops.getItemsByClassTerm(localDatabase, classId, term, component: component);
 
   @override
   Future<void> saveItems(List<GradeItemModel> items) =>
@@ -143,11 +143,11 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       ops.getScoresByItem(localDatabase, gradeItemId);
 
   @override
-  Future<List<GradeScoreModel>> getScoresForClassQuarter(
+  Future<List<GradeScoreModel>> getScoresForClassTerm(
     String classId,
-    int quarter,
+    int term,
   ) =>
-      ops.getScoresForClassQuarter(localDatabase, classId, quarter);
+      ops.getScoresForClassTerm(localDatabase, classId, term);
 
   @override
   Future<void> saveScores(List<GradeScoreModel> scores, {Transaction? txn}) =>
@@ -170,28 +170,28 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
       ops.updateScoreOverride(localDatabase, syncQueue, scoreId, overrideScore, txn: txn);
 
   @override
-  Future<List<PeriodGradeModel>> getPeriodGradesByClass(
+  Future<List<TermGradeModel>> getTermGradesByClass(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
   ) =>
-      ops.getPeriodGradesByClass(localDatabase, classId, gradingPeriodNumber);
+      ops.getTermGradesByClass(localDatabase, classId, termNumber);
 
   @override
-  Future<List<PeriodGradeModel>> getStudentAllPeriods(
+  Future<List<TermGradeModel>> getStudentAllTerms(
     String classId,
     String studentId,
   ) =>
-      ops.getStudentAllPeriods(localDatabase, classId, studentId);
+      ops.getStudentAllTerms(localDatabase, classId, studentId);
 
   @override
-  Future<void> savePeriodGrades(List<PeriodGradeModel> grades) =>
-      ops.savePeriodGrades(localDatabase, grades);
+  Future<void> saveTermGrades(List<TermGradeModel> grades) =>
+      ops.saveTermGrades(localDatabase, grades);
 
   @override
   Future<void> updateTransmutedGrade(
     String classId,
     String studentId,
-    int gradingPeriodNumber,
+    int termNumber,
     int transmutedGrade, {
     Transaction? txn,
   }) =>
@@ -200,7 +200,7 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
         syncQueue,
         classId,
         studentId,
-        gradingPeriodNumber,
+        termNumber,
         transmutedGrade,
         txn: txn,
       );
@@ -208,17 +208,17 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<List<Map<String, dynamic>>> getCachedGradeSummary(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
   ) =>
-      ops.getCachedGradeSummary(localDatabase, classId, gradingPeriodNumber);
+      ops.getCachedGradeSummary(localDatabase, classId, termNumber);
 
   @override
   Future<void> cacheGradeSummary(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
     List<Map<String, dynamic>> summary,
   ) =>
-      ops.cacheGradeSummary(localDatabase, classId, gradingPeriodNumber, summary);
+      ops.cacheGradeSummary(localDatabase, classId, termNumber, summary);
 
   @override
   Future<List<Map<String, dynamic>>> getCachedFinalGrades(String classId) =>
@@ -239,17 +239,17 @@ class GradingLocalDataSourceImpl implements GradingLocalDataSource {
   @override
   Future<Map<String, dynamic>> getCachedMyGradeDetail(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
   ) =>
-      ops.getCachedMyGradeDetail(localDatabase, classId, gradingPeriodNumber);
+      ops.getCachedMyGradeDetail(localDatabase, classId, termNumber);
 
   @override
   Future<void> cacheMyGradeDetail(
     String classId,
-    int gradingPeriodNumber,
+    int termNumber,
     Map<String, dynamic> data,
   ) =>
-      ops.cacheMyGradeDetail(localDatabase, classId, gradingPeriodNumber, data);
+      ops.cacheMyGradeDetail(localDatabase, classId, termNumber, data);
 
   @override
   Future<Map<String, dynamic>> getCachedSf9(String classId, String studentId) =>

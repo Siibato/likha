@@ -6,11 +6,11 @@ import 'package:likha/core/network/dio_client.dart';
 Future<Map<String, dynamic>> getMyGradeDetail(
   DioClient dioClient, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   try {
     final response = await dioClient.dio.get(
-      ApiEndpoints.myGradeDetail(classId, gradingPeriodNumber).path,
+      ApiEndpoints.myGradeDetail(classId, termNumber).path,
     );
     return (response.data['data'] ?? response.data) as Map<String, dynamic>;
   } on DioException catch (e) {

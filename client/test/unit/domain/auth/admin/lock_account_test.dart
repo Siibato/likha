@@ -23,7 +23,8 @@ void main() {
     final tLockedUser = User(
       id: 'user-1',
       username: 'testuser',
-      fullName: 'Test User',
+      firstName: 'Test',
+    lastName: 'User',
       role: 'student',
       accountStatus: 'locked',
       isActive: false,
@@ -33,7 +34,8 @@ void main() {
     final tUnlockedUser = User(
       id: 'user-1',
       username: 'testuser',
-      fullName: 'Test User',
+      firstName: 'Test',
+    lastName: 'User',
       role: 'student',
       accountStatus: 'activated',
       isActive: true,

@@ -2,27 +2,27 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
-/// Per-class grade data derived from the DepEd quarterly grading system.
+/// Per-class grade data derived from the DepEd term grading system.
 class ClassGradeData {
   final String classId;
   final String className;
-  final List<PeriodGrade> periodGrades;
+  final List<TermGrade> termGrades;
   final int? latestGrade; // transmuted grade from most recent period
   final String latestDescriptor;
-  final int? latestPeriod; // which period the latest grade is from
+  final int? latestTerm; // which period the latest grade is from
 
   ClassGradeData({
     required this.classId,
     required this.className,
-    required this.periodGrades,
+    required this.termGrades,
     this.latestGrade,
     this.latestDescriptor = '--',
-    this.latestPeriod,
+    this.latestTerm,
   });
 }
 
@@ -112,12 +112,12 @@ class StudentClassGradesNotifier
             (failure) {
               // Skip failed classes, continue with others
             },
-            (periodGrades) {
+            (termGrades) {
               // Find the most recent period with a transmuted grade
-              PeriodGrade? latest;
-              for (final pg in periodGrades) {
+              TermGrade? latest;
+              for (final pg in termGrades) {
                 if (pg.transmutedGrade != null) {
-                  if (latest == null || pg.gradingPeriodNumber > latest.gradingPeriodNumber) {
+                  if (latest == null || pg.termNumber > latest.termNumber) {
                     latest = pg;
                   }
                 }
@@ -126,13 +126,13 @@ class StudentClassGradesNotifier
               allGrades.add(ClassGradeData(
                 classId: cls.id,
                 className: cls.title,
-                periodGrades: periodGrades,
+                termGrades: termGrades,
                 latestGrade: latest?.transmutedGrade,
                 latestDescriptor: latest != null
                     ? TransmutationUtil.getDescriptor(
                         latest.transmutedGrade ?? 0)
                     : '--',
-                latestPeriod: latest?.gradingPeriodNumber,
+                latestTerm: latest?.termNumber,
               ));
             },
           );
@@ -150,7 +150,7 @@ class StudentClassGradesNotifier
 
       final classAverages = <double>[];
       for (final cg in allGrades) {
-        final withGrades = cg.periodGrades
+        final withGrades = cg.termGrades
             .where((pg) => pg.transmutedGrade != null)
             .toList();
         if (withGrades.isNotEmpty) {

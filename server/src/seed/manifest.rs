@@ -8,7 +8,8 @@ pub struct ManifestUser {
     pub id: Uuid,
     pub username: String,
     pub role: String,
-    pub full_name: String,
+    pub first_name: String,
+    pub last_name: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -26,7 +27,7 @@ pub struct ManifestAssessment {
     pub title: String,
     pub total_points: i32,
     pub is_published: bool,
-    pub grading_period_number: i32,
+    pub term_number: i32,
     pub question_ids: Vec<Uuid>,
 }
 
@@ -37,7 +38,7 @@ pub struct ManifestAssignment {
     pub title: String,
     pub total_points: i32,
     pub is_published: bool,
-    pub grading_period_number: i32,
+    pub term_number: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,7 +63,8 @@ pub fn build_manifest(
                 id: u.id,
                 username: u.username.clone(),
                 role: u.role.clone(),
-                full_name: u.full_name.clone(),
+                first_name: u.first_name.clone(),
+                last_name: u.last_name.clone(),
             })
             .collect(),
 
@@ -85,7 +87,7 @@ pub fn build_manifest(
                 title: a.title.clone(),
                 total_points: a.total_points,
                 is_published: a.is_published,
-                grading_period_number: a.grading_period_number,
+                term_number: a.term_number,
                 question_ids: a.questions.iter().map(|q| q.id).collect(),
             })
             .collect(),
@@ -99,7 +101,7 @@ pub fn build_manifest(
                 title: a.title.clone(),
                 total_points: a.total_points,
                 is_published: a.is_published,
-                grading_period_number: a.grading_period_number,
+                term_number: a.term_number,
             })
             .collect(),
     }

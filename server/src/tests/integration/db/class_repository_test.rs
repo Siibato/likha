@@ -27,7 +27,7 @@ async fn test_find_by_user_id_returns_empty_when_no_enrollments() {
     let class_repo = ClassRepository::new(db);
 
     let user = user_repo
-        .create_account("teacher01".to_string(), "T One".to_string(), "teacher".to_string(), None)
+        .create_account("teacher01".to_string(), "T".to_string(), "One".to_string(), "teacher".to_string(), None)
         .await
         .expect("create_account failed");
 

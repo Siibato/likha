@@ -17,7 +17,7 @@ pub struct CreateAssignmentRequest {
     pub due_at: String,
     #[serde(default)]
     pub is_published: Option<bool>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
 }
 
@@ -31,7 +31,7 @@ pub struct UpdateAssignmentRequest {
     pub allowed_file_types: Option<String>,
     pub max_file_size_mb: Option<i32>,
     pub due_at: Option<String>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
 }
 
@@ -69,7 +69,7 @@ pub struct AssignmentResponse {
     pub order_index: i32,
     pub submission_count: usize,
     pub graded_count: usize,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
     pub submission_status: Option<String>,
     pub submission_id: Option<Uuid>,
@@ -107,7 +107,8 @@ pub struct AssignmentSubmissionResponse {
     pub id: Uuid,
     pub assignment_id: Uuid,
     pub student_id: Uuid,
-    pub student_name: String,
+    pub student_first_name: String,
+    pub student_last_name: String,
     pub status: String,
     pub text_content: Option<String>,
     pub submitted_at: Option<String>,
@@ -128,7 +129,8 @@ pub struct SubmissionListResponse {
 pub struct SubmissionListItem {
     pub id: Uuid,
     pub student_id: Uuid,
-    pub student_name: String,
+    pub student_first_name: String,
+    pub student_last_name: String,
     pub student_username: String,
     pub status: String,
     pub submitted_at: Option<String>,
@@ -151,7 +153,8 @@ pub struct StudentAssignmentSubmissionItem {
     pub assignment_id: Uuid,
     pub id: Uuid,
     pub student_id: Uuid,
-    pub student_name: String,
+    pub student_first_name: String,
+    pub student_last_name: String,
     pub status: String,
     pub submitted_at: Option<String>,
     pub score: Option<i32>,

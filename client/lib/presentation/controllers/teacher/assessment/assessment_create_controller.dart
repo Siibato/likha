@@ -27,7 +27,7 @@ class AssessmentCreateController extends ChangeNotifier {
   DateTime closeAt = DateTime.now().add(const Duration(days: 7));
   bool showResultsImmediately = false;
   bool isPublished = true;
-  int? quarter;
+  int? termNumber;
   String? component;
   bool isDepartmentalExam = false;
   String? linkedTosId;
@@ -79,7 +79,7 @@ class AssessmentCreateController extends ChangeNotifier {
         );
         showResultsImmediately = draft['showResultsImmediately'] as bool? ?? false;
         isPublished = draft['isPublished'] as bool? ?? true;
-        quarter = draft['quarter'] as int?;
+        termNumber = draft['termNumber'] as int?;
         component = draft['component'] as String?;
         isDepartmentalExam = draft['isDepartmentalExam'] as bool? ?? false;
         linkedTosId = draft['linkedTosId'] as String?;
@@ -108,7 +108,7 @@ class AssessmentCreateController extends ChangeNotifier {
         'closeAt': closeAt.toIso8601String(),
         'showResultsImmediately': showResultsImmediately,
         'isPublished': isPublished,
-        'quarter': quarter,
+        'termNumber': termNumber,
         'component': component,
         'isDepartmentalExam': isDepartmentalExam,
         'linkedTosId': linkedTosId,
@@ -139,7 +139,7 @@ class AssessmentCreateController extends ChangeNotifier {
     closeAt = DateTime.now().add(const Duration(days: 7));
     showResultsImmediately = false;
     isPublished = true;
-    quarter = null;
+    termNumber = null;
     component = null;
     isDepartmentalExam = false;
     linkedTosId = null;
@@ -180,8 +180,8 @@ class AssessmentCreateController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setQuarter(int? value) {
-    quarter = value;
+  void setTermNumber(int? value) {
+    termNumber = value;
     formError = null;
     notifyListeners();
   }
@@ -369,7 +369,7 @@ class AssessmentCreateController extends ChangeNotifier {
               showResultsImmediately: showResultsImmediately,
               isPublished: isPublished,
               questions: isPublished ? questionsData : null,
-              gradingPeriodNumber: quarter,
+              termNumber: termNumber,
               component: component,
               tosId: linkedTosId,
             ),

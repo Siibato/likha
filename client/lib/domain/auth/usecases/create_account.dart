@@ -11,20 +11,29 @@ class CreateAccount {
   ResultFuture<MutationResult<User>> call(CreateAccountParams params) {
     return _repository.createAccount(
       username: params.username,
-      fullName: params.fullName,
+      firstName: params.firstName,
+      lastName: params.lastName,
       role: params.role,
+      learnerDetails: params.learnerDetails,
+      teacherDetails: params.teacherDetails,
     );
   }
 }
 
 class CreateAccountParams {
   final String username;
-  final String fullName;
+  final String firstName;
+  final String lastName;
   final String role;
+  final Map<String, dynamic>? learnerDetails;
+  final Map<String, dynamic>? teacherDetails;
 
   CreateAccountParams({
     required this.username,
-    required this.fullName,
+    required this.firstName,
+    required this.lastName,
     required this.role,
+    this.learnerDetails,
+    this.teacherDetails,
   });
 }

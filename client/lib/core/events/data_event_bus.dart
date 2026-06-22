@@ -72,7 +72,7 @@ class DataEventBus {
       StreamController<String>.broadcast();
   final StreamController<String> _studentAssignmentSubmissions =
       StreamController<String>.broadcast();
-  final StreamController<void> _schoolSettings =
+  final StreamController<void> _schoolDetails =
       StreamController<void>.broadcast();
 
   Stream<String?> get onAssessmentsChanged => _assessments.stream;
@@ -106,7 +106,7 @@ class DataEventBus {
   Stream<String>  get onParticipantsChanged   => _participants.stream;
   Stream<String>  get onStudentSubmissionsChanged => _studentSubmissions.stream;
   Stream<String>  get onStudentAssignmentSubmissionsChanged => _studentAssignmentSubmissions.stream;
-  Stream<void>    get onSchoolSettingsChanged    => _schoolSettings.stream;
+  Stream<void>    get onSchoolDetailsChanged    => _schoolDetails.stream;
 
   void notifyAssessmentsChanged(String classId) => _assessments.add(classId);
   void notifyAssessmentDetailChanged(String assessmentId) => _assessmentDetail.add(assessmentId);
@@ -145,7 +145,7 @@ class DataEventBus {
   void notifyParticipantsChanged(String classId)  => _participants.add(classId);
   void notifyStudentSubmissionsChanged(String assessmentId) => _studentSubmissions.add(assessmentId);
   void notifyStudentAssignmentSubmissionsChanged(String assignmentId) => _studentAssignmentSubmissions.add(assignmentId);
-  void notifySchoolSettingsChanged() => _schoolSettings.add(null);
+  void notifySchoolDetailsChanged() => _schoolDetails.add(null);
 
   void dispose() {
     _assessments.close();
@@ -179,6 +179,6 @@ class DataEventBus {
     _participants.close();
     _studentSubmissions.close();
     _studentAssignmentSubmissions.close();
-    _schoolSettings.close();
+    _schoolDetails.close();
   }
 }

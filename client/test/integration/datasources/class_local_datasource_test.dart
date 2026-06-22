@@ -21,7 +21,7 @@ ClassModel _sampleClass({String id = 'class-001'}) {
     teacherFullName: 'Mr. Teacher',
     isArchived: false,
     studentCount: 0,
-    gradingPeriodType: 'quarter',
+    termType: 'term',
     createdAt: now,
     updatedAt: now,
   );
@@ -32,7 +32,8 @@ UserModel _sampleStudent({String id = 'student-001'}) {
   return UserModel(
     id: id,
     username: 'student_$id',
-    fullName: 'Student Name',
+    firstName: 'Student',
+    lastName: 'Name',
     role: 'student',
     accountStatus: 'active',
     isActive: true,
@@ -84,7 +85,7 @@ void main() {
         teacherFullName: 'Mr. Teacher',
         isArchived: false,
         studentCount: 0,
-        gradingPeriodType: 'quarter',
+        termType: 'term',
         createdAt: DateTime(2026, 4, 19),
         updatedAt: DateTime(2026, 4, 19),
         syncStatus: SyncStatus.pending,
@@ -112,7 +113,8 @@ void main() {
       await db.insert(DbTables.users, {
         'id': student.id,
         'username': student.username,
-        'full_name': student.fullName,
+        'first_name': student.firstName,
+        'last_name': student.lastName,
         'role': student.role,
         'account_status': student.accountStatus,
         'created_at': now,

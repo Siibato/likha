@@ -1,50 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/constants/core_values_constants.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
+import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9CoreValuesTable extends StatelessWidget {
-  const Sf9CoreValuesTable({super.key});
+  final List<Sf9CoreValueMarking> coreValues;
 
-  static const _coreValues = [
-    (
-      'Maka-Diyos',
-      [
-        "Expresses one's spiritual beliefs while respecting those of others",
-        'Shows adherence to ethical principles by upholding truth and justice at all times',
-        'Exhibits a deep sense of love for and service to the community and country',
-      ],
-    ),
-    (
-      'Makatao',
-      [
-        'Demonstrates and expresses pride in being a Filipino without looking down on others',
-        'Listens attentively and responds appropriately to the opinions, ideas, and views of others',
-        'Shows respect for and understanding of differences in culture, religion, and beliefs',
-      ],
-    ),
-    (
-      'Maka-Kalikasan',
-      [
-        'Shows care and concern for the environment',
-        'Demonstrates resourcefulness and creativity in solving problems',
-        'Exhibits a sense of responsibility for the sustainable use of resources',
-      ],
-    ),
-    (
-      'Maka-bansa',
-      [
-        'Demonstrates pride in being a Filipino without looking down on others',
-        'Shows commitment to the ideals of democracy and nationalism',
-        'Exhibits a deep sense of patriotism and love for the country',
-      ],
-    ),
-  ];
+  const Sf9CoreValuesTable({
+    super.key,
+    this.coreValues = const [],
+  });
+
+  String? _getMarking(int statementId, int term) {
+    final match = coreValues
+        .where((v) => v.coreValueId == statementId && v.termNumber == term)
+        .firstOrNull;
+    return match?.marking;
+  }
 
   @override
   Widget build(BuildContext context) {
-    const nameWidth = 120.0;
-    const stmtWidth = 280.0;
+    const nameWidth = 180.0;
     const qWidth = 50.0;
     const cellHeight = 44.0;
+    final numTerms = termCountFromType(null);
 
     return Container(
       decoration: BoxDecoration(
@@ -79,36 +59,51 @@ class Sf9CoreValuesTable extends StatelessWidget {
           Row(
             children: [
               _cell('Core Values', nameWidth, cellHeight, bold: true),
-              _cell('Behavior Statements', stmtWidth, cellHeight, bold: true, align: Alignment.centerLeft),
-              _cell('Q1', qWidth, cellHeight, bold: true),
-              _cell('Q2', qWidth, cellHeight, bold: true),
-              _cell('Q3', qWidth, cellHeight, bold: true),
-              _cell('Q4', qWidth, cellHeight, bold: true),
+              _vDivider(cellHeight),
+              _flexCell('Behavior Statements', cellHeight, bold: true, align: Alignment.centerLeft),
+              _vDivider(cellHeight),
+              ...List.generate(numTerms, (i) => [
+                _cell('T${i + 1}', qWidth, cellHeight, bold: true),
+                if (i < numTerms - 1) _vDivider(cellHeight),
+              ]).expand((x) => x).toList(),
             ],
           ),
           const Divider(height: 1, color: AppColors.borderLight),
-          // Core value rows
-          ..._coreValues.map((cv) {
+          ...coreValueNames.asMap().entries.map((cvEntry) {
+            final cvIndex = cvEntry.key;
+            final cvName = cvEntry.value;
+            final numberedName = '${cvIndex + 1}. $cvName';
+            final stmts = statementsForCoreValue(cvName);
             return Column(
-              children: cv.$2.map((stmt) {
-                final isFirst = stmt == cv.$2.first;
-                return Row(
-                  children: [
-                    if (isFirst)
-                      _cell(cv.$1, nameWidth, cellHeight, bold: true)
-                    else
-                      _cell('', nameWidth, cellHeight),
-                    _cell(stmt, stmtWidth, cellHeight, align: Alignment.centerLeft, size: 10),
-                    _cell('', qWidth, cellHeight),
-                    _cell('', qWidth, cellHeight),
-                    _cell('', qWidth, cellHeight),
-                    _cell('', qWidth, cellHeight),
-                  ],
-                );
-              }).toList(),
+              children: [
+                ...stmts.asMap().entries.expand((entry) {
+                  final isFirst = entry.key == 0;
+                  final stmt = entry.value;
+                  return [
+                    Row(
+                      children: [
+                        if (isFirst)
+                          _cell(numberedName, nameWidth, cellHeight, bold: true, align: Alignment.centerLeft)
+                        else
+                          _cell('', nameWidth, cellHeight, align: Alignment.centerLeft),
+                        _vDivider(cellHeight),
+                        _flexCell(stmt.statement, cellHeight, align: Alignment.centerLeft, size: 12),
+                        _vDivider(cellHeight),
+                        ...List.generate(numTerms, (i) {
+                          final marking = _getMarking(stmt.id, i + 1);
+                          return [
+                            _cell(marking ?? '', qWidth, cellHeight, bold: marking != null),
+                            if (i < numTerms - 1) _vDivider(cellHeight),
+                          ];
+                        }).expand((x) => x).toList(),
+                      ],
+                    ),
+                    const Divider(height: 1, color: AppColors.borderLight),
+                  ];
+                }).toList(),
+              ],
             );
           }),
-          const Divider(height: 1, color: AppColors.borderLight),
           // Marking legend
           Padding(
             padding: const EdgeInsets.all(12),
@@ -134,6 +129,40 @@ class Sf9CoreValuesTable extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _vDivider(double height) {
+    return Container(width: 1, height: height, color: AppColors.borderLight);
+  }
+
+  Widget _flexCell(
+    String text,
+    double height, {
+    bool bold = false,
+    Alignment align = Alignment.center,
+    double size = 12,
+  }) {
+    return Expanded(
+      child: SizedBox(
+        height: height,
+        child: Align(
+          alignment: align,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: size,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+                color: AppColors.accentCharcoal,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
       ),
     );
   }

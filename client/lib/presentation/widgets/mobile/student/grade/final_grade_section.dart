@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 
-/// Shows the computed final grade when at least 2 quarters have grades.
+/// Shows the computed final grade when at least 2 terms have grades.
 /// Returns [SizedBox.shrink] when the condition is not met.
 class FinalGradeSection extends StatelessWidget {
-  final List<PeriodGrade> periodGrades;
+  final List<TermGrade> termGrades;
 
-  const FinalGradeSection({super.key, required this.periodGrades});
+  const FinalGradeSection({super.key, required this.termGrades});
 
   @override
   Widget build(BuildContext context) {
     final withGrades =
-        periodGrades.where((g) => g.transmutedGrade != null).toList();
+        termGrades.where((g) => g.transmutedGrade != null).toList();
 
     if (withGrades.length < 2) return const SizedBox.shrink();
 

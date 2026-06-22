@@ -10,7 +10,7 @@ async fn setup_teacher_class(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid) {
     let class_repo = ClassRepository::new(db.clone());
 
     let teacher = user_repo
-        .create_account("tos_teacher".to_string(), "TOS Teacher".to_string(), "teacher".to_string(), None)
+        .create_account("tos_teacher".to_string(), "TOS".to_string(), "Teacher".to_string(), "teacher".to_string(), None)
         .await
         .expect("teacher");
 
@@ -46,22 +46,22 @@ async fn test_tos_repo_create_and_find_by_class() {
 }
 
 #[tokio::test]
-async fn test_tos_unique_per_class_period() {
+async fn test_tos_unique_per_class_term() {
     let db = test_db().await;
     let (_, class_id) = setup_teacher_class(&db).await;
     let repo = TosRepository::new(db);
 
-    // First TOS for period 1
+    // First TOS for term 1
     repo.create_tos(
-        Uuid::new_v4(), class_id, 1, "TOS Q1", "blooms", 30,
+        Uuid::new_v4(), class_id, 1, "TOS T1", "blooms", 30,
         "days", 50.0, 30.0, 20.0, 16.67, 16.67, 16.67, 16.67, 16.67, 16.67,
     )
     .await
     .expect("first create");
 
-    // Second TOS for same class/period should fail (UNIQUE constraint)
+    // Second TOS for same class/term should fail (UNIQUE constraint)
     let result = repo.create_tos(
-        Uuid::new_v4(), class_id, 1, "TOS Q1 Duplicate", "difficulty", 30,
+        Uuid::new_v4(), class_id, 1, "TOS T1 Duplicate", "difficulty", 30,
         "days", 50.0, 30.0, 20.0, 16.67, 16.67, 16.67, 16.67, 16.67, 16.67,
     )
     .await;

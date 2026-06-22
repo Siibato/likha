@@ -11,7 +11,7 @@ pub async fn insert_tos(db: &DatabaseConnection, specs: &[TosSpec]) -> Result<()
         repo.create_tos(
             spec.id,
             spec.class_id,
-            spec.period,
+            spec.term_number,
             &spec.title,
             &spec.template_type,
             spec.total_items,

@@ -19,7 +19,8 @@ import '../../../../helpers/mock_repositories.dart';
 UserModel _fakeUser({String id = 'u-1', String role = 'teacher'}) => UserModel(
       id: id,
       username: 'testuser',
-      fullName: 'Test User',
+      firstName: 'Test',
+    lastName: 'User',
       role: role,
       accountStatus: 'activated',
       isActive: true,

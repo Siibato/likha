@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
-import 'package:likha/core/utils/grading_period_utils.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
 
 class Sf9GradeTable extends StatelessWidget {
   final List<Sf9SubjectRow> subjects;
-  final Sf9PeriodAverages? generalAverage;
-  final String? gradingPeriodType;
+  final Sf9TermAverages? generalAverage;
+  final String? termType;
 
   const Sf9GradeTable({
     super.key,
     required this.subjects,
     this.generalAverage,
-    this.gradingPeriodType,
+    this.termType,
   });
 
   @override
@@ -23,8 +23,8 @@ class Sf9GradeTable extends StatelessWidget {
     const descWidth = 80.0;
     const cellHeight = 40.0;
 
-    final periodCount = periodCountFromType(gradingPeriodType);
-    final prefix = periodLabelPrefix(gradingPeriodType);
+    final termCount = termCountFromType(termType);
+    final prefix = termLabelPrefix(termType);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -49,7 +49,7 @@ class Sf9GradeTable extends StatelessWidget {
               child: Row(
                 children: [
                   _cell('Learning Area', nameWidth, cellHeight, bold: true, align: Alignment.centerLeft),
-                  ...List.generate(periodCount, (i) => _cell('$prefix${i + 1}', cellWidth, cellHeight, bold: true)),
+                  ...List.generate(termCount, (i) => _cell('$prefix${i + 1}', cellWidth, cellHeight, bold: true)),
                   _cell('Final', fgWidth, cellHeight, bold: true),
                   _cell('Remarks', descWidth, cellHeight, bold: true),
                 ],
@@ -65,8 +65,8 @@ class Sf9GradeTable extends StatelessWidget {
                 child: Row(
                   children: [
                     _cell(s.classTitle, nameWidth, cellHeight, align: Alignment.centerLeft),
-                    ...List.generate(periodCount, (pi) => _gradeCell(
-                      s.periodGrades.length > pi ? s.periodGrades[pi] : null,
+                    ...List.generate(termCount, (pi) => _gradeCell(
+                      s.termGrades.length > pi ? s.termGrades[pi] : null,
                       cellWidth,
                       cellHeight,
                     )),
@@ -95,8 +95,8 @@ class Sf9GradeTable extends StatelessWidget {
                       children: [
                         _cell('General Average', nameWidth, cellHeight,
                             bold: true, align: Alignment.centerLeft),
-                        ...List.generate(periodCount, (pi) => _gradeCell(
-                          ga.periodGrades.length > pi ? ga.periodGrades[pi] : null,
+                        ...List.generate(termCount, (pi) => _gradeCell(
+                          ga.termGrades.length > pi ? ga.termGrades[pi] : null,
                           cellWidth,
                           cellHeight,
                           bold: true,

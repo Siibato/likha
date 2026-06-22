@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 
@@ -24,7 +25,7 @@ pub async fn insert_assessment_with_questions(
         spec.total_points,
         Some(spec.id),
         false, // allow_retake
-        Some(spec.grading_period_number),
+        Some(spec.term_number),
         Some(spec.component.clone()),
         Some(spec.tos_id.to_string()),
     )
@@ -92,7 +93,7 @@ async fn insert_question_with_choices_and_key(
         .ok_or_else(|| AppError::NotFound(format!("Question {} not found", spec.id)))?;
 
     let mut qam: assessment_questions::ActiveModel = question.into();
-    qam.tos_competency_id = Set(spec.tos_competency_id.map(|id| id.to_string()));
+    qam.tos_competency_id = Set(spec.tos_competency_id);
     qam.difficulty = Set(spec.difficulty.clone());
     qam.cognitive_level = Set(spec.cognitive_level.clone());
     qam.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
@@ -108,6 +109,7 @@ async fn insert_question_with_choices_and_key(
         let ak = answer_keys::ActiveModel {
             id: Set(Uuid::new_v4()),
             question_id: Set(spec.id),
+            updated_at: Set(Utc::now().naive_utc()),
         };
         let inserted_ak = ak.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
 

@@ -17,11 +17,12 @@ impl UserRepository {
     pub async fn create_account(
         &self,
         username: String,
-        full_name: String,
+        first_name: String,
+        last_name: String,
         role: String,
         client_id: Option<Uuid>,
     ) -> AppResult<users::Model> {
-        ops::create_account(&self.db, username, full_name, role, client_id).await
+        ops::create_account(&self.db, username, first_name, last_name, role, client_id).await
     }
 
     pub async fn set_password(&self, user_id: Uuid, password_hash: String) -> AppResult<users::Model> {
@@ -39,10 +40,11 @@ impl UserRepository {
     pub async fn update_account(
         &self,
         user_id: Uuid,
-        full_name: Option<String>,
+        first_name: Option<String>,
+        last_name: Option<String>,
         role: Option<String>,
     ) -> AppResult<users::Model> {
-        ops::update_account(&self.db, user_id, full_name, role).await
+        ops::update_account(&self.db, user_id, first_name, last_name, role).await
     }
 
     pub async fn find_by_username(&self, username: &str) -> AppResult<Option<users::Model>> {

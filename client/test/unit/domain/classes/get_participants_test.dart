@@ -23,7 +23,8 @@ void main() {
       User(
         id: 'student-1',
         username: 'student1',
-        fullName: 'Student One',
+        firstName: 'Student',
+        lastName: 'One',
         role: 'student',
         accountStatus: 'activated',
         isActive: true,
@@ -32,7 +33,8 @@ void main() {
       User(
         id: 'student-2',
         username: 'student2',
-        fullName: 'Student Two',
+        firstName: 'Student',
+        lastName: 'Two',
         role: 'student',
         accountStatus: 'activated',
         isActive: true,

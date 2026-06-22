@@ -21,11 +21,11 @@ void main() {
 
   group('CreateTos', () {
     const tClassId = 'class-1';
-    final tData = {'title': 'Q1 TOS', 'gradingPeriodNumber': 1, 'totalItems': 50, 'classificationMode': 'difficulty'};
+    final tData = {'title': 'Q1 TOS', 'termNumber': 1, 'totalItems': 50, 'classificationMode': 'difficulty'};
     final tTos = TableOfSpecifications(
       id: 'tos-new',
       classId: tClassId,
-      gradingPeriodNumber: 1,
+      termNumber: 1,
       title: 'Q1 TOS',
       classificationMode: 'difficulty',
       totalItems: 50,

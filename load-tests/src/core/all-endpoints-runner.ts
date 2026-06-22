@@ -218,8 +218,8 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
     const myGradesRes = gradingSvc.getMyGrades(classId);
     expectAll(myGradesRes, 'student-my-grades', { status: 200, underMs: 400 });
 
-    const myQuarterGradesRes = gradingSvc.getMyQuarterGrades(classId, '1');
-    expectAll(myQuarterGradesRes, 'student-my-quarter-grades', { status: 200, underMs: 400 });
+    const myTermGradesRes = gradingSvc.getMyTermGrades(classId, "1");
+    expectAll(myTermGradesRes, 'student-my-term-grades', { status: 200, underMs: 400 });
 
     // Materials
     const materialsRes = materialSvc.list(classId, role);

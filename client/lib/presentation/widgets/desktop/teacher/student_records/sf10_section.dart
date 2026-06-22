@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
@@ -266,7 +267,7 @@ class _Sf10Content extends StatelessWidget {
               ]),
               const SizedBox(height: 24),
               // Scholastic records
-              Text('Scholastic Records', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+              const Text('Scholastic Records', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
               const SizedBox(height: 12),
               ...data.scholasticRecords.map((yr) => _yearCard(yr)),
               const SizedBox(height: 24),
@@ -274,7 +275,7 @@ class _Sf10Content extends StatelessWidget {
               if (data.schoolHistory.isNotEmpty) ...[
                 Row(
                   children: [
-                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Text('School History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => Navigator.push(
@@ -298,7 +299,7 @@ class _Sf10Content extends StatelessWidget {
               ] else ...[
                 Row(
                   children: [
-                    Text('School History', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
+                    const Text('School History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => Navigator.push(
@@ -407,16 +408,15 @@ class _Sf10Content extends StatelessWidget {
             children: [
               TableRow(children: [
                 _th('Subject'),
-                _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'),
+                ...List.generate(termCountFromType(null), (i) => _th('T${i + 1}')),
                 _th('Final'),
                 _th('Descriptor'),
               ]),
               ...yr.subjects.map((s) => TableRow(children: [
                 _td(s.classTitle),
-                _td(s.periodGrades.isNotEmpty ? s.periodGrades[0]?.toString() ?? '-' : '-'),
-                _td(s.periodGrades.length > 1 ? s.periodGrades[1]?.toString() ?? '-' : '-'),
-                _td(s.periodGrades.length > 2 ? s.periodGrades[2]?.toString() ?? '-' : '-'),
-                _td(s.periodGrades.length > 3 ? s.periodGrades[3]?.toString() ?? '-' : '-'),
+                ...List.generate(termCountFromType(null), (i) =>
+                  _td(s.termGrades.length > i ? s.termGrades[i]?.toString() ?? '-' : '-'),
+                ),
                 _td(s.finalGrade?.toString() ?? '-'),
                 _td(s.descriptor ?? '-'),
               ])),
@@ -426,19 +426,112 @@ class _Sf10Content extends StatelessWidget {
             const SizedBox(height: 12),
             const Text('Attendance', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.foregroundSecondary)),
             const SizedBox(height: 6),
-            Wrap(
-              spacing: 12,
-              runSpacing: 4,
-              children: yr.attendance.map((a) => Text(
-                '${a.month}: ${a.daysPresent}/${a.schoolDays}',
-                style: const TextStyle(fontSize: 12, color: AppColors.foregroundSecondary),
-              )).toList(),
-            ),
+            _buildAttendanceTable(yr.attendance),
           ],
         ],
       ),
     );
   }
+
+  static const _monthOrder = [
+    'June', 'July', 'August', 'September', 'October', 'November',
+    'December', 'January', 'February', 'March', 'April',
+  ];
+
+  int _monthSortKey(String month) {
+    final idx = _monthOrder.indexOf(month);
+    return idx == -1 ? 999 : idx;
+  }
+
+  Widget _buildAttendanceTable(List<Sf10AttendanceMonth> attendance) {
+    final sorted = [...attendance]..sort((a, b) => _monthSortKey(a.month).compareTo(_monthSortKey(b.month)));
+    final totalSchoolDays = sorted.fold<int>(0, (sum, a) => sum + a.schoolDays);
+    final totalDaysPresent = sorted.fold<int>(0, (sum, a) => sum + a.daysPresent);
+    final totalDaysAbsent = totalSchoolDays - totalDaysPresent;
+
+    return Table(
+      columnWidths: {
+        0: const FixedColumnWidth(100),
+        for (int i = 0; i < _monthOrder.length; i++)
+          i + 1: const FixedColumnWidth(44),
+        _monthOrder.length + 1: const FixedColumnWidth(52),
+      },
+      border: TableBorder(
+        horizontalInside: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+        verticalInside: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+      ),
+      children: [
+        // Header row
+        TableRow(
+          children: [
+            _attendanceTh(''),
+            ..._monthOrder.map((m) => _attendanceTh(m.substring(0, 3))),
+            _attendanceTh('Total'),
+          ],
+        ),
+        // School Days row
+        TableRow(
+          children: [
+            _attendanceLabel('No. of\nSchool Days'),
+            ..._monthOrder.map((m) {
+              final rec = sorted.where((a) => a.month == m).firstOrNull;
+              return _attendanceCell(rec?.schoolDays.toString() ?? '');
+            }),
+            _attendanceCell(totalSchoolDays.toString(), isBold: true),
+          ],
+        ),
+        // Days Present row
+        TableRow(
+          children: [
+            _attendanceLabel('No. of\nDays Present'),
+            ..._monthOrder.map((m) {
+              final rec = sorted.where((a) => a.month == m).firstOrNull;
+              return _attendanceCell(rec?.daysPresent.toString() ?? '');
+            }),
+            _attendanceCell(totalDaysPresent.toString(), isBold: true),
+          ],
+        ),
+        // Times Absent row
+        TableRow(
+          children: [
+            _attendanceLabel('No. of\nTimes Absent'),
+            ..._monthOrder.map((m) {
+              final rec = sorted.where((a) => a.month == m).firstOrNull;
+              final absent = rec != null ? rec.schoolDays - rec.daysPresent : 0;
+              return _attendanceCell(absent > 0 ? absent.toString() : '');
+            }),
+            _attendanceCell(totalDaysAbsent > 0 ? totalDaysAbsent.toString() : '', isBold: true),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _attendanceTh(String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.foregroundSecondary),
+    ),
+  );
+
+  Widget _attendanceLabel(String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.foregroundDark, height: 1.3),
+    ),
+  );
+
+  Widget _attendanceCell(String text, {bool isBold = false}) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(fontSize: 12, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500, color: AppColors.foregroundDark),
+    ),
+  );
 
   Widget _tappableHistoryCard(BuildContext context, Sf10SchoolHistory h) {
     return GestureDetector(
@@ -496,15 +589,18 @@ class _Sf10Content extends StatelessWidget {
                 5: FlexColumnWidth(1),
               },
               children: [
-                TableRow(children: [_th('Subject'), _th('Q1'), _th('Q2'), _th('Q3'), _th('Q4'), _th('Final')]),
-                ...h.subjects.map((s) => TableRow(children: [
-                  _td(s.subjectName),
-                  _td(s.q1Grade?.toString() ?? '-'),
-                  _td(s.q2Grade?.toString() ?? '-'),
-                  _td(s.q3Grade?.toString() ?? '-'),
-                  _td(s.q4Grade?.toString() ?? '-'),
-                  _td(s.finalGrade?.toString() ?? '-'),
-                ])),
+                TableRow(children: [_th('Subject'), _th('T1'), _th('T2'), _th('T3'), _th('T4'), _th('Final')]),
+                ...h.subjects.map((s) {
+                  final tg = s.termGrades;
+                  return TableRow(children: [
+                    _td(s.subjectName),
+                    _td(tg.isNotEmpty ? tg[0]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 1 ? tg[1]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 2 ? tg[2]?.toString() ?? '-' : '-'),
+                    _td(tg.length > 3 ? tg[3]?.toString() ?? '-' : '-'),
+                    _td(s.finalGrade?.toString() ?? '-'),
+                  ]);
+                }),
               ],
             ),
           ],

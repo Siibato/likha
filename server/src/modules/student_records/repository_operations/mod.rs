@@ -12,6 +12,7 @@ pub mod update_school_history;
 pub mod delete_school_history;
 pub mod get_previous_subjects;
 pub mod upsert_previous_subject;
+pub mod get_term_grades_for_subject;
 pub mod get_previous_attendance;
 pub mod upsert_previous_attendance;
 
@@ -27,6 +28,7 @@ pub use update_school_history::update_school_history;
 pub use delete_school_history::delete_school_history;
 pub use get_previous_subjects::get_previous_subjects;
 pub use upsert_previous_subject::upsert_previous_subject;
+pub use get_term_grades_for_subject::get_term_grades_for_subject;
 pub use get_previous_attendance::get_previous_attendance;
 pub use upsert_previous_attendance::upsert_previous_attendance;
 

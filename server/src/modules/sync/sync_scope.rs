@@ -26,7 +26,7 @@ impl SyncScope {
                 include_submissions: false,
                 include_files: false,
                 include_statistics: false,
-                include_student_records: false,
+                include_student_records: true,
             },
             "teacher" => Self {
                 include_assessments: true,

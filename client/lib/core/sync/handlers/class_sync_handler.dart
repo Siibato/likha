@@ -110,7 +110,7 @@ class ClassSyncHandler {
           ClassesCols.teacherUsername: model.teacherUsername,
           ClassesCols.teacherFullName: model.teacherFullName,
           ClassesCols.isAdvisory: model.isAdvisory ? 1 : 0,
-          ClassesCols.gradingPeriodType: model.gradingPeriodType,
+          ClassesCols.termType: model.termType,
           CommonCols.updatedAt: model.updatedAt.toIso8601String(),
           CommonCols.syncStatus: SyncStatus.synced.dbValue,
         },
@@ -240,7 +240,8 @@ class ClassSyncHandler {
       {
         CommonCols.id: student.id,
         UsersCols.username: student.username,
-        UsersCols.fullName: student.fullName,
+        UsersCols.firstName: student.firstName,
+        UsersCols.lastName: student.lastName,
         UsersCols.role: student.role,
         UsersCols.accountStatus: student.accountStatus,
         CommonCols.createdAt: student.createdAt.toIso8601String(),

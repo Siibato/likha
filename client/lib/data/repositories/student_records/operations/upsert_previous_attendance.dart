@@ -27,7 +27,6 @@ ResultFuture<PreviousAttendance> upsertPreviousAttendance(
       month: data['month'] as String,
       schoolDays: data['school_days'] as int? ?? 0,
       daysPresent: data['days_present'] as int? ?? 0,
-      daysAbsent: data['days_absent'] as int? ?? 0,
     );
 
     final payload = {

@@ -20,9 +20,9 @@ pub struct Model {
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
-    pub grading_period_number: Option<i32>,
+    pub term_number: Option<i32>,
     pub component: Option<String>,
-    pub tos_id: Option<String>,
+    pub tos_id: Option<Uuid>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -37,6 +37,12 @@ pub enum Relation {
     Questions,
     #[sea_orm(has_many = "super::assessment_submissions::Entity")]
     Submissions,
+    #[sea_orm(
+        belongs_to = "super::table_of_specifications::Entity",
+        from = "Column::TosId",
+        to = "super::table_of_specifications::Column::Id"
+    )]
+    TableOfSpecifications,
 }
 
 impl Related<super::classes::Entity> for Entity {
@@ -54,6 +60,12 @@ impl Related<super::assessment_questions::Entity> for Entity {
 impl Related<super::assessment_submissions::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Submissions.def()
+    }
+}
+
+impl Related<super::table_of_specifications::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TableOfSpecifications.def()
     }
 }
 

@@ -36,30 +36,30 @@ pub struct GradeTableData {
 
 impl GradeTableData {
     pub fn build(data: &AllGradeDataResponse) -> Self {
-        let period = data.period;
+        let term_number = data.term_number;
 
-        let quarter_items: Vec<&GradeItemResponse> = data
+        let term_items: Vec<&GradeItemResponse> = data
             .grade_items
             .iter()
             .filter(|i| {
-                i.grading_period_number == Some(period)
-                    || i.grading_period_number.is_none()
+                i.term_number == Some(term_number)
+                    || i.term_number.is_none()
             })
             .collect();
 
-        let ww_items: Vec<GradeItemResponse> = quarter_items
+        let ww_items: Vec<GradeItemResponse> = term_items
             .iter()
             .filter(|i| i.component == "ww" || i.component == "written_work")
             .map(|i| (*i).clone())
             .collect();
-        let pt_items: Vec<GradeItemResponse> = quarter_items
+        let pt_items: Vec<GradeItemResponse> = term_items
             .iter()
             .filter(|i| i.component == "pt" || i.component == "performance_task")
             .map(|i| (*i).clone())
             .collect();
-        let qa_items: Vec<GradeItemResponse> = quarter_items
+        let qa_items: Vec<GradeItemResponse> = term_items
             .iter()
-            .filter(|i| i.component == "qa" || i.component == "period_assessment")
+            .filter(|i| i.component == "qa" || i.component == "term_assessment")
             .map(|i| (*i).clone())
             .collect();
 
@@ -87,13 +87,6 @@ impl GradeTableData {
             weight: qa_weight,
         };
 
-        let tg_lookup: std::collections::HashMap<String, Option<i32>> = data
-            .grade_summary
-            .students
-            .iter()
-            .map(|s| (s.student_id.clone(), s.transmuted_grade))
-            .collect();
-
         let score_lookup = build_score_lookup(&data.scores_by_item);
 
         let students = data
@@ -108,10 +101,7 @@ impl GradeTableData {
                 let qa_result = compute_section(&student_scores, &qa_section);
 
                 let initial_grade = compute_initial_grade(&ww_result, &pt_result, &qa_result);
-                let stored_tg = tg_lookup.get(&s.student_id).copied().flatten();
-                let tg = stored_tg.or_else(|| {
-                    initial_grade.map(|ig| transmute_grade(ig))
-                });
+                let tg = initial_grade.map(|ig| transmute_grade(ig));
 
                 StudentRow {
                     index: i + 1,
@@ -178,18 +168,16 @@ fn compute_section(
 ) -> SectionResult {
     let mut scores = Vec::new();
     let mut total = 0.0;
-    let mut has_any = false;
 
     for item in &section.items {
         let score = student_scores.get(&item.id).copied();
         scores.push(score);
         if let Some(s) = score {
             total += s;
-            has_any = true;
         }
     }
 
-    if !has_any || section.hps_total <= 0.0 {
+    if section.hps_total <= 0.0 {
         return SectionResult {
             scores,
             total: None,
@@ -214,15 +202,10 @@ fn compute_initial_grade(
     pt: &SectionResult,
     qa: &SectionResult,
 ) -> Option<f64> {
-    let mut sum: Option<f64> = None;
-    if let Some(w) = ww.ws {
-        sum = Some(sum.unwrap_or(0.0) + w);
+    let has_any_section = ww.ps.is_some() || pt.ps.is_some() || qa.ps.is_some();
+    if !has_any_section {
+        return None;
     }
-    if let Some(w) = pt.ws {
-        sum = Some(sum.unwrap_or(0.0) + w);
-    }
-    if let Some(w) = qa.ws {
-        sum = Some(sum.unwrap_or(0.0) + w);
-    }
-    sum
+    let sum = ww.ws.unwrap_or(0.0) + pt.ws.unwrap_or(0.0) + qa.ws.unwrap_or(0.0);
+    Some(sum)
 }

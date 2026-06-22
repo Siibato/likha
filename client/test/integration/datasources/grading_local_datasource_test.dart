@@ -15,7 +15,7 @@ GradeConfigModel _sampleConfig({int period = 1}) {
   return GradeConfigModel(
     id: _uuid.v4(),
     classId: _classId,
-    gradingPeriodNumber: period,
+    termNumber: period,
     wwWeight: 30.0,
     ptWeight: 50.0,
     qaWeight: 20.0,
@@ -44,7 +44,7 @@ void main() {
       ]);
       final result = await datasource.getConfigByClass(_classId);
       expect(result.length, 2);
-      final periods = result.map((c) => c.gradingPeriodNumber).toSet();
+      final periods = result.map((c) => c.termNumber).toSet();
       expect(periods, containsAll({1, 2}));
     });
 
@@ -55,7 +55,7 @@ void main() {
       final updated = GradeConfigModel(
         id: config.id,
         classId: config.classId,
-        gradingPeriodNumber: 1,
+        termNumber: 1,
         wwWeight: 25.0,
         ptWeight: 55.0,
         qaWeight: 20.0,
@@ -74,8 +74,8 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('saveItems and getItemsByClassQuarter returns grade items', () async {
-      final items = await datasource.getItemsByClassQuarter(_classId, 1);
+    test('saveItems and getItemsByClassTerm returns grade items', () async {
+      final items = await datasource.getItemsByClassTerm(_classId, 1);
       expect(items, isEmpty);
     });
   });

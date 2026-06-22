@@ -5,7 +5,7 @@ class GradeItemModel {
   final String classId;
   final String title;
   final String component;
-  final int gradingPeriodNumber;
+  final int termNumber;
   final double totalPoints;
   final String sourceType;
   final String? sourceId;
@@ -19,7 +19,7 @@ class GradeItemModel {
     required this.classId,
     required this.title,
     required this.component,
-    required this.gradingPeriodNumber,
+    required this.termNumber,
     required this.totalPoints,
     required this.sourceType,
     this.sourceId,
@@ -36,8 +36,7 @@ class GradeItemModel {
       classId: json['class_id'] as String,
       title: json['title'] as String,
       component: json['component'] as String,
-      gradingPeriodNumber: (json['grading_period_number'] as num?)?.toInt() ?? 
-                          (json['quarter'] as num?)?.toInt() ?? 1,
+      termNumber: (json['term_number'] as num?)?.toInt() ?? 1,
       totalPoints: (json['total_points'] as num).toDouble(),
       sourceType: (json['source_type'] as String?) ?? 'manual',
       sourceId: json['source_id'] as String?,
@@ -57,7 +56,7 @@ class GradeItemModel {
       classId: map[GradeItemsCols.classId] as String,
       title: map[GradeItemsCols.title] as String,
       component: map[GradeItemsCols.component] as String,
-      gradingPeriodNumber: map[GradeItemsCols.gradingPeriodNumber] as int,
+      termNumber: map[GradeItemsCols.termNumber] as int,
       totalPoints: (map[GradeItemsCols.totalPoints] as num).toDouble(),
       sourceType: map[GradeItemsCols.sourceType] as String,
       sourceId: map[GradeItemsCols.sourceId] as String?,
@@ -72,7 +71,7 @@ class GradeItemModel {
     'class_id': classId,
     'title': title,
     'component': component,
-    'grading_period_number': gradingPeriodNumber,
+    'term_number': termNumber,
     'total_points': totalPoints,
     'source_type': sourceType,
     'source_id': sourceId,
@@ -86,7 +85,7 @@ class GradeItemModel {
     GradeItemsCols.classId: classId,
     GradeItemsCols.title: title,
     GradeItemsCols.component: component,
-    GradeItemsCols.gradingPeriodNumber: gradingPeriodNumber,
+    GradeItemsCols.termNumber: termNumber,
     GradeItemsCols.totalPoints: totalPoints,
     GradeItemsCols.sourceType: sourceType,
     GradeItemsCols.sourceId: sourceId,

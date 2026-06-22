@@ -28,7 +28,7 @@ impl crate::modules::tos::service::TosService {
             items.push(TosResponse {
                 id: tos.id.to_string(),
                 class_id: tos.class_id.to_string(),
-                grading_period_number: tos.grading_period_number,
+                term_number: tos.term_number,
                 title: tos.title,
                 classification_mode: tos.classification_mode,
                 total_items: tos.total_items,

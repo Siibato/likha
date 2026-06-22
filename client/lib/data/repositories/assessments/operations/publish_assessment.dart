@@ -41,7 +41,7 @@ ResultFuture<MutationResult<Assessment>> publishAssessment(
       questionCount: cached.questionCount,
       submissionCount: cached.submissionCount,
       tosId: cached.tosId,
-      gradingPeriodNumber: cached.gradingPeriodNumber,
+      termNumber: cached.termNumber,
       component: cached.component,
       createdAt: cached.createdAt,
       updatedAt: now,

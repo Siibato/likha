@@ -19,7 +19,8 @@ Future<void> cacheSearchStudents(
           {
             CommonCols.id: student.id,
             UsersCols.username: student.username,
-            UsersCols.fullName: student.fullName,
+            UsersCols.firstName: student.firstName,
+            UsersCols.lastName: student.lastName,
             UsersCols.role: student.role,
             UsersCols.accountStatus: student.accountStatus,
             UsersCols.activatedAt: student.activatedAt?.toIso8601String(),

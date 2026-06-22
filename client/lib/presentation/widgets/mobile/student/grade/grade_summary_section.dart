@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
-import 'package:likha/domain/grading/entities/period_grade.dart';
+import 'package:likha/domain/grading/entities/term_grade.dart';
 
 /// Summary card showing initial grade, transmuted grade, and descriptor badge.
 class GradeSummarySection extends StatelessWidget {
-  final PeriodGrade quarterGrade;
+  final TermGrade termGrade;
 
-  const GradeSummarySection({super.key, required this.quarterGrade});
+  const GradeSummarySection({super.key, required this.termGrade});
 
   @override
   Widget build(BuildContext context) {
-    final transmuted = quarterGrade.transmutedGrade ?? 0;
+    final transmuted = termGrade.transmutedGrade ?? 0;
     final descriptor = TransmutationUtil.getDescriptor(transmuted);
     final descriptorColor = TransmutationUtil.getDescriptorColor(transmuted);
 
@@ -32,8 +32,8 @@ class GradeSummarySection extends StatelessWidget {
             children: [
               _SummaryRow(
                 label: 'Initial Grade',
-                value: quarterGrade.initialGrade != null
-                    ? quarterGrade.initialGrade!.toStringAsFixed(2)
+                value: termGrade.initialGrade != null
+                    ? termGrade.initialGrade!.toStringAsFixed(2)
                     : '--',
               ),
               const SizedBox(height: 8),

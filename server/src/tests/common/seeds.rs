@@ -77,12 +77,14 @@ pub async fn seed_student_with_password(db: &DatabaseConnection, password: &str)
 async fn seed_user(db: &DatabaseConnection, role: &str) -> SeedUser {
     let suffix = &Uuid::new_v4().to_string()[..8];
     let username = format!("{}_{}", role, suffix);
-    let full_name = format!("Test {}", role);
+    let first_name = format!("Test {}", role);
+    let last_name = "User".to_string();
 
     let user = UserRepository::new(db.clone())
         .create_account(
             username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role.to_string(),
             None,
         )

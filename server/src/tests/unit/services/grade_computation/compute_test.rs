@@ -9,7 +9,7 @@ fn make_item(id: Uuid, total_points: f64) -> ::entity::grade_items::Model {
         class_id: Uuid::new_v4(),
         title: "Test Item".to_string(),
         component: "written_work".to_string(),
-        grading_period_number: Some(1),
+        term_number: Some(1),
         total_points,
         source_type: "assignment".to_string(),
         source_id: None,

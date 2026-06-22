@@ -40,6 +40,19 @@ mod m20260618_000003_create_learner_details;
 mod m20260618_000004_rename_quarterly_assessment_component;
 mod m20260619_000001_add_school_head_to_settings;
 mod m20260620_000001_create_student_records_tables;
+mod m20260620_000002_phase_1_foundation;
+mod m20260620_000003_rename_terms;
+mod m20260620_000004_phase_3_normalization;
+mod m20260620_000005_phase_4_fk_constraints;
+mod m20260620_000006_rename_period_assessment_component;
+mod m20260621_000001_core_values_normalization;
+mod m20260621_000002_core_values_expanded_statements;
+mod m20260621_000003_split_user_name;
+mod m20260621_000004_create_teacher_details;
+mod m20260622_000001_fix_core_values_sf9_alignment;
+mod m20260622_000002_rebuild_core_values_records;
+mod m20260622_000003_create_replication_state;
+mod m20260622_000004_add_replication_timestamps;
 
 pub struct Migrator;
 
@@ -87,6 +100,19 @@ impl MigratorTrait for Migrator {
             Box::new(m20260618_000004_rename_quarterly_assessment_component::Migration),
             Box::new(m20260619_000001_add_school_head_to_settings::Migration),
             Box::new(m20260620_000001_create_student_records_tables::Migration),
+            Box::new(m20260620_000002_phase_1_foundation::Migration),
+            Box::new(m20260620_000003_rename_terms::Migration),
+            Box::new(m20260620_000004_phase_3_normalization::Migration),
+            Box::new(m20260620_000005_phase_4_fk_constraints::Migration),
+            Box::new(m20260620_000006_rename_period_assessment_component::Migration),
+            Box::new(m20260621_000001_core_values_normalization::Migration),
+            Box::new(m20260621_000002_core_values_expanded_statements::Migration),
+            Box::new(m20260621_000003_split_user_name::Migration),
+            Box::new(m20260621_000004_create_teacher_details::Migration),
+            Box::new(m20260622_000001_fix_core_values_sf9_alignment::Migration),
+            Box::new(m20260622_000002_rebuild_core_values_records::Migration),
+            Box::new(m20260622_000003_create_replication_state::Migration),
+            Box::new(m20260622_000004_add_replication_timestamps::Migration),
         ]
     }
 }

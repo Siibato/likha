@@ -1,12 +1,12 @@
 import 'package:likha/core/network/dio_client.dart';
-import 'package:likha/data/models/setup/school_settings_model.dart';
-import 'operations/get_school_settings.dart' as ops_get;
-import 'operations/update_school_settings.dart' as ops_update;
+import 'package:likha/data/models/setup/school_details_model.dart';
+import 'operations/get_school_details.dart' as ops_get;
+import 'operations/update_school_details.dart' as ops_update;
 import 'operations/update_school_code.dart' as ops_code;
 
 abstract class SetupRemoteDataSource {
-  Future<SchoolSettingsModel> getSchoolSettings();
-  Future<SchoolSettingsModel> updateSchoolSettings({
+  Future<SchoolDetailsModel> getSchoolDetails();
+  Future<SchoolDetailsModel> updateSchoolDetails({
     required String schoolName,
     required String schoolRegion,
     required String schoolDivision,
@@ -29,11 +29,11 @@ class SetupRemoteDataSourceImpl implements SetupRemoteDataSource {
   SetupRemoteDataSourceImpl(this._dioClient);
 
   @override
-  Future<SchoolSettingsModel> getSchoolSettings() =>
-      ops_get.getSchoolSettings(_dioClient);
+  Future<SchoolDetailsModel> getSchoolDetails() =>
+      ops_get.getSchoolDetails(_dioClient);
 
   @override
-  Future<SchoolSettingsModel> updateSchoolSettings({
+  Future<SchoolDetailsModel> updateSchoolDetails({
     required String schoolName,
     required String schoolRegion,
     required String schoolDivision,
@@ -44,7 +44,7 @@ class SetupRemoteDataSourceImpl implements SetupRemoteDataSource {
     String? schoolHeadPosition,
     String? idempotencyKey,
   }) =>
-      ops_update.updateSchoolSettings(
+      ops_update.updateSchoolDetails(
         _dioClient,
         schoolName: schoolName,
         schoolRegion: schoolRegion,

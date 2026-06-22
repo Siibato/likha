@@ -54,7 +54,10 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
         ),
       ),
       margin: const EdgeInsets.only(bottom: 12),
-      actions: isReorderMode
+      showDivider: false,
+      actions: const [],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      headerActions: isReorderMode
           ? [
               IconButton(
                 icon: const Icon(Icons.swap_vert_rounded, size: 20),
@@ -111,7 +114,7 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
                         child: Text(
                           choice.text.isEmpty ? '(empty)' : choice.text,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: choice.isCorrect
                                 ? AppColors.accentCharcoal
                                 : AppColors.foregroundSecondary,
@@ -130,9 +133,8 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
               child: Text(
                 '+${draft.choices.length - 3} more',
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: AppColors.foregroundTertiary,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),
@@ -149,7 +151,7 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
         child: Text(
           'Answers: ${nonEmpty.take(3).join(', ')}${nonEmpty.length > 3 ? '...' : ''}',
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             color: AppColors.foregroundSecondary,
           ),
           maxLines: 1,
@@ -174,7 +176,7 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
                   child: Text(
                     '${e.key + 1}. ${e.value.answers.where((a) => a.isNotEmpty).join(' / ')}',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: AppColors.foregroundSecondary,
                     ),
                     maxLines: 1,
@@ -188,9 +190,8 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
               child: Text(
                 '+${draft.enumerationItems.length - 2} more items',
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: AppColors.foregroundTertiary,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),
@@ -201,23 +202,31 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
     if (draft.type == 'essay') {
       return Padding(
         padding: const EdgeInsets.only(top: 8),
-        child: Row(
-          children: [
-            Icon(
-              Icons.edit_note_rounded,
-              size: 14,
-              color: AppColors.accentAmber.withValues(alpha: 0.7),
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              'Essay - manually graded',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.foregroundSecondary,
-                fontStyle: FontStyle.italic,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.accentAmber.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.edit_note_rounded,
+                size: 14,
+                color: AppColors.accentAmber,
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                'Manually graded',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.accentAmber,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

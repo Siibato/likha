@@ -33,11 +33,14 @@ class _Sf9SectionState extends ConsumerState<Sf9Section> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(generalAveragesProvider);
+    final students = List<dynamic>.from(state.students)
+      ..sort((a, b) => a.studentName.toLowerCase().compareTo(
+          b.studentName.toLowerCase()));
 
     return DesktopPageScaffold(
       title: 'SF9 (Form 137)',
       subtitle: 'Student Academic Records',
-      body: state.isLoading && state.students.isEmpty
+      body: state.isLoading && students.isEmpty
           ? const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
@@ -52,13 +55,13 @@ class _Sf9SectionState extends ConsumerState<Sf9Section> {
                   title: 'Error loading students',
                   subtitle: state.error ?? 'An unknown error occurred',
                 )
-          : state.students.isEmpty
+          : students.isEmpty
               ? const EmptyState.generic(
                   title: 'No students enrolled',
                   subtitle: 'No students enrolled in this advisory class',
                 )
               : BaseDataTable(
-                  items: state.students,
+                  items: students,
                   columnFlexes: const [3, 1, 1, 1],
                   columns: const [
                     DataColumn(

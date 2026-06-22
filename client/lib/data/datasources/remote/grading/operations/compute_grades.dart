@@ -4,10 +4,10 @@ import 'package:likha/core/network/dio_client.dart';
 Future<void> computeGrades(
   DioClient dioClient, {
   required String classId,
-  required int gradingPeriodNumber,
+  required int termNumber,
 }) async {
   await dioClient.postVoid(
     ApiEndpoints.classGradesCompute(classId),
-    queryParameters: {'grading_period_number': gradingPeriodNumber},
+    queryParameters: {'term_number': termNumber},
   );
 }
