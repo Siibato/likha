@@ -1,6 +1,6 @@
 # Multi-stage build — works on x86_64 and ARM64 (Raspberry Pi 4/5)
 # Stage 1: compile the release binary
-FROM rust:1.86-alpine AS builder
+FROM rust:alpine AS builder
 
 RUN apk add --no-cache musl-dev
 
