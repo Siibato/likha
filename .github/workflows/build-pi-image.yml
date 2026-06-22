@@ -32,7 +32,7 @@ jobs:
         with:
           repository: RPi-Distro/pi-gen
           path: pi-gen
-          ref: 2024-11-25  # Bookworm 64-bit Lite baseline; update as needed
+          ref: 2026-06-18-raspios-bookworm-arm64
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
