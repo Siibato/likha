@@ -52,15 +52,15 @@ jobs:
 
       - name: Save image to tar
         run: |
-          mkdir -p deploy/pi-image/stage-likha
-          docker save likha-server:latest > deploy/pi-image/stage-likha/likha-server-arm64.tar
+          mkdir -p deployment/pi-image/stage-likha
+          docker save likha-server:latest > deployment/pi-image/stage-likha/likha-server-arm64.tar
 
       - name: Prepare pi-gen workspace
         run: |
-          cp deploy/pi-image/config pi-gen/config
-          cp -r deploy/pi-image/stage-likha pi-gen/stage-likha
+          cp deployment/pi-image/config pi-gen/config
+          cp -r deployment/pi-image/stage-likha pi-gen/stage-likha
           # Ensure the image tar is where 01-run.sh expects it
-          cp deploy/pi-image/stage-likha/likha-server-arm64.tar pi-gen/stage-likha/likha-server-arm64.tar || true
+          cp deployment/pi-image/stage-likha/likha-server-arm64.tar pi-gen/stage-likha/likha-server-arm64.tar || true
 
       - name: Build Pi image with pi-gen
         run: |
@@ -104,8 +104,8 @@ jobs:
           EXTRACT="${{ steps.meta.outputs.extract_size }}"
           URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/likha-server-${VERSION}.img.xz"
 
-          mkdir -p deploy/imager-manifest
-          cat > deploy/imager-manifest/os_list.json <<EOF
+          mkdir -p deployment/imager-manifest
+          cat > deployment/imager-manifest/os_list.json <<EOF
           {
             "os_list": [
               {
@@ -162,4 +162,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: os_list.json
-          path: deploy/imager-manifest/os_list.json
+          path: deployment/imager-manifest/os_list.json
