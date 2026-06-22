@@ -13,3 +13,4 @@ pub mod student_records;
 pub mod sync;
 pub mod tasks;
 pub mod tos;
+pub mod replication;

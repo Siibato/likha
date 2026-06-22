@@ -33,6 +33,7 @@ pub mod submission_files;
 pub mod table_of_specifications;
 pub mod tos_competencies;
 pub mod users;
+pub mod replication_state;
 
 pub use activity_logs::Entity as ActivityLogs;
 pub use attendance_records::Entity as AttendanceRecords;
@@ -69,6 +70,7 @@ pub use submission_files::Entity as SubmissionFiles;
 pub use table_of_specifications::Entity as TableOfSpecifications;
 pub use tos_competencies::Entity as TosCompetencies;
 pub use users::Entity as Users;
+pub use replication_state::Entity as ReplicationState;
 
 pub mod prelude {
     pub use super::activity_logs::{self, Entity as ActivityLogs};
@@ -106,4 +108,5 @@ pub mod prelude {
     pub use super::table_of_specifications::{self, Entity as TableOfSpecifications};
     pub use super::tos_competencies::{self, Entity as TosCompetencies};
     pub use super::users::{self, Entity as Users};
+    pub use super::replication_state::{self, Entity as ReplicationState};
 }

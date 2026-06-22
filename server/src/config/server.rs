@@ -1,6 +1,8 @@
 use std::env;
 
-use crate::utils::validators::Validator;
+use uuid::Uuid;
+
+use crate::utils::{net, validators::Validator};
 
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
@@ -20,6 +22,15 @@ pub struct ServerConfig {
     pub cache_ttl_list_seconds: u64,
     pub cache_ttl_detail_seconds: u64,
     pub cache_ttl_static_seconds: u64,
+    pub peer_url: Option<String>,
+    pub node_id: String,
+    pub node_ip: String,
+    pub mesh_group_id: Option<String>,
+    pub replication_secret: Option<String>,
+    pub replication_interval_seconds: u64,
+    pub discovery_multicast_addr: String,
+    pub discovery_beacon_interval_seconds: u64,
+    pub discovery_peer_ttl_seconds: u64,
 }
 
 impl ServerConfig {
@@ -89,6 +100,25 @@ impl ServerConfig {
                 .unwrap_or_else(|_| "3600".to_string())
                 .parse()
                 .unwrap_or(3600),
+            peer_url: env::var("PEER_URL").ok().filter(|s| !s.is_empty()),
+            node_id: env::var("NODE_ID").unwrap_or_else(|_| Uuid::new_v4().to_string()),
+            node_ip: env::var("NODE_IP").unwrap_or_else(|_| net::detect_local_ip()),
+            mesh_group_id: env::var("MESH_GROUP_ID").ok().filter(|s| !s.is_empty()),
+            replication_secret: env::var("REPLICATION_SECRET").ok().filter(|s| !s.is_empty()),
+            replication_interval_seconds: env::var("REPLICATION_INTERVAL_SECONDS")
+                .unwrap_or_else(|_| "30".to_string())
+                .parse()
+                .unwrap_or(30),
+            discovery_multicast_addr: env::var("DISCOVERY_MULTICAST_ADDR")
+                .unwrap_or_else(|_| "239.255.42.99:9999".to_string()),
+            discovery_beacon_interval_seconds: env::var("DISCOVERY_BEACON_INTERVAL_SECONDS")
+                .unwrap_or_else(|_| "5".to_string())
+                .parse()
+                .unwrap_or(5),
+            discovery_peer_ttl_seconds: env::var("DISCOVERY_PEER_TTL_SECONDS")
+                .unwrap_or_else(|_| "30".to_string())
+                .parse()
+                .unwrap_or(30),
         }
     }
 }

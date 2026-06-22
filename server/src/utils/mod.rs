@@ -7,6 +7,7 @@ pub mod jwt;
 pub mod password;
 pub mod response;
 pub mod validators;
+pub mod net;
 
 pub use error::{AppError, AppResult};
 pub use datetime::{parse_datetime, fmt_utc};

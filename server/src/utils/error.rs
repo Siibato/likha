@@ -3,6 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use sea_orm::DbErr;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -90,6 +91,12 @@ impl IntoResponse for AppError {
         });
 
         (status, body).into_response()
+    }
+}
+
+impl From<DbErr> for AppError {
+    fn from(err: DbErr) -> Self {
+        AppError::InternalServerError(format!("Database error: {}", err))
     }
 }
 

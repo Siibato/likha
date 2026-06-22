@@ -1,0 +1,165 @@
+name: Build & Release Pi Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v0.0.0-dev'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: likha-server
+
+jobs:
+  build-pi-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout Likha repo
+        uses: actions/checkout@v4
+
+      - name: Checkout pi-gen
+        uses: actions/checkout@v4
+        with:
+          repository: RPi-Distro/pi-gen
+          path: pi-gen
+          ref: 2024-11-25  # Bookworm 64-bit Lite baseline; update as needed
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ARM64 server image
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            -t likha-server:latest \
+            -f server/Dockerfile \
+            server/
+
+      - name: Save image to tar
+        run: |
+          mkdir -p deploy/pi-image/stage-likha
+          docker save likha-server:latest > deploy/pi-image/stage-likha/likha-server-arm64.tar
+
+      - name: Prepare pi-gen workspace
+        run: |
+          cp deploy/pi-image/config pi-gen/config
+          cp -r deploy/pi-image/stage-likha pi-gen/stage-likha
+          # Ensure the image tar is where 01-run.sh expects it
+          cp deploy/pi-image/stage-likha/likha-server-arm64.tar pi-gen/stage-likha/likha-server-arm64.tar || true
+
+      - name: Build Pi image with pi-gen
+        run: |
+          cd pi-gen
+          ./build-docker.sh
+
+      - name: Compress output image
+        run: |
+          mkdir -p release
+          for img in pi-gen/deploy/*.img; do
+            if [ -f "$img" ]; then
+              xz -T0 -v "$img"
+              mv "$img.xz" "release/likha-server-${{ github.ref_name || inputs.version }}.img.xz"
+            fi
+          done
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          IMG_XZ="release/likha-server-${{ github.ref_name || inputs.version }}.img.xz"
+          if [ -f "$IMG_XZ" ]; then
+            SIZE_XZ=$(stat -c%s "$IMG_XZ")
+            # pi-gen images are ~3 GB uncompressed; exact size is hard to get without extraction
+            # Use a conservative estimate or parse the raw .img if available
+            echo "image_download_size=${SIZE_XZ}" >> "$GITHUB_OUTPUT"
+            echo "extract_size=3221225472" >> "$GITHUB_OUTPUT"  # ~3 GB
+          fi
+
+      - name: Upload release artifact
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: release/*.img.xz
+          tag_name: ${{ github.ref_name || inputs.version }}
+          generate_release_notes: true
+
+      - name: Update os_list.json manifest
+        run: |
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SIZE_XZ="${{ steps.meta.outputs.image_download_size }}"
+          EXTRACT="${{ steps.meta.outputs.extract_size }}"
+          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/likha-server-${VERSION}.img.xz"
+
+          mkdir -p deploy/imager-manifest
+          cat > deploy/imager-manifest/os_list.json <<EOF
+          {
+            "os_list": [
+              {
+                "name": "Likha Classroom Server",
+                "description": "Self-contained classroom server with mesh replication for Raspberry Pi 4/5",
+                "icon": "https://likha.app/imager/icon.png",
+                "url": "${URL}",
+                "extract_size": ${EXTRACT},
+                "image_download_size": ${SIZE_XZ},
+                "release_date": "$(date +%Y-%m-%d)",
+                "init_format": "systemd",
+                "devices": [
+                  "pi4",
+                  "pi5"
+                ],
+                "format": "custom",
+                "customization": {
+                  "schema": {
+                    "mesh_group_id": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 32,
+                      "description": "School Code / Mesh Group ID (shared by all nodes in the classroom)"
+                    },
+                    "wifi_ssid": {
+                      "type": "string",
+                      "maxLength": 64,
+                      "description": "Optional WiFi SSID (if not using Ethernet router mode)"
+                    },
+                    "wifi_password": {
+                      "type": "string",
+                      "maxLength": 64,
+                      "description": "Optional WiFi password"
+                    },
+                    "wifi_country": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 2,
+                      "description": "ISO 3166-1 alpha-2 country code for WiFi (e.g., PH, US)"
+                    },
+                    "school_code": {
+                      "type": "string",
+                      "maxLength": 32,
+                      "description": "School identifier (e.g., ESATQL)"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: Upload os_list.json artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: os_list.json
+          path: deploy/imager-manifest/os_list.json
