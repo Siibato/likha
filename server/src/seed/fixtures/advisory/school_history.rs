@@ -14,7 +14,7 @@ const HISTORY: [(&str, &str, &str, &str, &str); 3] = [
 pub fn advisory_school_history() -> Vec<SchoolHistorySpec> {
     let mut records = Vec::with_capacity(90);
 
-    for &(uname, _) in &STUDENT_DATA {
+    for &(uname, _, _) in &STUDENT_DATA {
         for &(grade_level, school_year, school_name, date_from, date_to) in &HISTORY {
             let id = seed_id(
                 "student_school_history",

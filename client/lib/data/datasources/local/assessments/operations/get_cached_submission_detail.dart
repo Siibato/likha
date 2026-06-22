@@ -11,7 +11,7 @@ Future<SubmissionDetailModel?> getCachedSubmissionDetail(
     RepoLogger.instance.log('getCachedSubmissionDetail: START for $submissionId');
     final db = await localDatabase.database;
     final results = await db.rawQuery('''
-      SELECT s.*, u.full_name as student_name
+      SELECT s.*, u.first_name || ' ' || u.last_name as student_name
       FROM assessment_submissions s
       LEFT JOIN users u ON u.id = s.user_id
       WHERE s.id = ? AND s.deleted_at IS NULL

@@ -11,7 +11,8 @@ class UpdateAccount {
   ResultFuture<MutationResult<User>> call(UpdateAccountParams params) {
     return _repository.updateAccount(
       userId: params.userId,
-      fullName: params.fullName,
+      firstName: params.firstName,
+      lastName: params.lastName,
       role: params.role,
     );
   }
@@ -19,12 +20,14 @@ class UpdateAccount {
 
 class UpdateAccountParams {
   final String userId;
-  final String? fullName;
+  final String? firstName;
+  final String? lastName;
   final String? role;
 
   UpdateAccountParams({
     required this.userId,
-    this.fullName,
+    this.firstName,
+    this.lastName,
     this.role,
   });
 }

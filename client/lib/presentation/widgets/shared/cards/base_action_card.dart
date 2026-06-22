@@ -11,6 +11,7 @@ import '../forms/styled_button.dart';
 class BaseActionCard extends StatelessWidget {
   final Widget child;
   final List<Widget> actions;
+  final List<Widget> headerActions;
   final String? title;
   final String? subtitle;
   final Widget? icon;
@@ -27,6 +28,7 @@ class BaseActionCard extends StatelessWidget {
     super.key,
     required this.child,
     this.actions = const [],
+    this.headerActions = const [],
     this.title,
     this.subtitle,
     this.icon,
@@ -233,6 +235,13 @@ class BaseActionCard extends StatelessWidget {
               ],
             ),
           ),
+          if (headerActions.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: headerActions,
+            ),
+          ],
         ],
       ),
     );

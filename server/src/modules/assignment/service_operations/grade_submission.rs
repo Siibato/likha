@@ -82,8 +82,8 @@ pub async fn grade_submission(
         )),
     ).await;
 
-    let student_name = assignment_repo.find_student_name(graded.student_id).await?;
+    let (student_first_name, student_last_name) = assignment_repo.find_student_name(graded.student_id).await?;
     let files = assignment_repo.find_files_by_submission(submission_id).await?;
 
-    Ok(build_submission_response(graded, student_name, files))
+    Ok(build_submission_response(graded, student_first_name, student_last_name, files))
 }

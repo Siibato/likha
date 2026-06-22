@@ -8,6 +8,8 @@ import 'package:likha/presentation/widgets/mobile/admin/account/activity_log_lis
 import 'package:likha/presentation/widgets/mobile/admin/account/edit_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/widgets/shared/cards/learner_details_card.dart';
+import 'package:likha/presentation/widgets/shared/cards/teacher_details_card.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
@@ -26,8 +28,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Load activity logs without clearing first to avoid losing data during navigation
       ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
+      ref.read(adminProvider.notifier).loadAccountDetails(widget.user.id);
     });
   }
 
@@ -86,9 +88,13 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
                 title: 'Edit Full Name',
                 currentValue: user.fullName,
                 onSave: (value) {
+                  final parts = value.trim().split(' ');
+                  final firstName = parts.isNotEmpty ? parts.first : '';
+                  final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
                   ref.read(adminProvider.notifier).updateAccount(
                         userId: user.id,
-                        fullName: value,
+                        firstName: firstName,
+                        lastName: lastName,
                       );
                 },
               ),
@@ -116,7 +122,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             ),
             const SizedBox(height: 32),
             const Text(
-              'Account Information',
+              'Details',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -125,10 +131,29 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
               ),
             ),
             const SizedBox(height: 12),
-            ActivityLogList(
-              logs: adminState.activityLogs,
-              isLoading: adminState.isLoading,
-            ),
+            if (user.role == 'student')
+              LearnerDetailsCard(
+                details: adminState.learnerDetails,
+                isLoading: adminState.isLoading,
+                onSave: (data) => ref.read(adminProvider.notifier).updateAccountDetails(
+                  userId: user.id,
+                  learnerDetails: data,
+                ),
+              )
+            else if (user.role == 'teacher')
+              TeacherDetailsCard(
+                details: adminState.teacherDetails,
+                isLoading: adminState.isLoading,
+                onSave: (data) => ref.read(adminProvider.notifier).updateAccountDetails(
+                  userId: user.id,
+                  teacherDetails: data,
+                ),
+              )
+            else
+              const Text(
+                'No additional details for admin accounts.',
+                style: TextStyle(fontSize: 14, color: AppColors.foregroundSecondary),
+              ),
             const SizedBox(height: 32),
             const Text(
               'Activity Log',

@@ -13,6 +13,19 @@ Future<void> cacheSubmissions(
     final db = await localDatabase.database;
     await db.transaction((txn) async {
       for (final submission in submissions) {
+        // DEFENSE: Skip if the student isn't in the local users table yet.
+        // This avoids FK constraint failures when syncing submissions
+        // before all referenced users have been cached.
+        final userExists = await txn.query(
+          'users',
+          where: 'id = ?',
+          whereArgs: [submission.studentId],
+          limit: 1,
+        );
+        if (userExists.isEmpty) {
+          continue;
+        }
+
         // DEFENSE: Use UPDATE instead of REPLACE to avoid CASCADE-deleting
         // nested submission_answers and submission_answer_items.
         // REPLACE does DELETE + INSERT, which triggers ON DELETE CASCADE.

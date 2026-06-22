@@ -290,7 +290,7 @@ fn generate_term_grades(
     grade_scores: &[crate::seed::specs::GradeScoreSpec],
     grade_items: &[crate::seed::specs::GradeItemSpec],
     enrollments: &[crate::seed::specs::EnrollmentSpec],
-    ctx: &SeedContext,
+    _ctx: &SeedContext,
 ) -> Vec<crate::seed::specs::TermGradeSpec> {
     use crate::modules::grading::helpers::deped_weights::transmute_grade;
     use uuid::Uuid;

@@ -150,7 +150,7 @@ pub fn generate_term_grades(
     grade_items: &[GradeItemSpec],
     students: &[UserSpec],
     enrollments: &[EnrollmentSpec],
-    ctx: &SeedContext,
+    _ctx: &SeedContext,
 ) -> Vec<TermGradeSpec> {
     let mut term_grades = Vec::new();
 
@@ -167,7 +167,7 @@ pub fn generate_term_grades(
 
     for record in grade_records {
         let enrolled = class_students.get(&record.class_id).cloned().unwrap_or_default();
-        for (student_idx, student_id) in enrolled.iter().enumerate() {
+        for (_student_idx, student_id) in enrolled.iter().enumerate() {
             let student_scores: Vec<&GradeScoreSpec> = grade_scores.iter()
                 .filter(|s| s.student_id == *student_id && s.term_number == record.term_number)
                 .collect();

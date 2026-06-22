@@ -7,7 +7,10 @@ import 'package:likha/presentation/pages/desktop/admin/account/create_account_pa
 import 'package:likha/presentation/widgets/desktop/admin/account/account_data_table.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
+import 'package:likha/presentation/widgets/shared/import/history_import_dialog.dart';
 import 'package:likha/presentation/widgets/shared/search/search_filter_bar.dart';
 
 class AccountManagementPage extends ConsumerStatefulWidget {
@@ -118,6 +121,97 @@ class _AccountManagementPageState
     return DesktopPageScaffold(
       title: 'Account Management',
       actions: [
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            showDialog(
+              context: context,
+              builder: (_) => HistoryImportDialog(
+                type: value,
+                title: {
+                  'school_history': 'Import School History',
+                  'subjects': 'Import Previous Subjects',
+                  'attendance': 'Import Attendance',
+                }[value]!,
+              ),
+            );
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'school_history',
+              child: Row(children: [
+                Icon(Icons.history_edu_outlined, size: 18),
+                SizedBox(width: 8),
+                Text('School History'),
+              ]),
+            ),
+            const PopupMenuItem(
+              value: 'subjects',
+              child: Row(children: [
+                Icon(Icons.menu_book_outlined, size: 18),
+                SizedBox(width: 8),
+                Text('Previous Subjects'),
+              ]),
+            ),
+            const PopupMenuItem(
+              value: 'attendance',
+              child: Row(children: [
+                Icon(Icons.calendar_month_outlined, size: 18),
+                SizedBox(width: 8),
+                Text('Attendance'),
+              ]),
+            ),
+          ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.borderLight, width: 1.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.history_edu_outlined, size: 18, color: AppColors.foregroundSecondary),
+                SizedBox(width: 8),
+                Text(
+                  'Import History',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.foregroundSecondary,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_drop_down_rounded, size: 18, color: AppColors.foregroundSecondary),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        OutlinedButton.icon(
+          onPressed: () => showDialog(
+            context: context,
+            builder: (_) => BulkImportDialog(
+              onSuccess: () {
+                ref.read(syncProvider.notifier).sync().then((_) {
+                  if (mounted) {
+                    ref.read(adminProvider.notifier).loadAccounts();
+                  }
+                });
+              },
+            ),
+          ),
+          icon: const Icon(Icons.upload_file_outlined, size: 18),
+          label: const Text('Bulk Import'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.foregroundSecondary,
+            side: const BorderSide(color: AppColors.borderLight, width: 1.5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+        ),
+        const SizedBox(width: 12),
         FilledButton.icon(
           onPressed: () => Navigator.push(
             context,

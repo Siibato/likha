@@ -22,8 +22,8 @@ pub async fn get_student_assignment_submissions(
     let submission = assignment_repo.find_student_submission(assignment_id, student_id).await?
         .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
-    let student_name = assignment_repo.find_student_name(student_id).await?;
+    let (student_first_name, student_last_name) = assignment_repo.find_student_name(student_id).await?;
     let files = assignment_repo.find_files_by_submission(submission.id).await?;
 
-    Ok(build_submission_response(submission, student_name, files))
+    Ok(build_submission_response(submission, student_first_name, student_last_name, files))
 }

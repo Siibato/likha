@@ -15,8 +15,11 @@ ResultFuture<MutationResult<User>> createAccount(
   SyncQueue syncQueue,
   {
     required String username,
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String role,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
   }) async {
   try {
     final now = DateTime.now();
@@ -26,7 +29,8 @@ ResultFuture<MutationResult<User>> createAccount(
     final optimisticUser = UserModel(
       id: userId,
       username: username,
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       role: role,
       accountStatus: 'pending_activation',
       isActive: false,
@@ -36,6 +40,14 @@ ResultFuture<MutationResult<User>> createAccount(
       cachedAt: now,
       syncStatus: SyncStatus.pending,
     );
+
+    final payload = optimisticUser.toPayload();
+    if (learnerDetails != null) {
+      payload['learner_details'] = learnerDetails;
+    }
+    if (teacherDetails != null) {
+      payload['teacher_details'] = teacherDetails;
+    }
 
     final db = await localDataSource.localDatabase.database;
     await db.transaction((txn) async {
@@ -53,7 +65,7 @@ ResultFuture<MutationResult<User>> createAccount(
           id: queueEntryId,
           entityType: SyncEntityType.adminUser,
           operation: SyncOperation.create,
-          payload: optimisticUser.toPayload(),
+          payload: payload,
           status: SyncStatus.pending,
           retryCount: 0,
           maxRetries: 5,

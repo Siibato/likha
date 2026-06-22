@@ -124,7 +124,8 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
         UserSpec {
             id: TEACHER_01_ID,
             username: "teacher_01".into(),
-            full_name: "Teacher One".into(),
+            first_name: "Teacher".into(),
+            last_name: "One".into(),
             role: "teacher".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_TEACHER, 4).unwrap()),
             account_status: "active".into(),
@@ -135,7 +136,8 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
         UserSpec {
             id: TEACHER_02_ID,
             username: "teacher_02".into(),
-            full_name: "Teacher Two".into(),
+            first_name: "Teacher".into(),
+            last_name: "Two".into(),
             role: "teacher".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_TEACHER, 4).unwrap()),
             account_status: "active".into(),
@@ -147,7 +149,8 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
         UserSpec {
             id: STUDENT_01_ID,
             username: "student_01".into(),
-            full_name: "Student One".into(),
+            first_name: "Student".into(),
+            last_name: "One".into(),
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),
@@ -158,7 +161,8 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
         UserSpec {
             id: STUDENT_02_ID,
             username: "student_02".into(),
-            full_name: "Student Two".into(),
+            first_name: "Student".into(),
+            last_name: "Two".into(),
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),
@@ -169,7 +173,8 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
         UserSpec {
             id: STUDENT_03_ID,
             username: "student_03".into(),
-            full_name: "Student Three".into(),
+            first_name: "Student".into(),
+            last_name: "Three".into(),
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),
@@ -181,7 +186,8 @@ pub fn e2e_users(ctx: &SeedContext) -> Vec<UserSpec> {
         UserSpec {
             id: STUDENT_DELETED_ID,
             username: "student_deleted_99".into(),
-            full_name: "Student Deleted 99".into(),
+            first_name: "Student".into(),
+            last_name: "Deleted 99".into(),
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),

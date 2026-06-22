@@ -12,3 +12,5 @@ export 'lock_account.dart';
 export 'get_activity_logs.dart';
 export 'update_account.dart';
 export 'delete_account.dart';
+export 'get_account_details.dart';
+export 'upsert_account_details.dart';

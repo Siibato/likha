@@ -5,6 +5,8 @@ import 'package:likha/presentation/pages/mobile/admin/account/account_detail_pag
 import 'package:likha/presentation/widgets/mobile/admin/account/account_tile.dart';
 import 'package:likha/presentation/widgets/shared/search/app_search_bar.dart';
 import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
+import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
+import 'package:likha/presentation/widgets/shared/import/history_import_dialog.dart';
 import 'package:likha/presentation/providers/admin_provider.dart';
 
 class AccountManagementPage extends ConsumerStatefulWidget {
@@ -70,6 +72,68 @@ class _AccountManagementPageState
             letterSpacing: -0.4,
           ),
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'bulk') {
+                showDialog(
+                  context: context,
+                  builder: (_) => BulkImportDialog(
+                    onSuccess: () => ref.read(adminProvider.notifier).loadAccounts(),
+                  ),
+                );
+              } else {
+                showDialog(
+                  context: context,
+                  builder: (_) => HistoryImportDialog(
+                    type: value,
+                    title: {
+                      'school_history': 'Import School History',
+                      'subjects': 'Import Previous Subjects',
+                      'attendance': 'Import Attendance',
+                    }[value]!,
+                  ),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'bulk',
+                child: Row(children: [
+                  Icon(Icons.upload_file_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Text('Bulk Import Students'),
+                ]),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'school_history',
+                child: Row(children: [
+                  Icon(Icons.history_edu_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Text('Import School History'),
+                ]),
+              ),
+              const PopupMenuItem(
+                value: 'subjects',
+                child: Row(children: [
+                  Icon(Icons.menu_book_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Text('Import Previous Subjects'),
+                ]),
+              ),
+              const PopupMenuItem(
+                value: 'attendance',
+                child: Row(children: [
+                  Icon(Icons.calendar_month_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Text('Import Attendance'),
+                ]),
+              ),
+            ],
+            icon: const Icon(Icons.more_vert_rounded, color: AppColors.foregroundDark),
+          ),
+        ],
       ),
       body: Column(
         children: [

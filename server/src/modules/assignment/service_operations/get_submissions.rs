@@ -27,7 +27,8 @@ pub async fn get_submissions(
         .map(|(s, user)| SubmissionListItem {
             id: s.id,
             student_id: s.student_id,
-            student_name: user.as_ref().map(|u| u.full_name.clone()).unwrap_or_default(),
+            student_first_name: user.as_ref().map(|u| u.first_name.clone()).unwrap_or_default(),
+            student_last_name: user.as_ref().map(|u| u.last_name.clone()).unwrap_or_default(),
             student_username: user.map(|u| u.username).unwrap_or_default(),
             status: s.status,
             submitted_at: s.submitted_at.map(|dt| dt.to_string()),

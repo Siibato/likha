@@ -2,19 +2,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
+import 'package:likha/domain/auth/entities/teacher_details.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
+import 'package:likha/domain/auth/usecases/get_account_details.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/delete_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
+import 'package:likha/domain/auth/usecases/upsert_account_details.dart';
+import 'package:likha/domain/student_records/entities/learner_details.dart';
 import 'package:likha/injection_container.dart';
 
 class AdminState {
   final List<User> accounts;
   final List<ActivityLog> activityLogs;
+  final LearnerDetails? learnerDetails;
+  final TeacherDetails? teacherDetails;
   final bool isLoading;
   final String? error;
   final String? successMessage;
@@ -22,6 +28,8 @@ class AdminState {
   AdminState({
     this.accounts = const [],
     this.activityLogs = const [],
+    this.learnerDetails,
+    this.teacherDetails,
     this.isLoading = false,
     this.error,
     this.successMessage,
@@ -30,6 +38,8 @@ class AdminState {
   AdminState copyWith({
     List<User>? accounts,
     List<ActivityLog>? activityLogs,
+    LearnerDetails? learnerDetails,
+    TeacherDetails? teacherDetails,
     bool? isLoading,
     String? error,
     String? successMessage,
@@ -39,6 +49,8 @@ class AdminState {
     return AdminState(
       accounts: accounts ?? this.accounts,
       activityLogs: activityLogs ?? this.activityLogs,
+      learnerDetails: learnerDetails ?? this.learnerDetails,
+      teacherDetails: teacherDetails ?? this.teacherDetails,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       successMessage:
@@ -55,6 +67,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
   final GetActivityLogs _getActivityLogs;
   final UpdateAccount _updateAccount;
   final DeleteAccount _deleteAccount;
+  final GetAccountDetails _getAccountDetails;
+  final UpsertAccountDetails _upsertAccountDetails;
 
   AdminNotifier(
     this._getAllAccounts,
@@ -64,6 +78,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     this._getActivityLogs,
     this._updateAccount,
     this._deleteAccount,
+    this._getAccountDetails,
+    this._upsertAccountDetails,
   ) : super(AdminState());
 
   Future<void> loadAccounts() async {
@@ -92,17 +108,21 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
   Future<void> createAccount({
     required String username,
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String role,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
   }) async {
-    ProviderLogger.instance.log('createAccount START: username=$username, fullName=$fullName, role=$role');
+    ProviderLogger.instance.log('createAccount START: username=$username, firstName=$firstName, lastName=$lastName, role=$role');
     final previousAccounts = List<User>.from(state.accounts);
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempUser = User(
       id: tempId,
       username: username,
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       role: role,
       accountStatus: 'pending_activation',
       isActive: false,
@@ -118,8 +138,11 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     final result = await _createAccount(CreateAccountParams(
       username: username,
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       role: role,
+      learnerDetails: learnerDetails,
+      teacherDetails: teacherDetails,
     ));
 
     result.fold(
@@ -151,7 +174,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
         return User(
           id: a.id,
           username: a.username,
-          fullName: a.fullName,
+          firstName: a.firstName,
+          lastName: a.lastName,
           role: a.role,
           accountStatus: 'pending_activation',
           isActive: false,
@@ -193,7 +217,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
         return User(
           id: a.id,
           username: a.username,
-          fullName: a.fullName,
+          firstName: a.firstName,
+          lastName: a.lastName,
           role: a.role,
           accountStatus: locked ? 'locked' : 'activated',
           isActive: !locked,
@@ -231,6 +256,51 @@ class AdminNotifier extends StateNotifier<AdminState> {
     );
   }
 
+  Future<void> loadAccountDetails(String userId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    final result = await _getAccountDetails(userId);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (response) => state = state.copyWith(
+        isLoading: false,
+        learnerDetails: response.learnerDetails,
+        teacherDetails: response.teacherDetails,
+      ),
+    );
+  }
+
+  Future<void> updateAccountDetails({
+    required String userId,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    final result = await _upsertAccountDetails(UpsertAccountDetailsParams(
+      userId: userId,
+      learnerDetails: learnerDetails,
+      teacherDetails: teacherDetails,
+    ));
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: AppErrorMapper.fromFailure(failure),
+      ),
+      (response) => state = state.copyWith(
+        isLoading: false,
+        learnerDetails: response.learnerDetails,
+        teacherDetails: response.teacherDetails,
+        successMessage: 'Account details updated successfully',
+      ),
+    );
+  }
+
   Future<void> loadActivityLogs(String userId) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
@@ -254,7 +324,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
   Future<void> updateAccount({
     required String userId,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
   }) async {
     final previousAccounts = List<User>.from(state.accounts);
@@ -264,7 +335,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
         return User(
           id: a.id,
           username: a.username,
-          fullName: fullName ?? a.fullName,
+          firstName: firstName ?? a.firstName,
+          lastName: lastName ?? a.lastName,
           role: role ?? a.role,
           accountStatus: a.accountStatus,
           isActive: a.isActive,
@@ -283,7 +355,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
 
     final result = await _updateAccount(UpdateAccountParams(
       userId: userId,
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       role: role,
     ));
 
@@ -353,5 +426,7 @@ final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
     sl<GetActivityLogs>(),
     sl<UpdateAccount>(),
     sl<DeleteAccount>(),
+    sl<GetAccountDetails>(),
+    sl<UpsertAccountDetails>(),
   );
 });

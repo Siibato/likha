@@ -61,7 +61,7 @@ db-delete:
 	@cd $(SERVER_DIR) && cargo run -- delete-db
 
 build-server:
-	@cd $(SERVER_DIR) && cargo build --release
+	@cd $(SERVER_DIR) && cargo build --release --no-default-features
 
 run-server:
 	@cd $(SERVER_DIR) && ./target/release/server
@@ -76,7 +76,7 @@ build-windows:
 	@cd $(CLIENT_DIR) && flutter build windows
 
 test-server:
-	@cd $(SERVER_DIR) && cargo test
+	@cd $(SERVER_DIR) && cargo test --features seed
 
 test-client:
 	@cd $(CLIENT_DIR) && flutter test

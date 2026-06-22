@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/student_records_provider.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_year_dropdown.dart';
 import 'package:likha/domain/student_records/entities/school_history.dart';
 
 class Sf10SchoolHistoryEditPage extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
   late final TextEditingController _schoolNameCtrl;
   late final TextEditingController _schoolIdCtrl;
   late final TextEditingController _gradeLevelCtrl;
-  late final TextEditingController _schoolYearCtrl;
+  String? _selectedSchoolYear;
   late final TextEditingController _sectionCtrl;
   late final TextEditingController _dateFromCtrl;
   late final TextEditingController _dateToCtrl;
@@ -42,7 +43,7 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     _schoolNameCtrl = TextEditingController(text: h?.schoolName ?? '');
     _schoolIdCtrl = TextEditingController(text: h?.schoolId ?? '');
     _gradeLevelCtrl = TextEditingController(text: h?.gradeLevel ?? '');
-    _schoolYearCtrl = TextEditingController(text: h?.schoolYear ?? '');
+    _selectedSchoolYear = h?.schoolYear?.isNotEmpty == true ? h!.schoolYear : SchoolYearDropdown.currentSchoolYear;
     _sectionCtrl = TextEditingController(text: h?.section ?? '');
     _dateFromCtrl = TextEditingController(text: h?.dateFrom ?? '');
     _dateToCtrl = TextEditingController(text: h?.dateTo ?? '');
@@ -61,7 +62,6 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     _schoolNameCtrl.dispose();
     _schoolIdCtrl.dispose();
     _gradeLevelCtrl.dispose();
-    _schoolYearCtrl.dispose();
     _sectionCtrl.dispose();
     _dateFromCtrl.dispose();
     _dateToCtrl.dispose();
@@ -75,7 +75,7 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
       'school_name': _schoolNameCtrl.text,
       'school_id': _schoolIdCtrl.text.isEmpty ? null : _schoolIdCtrl.text,
       'grade_level': _gradeLevelCtrl.text,
-      'school_year': _schoolYearCtrl.text,
+      'school_year': _selectedSchoolYear,
       'section': _sectionCtrl.text.isEmpty ? null : _sectionCtrl.text,
       'date_from': _dateFromCtrl.text.isEmpty ? null : _dateFromCtrl.text,
       'date_to': _dateToCtrl.text.isEmpty ? null : _dateToCtrl.text,
@@ -223,7 +223,13 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
               children: [
                 Expanded(child: _textField(_gradeLevelCtrl, 'Grade Level', required: true)),
                 const SizedBox(width: 16),
-                Expanded(child: _textField(_schoolYearCtrl, 'School Year', required: true, hint: 'e.g. 2023-2024')),
+                Expanded(
+                  child: SchoolYearDropdown(
+                    value: _selectedSchoolYear,
+                    onChanged: (val) => setState(() => _selectedSchoolYear = val),
+                    validator: (v) => v == null || v.isEmpty ? 'School Year is required' : null,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),

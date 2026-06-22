@@ -22,6 +22,7 @@ pub async fn upsert_core_values(
         .filter(core_values_records::Column::SchoolYear.eq(&school_year))
         .filter(core_values_records::Column::TermNumber.eq(term_number))
         .filter(core_values_records::Column::CoreValueId.eq(core_value_id))
+        .filter(core_values_records::Column::DeletedAt.is_null())
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;

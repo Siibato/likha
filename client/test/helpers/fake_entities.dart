@@ -24,14 +24,16 @@ class FakeEntities {
   static User user({
     String? id,
     String? username,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
     String? accountStatus,
     bool? isActive,
   }) => User(
     id: id ?? 'user-1',
     username: username ?? 'testuser',
-    fullName: fullName ?? 'Test User',
+    firstName: firstName ?? 'Test',
+    lastName: lastName ?? 'User',
     role: role ?? 'student',
     accountStatus: accountStatus ?? 'activated',
     isActive: isActive ?? true,
@@ -53,11 +55,13 @@ class FakeEntities {
   static CheckUsernameResult checkUsernameResult({
     String? username,
     String? accountStatus,
-    String? fullName,
+    String? firstName,
+    String? lastName,
   }) => CheckUsernameResult(
     username: username ?? 'testuser',
     accountStatus: accountStatus ?? 'pending_activation',
-    fullName: fullName,
+    firstName: firstName,
+    lastName: lastName,
   );
 
   static ActivityLog activityLog({

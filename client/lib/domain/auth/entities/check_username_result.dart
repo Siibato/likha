@@ -3,18 +3,24 @@ import 'package:equatable/equatable.dart';
 class CheckUsernameResult extends Equatable {
   final String username;
   final String accountStatus;
-  final String? fullName;
+  final String? firstName;
+  final String? lastName;
 
   const CheckUsernameResult({
     required this.username,
     required this.accountStatus,
-    this.fullName,
+    this.firstName,
+    this.lastName,
   });
 
+  String? get fullName {
+    if (firstName == null && lastName == null) return null;
+    return '$lastName, $firstName'.trim();
+  }
   bool get isPendingActivation => accountStatus == 'pending_activation';
   bool get isActivated => accountStatus == 'activated';
   bool get isLocked => accountStatus == 'locked';
 
   @override
-  List<Object?> get props => [username, accountStatus, fullName];
+  List<Object?> get props => [username, accountStatus, firstName, lastName];
 }

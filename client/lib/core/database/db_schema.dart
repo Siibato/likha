@@ -37,6 +37,7 @@ abstract final class DbTables {
   static const String validationMetadata = 'validation_metadata';
   static const String schoolDetails = 'school_details';
   static const String learnerDetails = 'learner_details';
+  static const String teacherDetails = 'teacher_details';
   static const String attendanceRecords = 'attendance_records';
   static const String coreValuesRecords = 'core_values_records';
   static const String studentSchoolHistory = 'student_school_history';
@@ -60,7 +61,8 @@ abstract final class CommonCols {
 
 abstract final class UsersCols {
   static const String username = 'username';
-  static const String fullName = 'full_name';
+  static const String firstName = 'first_name';
+  static const String lastName = 'last_name';
   static const String role = 'role';
   static const String accountStatus = 'account_status';
   static const String activatedAt = 'activated_at';
@@ -374,6 +376,20 @@ abstract final class LearnerDetailsCols {
   static const String guardianName = 'guardian_name';
   static const String guardianContact = 'guardian_contact';
   static const String dateAdmitted = 'date_admitted';
+}
+
+abstract final class TeacherDetailsCols {
+  static const String userId = 'user_id';
+  static const String licenseId = 'license_id';
+  static const String rank = 'rank';
+  static const String position = 'position';
+  static const String sex = 'sex';
+  static const String birthdate = 'birthdate';
+  static const String homeAddress = 'home_address';
+  static const String dateHired = 'date_hired';
+  static const String educationLevel = 'education_level';
+  static const String specialization = 'specialization';
+  static const String contactNumber = 'contact_number';
 }
 
 abstract final class AttendanceRecordsCols {

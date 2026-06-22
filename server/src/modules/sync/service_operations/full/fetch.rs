@@ -210,6 +210,7 @@ impl super::SyncFullService {
                 }),
                 school_details,
                 learner_details: vec![],
+                teacher_details: vec![],
                 attendance_records: vec![],
                 core_values_records: vec![],
                 student_school_history: vec![],
@@ -261,6 +262,7 @@ impl super::SyncFullService {
                 sync_plan: None,
                 school_details: None,
                 learner_details: vec![],
+                teacher_details: vec![],
                 attendance_records: vec![],
                 core_values_records: vec![],
                 student_school_history: vec![],
@@ -558,6 +560,7 @@ impl super::SyncFullService {
 
         // Fetch student records if scoped
         let mut learner_details: Vec<Value> = Vec::new();
+        let mut teacher_details: Vec<Value> = Vec::new();
         let mut attendance_records: Vec<Value> = Vec::new();
         let mut core_values_records: Vec<Value> = Vec::new();
         let mut student_school_history: Vec<Value> = Vec::new();
@@ -586,6 +589,52 @@ impl super::SyncFullService {
             learner_details = self
                 .manifest_repo
                 .get_learner_details_for_students(student_ids.clone(), 10000)
+                .await?
+                .records;
+
+            // Derive teacher_ids from class_participants by looking up user roles
+            let participant_user_ids: Vec<Uuid> = participants
+                .iter()
+                .map(|p| p.user_id)
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect();
+
+            let teacher_ids: Vec<Uuid> = if participant_user_ids.is_empty() {
+                Vec::new()
+            } else {
+                ::entity::users::Entity::find()
+                    .filter(::entity::users::Column::Id.is_in(participant_user_ids))
+                    .filter(::entity::users::Column::Role.eq("teacher"))
+                    .filter(::entity::users::Column::DeletedAt.is_null())
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .into_iter()
+                    .map(|u| u.id)
+                    .collect()
+            };
+
+            // For admin, also fetch all users with role=teacher (not just class participants)
+            let teacher_ids = if user_role == "admin" {
+                ::entity::users::Entity::find()
+                    .filter(::entity::users::Column::Role.eq("teacher"))
+                    .filter(::entity::users::Column::DeletedAt.is_null())
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .into_iter()
+                    .map(|u| u.id)
+                    .collect::<HashSet<_>>()
+                    .into_iter()
+                    .collect()
+            } else {
+                teacher_ids
+            };
+
+            teacher_details = self
+                .manifest_repo
+                .get_teacher_details_for_teachers(teacher_ids, 10000)
                 .await?
                 .records;
 
@@ -692,6 +741,7 @@ impl super::SyncFullService {
             sync_plan: None,
             school_details: None,
             learner_details,
+            teacher_details,
             attendance_records,
             core_values_records,
             student_school_history,

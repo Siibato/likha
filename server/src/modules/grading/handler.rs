@@ -275,7 +275,7 @@ pub async fn get_final_grades(
             Ok(students) => {
                 let futures = students
                     .iter()
-                    .map(|(sid, _)| service.compute_final_grade(class_id, *sid));
+                    .map(|(sid, _, _)| service.compute_final_grade(class_id, *sid));
                 match try_join_all(futures).await {
                     Ok(results) => success_response(results, StatusCode::OK).into_response(),
                     Err(e) => e.into_response(),

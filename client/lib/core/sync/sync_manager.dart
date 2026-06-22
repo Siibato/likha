@@ -323,10 +323,10 @@ class SyncManager {
       _log.log('_runSync() - END');
 
       // Re-flush any entries that arrived while we were busy syncing
-      final pendingCount = await _syncQueue.getPendingCount();
-      if (pendingCount > 0) {
-        _log.log('_runSync() - $pendingCount new queue entries arrived during sync, re-flushing');
-        _runSync();
+      final retriable = await _syncQueue.getAllRetriable();
+      if (retriable.isNotEmpty) {
+        _log.log('_runSync() - ${retriable.length} new queue entries arrived during sync, re-flushing');
+        await _runSync();
       }
     }
   }

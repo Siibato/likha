@@ -20,7 +20,7 @@ pub fn generate_grade_scores(
 }
 
 pub fn generate_term_grades(
-    ctx: &SeedContext,
+    _ctx: &SeedContext,
     classes: &[ClassSpec],
     students: &[UserSpec],
     grade_scores: &[GradeScoreSpec],

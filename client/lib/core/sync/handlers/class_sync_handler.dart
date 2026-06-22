@@ -240,7 +240,8 @@ class ClassSyncHandler {
       {
         CommonCols.id: student.id,
         UsersCols.username: student.username,
-        UsersCols.fullName: student.fullName,
+        UsersCols.firstName: student.firstName,
+        UsersCols.lastName: student.lastName,
         UsersCols.role: student.role,
         UsersCols.accountStatus: student.accountStatus,
         CommonCols.createdAt: student.createdAt.toIso8601String(),

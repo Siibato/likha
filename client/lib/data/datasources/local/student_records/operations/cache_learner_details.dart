@@ -18,8 +18,8 @@ Future<void> cacheLearnerDetails(
       final updated = await txn.update(
         DbTables.learnerDetails,
         map,
-        where: '${CommonCols.id} = ?',
-        whereArgs: [map[CommonCols.id]],
+        where: '${LearnerDetailsCols.userId} = ?',
+        whereArgs: [map[LearnerDetailsCols.userId]],
       );
       if (updated == 0) {
         await txn.insert(DbTables.learnerDetails, map);
@@ -29,8 +29,8 @@ Future<void> cacheLearnerDetails(
       final updated = await db.update(
         DbTables.learnerDetails,
         map,
-        where: '${CommonCols.id} = ?',
-        whereArgs: [map[CommonCols.id]],
+        where: '${LearnerDetailsCols.userId} = ?',
+        whereArgs: [map[LearnerDetailsCols.userId]],
       );
       if (updated == 0) {
         await db.insert(DbTables.learnerDetails, map);

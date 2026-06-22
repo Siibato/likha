@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::modules::grading::helpers::deped_weights::get_descriptor;
+use crate::modules::student_records::schema::CoreValuesResponse;
 
 // ===== REQUEST SCHEMAS =====
 
@@ -192,6 +193,13 @@ pub struct SubjectGrade {
 // ===== SF9/SF10 SCHEMAS =====
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Sf9AttendanceRecord {
+    pub month: String,
+    pub school_days: i32,
+    pub days_present: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Sf9Response {
     pub student_id: String,
     pub student_name: String,
@@ -207,6 +215,10 @@ pub struct Sf9Response {
     pub term_type: Option<String>,
     pub subjects: Vec<Sf9SubjectRow>,
     pub general_average: Option<Sf9TermAverages>,
+    #[serde(default)]
+    pub core_values: Vec<CoreValuesResponse>,
+    #[serde(default)]
+    pub attendance: Vec<Sf9AttendanceRecord>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

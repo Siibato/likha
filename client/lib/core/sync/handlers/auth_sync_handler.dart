@@ -106,7 +106,8 @@ class AuthSyncHandler {
         {
           CommonCols.id: model.id,
           UsersCols.username: model.username,
-          UsersCols.fullName: model.fullName,
+          UsersCols.firstName: model.firstName,
+          UsersCols.lastName: model.lastName,
           UsersCols.role: model.role,
           UsersCols.accountStatus: model.accountStatus,
           CommonCols.updatedAt:
@@ -151,10 +152,15 @@ class AuthSyncHandler {
 
   Future<SyncResult> _handleAdminUserCreate(SyncQueueEntry entry) async {
     final payload = entry.payload;
+    final learnerDetails = payload['learner_details'] as Map<String, dynamic>?;
+    final teacherDetails = payload['teacher_details'] as Map<String, dynamic>?;
     final model = await _remote.createAccount(
       username: payload['username'] as String,
-      fullName: payload['full_name'] as String,
+      firstName: payload['first_name'] as String? ?? '',
+      lastName: payload['last_name'] as String? ?? '',
       role: payload['role'] as String,
+      learnerDetails: learnerDetails,
+      teacherDetails: teacherDetails,
       idempotencyKey: entry.id,
     );
     await _reconcileUser(entry, model);
@@ -184,7 +190,8 @@ class AuthSyncHandler {
     final userId = payload['id'] as String;
     final model = await _remote.updateAccount(
       userId: userId,
-      fullName: payload['full_name'] as String?,
+      firstName: payload['first_name'] as String?,
+      lastName: payload['last_name'] as String?,
       role: payload['role'] as String?,
       idempotencyKey: entry.id,
     );

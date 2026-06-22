@@ -125,12 +125,13 @@ Future<void> _seedTermGrade(GradingLocalDataSource local, TermGradeModel pg) asy
   await local.saveTermGrades([pg]);
 }
 
-Future<void> _seedStudent(String id, {String fullName = 'Student'}) async {
+Future<void> _seedStudent(String id, {String firstName = 'Student', String lastName = ''}) async {
   final db = await LocalDatabase().database;
   await db.insert(DbTables.users, {
     CommonCols.id: id,
     UsersCols.username: id,
-    UsersCols.fullName: fullName,
+    UsersCols.firstName: firstName,
+    UsersCols.lastName: lastName,
     UsersCols.role: 'student',
     UsersCols.accountStatus: 'active',
     CommonCols.createdAt: DateTime.now().toIso8601String(),
@@ -283,8 +284,8 @@ void main() {
 
   group('createGradeItem', () {
     test('returns MutationResult<GradeItem> with pending, enqueues create op, and inserts score=0 rows for enrolled students', () async {
-      await _seedStudent('student-a', fullName: 'Alice');
-      await _seedStudent('student-b', fullName: 'Bob');
+      await _seedStudent('student-a', firstName: 'Alice');
+      await _seedStudent('student-b', firstName: 'Bob');
       await _seedParticipant('class-1', 'student-a');
       await _seedParticipant('class-1', 'student-b');
 

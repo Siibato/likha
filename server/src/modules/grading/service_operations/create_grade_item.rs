@@ -30,17 +30,6 @@ impl crate::modules::grading::service::GradeComputationService {
             )
             .await?;
 
-        let enrolled = self.repo.get_enrolled_student_ids(class_id).await?;
-        for (student_id, _name) in &enrolled {
-            self.repo.upsert_score(item.id, *student_id, Some(0.0), true).await?;
-        }
-        tracing::info!(
-            "Initialized {} score=0 rows for grade_item {} in class {}",
-            enrolled.len(),
-            item.id,
-            class_id
-        );
-
         let score_models = self.repo.get_scores_by_item(item.id).await?;
         let scores: Vec<GradeScoreResponse> =
             score_models.into_iter().map(GradeScoreResponse::from).collect();

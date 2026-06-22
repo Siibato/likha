@@ -23,7 +23,8 @@ void main() {
     final tUpdatedUser = User(
       id: 'user-1',
       username: 'testuser',
-      fullName: 'Updated Name',
+      firstName: 'Updated',
+      lastName: 'Name',
       role: 'teacher',
       accountStatus: 'activated',
       isActive: true,
@@ -36,12 +37,14 @@ void main() {
     test('should update full name successfully', () async {
       final updateParams = UpdateAccountParams(
         userId: 'user-1',
-        fullName: 'Updated Name',
+        firstName: 'Updated',
+        lastName: 'Name',
       );
 
       when(() => mockRepository.updateAccount(
         userId: any(named: 'userId'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => Right(tMutationResult));
 
@@ -51,7 +54,8 @@ void main() {
       expect(result.getOrElse(() => throw Exception()).entity.fullName, 'Updated Name');
       verify(() => mockRepository.updateAccount(
         userId: 'user-1',
-        fullName: 'Updated Name',
+        firstName: 'Updated',
+        lastName: 'Name',
         role: null,
       )).called(1);
     });
@@ -64,7 +68,8 @@ void main() {
 
       when(() => mockRepository.updateAccount(
         userId: any(named: 'userId'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => Right(tMutationResult));
 
@@ -76,13 +81,15 @@ void main() {
     test('should update both name and role successfully', () async {
       final updateParams = UpdateAccountParams(
         userId: 'user-1',
-        fullName: 'Updated Name',
+        firstName: 'Updated',
+        lastName: 'Name',
         role: 'admin',
       );
 
       when(() => mockRepository.updateAccount(
         userId: any(named: 'userId'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => Right(tMutationResult));
 
@@ -99,7 +106,8 @@ void main() {
 
       when(() => mockRepository.updateAccount(
         userId: any(named: 'userId'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => const Left(ValidationFailure('Invalid role')));
 
@@ -115,12 +123,14 @@ void main() {
     test('should return ServerFailure when user not found', () async {
       final updateParams = UpdateAccountParams(
         userId: 'nonexistent',
-        fullName: 'Updated Name',
+        firstName: 'Updated',
+        lastName: 'Name',
       );
 
       when(() => mockRepository.updateAccount(
         userId: any(named: 'userId'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => const Left(ServerFailure('User not found')));
 
@@ -136,12 +146,14 @@ void main() {
     test('should return UnauthorizedFailure when not authorized', () async {
       final updateParams = UpdateAccountParams(
         userId: 'user-1',
-        fullName: 'Updated Name',
+        firstName: 'Updated',
+        lastName: 'Name',
       );
 
       when(() => mockRepository.updateAccount(
         userId: any(named: 'userId'),
-        fullName: any(named: 'fullName'),
+        firstName: any(named: 'firstName'),
+        lastName: any(named: 'lastName'),
         role: any(named: 'role'),
       )).thenAnswer((_) async => const Left(UnauthorizedFailure('Unauthorized')));
 

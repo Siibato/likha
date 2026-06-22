@@ -64,7 +64,8 @@ impl crate::modules::assessment::service::AssessmentService {
         let response = SubmissionSummaryResponse {
             id: submitted.id,
             student_id: submitted.user_id,
-            student_name: student.full_name,
+            student_first_name: student.first_name,
+            student_last_name: student.last_name,
             student_username: student.username,
             started_at: submitted.started_at.to_string(),
             submitted_at: submitted.submitted_at.map(|dt| dt.to_string()),

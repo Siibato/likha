@@ -14,7 +14,7 @@ pub fn advisory_core_values() -> Vec<CoreValuesSpec> {
     let advisory_class = cid("adv10");
     let school_year = "2025-2026";
 
-    for (sidx, &(uname, _)) in STUDENT_DATA.iter().enumerate() {
+    for (sidx, &(uname, _, _)) in STUDENT_DATA.iter().enumerate() {
         for term in 1..=4 {
             for (vidx, &core_value_id) in CORE_VALUE_IDS.iter().enumerate() {
                 let marking = MARKINGS[(sidx + vidx + term) % 4];

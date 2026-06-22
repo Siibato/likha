@@ -17,7 +17,8 @@ pub async fn get_users_paginated(
         serde_json::json!({
             "id": r.id.to_string(),
             "username": r.username,
-            "full_name": r.full_name,
+            "first_name": r.first_name,
+            "last_name": r.last_name,
             "role": r.role,
             "account_status": r.account_status,
             "is_active": is_active,

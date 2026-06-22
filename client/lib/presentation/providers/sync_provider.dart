@@ -35,6 +35,12 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
   Future<void> refreshCounts() => _updateCounts();
 
+  /// Trigger a full sync cycle: outbound flush then inbound delta/full sync.
+  Future<void> sync() async {
+    await _syncManager.sync();
+    await _updateCounts();
+  }
+
   @override
   void dispose() {
     _syncManager.setStateListener(null);

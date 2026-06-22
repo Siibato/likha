@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
@@ -147,7 +148,15 @@ class _GradeItemScoresPageState
   @override
   Widget build(BuildContext context) {
     final classState = ref.watch(classProvider);
-    final students = classState.currentClassDetail?.students ?? [];
+    final rawStudents = classState.currentClassDetail?.students ?? [];
+    final students = List<Participant>.from(rawStudents)
+      ..sort((a, b) {
+        final lastCmp = a.student.lastName.toLowerCase().compareTo(
+            b.student.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return a.student.firstName.toLowerCase().compareTo(
+            b.student.firstName.toLowerCase());
+      });
     final scoresState = ref.watch(gradeScoresProvider);
     final scores = scoresState.scoresByItem[widget.gradeItem.id] ?? [];
 

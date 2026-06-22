@@ -9,15 +9,16 @@ use ::entity::{
     learner_details, attendance_records, core_values_records,
     student_school_history, previous_school_subjects, previous_school_attendance,
     previous_school_term_grades,
+    teacher_details,
 };
 use crate::utils::{AppError, AppResult};
 use super::{ManifestEntry, PaginatedRecords};
 
-/// Build a map of class_id -> (teacher_id, teacher_username, teacher_full_name)
+/// Build a map of class_id -> (teacher_id, teacher_username, teacher_first_name, teacher_last_name)
 pub async fn build_teacher_map(
     db: &DatabaseConnection,
     class_ids: &[Uuid],
-) -> AppResult<std::collections::HashMap<Uuid, (Uuid, String, String)>> {
+) -> AppResult<std::collections::HashMap<Uuid, (Uuid, String, String, String)>> {
     let participants = class_participants::Entity::find()
         .filter(class_participants::Column::ClassId.is_in(class_ids.to_vec()))
         .filter(class_participants::Column::RemovedAt.is_null())
@@ -35,7 +36,7 @@ pub async fn build_teacher_map(
             if user.role == "teacher" {
                 map.insert(
                     participant.class_id,
-                    (user.id, user.username.clone(), user.full_name.clone()),
+                    (user.id, user.username.clone(), user.first_name.clone(), user.last_name.clone()),
                 );
             }
         }
@@ -197,6 +198,26 @@ pub fn learner_details_to_json(r: learner_details::Model) -> Value {
         "guardian_name": r.guardian_name,
         "guardian_contact": r.guardian_contact,
         "date_admitted": r.date_admitted.map(|d| d.to_string()),
+        "created_at": r.created_at.to_string(),
+        "updated_at": r.updated_at.to_string(),
+        "deleted_at": r.deleted_at.map(|d| d.to_string()),
+    })
+}
+
+pub fn teacher_details_to_json(r: teacher_details::Model) -> Value {
+    serde_json::json!({
+        "id": r.id.to_string(),
+        "user_id": r.user_id.to_string(),
+        "license_id": r.license_id,
+        "rank": r.rank,
+        "position": r.position,
+        "sex": r.sex,
+        "birthdate": r.birthdate.map(|d| d.to_string()),
+        "home_address": r.home_address,
+        "date_hired": r.date_hired.map(|d| d.to_string()),
+        "education_level": r.education_level,
+        "specialization": r.specialization,
+        "contact_number": r.contact_number,
         "created_at": r.created_at.to_string(),
         "updated_at": r.updated_at.to_string(),
         "deleted_at": r.deleted_at.map(|d| d.to_string()),

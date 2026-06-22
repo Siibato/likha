@@ -21,7 +21,8 @@ void main() {
     final tUser = User(
       id: 'user-1',
       username: 'testuser',
-      fullName: 'Test User',
+      firstName: 'Test',
+    lastName: 'User',
       role: 'student',
       accountStatus: 'activated',
       isActive: true,

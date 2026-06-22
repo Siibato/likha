@@ -40,8 +40,8 @@ pub async fn return_submission(
         Some(format!("Returned assignment '{}' for revision", assignment.title)),
     ).await;
 
-    let student_name = assignment_repo.find_student_name(returned.student_id).await?;
+    let (student_first_name, student_last_name) = assignment_repo.find_student_name(returned.student_id).await?;
     let files = assignment_repo.find_files_by_submission(submission_id).await?;
 
-    Ok(build_submission_response(returned, student_name, files))
+    Ok(build_submission_response(returned, student_first_name, student_last_name, files))
 }

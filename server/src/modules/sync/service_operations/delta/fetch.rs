@@ -235,6 +235,7 @@ impl super::SyncDeltaService {
 
         // Fetch student record deltas if scoped
         let mut learner_details_raw: Vec<serde_json::Value> = Vec::new();
+        let mut teacher_details_raw: Vec<serde_json::Value> = Vec::new();
         let mut attendance_records_raw: Vec<serde_json::Value> = Vec::new();
         let mut core_values_records_raw: Vec<serde_json::Value> = Vec::new();
         let mut student_school_history_raw: Vec<serde_json::Value> = Vec::new();
@@ -263,6 +264,35 @@ impl super::SyncDeltaService {
             learner_details_raw = self.manifest_repo
                 .get_learner_details_since(student_ids.clone(), last_sync_at)
                 .await?;
+
+            // Derive teacher_ids from class_participants by looking up user roles
+            let teacher_ids: Vec<Uuid> = if user_role == "admin" {
+                ::entity::users::Entity::find()
+                    .filter(::entity::users::Column::Role.eq("teacher"))
+                    .filter(::entity::users::Column::DeletedAt.is_null())
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .into_iter()
+                    .map(|u| u.id)
+                    .collect()
+            } else {
+                ::entity::users::Entity::find()
+                    .filter(::entity::users::Column::Id.is_in(participants.iter().map(|p| p.user_id).collect::<Vec<_>>()))
+                    .filter(::entity::users::Column::Role.eq("teacher"))
+                    .filter(::entity::users::Column::DeletedAt.is_null())
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .into_iter()
+                    .map(|u| u.id)
+                    .collect()
+            };
+
+            teacher_details_raw = self.manifest_repo
+                .get_teacher_details_since(teacher_ids, last_sync_at)
+                .await?;
+
             attendance_records_raw = self.manifest_repo
                 .get_attendance_since(class_ids.clone(), last_sync_at)
                 .await?;
@@ -305,6 +335,7 @@ impl super::SyncDeltaService {
         let activity_logs_deltas = separate_deltas(activity_logs_raw);
         let school_details_deltas = separate_deltas(school_details_raw);
         let learner_details_deltas = separate_deltas(learner_details_raw);
+        let teacher_details_deltas = separate_deltas(teacher_details_raw);
         let attendance_records_deltas = separate_deltas(attendance_records_raw);
         let core_values_records_deltas = separate_deltas(core_values_records_raw);
         let student_school_history_deltas = separate_deltas(student_school_history_raw);
@@ -346,6 +377,7 @@ impl super::SyncDeltaService {
                 activity_logs: activity_logs_deltas,
                 school_details: school_details_deltas,
                 learner_details: learner_details_deltas,
+                teacher_details: teacher_details_deltas,
                 attendance_records: attendance_records_deltas,
                 core_values_records: core_values_records_deltas,
                 student_school_history: student_school_history_deltas,

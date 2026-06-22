@@ -26,8 +26,8 @@ pub async fn get_submission_detail(
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let student_name = assignment_repo.find_student_name(submission.student_id).await?;
+    let (student_first_name, student_last_name) = assignment_repo.find_student_name(submission.student_id).await?;
     let files = assignment_repo.find_files_by_submission(submission_id).await?;
 
-    Ok(build_submission_response(submission, student_name, files))
+    Ok(build_submission_response(submission, student_first_name, student_last_name, files))
 }

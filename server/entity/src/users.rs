@@ -9,7 +9,8 @@ pub struct Model {
     #[sea_orm(unique)]
     pub username: String,
     pub password_hash: Option<String>,
-    pub full_name: String,
+    pub first_name: String,
+    pub last_name: String,
     pub role: String,
     pub account_status: String,
     pub activated_at: Option<chrono::NaiveDateTime>,

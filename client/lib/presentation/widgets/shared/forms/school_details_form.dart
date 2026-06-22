@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/widgets/shared/cards/info_panel.dart';
+import 'package:likha/presentation/widgets/shared/forms/school_year_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 /// Custom input formatter to convert text to uppercase
@@ -24,7 +25,8 @@ class SchoolDetailsForm extends StatelessWidget {
   final TextEditingController schoolNameController;
   final TextEditingController regionController;
   final TextEditingController divisionController;
-  final TextEditingController schoolYearController;
+  final String? selectedSchoolYear;
+  final ValueChanged<String?>? onSchoolYearChanged;
   final TextEditingController? districtController;
   final TextEditingController? schoolHeadNameController;
   final TextEditingController? schoolHeadPositionController;
@@ -37,7 +39,8 @@ class SchoolDetailsForm extends StatelessWidget {
     required this.schoolNameController,
     required this.regionController,
     required this.divisionController,
-    required this.schoolYearController,
+    this.selectedSchoolYear,
+    this.onSchoolYearChanged,
     this.districtController,
     this.schoolHeadNameController,
     this.schoolHeadPositionController,
@@ -104,17 +107,10 @@ class SchoolDetailsForm extends StatelessWidget {
             hintText: 'e.g., Principal II',
           ),
         if (schoolHeadPositionController != null) const SizedBox(height: 16),
-        StyledTextField(
-          controller: schoolYearController,
-          label: 'School Year',
-          icon: Icons.calendar_today_outlined,
+        SchoolYearDropdown(
+          value: selectedSchoolYear,
+          onChanged: onSchoolYearChanged,
           enabled: enabled,
-          hintText: 'e.g., 2025-2026',
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]')),
-            LengthLimitingTextInputFormatter(9),
-          ],
         ),
         if (schoolCodeController != null) ...[
           const SizedBox(height: 16),

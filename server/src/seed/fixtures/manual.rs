@@ -26,11 +26,13 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     // Teachers (5)
     for i in 1..=5 {
         let username = teacher_username(i);
-        let full_name = teacher_full_name(i);
+        let first_name = teacher_first_name(i);
+        let last_name = teacher_last_name(i);
         users.push(UserSpec {
             id: user_id(&username),
             username: username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role: "teacher".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_TEACHER, 4).unwrap()),
             account_status: "active".into(),
@@ -43,11 +45,13 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     // Students (70)
     for i in 1..=70 {
         let username = student_username(i);
-        let full_name = student_full_name(i);
+        let first_name = student_first_name(i);
+        let last_name = student_last_name(i);
         users.push(UserSpec {
             id: user_id(&username),
             username: username.clone(),
-            full_name,
+            first_name,
+            last_name,
             role: "student".into(),
             password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
             account_status: "active".into(),
@@ -61,7 +65,8 @@ pub fn manual_users(ctx: &SeedContext) -> Vec<UserSpec> {
     users.push(UserSpec {
         id: user_id("student_deleted_99"),
         username: "student_deleted_99".into(),
-        full_name: "Student Deleted 99".into(),
+        first_name: "Student".into(),
+        last_name: "Deleted 99".into(),
         role: "student".into(),
         password_hash: Some(bcrypt::hash(PASSWORD_STUDENT, 4).unwrap()),
         account_status: "active".into(),
@@ -724,11 +729,11 @@ fn generate_questions(
         // Competency assignment
         let tos_competency_id = comp_ids.get(q_idx % comp_ids.len()).copied();
 
-        let q_id = question_id(&format!("{}_t{}_assess_{}", class_key, term, assess_idx), q_idx as u32);
+        let q_id = question_id(&format!("{}_t{}_assess_{}", class_key, term_number, assess_idx), q_idx as u32);
 
         // Generate choices for MCQ
         let choices = if has_choices {
-            let q_id_str = format!("{}_t{}_assess_{}_q{}", class_key, term, assess_idx, q_idx);
+            let q_id_str = format!("{}_t{}_assess_{}_q{}", class_key, term_number, assess_idx, q_idx);
             vec![
                 ChoiceSpec { id: choice_id(&q_id_str, 0), text: "Option A".into(), is_correct: true, order: 0 },
                 ChoiceSpec { id: choice_id(&q_id_str, 1), text: "Option B".into(), is_correct: false, order: 1 },

@@ -2,7 +2,8 @@ use crate::modules::assignment::schema::*;
 
 pub fn build_submission_response(
     submission: ::entity::assignment_submissions::Model,
-    student_name: String,
+    student_first_name: String,
+    student_last_name: String,
     files: Vec<::entity::submission_files::Model>,
 ) -> AssignmentSubmissionResponse {
     let file_responses: Vec<FileMetadataResponse> = files
@@ -20,7 +21,8 @@ pub fn build_submission_response(
         id: submission.id,
         assignment_id: submission.assignment_id,
         student_id: submission.student_id,
-        student_name,
+        student_first_name,
+        student_last_name,
         status: submission.status,
         text_content: submission.text_content,
         submitted_at: submission.submitted_at.map(|dt| dt.to_string()),

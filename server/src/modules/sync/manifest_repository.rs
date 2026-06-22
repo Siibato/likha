@@ -306,4 +306,12 @@ impl ManifestRepository {
     pub async fn get_previous_attendance_since(&self, student_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
         ops::get_previous_attendance_since(&self.db, student_ids, since).await
     }
+
+    pub async fn get_teacher_details_for_teachers(&self, teacher_ids: Vec<Uuid>, limit: i64) -> crate::utils::AppResult<PaginatedRecords> {
+        ops::get_teacher_details_for_teachers(&self.db, teacher_ids, limit).await
+    }
+
+    pub async fn get_teacher_details_since(&self, teacher_ids: Vec<Uuid>, since: NaiveDateTime) -> crate::utils::AppResult<Vec<Value>> {
+        ops::get_teacher_details_since(&self.db, teacher_ids, since).await
+    }
 }

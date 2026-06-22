@@ -10,13 +10,15 @@ pub async fn search_students(db: &DatabaseConnection, query: &str) -> AppResult<
         condition = condition.add(
             Condition::any()
                 .add(users::Column::Username.contains(query))
-                .add(users::Column::FullName.contains(query)),
+                .add(users::Column::FirstName.contains(query))
+                .add(users::Column::LastName.contains(query)),
         );
     }
 
     users::Entity::find()
         .filter(condition)
-        .order_by_asc(users::Column::FullName)
+        .order_by_asc(users::Column::LastName)
+        .order_by_asc(users::Column::FirstName)
         .all(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))

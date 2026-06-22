@@ -12,11 +12,11 @@ impl crate::modules::grading::service::GradeComputationService {
         let enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
         let futures = enrolled_students
             .iter()
-            .map(|(student_id, _)| self.compute_student_term(class_id, *student_id, term_number));
+            .map(|(student_id, _, _)| self.compute_student_term(class_id, *student_id, term_number));
         let result = try_join_all(futures).await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_class_grades(class_id, term_number).await;
-            for (student_id, _) in &enrolled_students {
+            for (student_id, _, _) in &enrolled_students {
                 inv.invalidate_student_grades(class_id, *student_id, term_number).await;
             }
         }

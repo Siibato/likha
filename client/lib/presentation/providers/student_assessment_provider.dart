@@ -293,11 +293,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
         }
         state = state.copyWith(isLoading: false, currentStudentSubmission: submission);
         if (!submission.isSubmitted) return;
-        loadStudentResults(submission.id).then((_) {
-          if (state.error != null) {
-            state = state.copyWith(error: null);
-          }
-        }).ignore();
       },
     );
     ProviderLogger.instance.log('loadScorePreview() END - currentStudentSubmission=${state.currentStudentSubmission?.id}');
@@ -314,13 +309,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       (failure) {}, // silent: background refresh should not show errors
       (submission) {
         state = state.copyWith(currentStudentSubmission: submission);
-        if (submission != null && submission.isSubmitted) {
-          loadStudentResults(submission.id).then((_) {
-            if (state.error != null) {
-              state = state.copyWith(error: null);
-            }
-          }).ignore();
-        }
       },
     );
   }

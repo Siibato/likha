@@ -29,7 +29,7 @@ class _AdminSchoolDetailsPageState
   final _districtController = TextEditingController();
   final _schoolHeadNameController = TextEditingController();
   final _schoolHeadPositionController = TextEditingController();
-  final _schoolYearController = TextEditingController();
+  String? _selectedSchoolYear;
   final _schoolCodeController = TextEditingController();
   late String _originalSchoolCode;
   bool _hasSyncedControllers = false;
@@ -51,7 +51,6 @@ class _AdminSchoolDetailsPageState
     _districtController.dispose();
     _schoolHeadNameController.dispose();
     _schoolHeadPositionController.dispose();
-    _schoolYearController.dispose();
     _schoolCodeController.dispose();
     super.dispose();
   }
@@ -65,7 +64,7 @@ class _AdminSchoolDetailsPageState
     _districtController.text = settings.schoolDistrict ?? '';
     _schoolHeadNameController.text = settings.schoolHeadName ?? '';
     _schoolHeadPositionController.text = settings.schoolHeadPosition ?? '';
-    _schoolYearController.text = settings.schoolYear;
+    _selectedSchoolYear = settings.schoolYear;
     _schoolCodeController.text = settings.schoolCode;
     _originalSchoolCode = settings.schoolCode;
     _hasSyncedControllers = true;
@@ -154,7 +153,7 @@ class _AdminSchoolDetailsPageState
       schoolName: name,
       schoolRegion: _regionController.text.trim(),
       schoolDivision: _divisionController.text.trim(),
-      schoolYear: _schoolYearController.text.trim(),
+      schoolYear: _selectedSchoolYear?.trim() ?? '',
       schoolCode: _schoolCodeController.text.trim(),
       schoolDistrict: _districtController.text.trim().isEmpty ? null : _districtController.text.trim(),
       schoolHeadName: _schoolHeadNameController.text.trim().isEmpty ? null : _schoolHeadNameController.text.trim(),
@@ -255,7 +254,8 @@ class _AdminSchoolDetailsPageState
                       districtController: _districtController,
                       schoolHeadNameController: _schoolHeadNameController,
                       schoolHeadPositionController: _schoolHeadPositionController,
-                      schoolYearController: _schoolYearController,
+                      selectedSchoolYear: _selectedSchoolYear,
+                      onSchoolYearChanged: (v) => setState(() => _selectedSchoolYear = v),
                       schoolCodeController: _schoolCodeController,
                       enabled: !isSaving,
                     ),

@@ -9,7 +9,8 @@ import '../helpers/widget_test_helpers.dart';
 User _fakeUser(String role) => User(
       id: 'u1',
       username: 'testuser',
-      fullName: 'Test User',
+      firstName: 'Test',
+      lastName: 'User',
       role: role,
       accountStatus: 'active',
       isActive: true,

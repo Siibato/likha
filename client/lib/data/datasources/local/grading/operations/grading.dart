@@ -1,3 +1,4 @@
+export 'assemble_general_averages_local.dart';
 export 'assemble_sf9_local.dart';
 export 'assemble_sf10_local.dart';
 export 'cache_final_grades.dart';

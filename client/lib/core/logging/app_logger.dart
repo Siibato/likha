@@ -8,6 +8,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// log() / debug() calls are no-ops when the env flag is false.
 /// warn() and error() always emit output regardless of the flag.
 abstract class AppLogger {
+  static const int _maxLogLength = 500;
+
   final String tag;
   final bool _enabled;
 
@@ -19,10 +21,15 @@ abstract class AppLogger {
     return raw == 'true' || raw == '1';
   }
 
+  static String _truncate(String message) {
+    if (message.length <= _maxLogLength) return message;
+    return '${message.substring(0, _maxLogLength)}...(truncated, ${message.length} chars total)';
+  }
+
   /// Gated by the env flag. Use for verbose operational traces.
   void log(String message) {
     if (!_enabled) return;
-    debugPrint('$tag $message');
+    debugPrint('$tag ${_truncate(message)}');
   }
 
   /// Alias for log(). Keeps callsites readable.
@@ -30,11 +37,11 @@ abstract class AppLogger {
 
   /// Always logs. Use for recoverable issues.
   void warn(String message, [Object? error]) {
-    debugPrint('$tag WARN: $message${error != null ? ' | $error' : ''}');
+    debugPrint('$tag WARN: ${_truncate(message)}${error != null ? ' | ${_truncate(error.toString())}' : ''}');
   }
 
   /// Always logs. Use for failures that affect behavior.
   void error(String message, [Object? error]) {
-    debugPrint('$tag ERROR: $message${error != null ? ' | $error' : ''}');
+    debugPrint('$tag ERROR: ${_truncate(message)}${error != null ? ' | ${_truncate(error.toString())}' : ''}');
   }
 }

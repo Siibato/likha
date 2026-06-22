@@ -8,7 +8,8 @@ pub struct ManifestUser {
     pub id: Uuid,
     pub username: String,
     pub role: String,
-    pub full_name: String,
+    pub first_name: String,
+    pub last_name: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,7 +63,8 @@ pub fn build_manifest(
                 id: u.id,
                 username: u.username.clone(),
                 role: u.role.clone(),
-                full_name: u.full_name.clone(),
+                first_name: u.first_name.clone(),
+                last_name: u.last_name.clone(),
             })
             .collect(),
 

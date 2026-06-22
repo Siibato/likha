@@ -65,6 +65,9 @@ class DeltaPayload {
   @JsonKey(name: 'learner_details')
   final EntityDeltas learnerDetails;
 
+  @JsonKey(name: 'teacher_details')
+  final EntityDeltas teacherDetails;
+
   @JsonKey(name: 'attendance_records')
   final EntityDeltas attendanceRecords;
 
@@ -101,6 +104,7 @@ class DeltaPayload {
     required this.activityLogs,
     required this.schoolDetails,
     required this.learnerDetails,
+    required this.teacherDetails,
     required this.attendanceRecords,
     required this.coreValuesRecords,
     required this.studentSchoolHistory,

@@ -5,7 +5,8 @@ class UserModel extends User {
   const UserModel({
     required super.id,
     required super.username,
-    required super.fullName,
+    required super.firstName,
+    required super.lastName,
     required super.role,
     required super.accountStatus,
     required super.isActive,
@@ -25,7 +26,8 @@ class UserModel extends User {
     return UserModel(
       id: json['id'] as String,
       username: json['username'] as String,
-      fullName: json['full_name'] as String,
+      firstName: json['first_name'] as String? ?? '',
+      lastName: json['last_name'] as String? ?? '',
       role: json['role'] as String,
       accountStatus: accountStatus,
       isActive: isActive,
@@ -52,7 +54,8 @@ class UserModel extends User {
     return UserModel(
       id: map['id'] as String,
       username: map['username'] as String,
-      fullName: map['full_name'] as String,
+      firstName: map['first_name'] as String? ?? '',
+      lastName: map['last_name'] as String? ?? '',
       role: map['role'] as String,
       accountStatus: accountStatus ?? 'pending_activation',
       isActive: isActive,
@@ -80,7 +83,8 @@ class UserModel extends User {
     return {
       'id': id,
       'username': username,
-      'full_name': fullName,
+      'first_name': firstName,
+      'last_name': lastName,
       'role': role,
       'account_status': accountStatus,
       'activated_at': activatedAt?.toIso8601String(),
@@ -92,7 +96,8 @@ class UserModel extends User {
     return {
       'id': id,
       'username': username,
-      'full_name': fullName,
+      'first_name': firstName,
+      'last_name': lastName,
       'role': role,
     };
   }
@@ -101,7 +106,8 @@ class UserModel extends User {
     return {
       'id': id,
       'username': username,
-      'full_name': fullName,
+      'first_name': firstName,
+      'last_name': lastName,
       'role': role,
       'account_status': accountStatus,
       'activated_at': activatedAt?.toIso8601String(),
@@ -116,7 +122,8 @@ class UserModel extends User {
   UserModel copyWith({
     String? id,
     String? username,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
     String? accountStatus,
     bool? isActive,
@@ -130,7 +137,8 @@ class UserModel extends User {
     return UserModel(
       id: id ?? this.id,
       username: username ?? this.username,
-      fullName: fullName ?? this.fullName,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       role: role ?? this.role,
       accountStatus: accountStatus ?? this.accountStatus,
       isActive: isActive ?? this.isActive,

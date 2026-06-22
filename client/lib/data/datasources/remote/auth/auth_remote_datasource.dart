@@ -1,4 +1,5 @@
 import 'package:likha/core/network/dio_client.dart';
+import 'package:likha/data/models/auth/account_detail_response_model.dart';
 import 'package:likha/data/models/auth/activity_log_model.dart';
 import 'package:likha/data/models/auth/auth_response_model.dart';
 import 'package:likha/data/models/auth/check_username_result_model.dart';
@@ -31,8 +32,11 @@ abstract class AuthRemoteDataSource {
   // Admin methods
   Future<UserModel> createAccount({
     required String username,
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String role,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
     String? idempotencyKey,
   });
 
@@ -46,12 +50,22 @@ abstract class AuthRemoteDataSource {
 
   Future<UserModel> updateAccount({
     required String userId,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
     String? idempotencyKey,
   });
 
   Future<void> deleteAccount({required String userId, String? idempotencyKey});
+
+  Future<AccountDetailResponseModel> getAccountDetails({required String userId});
+
+  Future<AccountDetailResponseModel> upsertAccountDetails({
+    required String userId,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
+    String? idempotencyKey,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -125,15 +139,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> createAccount({
     required String username,
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String role,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
     String? idempotencyKey,
   }) =>
       ops.createAccount(
         _dioClient,
         username: username,
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         role: role,
+        learnerDetails: learnerDetails,
+        teacherDetails: teacherDetails,
         idempotencyKey: idempotencyKey,
       );
 
@@ -177,14 +197,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> updateAccount({
     required String userId,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? role,
     String? idempotencyKey,
   }) =>
       ops.updateAccount(
         _dioClient,
         userId: userId,
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         role: role,
         idempotencyKey: idempotencyKey,
       );
@@ -194,6 +216,28 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       ops.deleteAccount(
         _dioClient,
         userId: userId,
+        idempotencyKey: idempotencyKey,
+      );
+
+  @override
+  Future<AccountDetailResponseModel> getAccountDetails({required String userId}) =>
+      ops.getAccountDetails(
+        _dioClient,
+        userId: userId,
+      );
+
+  @override
+  Future<AccountDetailResponseModel> upsertAccountDetails({
+    required String userId,
+    Map<String, dynamic>? learnerDetails,
+    Map<String, dynamic>? teacherDetails,
+    String? idempotencyKey,
+  }) =>
+      ops.upsertAccountDetails(
+        _dioClient,
+        userId: userId,
+        learnerDetails: learnerDetails,
+        teacherDetails: teacherDetails,
         idempotencyKey: idempotencyKey,
       );
 }

@@ -36,13 +36,13 @@ impl crate::modules::grading::service::GradeComputationService {
                 .await
                 .ok()
                 .flatten();
-            (p.user_id, user.map(|u| u.full_name).unwrap_or_else(|| "Unknown".to_string()))
+            (p.user_id, user.map(|u| format!("{}, {}", u.last_name, u.first_name)).unwrap_or_else(|| "Unknown".to_string()))
         });
         let name_pairs = join_all(name_futures).await;
         let student_name_map: std::collections::HashMap<Uuid, String> =
             name_pairs.into_iter().collect();
 
-        let students = term_grades_data
+        let mut students: Vec<GradeSummaryRow> = term_grades_data
             .into_iter()
             .map(|qg| {
                 let descriptor = qg
@@ -61,6 +61,7 @@ impl crate::modules::grading::service::GradeComputationService {
                 }
             })
             .collect();
+        students.sort_by(|a, b| a.student_name.cmp(&b.student_name));
 
         let result = GradeSummaryResponse {
             class_id: class_id.to_string(),

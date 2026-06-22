@@ -40,18 +40,40 @@ class StyledButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isLoading ? AppColors.borderLight : bgColor,
         borderRadius: BorderRadius.circular(14),
+        border: variant == StyledButtonVariant.outlined
+            ? Border.all(color: AppColors.borderPrimary, width: 1.5)
+            : null,
       ),
       child: Container(
         margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isLoading ? AppColors.backgroundDisabled : bgColor,
-            foregroundColor: fgColor,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(13),
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return AppColors.backgroundDisabled;
+              }
+              return bgColor;
+            }),
+            foregroundColor: WidgetStateProperty.all(fgColor),
+            elevation: WidgetStateProperty.all(0),
+            shadowColor: WidgetStateProperty.all(Colors.transparent),
+            surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
+            overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+              if (states.contains(WidgetState.hovered)) {
+                return variant == StyledButtonVariant.outlined
+                    ? AppColors.borderLight.withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.12);
+              }
+              return null;
+            }),
+            padding: WidgetStateProperty.all(
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            ),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(13),
+              ),
             ),
           ),
           child: isLoading
@@ -99,7 +121,7 @@ class StyledButton extends StatelessWidget {
       StyledButtonVariant.dark => (AppColors.accentCharcoal, Colors.white),
       StyledButtonVariant.accent => (AppColors.accentAmber, Colors.white),
       StyledButtonVariant.destructive => (AppColors.semanticError, Colors.white),
-      StyledButtonVariant.outlined => (Colors.transparent, AppColors.foregroundSecondary),
+      StyledButtonVariant.outlined => (AppColors.backgroundDisabled, AppColors.foregroundSecondary),
     };
   }
 }

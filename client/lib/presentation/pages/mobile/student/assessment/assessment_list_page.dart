@@ -85,6 +85,7 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
   }
 
   void _onAssessmentTap(Assessment assessment) {
+    ref.read(studentAssessmentProvider.notifier).clearMessages();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -111,7 +112,8 @@ class _AssessmentListPageState extends ConsumerState<AssessmentListPage> {
       if (next.error != null && prev?.error != next.error) {
         final isResultsNotReleased =
             next.error!.toLowerCase().contains('not been released');
-        if (!isResultsNotReleased) {
+        final justFinishedLoading = prev?.isLoading == true && !next.isLoading;
+        if (!isResultsNotReleased && justFinishedLoading) {
           setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
         }
         ref.read(studentAssessmentProvider.notifier).clearMessages();

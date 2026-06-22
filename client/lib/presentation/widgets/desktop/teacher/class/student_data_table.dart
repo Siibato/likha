@@ -38,9 +38,13 @@ class StudentDataTable extends StatelessWidget {
     }
 
     final sorted = List<Participant>.from(students)
-      ..sort((a, b) => a.student.fullName
-          .toLowerCase()
-          .compareTo(b.student.fullName.toLowerCase()));
+      ..sort((a, b) {
+        final lastCmp = a.student.lastName.toLowerCase().compareTo(
+            b.student.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return a.student.firstName.toLowerCase().compareTo(
+            b.student.firstName.toLowerCase());
+      });
 
     return Container(
       width: double.infinity,

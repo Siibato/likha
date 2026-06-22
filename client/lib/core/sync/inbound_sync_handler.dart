@@ -346,6 +346,9 @@ class InboundSyncHandler {
             }
           }
 
+          await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
+          await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);
+
           await _upsertHelpers.upsertAssessments(txn, assessments);
           await _upsertHelpers.upsertQuestions(txn, questions);
           await _upsertHelpers.upsertAssessmentSubmissions(txn, assessmentSubmissions, studentMap);
@@ -363,11 +366,10 @@ class InboundSyncHandler {
           await _upsertHelpers.upsertGradeScores(txn, gradeScores);
           await _upsertHelpers.upsertTermGrades(txn, termGrades);
 
-          await _upsertHelpers.upsertTableOfSpecifications(txn, tableOfSpecifications);
-          await _upsertHelpers.upsertTosCompetencies(txn, tosCompetencies);
           await _upsertHelpers.upsertActivityLogs(txn, activityLogs);
 
           await _upsertHelpers.upsertLearnerDetails(txn, batchResponse.learnerDetails);
+          await _upsertHelpers.upsertTeacherDetails(txn, batchResponse.teacherDetails);
           await _upsertHelpers.upsertAttendanceRecords(txn, batchResponse.attendanceRecords);
           await _upsertHelpers.upsertCoreValuesRecords(txn, batchResponse.coreValuesRecords);
           await _upsertHelpers.upsertStudentSchoolHistory(txn, batchResponse.studentSchoolHistory);

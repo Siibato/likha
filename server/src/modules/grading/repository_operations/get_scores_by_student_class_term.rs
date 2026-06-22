@@ -27,8 +27,8 @@ pub async fn get_scores_by_student_class_term(
         DbBackend::Sqlite,
         sql,
         vec![
-            student_id.to_string().into(),
-            class_id.to_string().into(),
+            student_id.into(),
+            class_id.into(),
             term_number.into(),
         ],
     );

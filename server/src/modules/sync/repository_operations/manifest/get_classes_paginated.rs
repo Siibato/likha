@@ -20,10 +20,10 @@ pub async fn get_classes_paginated(
         .filter(classes::Column::Id.is_in(class_ids))
         .filter(classes::Column::DeletedAt.is_null());
     helpers::paginate_query(db, query, limit, move |r| {
-        let (teacher_id, teacher_username, teacher_full_name) = teacher_map
+        let (teacher_id, teacher_username, teacher_first_name, teacher_last_name) = teacher_map
             .get(&r.id)
-            .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone()))
-            .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string()));
+            .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone(), t.3.clone()))
+            .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string(), "".to_string()));
 
         serde_json::json!({
             "id": r.id.to_string(),
@@ -36,7 +36,8 @@ pub async fn get_classes_paginated(
             "school_year": r.school_year,
             "teacher_id": teacher_id,
             "teacher_username": teacher_username,
-            "teacher_full_name": teacher_full_name,
+            "teacher_first_name": teacher_first_name,
+            "teacher_last_name": teacher_last_name,
             "created_at": r.created_at.to_string(),
             "updated_at": r.updated_at.to_string(),
             "deleted_at": r.deleted_at.map(|d| d.to_string()),

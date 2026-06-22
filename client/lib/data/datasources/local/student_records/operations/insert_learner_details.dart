@@ -17,10 +17,26 @@ Future<void> insertLearnerDetails(
     map[CommonCols.syncStatus] = SyncStatus.pending.dbValue;
 
     if (txn != null) {
-      await txn.insert(DbTables.learnerDetails, map);
+      final updated = await txn.update(
+        DbTables.learnerDetails,
+        map,
+        where: '${LearnerDetailsCols.userId} = ?',
+        whereArgs: [map[LearnerDetailsCols.userId]],
+      );
+      if (updated == 0) {
+        await txn.insert(DbTables.learnerDetails, map);
+      }
     } else {
       final db = await localDatabase.database;
-      await db.insert(DbTables.learnerDetails, map);
+      final updated = await db.update(
+        DbTables.learnerDetails,
+        map,
+        where: '${LearnerDetailsCols.userId} = ?',
+        whereArgs: [map[LearnerDetailsCols.userId]],
+      );
+      if (updated == 0) {
+        await db.insert(DbTables.learnerDetails, map);
+      }
     }
   } catch (e) {
     throw CacheException('Failed to insert learner details locally: $e');

@@ -4,12 +4,13 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'account_status_badge.dart';
 import 'package:likha/presentation/widgets/desktop/admin/shared/date_utils.dart';
 import 'package:likha/presentation/widgets/shared/cards/base_action_card.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
 
 class AccountDetailPanel extends StatelessWidget {
   final User user;
   final bool isLoading;
-  final VoidCallback onEditFullName;
-  final VoidCallback? onEditRole;
+  final VoidCallback onEditFirstName;
+  final VoidCallback onEditLastName;
   final VoidCallback onLock;
   final VoidCallback onUnlock;
   final VoidCallback onResetPassword;
@@ -18,8 +19,8 @@ class AccountDetailPanel extends StatelessWidget {
     super.key,
     required this.user,
     required this.isLoading,
-    required this.onEditFullName,
-    this.onEditRole,
+    required this.onEditFirstName,
+    required this.onEditLastName,
     required this.onLock,
     required this.onUnlock,
     required this.onResetPassword,
@@ -35,24 +36,31 @@ class AccountDetailPanel extends StatelessWidget {
       icon: const Icon(Icons.person_outline_rounded),
       actions: [
         if (user.accountStatus != 'locked')
-          _ActionChip(
+          StyledButton(
+            text: 'Lock Account',
             icon: Icons.lock_outline_rounded,
-            label: 'Lock Account',
-            color: AppColors.semanticErrorDark,
-            onTap: isLoading ? null : onLock,
+            variant: StyledButtonVariant.outlined,
+            isLoading: isLoading,
+            onPressed: onLock,
+            fullWidth: false,
           ),
         if (user.accountStatus == 'locked')
-          _ActionChip(
+          StyledButton(
+            text: 'Unlock Account',
             icon: Icons.lock_open_rounded,
-            label: 'Unlock Account',
-            color: AppColors.semanticSuccessAlt,
-            onTap: isLoading ? null : onUnlock,
+            variant: StyledButtonVariant.outlined,
+            isLoading: isLoading,
+            onPressed: onUnlock,
+            fullWidth: false,
           ),
-        _ActionChip(
+        const SizedBox(width: 8),
+        StyledButton(
+          text: 'Reset Password',
           icon: Icons.refresh_rounded,
-          label: 'Reset Password',
-          color: AppColors.accentAmber,
-          onTap: isLoading ? null : onResetPassword,
+          variant: StyledButtonVariant.outlined,
+          isLoading: isLoading,
+          onPressed: onResetPassword,
+          fullWidth: false,
         ),
       ],
       child: Column(
@@ -60,22 +68,21 @@ class AccountDetailPanel extends StatelessWidget {
         children: [
           const SizedBox(height: 20),
           _EditableRow(
-            label: 'Full Name',
-            value: user.fullName,
-            onEdit: isLoading ? null : onEditFullName,
+            label: 'First Name',
+            value: user.firstName,
+            onEdit: isLoading ? null : onEditFirstName,
           ),
           const Divider(height: 24, color: AppColors.borderLight),
-          if (onEditRole != null)
-            _EditableRow(
-              label: 'Role',
-              value: user.role[0].toUpperCase() + user.role.substring(1),
-              onEdit: isLoading ? null : onEditRole,
-            )
-          else
-            _InfoRow(
-              label: 'Role',
-              value: user.role[0].toUpperCase() + user.role.substring(1),
-            ),
+          _EditableRow(
+            label: 'Last Name',
+            value: user.lastName,
+            onEdit: isLoading ? null : onEditLastName,
+          ),
+          const Divider(height: 24, color: AppColors.borderLight),
+          _InfoRow(
+            label: 'Role',
+            value: user.role[0].toUpperCase() + user.role.substring(1),
+          ),
           const Divider(height: 24, color: AppColors.borderLight),
           Row(
             children: [
@@ -180,53 +187,3 @@ class _EditableRow extends StatelessWidget {
   }
 }
 
-class _ActionChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _ActionChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = onTap == null;
-    return Material(
-      color: isDisabled
-          ? AppColors.backgroundDisabled
-          : color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isDisabled ? AppColors.foregroundTertiary : AppColors.foregroundPrimary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDisabled ? AppColors.foregroundTertiary : AppColors.foregroundPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

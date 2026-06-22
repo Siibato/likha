@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:likha/core/constants/core_values_constants.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/utils/term_utils.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/skeleton_box.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
-
-const _skeletonCoreValues = ['Maka-Diyos', 'Maka-tao', 'Maka-bayan', 'Maka-kalikasan'];
 
 class CoreValuesSkeleton extends StatelessWidget {
   const CoreValuesSkeleton({super.key});
@@ -24,31 +24,28 @@ class CoreValuesSkeleton extends StatelessWidget {
             const SkeletonBox(width: 200, height: 22, borderRadius: 4),
             const SizedBox(height: 20),
             Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
+              columnWidths: {
+                0: const FlexColumnWidth(3),
+                ...Map.fromEntries(List.generate(termCountFromType(null), (i) => MapEntry(i + 1, const FlexColumnWidth(1)))),
               },
               children: [
                 TableRow(
                   children: List.generate(
-                    5,
+                    termCountFromType(null) + 1,
                     (_) => const Padding(
                       padding: EdgeInsets.only(bottom: 8),
                       child: SkeletonBox(width: double.infinity, height: 14, borderRadius: 4),
                     ),
                   ),
                 ),
-                ..._skeletonCoreValues.map((_) => TableRow(
+                ...coreValueStatements.map((_) => TableRow(
                   children: [
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 10),
-                      child: SkeletonBox(width: 100, height: 14, borderRadius: 4),
+                      child: SkeletonBox(width: 200, height: 14, borderRadius: 4),
                     ),
                     ...List.generate(
-                      4,
+                      termCountFromType(null),
                       (_) => const Padding(
                         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                         child: SizedBox(

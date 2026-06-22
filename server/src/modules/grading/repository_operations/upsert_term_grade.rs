@@ -34,9 +34,9 @@ pub async fn upsert_term_grade(
         DbBackend::Sqlite,
         sql,
         vec![
-            id.to_string().into(),
-            class_id.to_string().into(),
-            student_id.to_string().into(),
+            id.into(),
+            class_id.into(),
+            student_id.into(),
             term_number.into(),
             initial_grade.into(),
             transmuted_grade.into(),

@@ -20,11 +20,15 @@ impl crate::modules::grading::service::GradeComputationService {
                 let class_id = item.class_id;
                 let term = item.term_number.unwrap_or(1);
                 tracing::debug!("save_scores: invalidating cache for class_id={} term={}", class_id, term);
-                inv.invalidate_item_scores(grade_item_id).await;
-                inv.invalidate_class_grades(class_id, term).await;
-                for (student_id, _) in &scores {
-                    inv.invalidate_student_grades(class_id, *student_id, term).await;
-                }
+                let inv = inv.clone();
+                let scores = scores.clone();
+                tokio::spawn(async move {
+                    inv.invalidate_item_scores(grade_item_id).await;
+                    inv.invalidate_class_grades(class_id, term).await;
+                    for (student_id, _) in &scores {
+                        inv.invalidate_student_grades(class_id, *student_id, term).await;
+                    }
+                });
             }
         }
         tracing::info!("save_scores: completed for grade_item_id={}", grade_item_id);

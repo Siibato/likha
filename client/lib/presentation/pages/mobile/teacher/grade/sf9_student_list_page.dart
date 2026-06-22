@@ -30,6 +30,9 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(generalAveragesProvider);
+    final students = List<dynamic>.from(state.students)
+      ..sort((a, b) => a.studentName.toLowerCase().compareTo(
+          b.studentName.toLowerCase()));
 
     return MobilePageScaffold(
       title: 'Student Records (SF9)',
@@ -41,7 +44,7 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
         title: 'Student Records (SF9)',
         showBackButton: true,
       ),
-      body: state.students.isEmpty
+      body: students.isEmpty
                           ? const Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -62,9 +65,9 @@ class _Sf9StudentListPageState extends ConsumerState<Sf9StudentListPage> {
                             )
                           : ListView.builder(
                               padding: const EdgeInsets.all(24),
-                              itemCount: state.students.length,
+                              itemCount: students.length,
                               itemBuilder: (context, index) {
-                                final student = state.students[index];
+                                final student = students[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: BaseCard(

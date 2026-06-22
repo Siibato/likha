@@ -25,7 +25,7 @@ pub fn advisory_attendance() -> Vec<AttendanceSpec> {
     let advisory_class = cid("adv10");
     let school_year = "2025-2026";
 
-    for (idx, &(uname, _)) in STUDENT_DATA.iter().enumerate() {
+    for (idx, &(uname, _, _)) in STUDENT_DATA.iter().enumerate() {
         for (month_idx, &(month, school_days)) in MONTHS.iter().enumerate() {
             if school_days == 0 {
                 continue;
