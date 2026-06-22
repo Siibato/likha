@@ -8,6 +8,7 @@ WORKDIR /build
 
 # Copy the full workspace needed by the server crate
 COPY Cargo.toml Cargo.lock ./
+COPY .cargo/ ./.cargo/
 COPY src/ ./src/
 COPY entity/ ./entity/
 COPY migrations/ ./migrations/
