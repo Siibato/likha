@@ -253,7 +253,7 @@ class _BulkSchoolDaysCardState extends State<_BulkSchoolDaysCard> {
           ),
           const SizedBox(width: 12),
           SizedBox(
-            width: 120,
+            width: 80,
             child: TextField(
               controller: _schoolDaysCtrl,
               keyboardType: TextInputType.number,

@@ -6,21 +6,25 @@ impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_student_results(
         &self,
         submission_id: Uuid,
-        student_id: Uuid,
+        requesting_user_id: Uuid,
+        _role: &str,
     ) -> AppResult<StudentResultResponse> {
         let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
-        if submission.user_id != student_id {
+        let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
+            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
+
+        let is_teacher = self.class_repo.is_teacher_of_class(requesting_user_id, assessment.class_id).await?;
+        let is_own = requesting_user_id == submission.user_id;
+
+        if !is_teacher && !is_own {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
         if submission.submitted_at.is_none() {
             return Err(AppError::BadRequest("Assessment not yet submitted".to_string()));
         }
-
-        let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
-            .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
         if !assessment.show_results_immediately && !assessment.results_released {
             return Err(AppError::Forbidden("Results have not been released yet".to_string()));

@@ -34,11 +34,13 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadSubmissionStatus();
-      final status = _computeDetailStatus();
-      if (status == DetailStatus.resultsAvailable) {
-        _loadScore();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadSubmissionStatus();
+      if (mounted) {
+        final status = _computeDetailStatus();
+        if (status == DetailStatus.resultsAvailable) {
+          _loadResults();
+        }
       }
     });
   }
@@ -127,18 +129,15 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage> {
     }
   }
 
-  Future<void> _loadScore() async {
-    final user = ref.read(authProvider).user;
-    if (user == null) return;
-    PageLogger.instance.log('_loadScore() START - assessmentId: ${widget.assessment.id}, studentId: ${user.id}');
+  Future<void> _loadResults() async {
+    final submissionId = ref.read(studentAssessmentProvider).currentStudentSubmission?.id;
+    if (submissionId == null) return;
+    PageLogger.instance.log('_loadResults() START - submissionId: $submissionId');
 
-    await ref.read(studentAssessmentProvider.notifier).loadScorePreview(
-      widget.assessment.id,
-      user.id,
-    );
+    await ref.read(studentAssessmentProvider.notifier).loadStudentResults(submissionId);
 
     final state = ref.read(studentAssessmentProvider);
-    PageLogger.instance.log('_loadScore() END - studentResult: ${state.studentResult}, error: ${state.error}');
+    PageLogger.instance.log('_loadResults() END - studentResult: ${state.studentResult}, error: ${state.error}');
   }
 
   void _navigateToTakeAssessment() {

@@ -117,6 +117,7 @@ impl AssessmentService {
         &self,
         submission_id: Uuid,
         user_id: Uuid,
+        role: &str,
     ) -> crate::utils::AppResult<crate::modules::assessment::schema::StudentResultResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentResults(submission_id).as_str();
@@ -124,7 +125,7 @@ impl AssessmentService {
                 return Ok(cached);
             }
         }
-        let result = self.get_student_results(submission_id, user_id).await?;
+        let result = self.get_student_results(submission_id, user_id, role).await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentResults(submission_id).as_str();
             cache.set(&key, &result, cache.ttl.detail_seconds).await;
