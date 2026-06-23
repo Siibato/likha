@@ -1,0 +1,16 @@
+[Unit]
+Description=Likha server stack
+After=network-online.target docker.socket likha-first-boot.service
+Requires=docker.socket
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/likha/compose
+ExecStart=/usr/bin/docker-compose -f /opt/likha/compose/docker-compose.pi.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker-compose -f /opt/likha/compose/docker-compose.pi.yml down
+Restart=always
+RestartSec=10
+Environment="COMPOSE_PROJECT_NAME=likha"
+
+[Install]
+WantedBy=multi-user.target

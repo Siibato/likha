@@ -13,7 +13,9 @@ TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 PI_IMAGE_DIR      := deployment/pi-image
 PI_GEN_DIR        := /tmp/pi-gen
 PI_GEN_REPO       := https://github.com/RPi-Distro/pi-gen.git
+PI_GEN_REF        := 2026-06-18-raspios-bookworm-arm64
 PI_DEPLOY_DIR     := $(PI_GEN_DIR)/deploy
+BUILD_DIR         := builds
 
 .SHELLFLAGS := -euo pipefail -c
 
@@ -124,7 +126,7 @@ build-pi-server-image: ## Build ARM64 Docker image and save as tar for pi-gen em
 build-pi-image: sync-pi-assets build-pi-server-image ## Build the full Raspberry Pi SD card image (.img.xz)
 	@echo "Cloning pi-gen..."
 	@rm -rf $(PI_GEN_DIR)
-	@git clone --depth 1 $(PI_GEN_REPO) $(PI_GEN_DIR)
+	@git clone --depth 1 --branch $(PI_GEN_REF) $(PI_GEN_REPO) $(PI_GEN_DIR)
 	@echo "Copying Likha config and stage..."
 	@cp $(PI_IMAGE_DIR)/config $(PI_GEN_DIR)/
 	@cp -r $(PI_IMAGE_DIR)/stage-likha $(PI_GEN_DIR)/
@@ -137,9 +139,12 @@ build-pi-image: sync-pi-assets build-pi-server-image ## Build the full Raspberry
 			echo "Output: $$img.xz"; \
 		fi; \
 	done
-	@echo "Done. Image(s) in $(PI_DEPLOY_DIR)/"
+	@mkdir -p $(BUILD_DIR)
+	@cp $(PI_DEPLOY_DIR)/*.img.xz $(BUILD_DIR)/ 2>/dev/null || true
+	@echo "Done. Image(s) in $(BUILD_DIR)/"
 
 clean-pi-image: ## Remove pi-gen clone and build artifacts
+	@docker rm -f pigen_work 2>/dev/null || true
 	@rm -rf $(PI_GEN_DIR)
 	@rm -f $(PI_IMAGE_DIR)/stage-likha/likha-server-arm64.tar
 	@echo "Pi image build artifacts cleaned"
