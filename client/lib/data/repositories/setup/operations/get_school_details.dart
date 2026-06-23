@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -12,8 +11,7 @@ import 'package:likha/domain/setup/entities/school_details.dart';
 
 ResultFuture<SchoolDetails> getSchoolDetails(
   SetupLocalDataSource localDataSource,
-  SetupRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  SetupRemoteDataSource remoteDataSource, {
   bool skipBackgroundRefresh = false,
 }) async {
   try {
@@ -32,11 +30,9 @@ ResultFuture<SchoolDetails> getSchoolDetails(
               if (current.syncStatus == SyncStatus.pending) return;
               if (_settingsHaveChanged(current, fresh)) {
                 await localDataSource.cacheSchoolDetails(fresh);
-                dataEventBus.notifySchoolDetailsChanged();
               }
             } on CacheException {
               await localDataSource.cacheSchoolDetails(fresh);
-              dataEventBus.notifySchoolDetailsChanged();
             }
           },
         );

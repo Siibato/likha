@@ -4,7 +4,6 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
@@ -40,7 +39,6 @@ LearningMaterialRepositoryImpl _buildRepo({
   required SyncQueue syncQueue,
   required ServerReachabilityService reachability,
   required StorageService storage,
-  required DataEventBus eventBus,
   bool isServerReachable = true,
 }) {
   when(() => reachability.isServerReachable).thenReturn(isServerReachable);
@@ -48,7 +46,6 @@ LearningMaterialRepositoryImpl _buildRepo({
     remoteDataSource: remote,
     localDataSource: local,
     syncQueue: syncQueue,
-    dataEventBus: eventBus,
   );
 }
 
@@ -60,7 +57,6 @@ void main() {
   late MockLearningMaterialRemoteDataSource remote;
   late MockServerReachabilityService reachability;
   late MockStorageService storage;
-  late MockDataEventBus eventBus;
 
   setUp(() async {
     await openFreshTestDatabase();
@@ -69,11 +65,8 @@ void main() {
     remote = MockLearningMaterialRemoteDataSource();
     reachability = MockServerReachabilityService();
     storage = MockStorageService();
-    eventBus = MockDataEventBus();
     dotenv.testLoad(fileInput: '');
     when(() => storage.getUserId()).thenAnswer((_) async => null);
-    when(() => eventBus.onMaterialsChanged)
-        .thenAnswer((_) => const Stream.empty());
 
     when(() => reachability.isServerReachable).thenReturn(true);
     when(() => reachability.checkNow()).thenAnswer((_) async => true);
@@ -115,7 +108,6 @@ void main() {
           syncQueue: syncQueue,
           reachability: reachability,
           storage: storage,
-          eventBus: eventBus,
           isServerReachable: false,
         );
 
@@ -138,7 +130,6 @@ void main() {
           syncQueue: syncQueue,
           reachability: reachability,
           storage: storage,
-          eventBus: eventBus,
           isServerReachable: true,
         );
 
@@ -157,7 +148,6 @@ void main() {
           syncQueue: syncQueue,
           reachability: reachability,
           storage: storage,
-          eventBus: eventBus,
           isServerReachable: true,
         );
 
@@ -182,7 +172,6 @@ void main() {
           syncQueue: syncQueue,
           reachability: reachability,
           storage: storage,
-          eventBus: eventBus,
           isServerReachable: false,
         );
 
@@ -213,7 +202,6 @@ void main() {
           syncQueue: syncQueue,
           reachability: reachability,
           storage: storage,
-          eventBus: eventBus,
           isServerReachable: true,
         );
 

@@ -144,8 +144,8 @@ class StudentTasksNotifier extends StateNotifier<StudentTasksState> {
 
     try {
       // Get enrolled classes from classProvider
-      final classState = _ref.read(classProvider);
-      final enrolledClasses = classState.classes;
+      final classListState = _ref.read(classListProvider);
+      final enrolledClasses = classListState.classes;
 
       // Map classId → className for quick lookup
       final classNameMap = {

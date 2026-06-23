@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/controllers/teacher/assignment/assignment_create_controller.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_create_form.dart';
 import 'package:likha/presentation/widgets/shared/feedback/provider_message_listener.dart';
 
@@ -27,7 +27,7 @@ class _CreateAssignmentPageState
     super.initState();
     _controller = AssignmentCreateController(
       classId: widget.classId,
-      notifier: ref.read(assignmentProvider.notifier),
+      notifier: ref.read(assignmentListProvider.notifier),
     );
   }
 
@@ -109,11 +109,11 @@ class _CreateAssignmentPageState
 
   @override
   Widget build(BuildContext context) {
-    return ProviderMessageListener<AssignmentState>(
-      provider: assignmentProvider,
+    return ProviderMessageListener<AssignmentListState>(
+      provider: assignmentListProvider,
       successMessage: (s) => s.successMessage,
       errorMessage: (s) => s.error,
-      onClear: () => ref.read(assignmentProvider.notifier).clearMessages(),
+      onClear: () => ref.read(assignmentListProvider.notifier).clearMessages(),
       intercept: (prev, next) {
         if (next.successMessage == 'Assignment created') {
           Navigator.pop(context, true);

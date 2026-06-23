@@ -1,15 +1,45 @@
+use std::sync::Arc;
+use async_trait::async_trait;
 use uuid::Uuid;
 use chrono::Utc;
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assessment::schema::{CreateAssessmentRequest, UpdateAssessmentRequest};
+use super::delegate::PushDelegate;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
-use super::extract_field;
+use super::result_helpers::{error_result, success_result, parse_uuid_field, parse_str_field};
 
-impl super::SyncPushService {
-    pub(super) async fn handle_assessment_operation(&self, user_id: Uuid, user_role: &str, op: &SyncQueueEntry) -> OperationResult {
+pub struct AssessmentPushDelegate {
+    pub assessment_service: Arc<AssessmentService>,
+}
+
+impl AssessmentPushDelegate {
+    pub fn new(assessment_service: Arc<AssessmentService>) -> Self {
+        Self { assessment_service }
+    }
+}
+
+#[async_trait]
+impl PushDelegate for AssessmentPushDelegate {
+    fn can_handle(&self, entity_type: &str) -> bool {
+        entity_type == "assessment"
+    }
+
+    async fn process(
+        &self,
+        user_id: Uuid,
+        user_role: &str,
+        op: &SyncQueueEntry,
+    ) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
-                let title = extract_field!(self, op, parse_str_field, "title");
+                let class_id = match parse_uuid_field(&op.payload, "class_id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
+                let title = match parse_str_field(&op.payload, "title") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 let description = op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                 let time_limit = op.payload.get("time_limit_minutes").and_then(|v| v.as_i64()).unwrap_or(30) as i32;
                 let open_at = op.payload.get("open_at").and_then(|v| v.as_str()).map(|s| s.to_string())
@@ -17,9 +47,9 @@ impl super::SyncPushService {
                 let close_at = op.payload.get("close_at").and_then(|v| v.as_str()).map(|s| s.to_string())
                     .unwrap_or_else(|| Utc::now().checked_add_signed(chrono::Duration::hours(1)).unwrap().to_rfc3339());
 
-                let client_id = match self.parse_uuid_field(&op.payload, "id") {
+                let client_id = match parse_uuid_field(&op.payload, "id") {
                     Ok(id) => Some(id),
-                    Err(e) => return self.error_result(op, &format!("Client ID is required for assessment creation: {}", e)),
+                    Err(e) => return error_result(op, &format!("Client ID is required for assessment creation: {}", e)),
                 };
                 let request = CreateAssessmentRequest {
                     title,
@@ -36,12 +66,15 @@ impl super::SyncPushService {
                 };
 
                 match self.assessment_service.create_assessment(class_id, request, user_id, client_id).await {
-                    Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(r) => success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "update" => {
-                let assessment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assessment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 let request = UpdateAssessmentRequest {
                     title: op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     description: op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -54,39 +87,51 @@ impl super::SyncPushService {
                     tos_id: op.payload.get("tos_id").map(|v| v.as_str().map(|s| s.to_string())),
                 };
                 match self.assessment_service.update_assessment(assessment_id, request, user_id).await {
-                    Ok(r) => self.success_result(op, None, Some(r.updated_at)),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(r) => success_result(op, None, Some(r.updated_at)),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "delete" => {
-                let assessment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assessment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assessment_service.soft_delete(assessment_id, user_id, user_role).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "publish" => {
-                let assessment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assessment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assessment_service.publish_assessment(assessment_id, user_id).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "release_results" => {
-                let assessment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assessment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assessment_service.release_results(assessment_id, user_id).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "unpublish" => {
-                let assessment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assessment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assessment_service.unpublish_assessment(assessment_id, user_id).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
-            _ => self.error_result(op, &format!("Unknown operation: {}", op.operation)),
+            _ => error_result(op, &format!("Unknown operation: {}", op.operation)),
         }
     }
 }

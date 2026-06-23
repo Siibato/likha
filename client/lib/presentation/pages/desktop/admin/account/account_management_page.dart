@@ -6,7 +6,7 @@ import 'package:likha/presentation/pages/desktop/admin/account/account_detail_pa
 import 'package:likha/presentation/pages/desktop/admin/account/create_account_page.dart';
 import 'package:likha/presentation/widgets/desktop/admin/account/account_data_table.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
@@ -31,7 +31,7 @@ class _AccountManagementPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadAccounts();
+      ref.read(accountManagementProvider.notifier).loadAccounts();
     });
   }
 
@@ -50,7 +50,7 @@ class _AccountManagementPageState
           userName: user.fullName,
           onConfirm: (reason) {
             Navigator.pop(ctx);
-            ref.read(adminProvider.notifier).lockAccount(
+            ref.read(accountManagementProvider.notifier).lockAccount(
                   user.id,
                   true,
                   reason: reason,
@@ -60,7 +60,7 @@ class _AccountManagementPageState
       );
     } else {
       // Unlock directly
-      ref.read(adminProvider.notifier).lockAccount(user.id, false);
+      ref.read(accountManagementProvider.notifier).lockAccount(user.id, false);
     }
   }
 
@@ -83,7 +83,7 @@ class _AccountManagementPageState
             isPrimary: true,
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(adminProvider.notifier).resetAccount(user.id);
+              ref.read(accountManagementProvider.notifier).resetAccount(user.id);
             },
           ),
         ],
@@ -98,7 +98,7 @@ class _AccountManagementPageState
         userName: user.fullName,
         onConfirm: () {
           Navigator.pop(ctx);
-          ref.read(adminProvider.notifier).deleteAccount(user.id);
+          ref.read(accountManagementProvider.notifier).deleteAccount(user.id);
         },
       ),
     );
@@ -106,9 +106,9 @@ class _AccountManagementPageState
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
+    final accountMgmtState = ref.watch(accountManagementProvider);
 
-    final filteredAccounts = adminState.accounts.where((user) {
+    final filteredAccounts = accountMgmtState.accounts.where((user) {
       if (user.isAdmin) return false;
       if (_selectedRole != null && user.role != _selectedRole) return false;
       if (_searchQuery.isEmpty) return true;
@@ -194,7 +194,7 @@ class _AccountManagementPageState
               onSuccess: () {
                 ref.read(syncProvider.notifier).sync().then((_) {
                   if (mounted) {
-                    ref.read(adminProvider.notifier).loadAccounts();
+                    ref.read(accountManagementProvider.notifier).loadAccounts();
                   }
                 });
               },
@@ -216,7 +216,7 @@ class _AccountManagementPageState
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CreateAccountPage()),
-          ).then((_) => ref.read(adminProvider.notifier).loadAccounts()),
+          ).then((_) => ref.read(accountManagementProvider.notifier).loadAccounts()),
           icon: const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create Account'),
           style: FilledButton.styleFrom(
@@ -245,7 +245,7 @@ class _AccountManagementPageState
           const SizedBox(height: 20),
 
           // Data table
-          if (adminState.isLoading && adminState.accounts.isEmpty)
+          if (accountMgmtState.isLoading && accountMgmtState.accounts.isEmpty)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(48),
@@ -263,7 +263,7 @@ class _AccountManagementPageState
                 MaterialPageRoute(
                   builder: (_) => AccountDetailPage(user: user),
                 ),
-              ).then((_) => ref.read(adminProvider.notifier).loadAccounts()),
+              ).then((_) => ref.read(accountManagementProvider.notifier).loadAccounts()),
               onLock: _handleLock,
               onResetPassword: _handleResetPassword,
               onDelete: _handleDelete,

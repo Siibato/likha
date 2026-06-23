@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/models/assignments/assignment_submission_model.dart';
@@ -11,8 +10,7 @@ import 'package:likha/data/datasources/remote/assignments/assignment_remote_data
 
 ResultFuture<List<SubmissionListItem>> getSubmissions(
   AssignmentLocalDataSource localDataSource,
-  AssignmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssignmentRemoteDataSource remoteDataSource, {
   required String assignmentId,
   bool skipBackgroundRefresh = false,
 }) async {
@@ -30,26 +28,10 @@ ResultFuture<List<SubmissionListItem>> getSubmissions(
               if (_submissionsHaveChanged(current, fresh)) {
                 await localDataSource.cacheSubmissions(
                   assignmentId, fresh.cast<SubmissionListItemModel>());
-                String? classId;
-                try {
-                  final assignment = await localDataSource.getCachedAssignmentDetail(assignmentId);
-                  classId = assignment.classId;
-                } catch (_) {}
-                if (classId != null) {
-                  dataEventBus.notifyAssignmentsChanged(classId);
-                }
               }
             } on CacheException {
               await localDataSource.cacheSubmissions(
                 assignmentId, fresh.cast<SubmissionListItemModel>());
-              String? classId;
-              try {
-                final assignment = await localDataSource.getCachedAssignmentDetail(assignmentId);
-                classId = assignment.classId;
-              } catch (_) {}
-              if (classId != null) {
-                dataEventBus.notifyAssignmentsChanged(classId);
-              }
             }
           },
         );

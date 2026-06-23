@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
@@ -11,8 +10,7 @@ import 'package:likha/data/datasources/remote/assessments/assessment_remote_data
 
 ResultFuture<(Assessment, List<Question>)> getAssessmentDetail(
   AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssessmentRemoteDataSource remoteDataSource, {
   required String assessmentId,
   bool skipBackgroundRefresh = false,
 }) async {
@@ -31,11 +29,9 @@ ResultFuture<(Assessment, List<Question>)> getAssessmentDetail(
               final cachedQuestions = result.$2;
               if (_assessmentDetailHasChanged(cachedAssessment, cachedQuestions, fresh.assessment, fresh.questions)) {
                 await localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
-                dataEventBus.notifyAssessmentDetailChanged(assessmentId);
               }
             } on CacheException {
               await localDataSource.cacheAssessmentDetail(fresh.assessment, fresh.questions);
-              dataEventBus.notifyAssessmentDetailChanged(assessmentId);
             }
           },
         );

@@ -7,7 +7,7 @@ import 'package:likha/presentation/widgets/shared/feedback/content_state_builder
 import 'package:likha/presentation/pages/mobile/teacher/assessment/submission_review_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_submission_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/empty_assessment_submissions_state.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/submission_review_notifier.dart';
 
 class AssessmentSubmissionsPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -28,19 +28,19 @@ class _AssessmentSubmissionsPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(submissionReviewProvider.notifier)
           .loadSubmissions(widget.assessmentId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(submissionReviewProvider);
 
-    ref.listen<TeacherAssessmentState>(teacherAssessmentProvider, (prev, next) {
+    ref.listen<SubmissionReviewState>(submissionReviewProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(teacherAssessmentProvider.notifier).clearMessages();
+        ref.read(submissionReviewProvider.notifier).clearMessages();
       }
     });
 
@@ -76,10 +76,10 @@ class _AssessmentSubmissionsPageState
               error: state.error,
               isEmpty: state.submissions.isEmpty,
               onRetry: () => ref
-                  .read(teacherAssessmentProvider.notifier)
+                  .read(submissionReviewProvider.notifier)
                   .loadSubmissions(widget.assessmentId),
               onRefresh: () => ref
-                  .read(teacherAssessmentProvider.notifier)
+                  .read(submissionReviewProvider.notifier)
                   .loadSubmissions(widget.assessmentId),
               emptyState: const EmptyAssessmentSubmissionsState(),
               child: ListView.builder(
@@ -102,7 +102,7 @@ class _AssessmentSubmissionsPageState
                         ),
                       ),
                     ).then((_) => ref
-                        .read(teacherAssessmentProvider.notifier)
+                        .read(submissionReviewProvider.notifier)
                         .loadSubmissions(widget.assessmentId)),
                   );
                 },

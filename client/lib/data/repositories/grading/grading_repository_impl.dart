@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -21,19 +20,16 @@ class GradingRepositoryImpl implements GradingRepository {
   final GradingRemoteDataSource _remoteDataSource;
   final GradingLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final DataEventBus _dataEventBus;
   final StudentRecordsRepository? _studentRecordsRepository;
 
   GradingRepositoryImpl({
     required GradingRemoteDataSource remoteDataSource,
     required GradingLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required DataEventBus dataEventBus,
     StudentRecordsRepository? studentRecordsRepository,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus,
         _studentRecordsRepository = studentRecordsRepository;
 
   // ===== Config =====
@@ -45,8 +41,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getGradingConfig(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
       );
 
   @override
@@ -90,8 +85,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getGradeItems(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         termNumber: termNumber,
         component: component,
       );
@@ -104,8 +98,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.createGradeItem(
         _localDataSource,
         _syncQueue,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         data: data,
       );
 
@@ -117,8 +110,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.updateGradeItem(
         _localDataSource,
         _syncQueue,
-        _dataEventBus,
-        id: id,
+                id: id,
         data: data,
       );
 
@@ -127,8 +119,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.deleteGradeItem(
         _localDataSource,
         _syncQueue,
-        _dataEventBus,
-        id: id,
+                id: id,
       );
 
   @override
@@ -147,8 +138,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getScoresByItem(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        gradeItemId: gradeItemId,
+                gradeItemId: gradeItemId,
       );
 
   @override
@@ -193,8 +183,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getTermGrades(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         termNumber: termNumber,
       );
 
@@ -233,8 +222,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getGradeSummary(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         termNumber: termNumber,
       );
 
@@ -245,8 +233,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getFinalGrades(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
       );
 
   // ===== Student =====
@@ -258,8 +245,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getMyGrades(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
       );
 
   @override
@@ -270,8 +256,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getMyGradeDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         termNumber: termNumber,
       );
 
@@ -284,8 +269,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getGeneralAverages(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
       );
 
   // ===== SF9/SF10 =====
@@ -299,8 +283,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getSf9(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         studentId: studentId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
@@ -323,8 +306,7 @@ class GradingRepositoryImpl implements GradingRepository {
     return ops.getSf10(
       _localDataSource,
       _remoteDataSource,
-      _dataEventBus,
-      classId: classId,
+            classId: classId,
       studentId: studentId,
       skipBackgroundRefresh: skipBackgroundRefresh,
     );
@@ -380,8 +362,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getGradeDataBatch(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         termNumber: termNumber,
       );
 
@@ -396,8 +377,7 @@ class GradingRepositoryImpl implements GradingRepository {
       ops.getClassGrades(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
-        classId: classId,
+                classId: classId,
         termNumber: termNumber,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );

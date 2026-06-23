@@ -1,4 +1,3 @@
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -27,7 +26,6 @@ class AuthRepositoryImpl implements AuthRepository {
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
   final GradingLocalDataSource _gradingLocalDataSource;
-  final DataEventBus _dataEventBus;
 
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
@@ -39,7 +37,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required AssessmentLocalDataSource assessmentLocalDataSource,
     required LearningMaterialLocalDataSource learningMaterialLocalDataSource,
     required GradingLocalDataSource gradingLocalDataSource,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _storageService = storageService,
@@ -48,8 +45,7 @@ class AuthRepositoryImpl implements AuthRepository {
         _assignmentLocalDataSource = assignmentLocalDataSource,
         _assessmentLocalDataSource = assessmentLocalDataSource,
         _learningMaterialLocalDataSource = learningMaterialLocalDataSource,
-        _gradingLocalDataSource = gradingLocalDataSource,
-        _dataEventBus = dataEventBus;
+        _gradingLocalDataSource = gradingLocalDataSource;
 
   @override
   ResultFuture<CheckUsernameResult> checkUsername({required String username}) =>
@@ -99,7 +95,6 @@ class AuthRepositoryImpl implements AuthRepository {
         _remoteDataSource,
         _localDataSource,
         _storageService,
-        _dataEventBus,
       );
 
   @override
@@ -146,7 +141,6 @@ class AuthRepositoryImpl implements AuthRepository {
         _localDataSource,
         _remoteDataSource,
         _syncQueue,
-        _dataEventBus,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
@@ -201,7 +195,6 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.getActivityLogs(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         userId: userId,
       );
 

@@ -20,15 +20,15 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
   @override
   void initState() {
     super.initState();
-    // Data is loaded by TeacherDashboardPage (tab 0) via the shared classProvider.
+    // Data is loaded by TeacherDashboardPage (tab 0) via the shared classListProvider.
     // No need to trigger another background fetch here.
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
-    final filteredClasses = classState.classes.where((c) {
+    final filteredClasses = classListState.classes.where((c) {
       if (_searchQuery.isEmpty) return true;
       return c.title.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
@@ -70,7 +70,7 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
           const SizedBox(height: 20),
 
           // Table
-          if (classState.isLoading && classState.classes.isEmpty)
+          if (classListState.isLoading && classListState.classes.isEmpty)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(48),
@@ -90,7 +90,7 @@ class _TeacherClassesPageState extends ConsumerState<TeacherClassesPage> {
                       TeacherClassDetailPage(classId: cls.id),
                 ),
               ).then(
-                  (_) => ref.read(classProvider.notifier).loadClasses()),
+                  (_) => ref.read(classListProvider.notifier).loadClasses()),
             ),
         ],
       ),

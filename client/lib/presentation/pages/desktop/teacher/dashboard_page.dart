@@ -23,14 +23,14 @@ class _TeacherDashboardPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClasses();
+      ref.read(classListProvider.notifier).loadClasses();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final classes = classState.classes;
+    final classListState = ref.watch(classListProvider);
+    final classes = classListState.classes;
 
     return DesktopPageScaffold(
       title: 'Dashboard',
@@ -54,7 +54,7 @@ class _TeacherDashboardPageState
           ),
           const SizedBox(height: 16),
 
-          if (classState.isLoading && classes.isEmpty)
+          if (classListState.isLoading && classes.isEmpty)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(48),
@@ -106,7 +106,7 @@ class _TeacherDashboardPageState
                             TeacherClassDetailPage(classId: cls.id),
                       ),
                     ).then(
-                        (_) => ref.read(classProvider.notifier).loadClasses()),
+                        (_) => ref.read(classListProvider.notifier).loadClasses()),
                   ),
                 );
               }).toList(),

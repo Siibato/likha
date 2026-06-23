@@ -1,90 +1,64 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/grading/repositories/grading_repository.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
 import 'package:likha/domain/assignments/usecases/delete_assignment.dart';
-import 'package:likha/domain/assignments/usecases/download_file.dart';
-import 'package:likha/domain/assignments/usecases/get_assignment_detail.dart';
 import 'package:likha/domain/assignments/usecases/get_assignments.dart';
-import 'package:likha/domain/assignments/usecases/get_submission_detail.dart';
-import 'package:likha/domain/assignments/usecases/get_submissions.dart';
-import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/domain/assignments/usecases/publish_assignment.dart';
-import 'package:likha/domain/assignments/usecases/unpublish_assignment.dart';
 import 'package:likha/domain/assignments/usecases/reorder_assignment.dart';
-import 'package:likha/domain/assignments/usecases/return_submission.dart';
-import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
+import 'package:likha/domain/assignments/usecases/unpublish_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
-import 'package:likha/domain/assignments/usecases/upload_file.dart';
-import 'package:likha/domain/assignments/usecases/create_submission.dart';
-import 'package:likha/domain/assignments/usecases/delete_file.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 
-import '../../../helpers/fake_entities.dart';
+import '../../../../helpers/fake_entities.dart';
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
+class _FakeRef implements Ref {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class MockGetAssignments extends Mock implements GetAssignments {}
-class MockGetAssignmentDetail extends Mock implements GetAssignmentDetail {}
 class MockCreateAssignment extends Mock implements CreateAssignment {}
 class MockUpdateAssignment extends Mock implements UpdateAssignment {}
 class MockDeleteAssignment extends Mock implements DeleteAssignment {}
 class MockPublishAssignment extends Mock implements PublishAssignment {}
 class MockUnpublishAssignment extends Mock implements UnpublishAssignment {}
-class MockGetAssignmentSubmissions extends Mock implements GetAssignmentSubmissions {}
-class MockGetAssignmentSubmissionDetail extends Mock implements GetAssignmentSubmissionDetail {}
-class MockGradeSubmission extends Mock implements GradeSubmission {}
-class MockReturnSubmission extends Mock implements ReturnSubmission {}
-class MockCreateSubmission extends Mock implements CreateSubmission {}
-class MockUploadFile extends Mock implements UploadFile {}
-class MockDeleteFile extends Mock implements DeleteFile {}
-class MockSubmitAssignment extends Mock implements SubmitAssignment {}
-class MockDownloadFile extends Mock implements DownloadFile {}
 class MockReorderAllAssignments extends Mock implements ReorderAllAssignments {}
 class MockGradingRepository extends Mock implements GradingRepository {}
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-AssignmentNotifier _buildNotifier({
+AssignmentListNotifier _buildNotifier({
+  Ref? ref,
   MockGetAssignments? getAssignments,
   MockCreateAssignment? createAssignment,
+  MockUpdateAssignment? updateAssignment,
   MockDeleteAssignment? deleteAssignment,
+  MockPublishAssignment? publishAssignment,
+  MockUnpublishAssignment? unpublishAssignment,
+  MockReorderAllAssignments? reorderAllAssignments,
 }) {
-  return AssignmentNotifier(
+  return AssignmentListNotifier(
+    ref ?? _FakeRef(),
     createAssignment ?? MockCreateAssignment(),
     getAssignments ?? MockGetAssignments(),
-    MockGetAssignmentDetail(),
-    MockUpdateAssignment(),
+    updateAssignment ?? MockUpdateAssignment(),
     deleteAssignment ?? MockDeleteAssignment(),
-    MockPublishAssignment(),
-    MockUnpublishAssignment(),
-    MockGetAssignmentSubmissions(),
-    MockGetAssignmentSubmissionDetail(),
-    MockGradeSubmission(),
-    MockReturnSubmission(),
-    MockCreateSubmission(),
-    MockUploadFile(),
-    MockDeleteFile(),
-    MockSubmitAssignment(),
-    MockDownloadFile(),
-    MockReorderAllAssignments(),
+    publishAssignment ?? MockPublishAssignment(),
+    unpublishAssignment ?? MockUnpublishAssignment(),
+    reorderAllAssignments ?? MockReorderAllAssignments(),
   );
 }
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
   final tAssignment = FakeEntities.assignment();
 
   setUpAll(() {
-    GetIt.instance.registerSingleton<DataEventBus>(DataEventBus());
     final mockGradingRepo = MockGradingRepository();
     when(() => mockGradingRepo.findGradeItemBySourceId(any()))
         .thenAnswer((_) async => const Right(null));
@@ -104,15 +78,18 @@ void main() {
     await GetIt.instance.reset();
   });
 
-  group('AssignmentNotifier', () {
+  group('AssignmentListNotifier', () {
     group('loadAssignments', () {
       test('sets isLoading then populates assignments on success', () async {
         final mockGet = MockGetAssignments();
         final notifier = _buildNotifier(getAssignments: mockGet);
 
-        when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'))).thenAnswer((_) async => Right([tAssignment]));
+        when(() => mockGet(any(),
+                publishedOnly: any(named: 'publishedOnly'),
+                skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
+            .thenAnswer((_) async => Right([tAssignment]));
 
-        final states = <AssignmentState>[];
+        final states = <AssignmentListState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
 
         await notifier.loadAssignments('c-1');
@@ -126,7 +103,9 @@ void main() {
         final mockGet = MockGetAssignments();
         final notifier = _buildNotifier(getAssignments: mockGet);
 
-        when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
+        when(() => mockGet(any(),
+                publishedOnly: any(named: 'publishedOnly'),
+                skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
             .thenAnswer((_) async => const Left(ServerFailure('Network error')));
 
         await notifier.loadAssignments('c-1');
@@ -146,8 +125,13 @@ void main() {
           createAssignment: mockCreate,
         );
 
-        when(() => mockCreate(any())).thenAnswer((_) async => Right(MutationResult(entity: tAssignment, status: SyncStatus.pending)));
-        when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'))).thenAnswer((_) async => Right([tAssignment]));
+        when(() => mockCreate(any())).thenAnswer((_) async =>
+            Right(MutationResult(
+                entity: tAssignment, status: SyncStatus.pending)));
+        when(() => mockGet(any(),
+                publishedOnly: any(named: 'publishedOnly'),
+                skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
+            .thenAnswer((_) async => Right([tAssignment]));
 
         await notifier.createAssignment(CreateAssignmentParams(
           classId: 'c-1',
@@ -186,7 +170,7 @@ void main() {
     });
 
     group('deleteAssignment', () {
-      test('removes assignment from state and sets successMessage on success', () async {
+      test('sets successMessage on success', () async {
         final mockGet = MockGetAssignments();
         final mockDelete = MockDeleteAssignment();
 
@@ -195,11 +179,14 @@ void main() {
           deleteAssignment: mockDelete,
         );
 
-        // Seed the state with one assignment
-        when(() => mockGet(any(), publishedOnly: any(named: 'publishedOnly'), skipBackgroundRefresh: any(named: 'skipBackgroundRefresh'))).thenAnswer((_) async => Right([tAssignment]));
+        when(() => mockGet(any(),
+                publishedOnly: any(named: 'publishedOnly'),
+                skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
+            .thenAnswer((_) async => Right([tAssignment]));
         await notifier.loadAssignments('c-1');
 
-        when(() => mockDelete(any())).thenAnswer((_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
+        when(() => mockDelete(any())).thenAnswer(
+            (_) async => const Right(MutationResult(entity: null, status: SyncStatus.pending)));
 
         await notifier.deleteAssignment(tAssignment.id);
 
@@ -220,12 +207,69 @@ void main() {
       });
     });
 
+    group('publishAssignment', () {
+      test('sets successMessage on success', () async {
+        final mockPublish = MockPublishAssignment();
+        final notifier = _buildNotifier(publishAssignment: mockPublish);
+
+        when(() => mockPublish(any())).thenAnswer((_) async =>
+            Right(MutationResult(
+                entity: tAssignment, status: SyncStatus.pending)));
+
+        await notifier.publishAssignment('a-1');
+
+        expect(notifier.state.successMessage, isNotNull);
+        expect(notifier.state.error, isNull);
+      });
+
+      test('sets error on failure', () async {
+        final mockPublish = MockPublishAssignment();
+        final notifier = _buildNotifier(publishAssignment: mockPublish);
+
+        when(() => mockPublish(any()))
+            .thenAnswer((_) async => const Left(ServerFailure('Publish failed')));
+
+        await notifier.publishAssignment('a-1');
+
+        expect(notifier.state.error, isNotNull);
+      });
+    });
+
+    group('unpublishAssignment', () {
+      test('sets successMessage on success', () async {
+        final mockUnpublish = MockUnpublishAssignment();
+        final notifier = _buildNotifier(unpublishAssignment: mockUnpublish);
+
+        when(() => mockUnpublish(any())).thenAnswer((_) async =>
+            Right(MutationResult(
+                entity: tAssignment, status: SyncStatus.pending)));
+
+        await notifier.unpublishAssignment('a-1');
+
+        expect(notifier.state.successMessage, isNotNull);
+        expect(notifier.state.error, isNull);
+      });
+    });
+
     group('initial state', () {
       test('starts with empty assignments and not loading', () {
         final notifier = _buildNotifier();
         expect(notifier.state.assignments, isEmpty);
         expect(notifier.state.isLoading, isFalse);
         expect(notifier.state.error, isNull);
+      });
+    });
+
+    group('clearMessages', () {
+      test('clears error and successMessage', () {
+        final notifier = _buildNotifier();
+        notifier.state = notifier.state.copyWith(
+          error: 'Some error',
+          successMessage: 'Some success',
+        );
+        notifier.clearMessages();
+        expect(notifier.state.error, isNull);
+        expect(notifier.state.successMessage, isNull);
       });
     });
   });

@@ -6,7 +6,7 @@ import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_submission_grading_page.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/empty_submissions_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/submission_card.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 
 class AssignmentSubmissionsPage extends ConsumerStatefulWidget {
@@ -35,7 +35,7 @@ class _AssignmentSubmissionsPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assignmentProvider.notifier)
+          .read(submissionProvider.notifier)
           .loadSubmissions(widget.assignmentId);
     });
   }
@@ -44,7 +44,7 @@ class _AssignmentSubmissionsPageState
     setState(() => _isDownloadingAll = true);
     context.showInfoSnackBar('Downloading submission files...', durationMs: 60000);
 
-    final (count, totalUncached) = await ref.read(assignmentProvider.notifier).downloadAllSubmissionFiles();
+    final (count, totalUncached) = await ref.read(submissionProvider.notifier).downloadAllSubmissionFiles();
 
     if (!mounted) return;
     setState(() => _isDownloadingAll = false);
@@ -52,10 +52,10 @@ class _AssignmentSubmissionsPageState
     // Dismiss the info snackbar
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    final error = ref.read(assignmentProvider).error;
+    final error = ref.read(submissionProvider).error;
     if (error != null) {
       context.showErrorSnackBar(AppErrorMapper.toUserMessage(error) ?? 'Download failed');
-      ref.read(assignmentProvider.notifier).clearMessages();
+      ref.read(submissionProvider.notifier).clearMessages();
     } else if (count > 0) {
       context.showSuccessSnackBar('Downloaded $count file(s). All submissions viewable offline.');
     } else if (totalUncached > 0) {
@@ -67,7 +67,7 @@ class _AssignmentSubmissionsPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(submissionProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -103,10 +103,10 @@ class _AssignmentSubmissionsPageState
         isLoading: state.isLoading && state.submissions.isEmpty,
         isEmpty: state.submissions.isEmpty,
         onRefresh: () => ref
-            .read(assignmentProvider.notifier)
+            .read(submissionProvider.notifier)
             .loadSubmissions(widget.assignmentId),
         onRetry: () => ref
-            .read(assignmentProvider.notifier)
+            .read(submissionProvider.notifier)
             .loadSubmissions(widget.assignmentId),
         emptyState: const EmptySubmissionsState(),
         child: ListView.builder(
@@ -130,7 +130,7 @@ class _AssignmentSubmissionsPageState
                   ),
                 ),
               ).then((_) => ref
-                  .read(assignmentProvider.notifier)
+                  .read(submissionProvider.notifier)
                   .loadSubmissions(widget.assignmentId)),
             );
           },

@@ -7,7 +7,7 @@ import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminCreateClassPage extends ConsumerStatefulWidget {
@@ -31,7 +31,7 @@ class _AdminCreateClassPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadAccounts();
+      ref.read(accountManagementProvider.notifier).loadAccounts();
     });
   }
 
@@ -49,12 +49,12 @@ class _AdminCreateClassPageState
       return;
     }
 
-    final adminState = ref.read(adminProvider);
-    final teachers = adminState.accounts.where((u) => u.isTeacher).toList();
+    final accountMgmtState = ref.read(accountManagementProvider);
+    final teachers = accountMgmtState.accounts.where((u) => u.isTeacher).toList();
     final selectedTeacher =
         teachers.firstWhere((t) => t.id == _selectedTeacherId!);
 
-    await ref.read(classProvider.notifier).createClass(
+    await ref.read(classListProvider.notifier).createClass(
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
               ? null
@@ -66,7 +66,7 @@ class _AdminCreateClassPageState
         );
 
     if (mounted) {
-      final state = ref.read(classProvider);
+      final state = ref.read(classListProvider);
       if (state.successMessage != null) {
         Navigator.pop(context);
       } else if (state.error != null) {
@@ -77,9 +77,9 @@ class _AdminCreateClassPageState
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
-    final classState = ref.watch(classProvider);
-    final teachers = adminState.accounts.where((u) => u.isTeacher).toList();
+    final accountMgmtState = ref.watch(accountManagementProvider);
+    final classListState = ref.watch(classListProvider);
+    final teachers = accountMgmtState.accounts.where((u) => u.isTeacher).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -91,7 +91,7 @@ class _AdminCreateClassPageState
           onPressed: () => Navigator.pop(context),
         ),
         body: Center(
-          child: teachers.isEmpty && !adminState.isLoading
+          child: teachers.isEmpty && !accountMgmtState.isLoading
               ? const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -139,7 +139,7 @@ class _AdminCreateClassPageState
                           controller: _titleController,
                           label: 'Class Title',
                           icon: Icons.class_outlined,
-                          enabled: !classState.isLoading,
+                          enabled: !classListState.isLoading,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Class title is required';
@@ -154,7 +154,7 @@ class _AdminCreateClassPageState
                           controller: _descriptionController,
                           label: 'Description (Optional)',
                           icon: Icons.description_outlined,
-                          enabled: !classState.isLoading,
+                          enabled: !classListState.isLoading,
                           validator: null,
                           onChanged: (_) =>
                               setState(() => _formError = null),
@@ -186,7 +186,7 @@ class _AdminCreateClassPageState
                               _formError = null;
                             });
                           },
-                          enabled: !classState.isLoading,
+                          enabled: !classListState.isLoading,
                         ),
                         const SizedBox(height: 16),
                         Container(
@@ -197,7 +197,7 @@ class _AdminCreateClassPageState
                           ),
                           child: SwitchListTile(
                             value: _isAdvisory,
-                            onChanged: classState.isLoading
+                            onChanged: classListState.isLoading
                                 ? null
                                 : (value) =>
                                     setState(() => _isAdvisory = value),
@@ -227,7 +227,7 @@ class _AdminCreateClassPageState
                         const SizedBox(height: 32),
                         StyledButton(
                           text: 'Create Class',
-                          isLoading: classState.isLoading,
+                          isLoading: classListState.isLoading,
                           onPressed: _handleCreate,
                         ),
                       ],

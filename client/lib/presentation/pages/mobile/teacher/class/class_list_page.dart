@@ -25,7 +25,7 @@ class _TeacherClassListPageState extends ConsumerState<TeacherClassListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClasses();
+      ref.read(classListProvider.notifier).loadClasses();
     });
   }
 
@@ -52,10 +52,10 @@ class _TeacherClassListPageState extends ConsumerState<TeacherClassListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
     return SafeArea(
-      child: classState.isLoading && classState.classes.isEmpty
+      child: classListState.isLoading && classListState.classes.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
                 color: AppColors.accentCharcoal,
@@ -63,7 +63,7 @@ class _TeacherClassListPageState extends ConsumerState<TeacherClassListPage> {
               ),
             )
           : RefreshIndicator(
-              onRefresh: () => ref.read(classProvider.notifier).loadClasses(),
+              onRefresh: () => ref.read(classListProvider.notifier).loadClasses(),
               color: AppColors.accentCharcoal,
               child: CustomScrollView(
                 slivers: [
@@ -84,13 +84,13 @@ class _TeacherClassListPageState extends ConsumerState<TeacherClassListPage> {
                       ),
                     ),
                   ),
-                  classState.classes.isEmpty
+                  classListState.classes.isEmpty
                       ? const SliverFillRemaining(
                           child: EmptyClassState(),
                         )
                       : Builder(
                           builder: (context) {
-                            final filteredClasses = _getFilteredAndSortedClasses(classState.classes);
+                            final filteredClasses = _getFilteredAndSortedClasses(classListState.classes);
                             if (filteredClasses.isEmpty) {
                               return SliverFillRemaining(
                                 child: EmptySearchResultState(searchQuery: _searchQuery),
@@ -113,7 +113,7 @@ class _TeacherClassListPageState extends ConsumerState<TeacherClassListPage> {
                                         builder: (_) => ClassDetailPage(classId: cls.id),
                                       ),
                                     ).then((_) =>
-                                        ref.read(classProvider.notifier).loadClasses()),
+                                        ref.read(classListProvider.notifier).loadClasses()),
                                   );
                                 },
                               ),

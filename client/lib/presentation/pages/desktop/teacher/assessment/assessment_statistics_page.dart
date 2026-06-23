@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment_statistics.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/statistics_charts.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/statistics_notifier.dart';
 
 class AssessmentStatisticsPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -23,14 +23,14 @@ class _AssessmentStatisticsPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(statisticsProvider.notifier)
           .loadStatistics(widget.assessmentId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(statisticsProvider);
     final stats = state.statistics;
 
     return Scaffold(

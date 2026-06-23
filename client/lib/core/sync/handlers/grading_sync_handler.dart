@@ -1,7 +1,6 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_result.dart';
@@ -20,14 +19,12 @@ class GradingSyncHandler {
   final GradingLocalDataSource _local;
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
-  final DataEventBus _dataEventBus;
 
   GradingSyncHandler(
     this._remote,
     this._local,
     this._localDatabase,
     this._log,
-    this._dataEventBus,
   );
 
   Future<SyncResult> handle(SyncQueueEntry entry) async {
@@ -202,7 +199,6 @@ class GradingSyncHandler {
           }
         }
 
-        _dataEventBus.notifyGradesChanged(classId);
         return SyncResult.success(serverId: model.id);
 
       case SyncOperation.update:

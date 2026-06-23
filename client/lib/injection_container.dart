@@ -7,7 +7,6 @@ import 'package:likha/core/config/api_config.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/services/school_setup_service_impl.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
@@ -237,9 +236,6 @@ Future<void> init() async {
   // Core - Sync infrastructure
   sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl<LocalDatabase>()));
 
-  // Core - Event Bus (must be before repositories)
-  sl.registerSingleton<DataEventBus>(DataEventBus());
-
   // Core - General
   sl.registerLazySingleton(() => StorageService(
         sl<FlutterSecureStorage>(),
@@ -374,7 +370,6 @@ Future<void> init() async {
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
       learningMaterialLocalDataSource: sl<LearningMaterialLocalDataSource>(),
       gradingLocalDataSource: sl<GradingLocalDataSource>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<ClassRepository>(
@@ -382,7 +377,6 @@ Future<void> init() async {
       remoteDataSource: sl<ClassRemoteDataSource>(),
       localDataSource: sl<ClassLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
@@ -392,7 +386,6 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
@@ -401,7 +394,6 @@ Future<void> init() async {
       localDataSource: sl<AssignmentLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
       storageService: sl<StorageService>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
@@ -409,7 +401,6 @@ Future<void> init() async {
       remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
       localDataSource: sl<LearningMaterialLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
 
@@ -445,7 +436,6 @@ Future<void> init() async {
       sl<SyncLogger>(), // SyncLogger
       sl<StorageService>(), // StorageService
       sl<ServerClockService>(), // ServerClockService
-      sl<DataEventBus>(), // DataEventBus
     ),
   );
 
@@ -540,7 +530,6 @@ Future<void> init() async {
       remoteDataSource: sl<GradingRemoteDataSource>(),
       localDataSource: sl<GradingLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
       studentRecordsRepository: sl<StudentRecordsRepository>(),
     ),
   );
@@ -596,7 +585,6 @@ Future<void> init() async {
       remoteDataSource: sl<SetupRemoteDataSource>(),
       localDataSource: sl<SetupLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<TosRepository>(
@@ -604,7 +592,6 @@ Future<void> init() async {
       remoteDataSource: sl<TosRemoteDataSource>(),
       localDataSource: sl<TosLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<DocumentExportRepository>(
@@ -616,7 +603,6 @@ Future<void> init() async {
       sl<StudentRecordsLocalDataSource>(),
       sl<GradingLocalDataSource>(),
       sl<SyncQueue>(),
-      sl<DataEventBus>(),
     ),
   );
 

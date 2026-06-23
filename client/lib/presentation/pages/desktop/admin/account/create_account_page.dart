@@ -8,7 +8,7 @@ import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 
 class CreateAccountPage extends ConsumerStatefulWidget {
   const CreateAccountPage({super.key});
@@ -125,7 +125,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
 
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(adminProvider.notifier).createAccount(
+      await ref.read(accountManagementProvider.notifier).createAccount(
             username: _usernameController.text.trim(),
             firstName: _firstNameController.text.trim(),
             lastName: _lastNameController.text.trim(),
@@ -135,12 +135,12 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
           );
 
       if (mounted) {
-        final state = ref.read(adminProvider);
+        final state = ref.read(accountManagementProvider);
         if (state.successMessage != null) {
-          ref.read(adminProvider.notifier).clearMessages();
+          ref.read(accountManagementProvider.notifier).clearMessages();
           Navigator.pop(context);
         } else if (state.error != null) {
-          ref.read(adminProvider.notifier).clearMessages();
+          ref.read(accountManagementProvider.notifier).clearMessages();
           setState(
               () => _formError = AppErrorMapper.toUserMessage(state.error));
         }
@@ -152,7 +152,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
+    final accountMgmtState = ref.watch(accountManagementProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -203,7 +203,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                           controller: _usernameController,
                           label: 'Username',
                           icon: Icons.person_outline_rounded,
-                          enabled: !adminState.isLoading,
+                          enabled: !accountMgmtState.isLoading,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Username is required';
@@ -220,7 +220,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                           controller: _firstNameController,
                           label: 'First Name',
                           icon: Icons.badge_outlined,
-                          enabled: !adminState.isLoading,
+                          enabled: !accountMgmtState.isLoading,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'First name is required';
@@ -234,7 +234,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                           controller: _lastNameController,
                           label: 'Last Name',
                           icon: Icons.badge_outlined,
-                          enabled: !adminState.isLoading,
+                          enabled: !accountMgmtState.isLoading,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Last name is required';
@@ -248,7 +248,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                           value: _selectedRole,
                           label: 'Role',
                           icon: Icons.work_outline_rounded,
-                          enabled: !adminState.isLoading,
+                          enabled: !accountMgmtState.isLoading,
                           items: const [
                             DropdownMenuItem(
                                 value: 'student', child: Text('Student')),
@@ -283,98 +283,98 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                       controller: _lrnController,
                       label: 'LRN',
                       icon: Icons.badge_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _sexController,
                       label: 'Sex',
                       icon: Icons.wc_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _birthdateController,
                       label: 'Birthdate (YYYY-MM-DD)',
                       icon: Icons.cake_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _birthplaceController,
                       label: 'Birthplace',
                       icon: Icons.place_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _homeAddressController,
                       label: 'Home Address',
                       icon: Icons.home_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _fatherNameController,
                       label: "Father's Name",
                       icon: Icons.person_outline_rounded,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _fatherContactController,
                       label: "Father's Contact",
                       icon: Icons.phone_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _motherNameController,
                       label: "Mother's Name",
                       icon: Icons.person_outline_rounded,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _motherContactController,
                       label: "Mother's Contact",
                       icon: Icons.phone_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _guardianNameController,
                       label: "Guardian's Name",
                       icon: Icons.person_outline_rounded,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _guardianContactController,
                       label: "Guardian's Contact",
                       icon: Icons.phone_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _trackStrandController,
                       label: 'Track / Strand',
                       icon: Icons.school_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _curriculumController,
                       label: 'Curriculum',
                       icon: Icons.menu_book_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _dateAdmittedController,
                       label: 'Date Admitted (YYYY-MM-DD)',
                       icon: Icons.event_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                   ],
                   if (_selectedRole == 'teacher') ...[
@@ -395,76 +395,76 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                       controller: _licenseIdController,
                       label: 'License ID (PRC)',
                       icon: Icons.badge_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _rankController,
                       label: 'Rank',
                       icon: Icons.work_outline_rounded,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _positionController,
                       label: 'Position',
                       icon: Icons.work_outline_rounded,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _sexController,
                       label: 'Sex',
                       icon: Icons.wc_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _birthdateController,
                       label: 'Birthdate (YYYY-MM-DD)',
                       icon: Icons.cake_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _homeAddressController,
                       label: 'Home Address',
                       icon: Icons.home_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _dateHiredController,
                       label: 'Date Hired (YYYY-MM-DD)',
                       icon: Icons.event_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _educationLevelController,
                       label: 'Education Level',
                       icon: Icons.school_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _specializationController,
                       label: 'Specialization',
                       icon: Icons.school_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                     const SizedBox(height: 16),
                     StyledTextField(
                       controller: _contactNumberController,
                       label: 'Contact Number',
                       icon: Icons.phone_outlined,
-                      enabled: !adminState.isLoading,
+                      enabled: !accountMgmtState.isLoading,
                     ),
                   ],
                   const SizedBox(height: 32),
                   StyledButton(
                     text: 'Create Account',
-                    isLoading: adminState.isLoading,
+                    isLoading: accountMgmtState.isLoading,
                     onPressed: _handleCreate,
                   ),
                 ],
@@ -509,7 +509,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
             showDialog(
               context: context,
               builder: (_) => BulkImportDialog(
-                onSuccess: () => ref.read(adminProvider.notifier).loadAccounts(),
+                onSuccess: () => ref.read(accountManagementProvider.notifier).loadAccounts(),
               ),
             );
           },

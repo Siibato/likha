@@ -3,7 +3,7 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
 import 'package:likha/domain/assessments/usecases/grade_essay.dart';
 import 'package:likha/domain/assessments/usecases/override_answer.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/submission_review_notifier.dart';
 
 /// Controller for the submission review flow.
 ///
@@ -12,7 +12,7 @@ import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 /// Consumed by both desktop and mobile submission review pages.
 class SubmissionReviewController extends ChangeNotifier {
   final String submissionId;
-  final TeacherAssessmentNotifier notifier;
+  final SubmissionReviewNotifier notifier;
 
   String? formError;
   final Map<String, TextEditingController> _essayScoreControllers = {};

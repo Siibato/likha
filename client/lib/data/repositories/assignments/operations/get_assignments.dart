@@ -8,14 +8,12 @@ import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 import 'package:likha/data/datasources/remote/assignments/assignment_remote_datasource.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import '_helpers.dart' as helpers;
 
 ResultFuture<List<Assignment>> getAssignments(
   AssignmentLocalDataSource localDataSource,
   AssignmentRemoteDataSource remoteDataSource,
-  StorageService storageService,
-  DataEventBus dataEventBus, {
+  StorageService storageService, {
   required String classId,
   bool publishedOnly = false,
   bool skipBackgroundRefresh = false,
@@ -60,12 +58,10 @@ ResultFuture<List<Assignment>> getAssignments(
               current = await localDataSource.getCachedAssignments(classId, publishedOnly: publishedOnly);
             } on CacheException {
               await localDataSource.cacheAssignments(fresh);
-              dataEventBus.notifyAssignmentsChanged(classId);
               return;
             }
             if (helpers.assignmentsHaveChanged(current, fresh)) {
               await localDataSource.cacheAssignments(fresh);
-              dataEventBus.notifyAssignmentsChanged(classId);
             }
           },
         );

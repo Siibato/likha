@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sf9_logger.dart';
 import 'package:likha/domain/grading/entities/general_average.dart';
 import 'package:likha/domain/grading/entities/sf9.dart';
@@ -41,18 +40,11 @@ class GeneralAveragesState {
 
 class GeneralAveragesNotifier extends StateNotifier<GeneralAveragesState> {
   final GetGeneralAverages _getGeneralAverages;
-  late StreamSubscription<String> _generalAveragesSub;
   String? _currentClassId;
   bool _isLoading = false;
 
   GeneralAveragesNotifier(this._getGeneralAverages)
-      : super(const GeneralAveragesState()) {
-    _generalAveragesSub = sl<DataEventBus>().onGeneralAveragesChanged.listen((classId) {
-      if (_currentClassId != null && _currentClassId == classId) {
-        loadStudents(_currentClassId!, skipBackgroundRefresh: true);
-      }
-    });
-  }
+      : super(const GeneralAveragesState());
 
   Future<void> loadStudents(String classId, {bool skipBackgroundRefresh = false}) async {
     if (_isLoading && _currentClassId == classId) return;
@@ -77,12 +69,6 @@ class GeneralAveragesNotifier extends StateNotifier<GeneralAveragesState> {
   void reset() {
     _currentClassId = null;
     state = const GeneralAveragesState();
-  }
-
-  @override
-  void dispose() {
-    _generalAveragesSub.cancel();
-    super.dispose();
   }
 }
 
@@ -122,36 +108,11 @@ class Sf9DetailState {
 class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
   final GetSf9 _getSf9;
   final GetSf10 _getSf10;
-  late StreamSubscription<String> _sf9Sub;
-  late StreamSubscription<String> _sf10Sub;
-  late StreamSubscription<String> _attendanceSub;
-  late StreamSubscription<String> _coreValuesSub;
   String? _currentClassId;
   String? _currentStudentId;
 
   Sf9DetailNotifier(this._getSf9, this._getSf10)
-      : super(const Sf9DetailState()) {
-    _sf9Sub = sl<DataEventBus>().onSf9Changed.listen((classId) {
-      if (_currentClassId != null && _currentClassId == classId && _currentStudentId != null) {
-        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
-      }
-    });
-    _sf10Sub = sl<DataEventBus>().onSf10Changed.listen((classId) {
-      if (_currentClassId != null && _currentClassId == classId && _currentStudentId != null) {
-        loadSf10(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
-      }
-    });
-    _attendanceSub = sl<DataEventBus>().onAttendanceChanged.listen((studentId) {
-      if (_currentStudentId != null && _currentStudentId == studentId && _currentClassId != null) {
-        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
-      }
-    });
-    _coreValuesSub = sl<DataEventBus>().onCoreValuesChanged.listen((studentId) {
-      if (_currentStudentId != null && _currentStudentId == studentId && _currentClassId != null) {
-        loadSf9(_currentClassId!, _currentStudentId!, skipBackgroundRefresh: true);
-      }
-    });
-  }
+      : super(const Sf9DetailState());
 
   Future<void> loadSf9(String classId, String studentId, {bool skipBackgroundRefresh = false}) async {
     final log = Sf9Logger.instance;
@@ -210,15 +171,6 @@ class Sf9DetailNotifier extends StateNotifier<Sf9DetailState> {
     _currentClassId = null;
     _currentStudentId = null;
     state = const Sf9DetailState();
-  }
-
-  @override
-  void dispose() {
-    _sf9Sub.cancel();
-    _sf10Sub.cancel();
-    _attendanceSub.cancel();
-    _coreValuesSub.cancel();
-    super.dispose();
   }
 }
 

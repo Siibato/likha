@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 class AssessmentDetailDeleteSection extends ConsumerWidget {
@@ -83,7 +83,7 @@ class AssessmentDetailDeleteSection extends ConsumerWidget {
       body: 'Delete "${assessment.title}"? This cannot be undone.',
       confirmLabel: 'Delete',
       onConfirm: () => ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(assessmentListProvider.notifier)
           .deleteAssessment(assessmentId),
       warningBox: warningBox,
     );

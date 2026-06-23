@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -16,17 +15,14 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
   final LearningMaterialRemoteDataSource _remoteDataSource;
   final LearningMaterialLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final DataEventBus _dataEventBus;
 
   LearningMaterialRepositoryImpl({
     required LearningMaterialRemoteDataSource remoteDataSource,
     required LearningMaterialLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus;
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<MutationResult<LearningMaterial>> createMaterial({
@@ -97,7 +93,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.getMaterials(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         classId: classId,
       );
 
@@ -106,7 +101,6 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
       ops.getMaterialDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         materialId: materialId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );

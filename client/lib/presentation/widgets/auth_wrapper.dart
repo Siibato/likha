@@ -15,7 +15,7 @@ import 'package:likha/presentation/pages/shared/auth/login_page.dart';
 import 'package:likha/presentation/pages/shared/auth/login_password_page.dart';
 import 'package:likha/presentation/pages/shared/setup/school_setup_page.dart';
 import 'package:likha/presentation/pages/shared/sync_loading_page.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 
@@ -114,7 +114,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
           di.sl<SyncManager>().start();
 
           if (authState.user?.role == 'admin') {
-            unawaited(ref.read(adminProvider.notifier).cacheAccountsOffline());
+            unawaited(ref.read(accountManagementProvider.notifier).cacheAccountsOffline());
             unawaited(_checkAdminSchoolDetails());
           } else {
             setState(() {

@@ -37,13 +37,11 @@ ClassRepositoryImpl _buildRepo({
   required MockClassLocalDataSource local,
   required MockClassRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  required MockDataEventBus eventBus,
 }) {
   return ClassRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
     syncQueue: syncQueue,
-    dataEventBus: eventBus,
   );
 }
 
@@ -53,14 +51,12 @@ void main() {
   late MockClassLocalDataSource local;
   late MockClassRemoteDataSource remote;
   late MockSyncQueue syncQueue;
-  late MockDataEventBus eventBus;
   late MockServerReachabilityService reachability;
 
   setUp(() {
     local = MockClassLocalDataSource();
     remote = MockClassRemoteDataSource();
     syncQueue = MockSyncQueue();
-    eventBus = MockDataEventBus();
     reachability = MockServerReachabilityService();
     dotenv.testLoad(fileInput: '');
 
@@ -96,7 +92,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedClasses())
@@ -117,7 +112,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedClasses())
@@ -148,7 +142,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          eventBus: eventBus,
         );
 
         when(() => local.insertClass(any(), txn: any(named: 'txn')))
@@ -185,7 +178,6 @@ void main() {
           local: local,
           remote: remote,
           syncQueue: syncQueue,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedClasses())

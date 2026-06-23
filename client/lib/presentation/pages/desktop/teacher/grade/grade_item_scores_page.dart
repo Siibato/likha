@@ -50,7 +50,7 @@ class _GradeItemScoresPageState
   }
 
   Future<void> _loadData() async {
-    await ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+    await ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     await ref
         .read(gradeScoresProvider.notifier)
         .loadScoresForItems([widget.gradeItem.id]);
@@ -65,8 +65,8 @@ class _GradeItemScoresPageState
   void _initControllers() {
     final scoresState = ref.read(gradeScoresProvider);
     final scores = scoresState.scoresByItem[widget.gradeItem.id] ?? [];
-    final classState = ref.read(classProvider);
-    final students = classState.currentClassDetail?.students ?? [];
+    final classDetailState = ref.read(classDetailProvider);
+    final students = classDetailState.currentClassDetail?.students ?? [];
 
     for (final participant in students) {
       final studentId = participant.student.id;
@@ -147,8 +147,8 @@ class _GradeItemScoresPageState
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final rawStudents = classState.currentClassDetail?.students ?? [];
+    final classDetailState = ref.watch(classDetailProvider);
+    final rawStudents = classDetailState.currentClassDetail?.students ?? [];
     final students = List<Participant>.from(rawStudents)
       ..sort((a, b) {
         final lastCmp = a.student.lastName.toLowerCase().compareTo(

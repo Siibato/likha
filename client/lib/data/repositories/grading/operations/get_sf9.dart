@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sf9_logger.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -15,8 +14,7 @@ import 'package:likha/domain/grading/entities/sf9.dart';
 
 ResultFuture<Sf9Response> getSf9(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
   required String studentId,
   bool skipBackgroundRefresh = false,
@@ -46,7 +44,6 @@ ResultFuture<Sf9Response> getSf9(
               log.log('getSf9: background refresh succeeded, caching result');
               try {
                 await localDataSource.cacheSf9(classId, studentId, fresh.toJson());
-                dataEventBus.notifySf9Changed(classId);
               } catch (e) {
                 log.warn('getSf9: background refresh cache failed', e);
               }
@@ -90,14 +87,12 @@ ResultFuture<Sf9Response> getSf9(
             if (_sf9HasChanged(current, fresh.toJson())) {
               log.log('getSf9: background refresh detected changes — updating cache');
               await localDataSource.cacheSf9(classId, studentId, fresh.toJson());
-              dataEventBus.notifySf9Changed(classId);
             } else {
               log.log('getSf9: background refresh — no changes detected');
             }
           } catch (e) {
             log.warn('getSf9: background refresh comparison failed, writing cache anyway', e);
             await localDataSource.cacheSf9(classId, studentId, fresh.toJson());
-            dataEventBus.notifySf9Changed(classId);
           }
         },
       );

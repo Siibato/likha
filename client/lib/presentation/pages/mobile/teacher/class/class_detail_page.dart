@@ -27,19 +27,20 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final detail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final classListState = ref.watch(classListProvider);
+    final detail = classDetailState.currentClassDetail;
 
-    ref.listen<ClassState>(classProvider, (prev, next) {
+    ref.listen<ClassDetailState>(classDetailProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ref.read(classProvider.notifier).clearMessages();
+        ref.read(classDetailProvider.notifier).clearMessages();
       }
     });
 
@@ -134,7 +135,7 @@ class _ClassDetailPageState extends ConsumerState<ClassDetailPage> {
                             ),
                           ),
                           // SF9/SF10 card for advisory classes
-                          if (classState.classes.any((c) => c.id == widget.classId && c.isAdvisory)) ...[
+                          if (classListState.classes.any((c) => c.id == widget.classId && c.isAdvisory)) ...[
                             const SizedBox(height: 16),
                             NavigationCard(
                               icon: Icons.assignment_ind_outlined,

@@ -6,7 +6,6 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -226,17 +225,14 @@ void _assertSyncQueueEntry(
 void main() {
   late GradingLocalDataSourceImpl local;
   late SyncQueueImpl syncQueue;
-  late DataEventBus dataEventBus;
 
   setUp(() async {
     await openFreshTestDatabase();
     syncQueue = SyncQueueImpl(LocalDatabase());
     local = GradingLocalDataSourceImpl(LocalDatabase(), syncQueue);
-    dataEventBus = DataEventBus();
   });
 
   tearDown(() async {
-    dataEventBus.dispose();
     await closeTestDatabase();
   });
 
@@ -292,7 +288,6 @@ void main() {
       final result = await createGradeItem(
         local,
         syncQueue,
-        dataEventBus,
         classId: 'class-1',
         data: {
           'title': 'New Item',
@@ -331,7 +326,6 @@ void main() {
       final result = await updateGradeItem(
         local,
         syncQueue,
-        dataEventBus,
         id: 'i1',
         data: {'title': 'New Title'},
       );
@@ -356,7 +350,6 @@ void main() {
       final result = await deleteGradeItem(
         local,
         syncQueue,
-        dataEventBus,
         id: 'i1',
       );
 

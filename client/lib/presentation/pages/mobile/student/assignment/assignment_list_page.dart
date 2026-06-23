@@ -8,7 +8,7 @@ import 'package:likha/presentation/widgets/shared/primitives/class_section_heade
 import 'package:likha/presentation/pages/mobile/student/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/empty_assignment_state.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/assignment_card_skeleton.dart';
@@ -29,19 +29,19 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assignmentProvider.notifier).loadAssignments(widget.classId, publishedOnly: true);
+      ref.read(assignmentListProvider.notifier).loadAssignments(widget.classId, publishedOnly: true);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(assignmentListProvider);
 
     // Listen for sync completion to auto-refresh if data arrives after page opens
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assignmentsReady ?? false) && next.assignmentsReady) {
         // Assignments just became ready in the DB — reload
-        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId, publishedOnly: true, skipBackgroundRefresh: true);
+        ref.read(assignmentListProvider.notifier).loadAssignments(widget.classId, publishedOnly: true, skipBackgroundRefresh: true);
       }
     });
 
@@ -65,7 +65,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
               ? const EmptyAssignmentState()
               : RefreshableList(
                   onRefresh: () => ref
-                      .read(assignmentProvider.notifier)
+                      .read(assignmentListProvider.notifier)
                       .loadAssignments(widget.classId, publishedOnly: true),
                   padding: const EdgeInsets.all(24),
                   itemCount: state.assignments.length,
@@ -98,7 +98,7 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
                           ),
                         ),
                       ).then((_) => ref
-                          .read(assignmentProvider.notifier)
+                          .read(assignmentListProvider.notifier)
                           .loadAssignments(widget.classId, publishedOnly: true)),
                     );
                   },

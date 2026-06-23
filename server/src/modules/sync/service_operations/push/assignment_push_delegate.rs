@@ -1,27 +1,59 @@
+use std::sync::Arc;
+use async_trait::async_trait;
 use uuid::Uuid;
 use chrono::Utc;
+use crate::modules::assignment::service::AssignmentService;
 use crate::modules::assignment::schema::{CreateAssignmentRequest, UpdateAssignmentRequest};
+use super::delegate::PushDelegate;
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
-use super::extract_field;
+use super::result_helpers::{error_result, success_result, parse_uuid_field, parse_str_field};
 
-impl super::SyncPushService {
-    pub(super) async fn handle_assignment_operation(&self, user_id: Uuid, _user_role: &str, op: &SyncQueueEntry) -> OperationResult {
+pub struct AssignmentPushDelegate {
+    pub assignment_service: Arc<AssignmentService>,
+}
+
+impl AssignmentPushDelegate {
+    pub fn new(assignment_service: Arc<AssignmentService>) -> Self {
+        Self { assignment_service }
+    }
+}
+
+#[async_trait]
+impl PushDelegate for AssignmentPushDelegate {
+    fn can_handle(&self, entity_type: &str) -> bool {
+        entity_type == "assignment"
+    }
+
+    async fn process(
+        &self,
+        user_id: Uuid,
+        _user_role: &str,
+        op: &SyncQueueEntry,
+    ) -> OperationResult {
         match op.operation.as_str() {
             "create" => {
-                let class_id = extract_field!(self, op, parse_uuid_field, "class_id");
-                let title = extract_field!(self, op, parse_str_field, "title");
-                let instructions = extract_field!(self, op, parse_str_field, "instructions");
-                let client_id = match self.parse_uuid_field(&op.payload, "id") {
-                    Ok(id) => Some(id),
-                    Err(e) => return self.error_result(op, &format!("Client ID is required for assignment creation: {}", e)),
+                let class_id = match parse_uuid_field(&op.payload, "class_id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
                 };
-                // Get allows_* flags from payload
+                let title = match parse_str_field(&op.payload, "title") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
+                let instructions = match parse_str_field(&op.payload, "instructions") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
+                let client_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(id) => Some(id),
+                    Err(e) => return error_result(op, &format!("Client ID is required for assignment creation: {}", e)),
+                };
                 let allows_text = op.payload.get("allows_text_submission")
                     .and_then(|v| v.as_bool())
-                    .unwrap_or(true); // Default to true for text submission
+                    .unwrap_or(true);
                 let allows_file = op.payload.get("allows_file_submission")
                     .and_then(|v| v.as_bool())
-                    .unwrap_or(false); // Default to false for file submission
+                    .unwrap_or(false);
                 let request = CreateAssignmentRequest {
                     title,
                     instructions,
@@ -37,12 +69,15 @@ impl super::SyncPushService {
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
                 match self.assignment_service.create_assignment(class_id, request, user_id, client_id).await {
-                    Ok(r) => self.success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(r) => success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "update" => {
-                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assignment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 let request = UpdateAssignmentRequest {
                     title: op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string()),
                     instructions: op.payload.get("instructions").and_then(|v| v.as_str()).map(|s| s.to_string()),
@@ -56,32 +91,41 @@ impl super::SyncPushService {
                     component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 };
                 match self.assignment_service.update_assignment(assignment_id, request, user_id).await {
-                    Ok(r) => self.success_result(op, None, Some(r.updated_at)),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(r) => success_result(op, None, Some(r.updated_at)),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "delete" => {
-                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assignment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assignment_service.soft_delete(assignment_id, user_id).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "publish" => {
-                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assignment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assignment_service.publish_assignment(assignment_id, user_id).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
             "unpublish" => {
-                let assignment_id = extract_field!(self, op, parse_uuid_field, "id");
+                let assignment_id = match parse_uuid_field(&op.payload, "id") {
+                    Ok(v) => v,
+                    Err(e) => return error_result(op, &e),
+                };
                 match self.assignment_service.unpublish_assignment(assignment_id, user_id).await {
-                    Ok(_) => self.success_result(op, None, Some(Utc::now().to_rfc3339())),
-                    Err(e) => self.error_result(op, &e.to_string()),
+                    Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
+                    Err(e) => error_result(op, &e.to_string()),
                 }
             }
-            _ => self.error_result(op, &format!("Unknown operation: {}", op.operation)),
+            _ => error_result(op, &format!("Unknown operation: {}", op.operation)),
         }
     }
 }

@@ -24,34 +24,34 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Load class detail to get enrolled students
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
       // Cache-first + background refresh for participants
-      ref.read(classProvider.notifier).loadParticipants(widget.classId);
+      ref.read(classDetailProvider.notifier).loadParticipants(widget.classId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final currentClassDetail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final currentClassDetail = classDetailState.currentClassDetail;
 
-    ref.listen<ClassState>(classProvider, (prev, next) {
+    ref.listen<ClassDetailState>(classDetailProvider, (prev, next) {
       // Offline fallback: if no cached detail and error occurred, load from local DB
       if (currentClassDetail == null &&
           next.error != null &&
           prev?.error != next.error) {
-        ref.read(classProvider.notifier).loadParticipants(widget.classId);
+        ref.read(classDetailProvider.notifier).loadParticipants(widget.classId);
       }
       // Show error messages
       if (next.error != null && prev?.error != next.error) {
-        ref.read(classProvider.notifier).clearMessages();
+        ref.read(classDetailProvider.notifier).clearMessages();
       }
     });
 
     // Determine which student list to show
     final rawStudents = currentClassDetail != null
         ? currentClassDetail.students // Online: from API
-        : classState.searchResults; // Offline: from local DB
+        : classDetailState.participants; // Offline: from local DB
 
     // Sort by last name, then first name
     final students = List<dynamic>.from(rawStudents)
@@ -67,7 +67,7 @@ class _ClassStudentListPageState extends ConsumerState<ClassStudentListPage> {
 
     return MobilePageScaffold(
       title: 'Students',
-      isLoading: classState.isLoading && students.isEmpty,
+      isLoading: classDetailState.isLoading && students.isEmpty,
       body: students.isEmpty
           ? const EmptyStudentState()
           : ListView.builder(

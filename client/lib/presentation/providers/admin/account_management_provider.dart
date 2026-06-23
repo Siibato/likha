@@ -1,56 +1,38 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
-import 'package:likha/domain/auth/entities/activity_log.dart';
-import 'package:likha/domain/auth/entities/teacher_details.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
-import 'package:likha/domain/auth/usecases/get_account_details.dart';
-import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
+import 'package:likha/domain/auth/usecases/delete_account.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
-import 'package:likha/domain/auth/usecases/delete_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
-import 'package:likha/domain/auth/usecases/upsert_account_details.dart';
-import 'package:likha/domain/student_records/entities/learner_details.dart';
 import 'package:likha/injection_container.dart';
 
-class AdminState {
+class AccountManagementState {
   final List<User> accounts;
-  final List<ActivityLog> activityLogs;
-  final LearnerDetails? learnerDetails;
-  final TeacherDetails? teacherDetails;
   final bool isLoading;
   final String? error;
   final String? successMessage;
 
-  AdminState({
+  AccountManagementState({
     this.accounts = const [],
-    this.activityLogs = const [],
-    this.learnerDetails,
-    this.teacherDetails,
     this.isLoading = false,
     this.error,
     this.successMessage,
   });
 
-  AdminState copyWith({
+  AccountManagementState copyWith({
     List<User>? accounts,
-    List<ActivityLog>? activityLogs,
-    LearnerDetails? learnerDetails,
-    TeacherDetails? teacherDetails,
     bool? isLoading,
     String? error,
     String? successMessage,
     bool clearError = false,
     bool clearSuccess = false,
   }) {
-    return AdminState(
+    return AccountManagementState(
       accounts: accounts ?? this.accounts,
-      activityLogs: activityLogs ?? this.activityLogs,
-      learnerDetails: learnerDetails ?? this.learnerDetails,
-      teacherDetails: teacherDetails ?? this.teacherDetails,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       successMessage:
@@ -59,28 +41,24 @@ class AdminState {
   }
 }
 
-class AdminNotifier extends StateNotifier<AdminState> {
+class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
+  final Ref ref;
   final GetAllAccounts _getAllAccounts;
   final CreateAccount _createAccount;
   final ResetAccount _resetAccount;
   final LockAccount _lockAccount;
-  final GetActivityLogs _getActivityLogs;
   final UpdateAccount _updateAccount;
   final DeleteAccount _deleteAccount;
-  final GetAccountDetails _getAccountDetails;
-  final UpsertAccountDetails _upsertAccountDetails;
 
-  AdminNotifier(
+  AccountManagementNotifier(
+    this.ref,
     this._getAllAccounts,
     this._createAccount,
     this._resetAccount,
     this._lockAccount,
-    this._getActivityLogs,
     this._updateAccount,
     this._deleteAccount,
-    this._getAccountDetails,
-    this._upsertAccountDetails,
-  ) : super(AdminState());
+  ) : super(AccountManagementState());
 
   Future<void> loadAccounts() async {
     ProviderLogger.instance.log('loadAccounts: Starting to load accounts');
@@ -162,6 +140,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
           accounts: state.accounts.map((a) => a.id == tempId ? user : a).toList(),
           successMessage: 'Account created successfully',
         );
+        ref.invalidate(accountManagementProvider);
       },
     );
   }
@@ -205,6 +184,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
           accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: 'Account reset successfully',
         );
+        ref.invalidate(accountManagementProvider);
       },
     );
   }
@@ -252,74 +232,9 @@ class AdminNotifier extends StateNotifier<AdminState> {
           accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: locked ? 'Account locked' : 'Account unlocked',
         );
+        ref.invalidate(accountManagementProvider);
       },
     );
-  }
-
-  Future<void> loadAccountDetails(String userId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await _getAccountDetails(userId);
-
-    result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (response) => state = state.copyWith(
-        isLoading: false,
-        learnerDetails: response.learnerDetails,
-        teacherDetails: response.teacherDetails,
-      ),
-    );
-  }
-
-  Future<void> updateAccountDetails({
-    required String userId,
-    Map<String, dynamic>? learnerDetails,
-    Map<String, dynamic>? teacherDetails,
-  }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await _upsertAccountDetails(UpsertAccountDetailsParams(
-      userId: userId,
-      learnerDetails: learnerDetails,
-      teacherDetails: teacherDetails,
-    ));
-
-    result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (response) => state = state.copyWith(
-        isLoading: false,
-        learnerDetails: response.learnerDetails,
-        teacherDetails: response.teacherDetails,
-        successMessage: 'Account details updated successfully',
-      ),
-    );
-  }
-
-  Future<void> loadActivityLogs(String userId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await _getActivityLogs(userId);
-
-    result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: AppErrorMapper.fromFailure(failure),
-      ),
-      (logs) => state = state.copyWith(
-        isLoading: false,
-        activityLogs: logs,
-      ),
-    );
-  }
-
-  void clearActivityLogs() {
-    state = state.copyWith(activityLogs: []);
   }
 
   Future<void> updateAccount({
@@ -371,6 +286,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
           accounts: state.accounts.map((a) => a.id == updatedUser.id ? updatedUser : a).toList(),
           successMessage: 'Account updated successfully',
         );
+        ref.invalidate(accountManagementProvider);
       },
     );
   }
@@ -391,9 +307,12 @@ class AdminNotifier extends StateNotifier<AdminState> {
         accounts: previousAccounts,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (_) => state = state.copyWith(
-        successMessage: 'Account deleted successfully',
-      ),
+      (_) {
+        state = state.copyWith(
+          successMessage: 'Account deleted successfully',
+        );
+        ref.invalidate(accountManagementProvider);
+      },
     );
   }
 
@@ -417,16 +336,15 @@ class AdminNotifier extends StateNotifier<AdminState> {
   }
 }
 
-final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
-  return AdminNotifier(
+final accountManagementProvider =
+    StateNotifierProvider<AccountManagementNotifier, AccountManagementState>((ref) {
+  return AccountManagementNotifier(
+    ref,
     sl<GetAllAccounts>(),
     sl<CreateAccount>(),
     sl<ResetAccount>(),
     sl<LockAccount>(),
-    sl<GetActivityLogs>(),
     sl<UpdateAccount>(),
     sl<DeleteAccount>(),
-    sl<GetAccountDetails>(),
-    sl<UpsertAccountDetails>(),
   );
 });

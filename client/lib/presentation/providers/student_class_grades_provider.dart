@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/transmutation_util.dart';
 import 'package:likha/domain/grading/entities/term_grade.dart';
 import 'package:likha/domain/grading/usecases/get_my_grades.dart';
@@ -73,28 +72,16 @@ class StudentClassGradesState {
 class StudentClassGradesNotifier
     extends StateNotifier<StudentClassGradesState> {
   StudentClassGradesNotifier(this._ref)
-      : super(StudentClassGradesState.initial()) {
-    _setupEventSubscriptions();
-  }
+      : super(StudentClassGradesState.initial());
 
   final Ref _ref;
-  late StreamSubscription<void> _classesChangedSub;
-
-  void _setupEventSubscriptions() {
-    // Reload grades when classes change (enrollment updates, sync, etc.)
-    _classesChangedSub = sl<DataEventBus>().onClassesChanged.listen((_) {
-      if (state.classGrades.isNotEmpty) {
-        loadAllClassGrades();
-      }
-    });
-  }
 
   Future<void> loadAllClassGrades() async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final classState = _ref.read(classProvider);
-      final enrolledClasses = classState.classes;
+      final classListState = _ref.read(classListProvider);
+      final enrolledClasses = classListState.classes;
 
       if (enrolledClasses.isEmpty) {
         state = state.copyWith(isLoading: false, classGrades: []);
@@ -182,12 +169,6 @@ class StudentClassGradesNotifier
         error: 'Something went wrong. Please try again.',
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _classesChangedSub.cancel();
-    super.dispose();
   }
 }
 

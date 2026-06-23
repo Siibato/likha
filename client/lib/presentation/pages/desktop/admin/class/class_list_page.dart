@@ -24,7 +24,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadAllClasses();
+      ref.read(classListProvider.notifier).loadAllClasses();
     });
   }
 
@@ -36,7 +36,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
         studentCount: cls.studentCount,
         onConfirm: () {
           Navigator.pop(ctx);
-          ref.read(classProvider.notifier).deleteClass(cls.id);
+          ref.read(classListProvider.notifier).deleteClass(cls.id);
         },
       ),
     );
@@ -44,9 +44,9 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
-    final filteredClasses = classState.classes.where((c) {
+    final filteredClasses = classListState.classes.where((c) {
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return c.title.toLowerCase().contains(q) ||
@@ -64,7 +64,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
             MaterialPageRoute(
               builder: (_) => const AdminCreateClassPage(),
             ),
-          ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
+          ).then((_) => ref.read(classListProvider.notifier).loadAllClasses()),
           icon: const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create Class'),
           style: FilledButton.styleFrom(
@@ -112,7 +112,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
           const SizedBox(height: 20),
 
           // Table
-          if (classState.isLoading && classState.classes.isEmpty)
+          if (classListState.isLoading && classListState.classes.isEmpty)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(48),
@@ -132,7 +132,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                       AdminClassDetailPage(classId: cls.id),
                 ),
               ).then(
-                  (_) => ref.read(classProvider.notifier).loadAllClasses()),
+                  (_) => ref.read(classListProvider.notifier).loadAllClasses()),
               onDelete: (cls) => _showDeleteConfirmation(cls),
             ),
         ],

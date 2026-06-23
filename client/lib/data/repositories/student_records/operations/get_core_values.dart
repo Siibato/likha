@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
@@ -10,8 +9,7 @@ import 'package:likha/domain/student_records/entities/core_values_record.dart';
 
 ResultFuture<List<CoreValuesRecord>> getCoreValues(
   StudentRecordsLocalDataSource localDataSource,
-  StudentRecordsRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  StudentRecordsRemoteDataSource remoteDataSource, {
   required String classId,
   required String studentId,
   String? schoolYear,

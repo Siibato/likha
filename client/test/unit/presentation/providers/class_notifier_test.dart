@@ -4,7 +4,6 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/classes/usecases/add_student.dart';
@@ -17,7 +16,7 @@ import 'package:likha/domain/classes/usecases/get_participants.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
-import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/providers/class/class_list_provider.dart';
 
 import '../../../helpers/fake_entities.dart';
 
@@ -36,22 +35,17 @@ class MockDeleteClass extends Mock implements DeleteClass {}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-ClassNotifier _buildNotifier({
+ClassListNotifier _buildNotifier({
   MockGetMyClasses? getMyClasses,
   MockGetAllClasses? getAllClasses,
   MockCreateClass? createClass,
   MockDeleteClass? deleteClass,
 }) {
-  return ClassNotifier(
+  return ClassListNotifier(
     createClass ?? MockCreateClass(),
     getMyClasses ?? MockGetMyClasses(),
     getAllClasses ?? MockGetAllClasses(),
-    MockGetClassDetail(),
     MockUpdateClass(),
-    MockAddStudent(),
-    MockRemoveStudent(),
-    MockSearchStudents(),
-    MockGetParticipants(),
     deleteClass ?? MockDeleteClass(),
   );
 }
@@ -63,7 +57,6 @@ void main() {
   final tMutationResult = MutationResult(entity: tClass, status: SyncStatus.pending);
 
   setUpAll(() {
-    GetIt.instance.registerSingleton<DataEventBus>(DataEventBus());
     registerFallbackValue(CreateClassParams(title: 'Test Class'));
     registerFallbackValue(UpdateClassParams(classId: 'c-1'));
     registerFallbackValue(AddStudentParams(classId: 'c-1', studentId: 's-1'));
@@ -73,7 +66,7 @@ void main() {
     await GetIt.instance.reset();
   });
 
-  group('ClassNotifier', () {
+  group('ClassListNotifier', () {
     group('loadClasses', () {
       test('populates classes on success', () async {
         final mockGet = MockGetMyClasses();
@@ -82,7 +75,7 @@ void main() {
         when(() => mockGet(skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
             .thenAnswer((_) async => Right([tClass]));
 
-        final states = <ClassState>[];
+        final states = <ClassListState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
 
         await notifier.loadClasses();
@@ -99,7 +92,7 @@ void main() {
         when(() => mockGet(skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
             .thenAnswer((_) async => const Left(ServerFailure('server error')));
 
-        final states = <ClassState>[];
+        final states = <ClassListState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
 
         await notifier.loadClasses();
@@ -117,7 +110,7 @@ void main() {
         when(() => mockGetAll(skipBackgroundRefresh: any(named: 'skipBackgroundRefresh')))
             .thenAnswer((_) async => Right([tClass]));
 
-        final states = <ClassState>[];
+        final states = <ClassListState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
 
         await notifier.loadAllClasses();
@@ -134,7 +127,7 @@ void main() {
 
         when(() => mockCreate(any())).thenAnswer((_) async => Right(tMutationResult));
 
-        final states = <ClassState>[];
+        final states = <ClassListState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
 
         await notifier.createClass(title: 'New Class');
@@ -151,7 +144,7 @@ void main() {
         when(() => mockCreate(any()))
             .thenAnswer((_) async => const Left(ServerFailure('create failed')));
 
-        final states = <ClassState>[];
+        final states = <ClassListState>[];
         notifier.addListener((s) => states.add(s), fireImmediately: false);
 
         await notifier.createClass(title: 'New Class');

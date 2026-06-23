@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
@@ -11,8 +10,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<List<ClassEntity>> getMyClasses(
   ClassLocalDataSource localDataSource,
-  ClassRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  ClassRemoteDataSource remoteDataSource, {
   bool skipBackgroundRefresh = false,
 }) async {
   try {
@@ -31,7 +29,6 @@ ResultFuture<List<ClassEntity>> getMyClasses(
             if (helpers.classesHaveChanged(current, fresh)) {
               await localDataSource.cacheClasses(fresh);
               await helpers.cacheStudentParticipations(localDataSource, fresh, currentUserId);
-              dataEventBus.notifyClassesChanged();
             }
           },
         );

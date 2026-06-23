@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
@@ -10,8 +9,7 @@ import 'package:likha/data/datasources/remote/assessments/assessment_remote_data
 
 ResultFuture<StudentResult> getStudentResults(
   AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssessmentRemoteDataSource remoteDataSource, {
   required String submissionId,
 }) async {
   try {
@@ -25,7 +23,6 @@ ResultFuture<StudentResult> getStudentResults(
             final current = await localDataSource.getCachedStudentResults(submissionId);
             if (current == null || current != fresh) {
               await localDataSource.cacheStudentResults(fresh);
-              dataEventBus.notifyStudentResultsChanged(submissionId);
             }
           },
         );

@@ -43,7 +43,8 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     _schoolNameCtrl = TextEditingController(text: h?.schoolName ?? '');
     _schoolIdCtrl = TextEditingController(text: h?.schoolId ?? '');
     _gradeLevelCtrl = TextEditingController(text: h?.gradeLevel ?? '');
-    _selectedSchoolYear = h?.schoolYear?.isNotEmpty == true ? h!.schoolYear : SchoolYearDropdown.currentSchoolYear;
+    final schoolYear = h?.schoolYear;
+    _selectedSchoolYear = (schoolYear != null && schoolYear.isNotEmpty) ? schoolYear : SchoolYearDropdown.currentSchoolYear;
     _sectionCtrl = TextEditingController(text: h?.section ?? '');
     _dateFromCtrl = TextEditingController(text: h?.dateFrom ?? '');
     _dateToCtrl = TextEditingController(text: h?.dateTo ?? '');

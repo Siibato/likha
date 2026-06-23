@@ -43,7 +43,6 @@ AuthRepositoryImpl _buildRepo({
   MockAssessmentLocalDataSource? assessmentLocal,
   MockLearningMaterialLocalDataSource? materialLocal,
   MockGradingLocalDataSource? gradingLocal,
-  MockDataEventBus? eventBus,
 }) {
   return AuthRepositoryImpl(
     remoteDataSource: remote,
@@ -55,7 +54,6 @@ AuthRepositoryImpl _buildRepo({
     assessmentLocalDataSource: assessmentLocal ?? MockAssessmentLocalDataSource(),
     learningMaterialLocalDataSource: materialLocal ?? MockLearningMaterialLocalDataSource(),
     gradingLocalDataSource: gradingLocal ?? MockGradingLocalDataSource(),
-    dataEventBus: eventBus ?? MockDataEventBus(),
   );
 }
 

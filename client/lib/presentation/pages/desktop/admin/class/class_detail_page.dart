@@ -28,7 +28,7 @@ class _AdminClassDetailPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     });
   }
 
@@ -38,10 +38,11 @@ class _AdminClassDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final detail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final classListState = ref.watch(classListProvider);
+    final detail = classDetailState.currentClassDetail;
 
-    final classInfo = classState.classes
+    final classInfo = classListState.classes
         .cast<ClassEntity?>()
         .firstWhere(
           (c) => c?.id == widget.classId,
@@ -79,9 +80,9 @@ class _AdminClassDetailPageState
                         ),
                       ),
                     ).then((_) {
-                      ref.read(classProvider.notifier).loadAllClasses();
+                      ref.read(classListProvider.notifier).loadAllClasses();
                       ref
-                          .read(classProvider.notifier)
+                          .read(classDetailProvider.notifier)
                           .loadClassDetail(widget.classId);
                     }),
                   ),
@@ -112,7 +113,7 @@ class _AdminClassDetailPageState
                           ),
                         ).then((_) {
                           ref
-                              .read(classProvider.notifier)
+                              .read(classDetailProvider.notifier)
                               .loadClassDetail(widget.classId);
                         }),
                         icon: const Icon(Icons.group_add_rounded, size: 18),
@@ -164,7 +165,7 @@ class _AdminClassDetailPageState
                                 ),
                               ).then((_) {
                                 ref
-                                    .read(classProvider.notifier)
+                                    .read(classDetailProvider.notifier)
                                     .loadClassDetail(widget.classId);
                               }),
                               child: const Text('Add students'),

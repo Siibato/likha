@@ -19,7 +19,7 @@ BUILD_DIR         := builds
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
+.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-up-nginx docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -108,10 +108,17 @@ lint:
 	@cd $(SERVER_DIR) && cargo clippy
 	@cd $(CLIENT_DIR) && flutter analyze
 
-docker-up:
-	@docker-compose up -d
+docker-up: ## Build and start dev stack (no nginx, port 8080 exposed)
+	@docker-compose up -d --build
 
-docker-down:
+docker-up-nginx: ## Build and start full stack with nginx + TLS (ports 80/443)
+	@if [ ! -f nginx/certs/server.crt ]; then \
+		echo "No TLS certs found — generating self-signed..."; \
+		SERVER_IP=127.0.0.1 bash scripts/generate-certs.sh; \
+	fi
+	@docker-compose -f docker-compose.yml up -d --build
+
+docker-down: ## Stop all containers
 	@docker-compose down
 
 sync-pi-assets: ## Sync deployment assets (compose, scripts, systemd) into pi-gen stage

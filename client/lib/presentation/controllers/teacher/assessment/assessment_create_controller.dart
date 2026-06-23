@@ -7,7 +7,8 @@ import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/domain/assessments/usecases/create_assessment.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/domain/assessments/entities/question_draft.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +18,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Both mobile and desktop pages consume this via [ListenableBuilder].
 class AssessmentCreateController extends ChangeNotifier {
   final String classId;
-  final TeacherAssessmentNotifier notifier;
+  final AssessmentListNotifier listNotifier;
+  final AssessmentDetailNotifier detailNotifier;
 
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -44,7 +46,7 @@ class AssessmentCreateController extends ChangeNotifier {
 
   Timer? _autoSaveTimer;
 
-  AssessmentCreateController({required this.classId, required this.notifier});
+  AssessmentCreateController({required this.classId, required this.listNotifier, required this.detailNotifier});
 
   String get _draftKey => 'assessment_draft_$classId';
 
@@ -356,7 +358,7 @@ class AssessmentCreateController extends ChangeNotifier {
       final questionsData = buildQuestionsData();
 
       PageLogger.instance.log('AssessmentCreateController: calling createAssessment');
-      final assessment = await notifier.createAssessment(
+      final assessment = await listNotifier.createAssessment(
             CreateAssessmentParams(
               classId: classId,
               title: titleController.text.trim(),
@@ -378,7 +380,7 @@ class AssessmentCreateController extends ChangeNotifier {
       PageLogger.instance.log('AssessmentCreateController: createAssessment returned id=${assessment?.id}');
 
       if (assessment == null) {
-        formError = AppErrorMapper.toUserMessage(notifier.currentError);
+        formError = AppErrorMapper.toUserMessage(listNotifier.currentError);
         isSaving = false;
         notifyListeners();
         return null;
@@ -386,16 +388,16 @@ class AssessmentCreateController extends ChangeNotifier {
 
       if (!isPublished && questions.isNotEmpty) {
         PageLogger.instance.log('AssessmentCreateController: Adding ${questions.length} questions (draft flow)');
-        await notifier.addQuestions(
+        await detailNotifier.addQuestions(
           AddQuestionsParams(
             assessmentId: assessment.id,
             questions: questionsData,
           ),
         );
 
-        if (notifier.currentError != null) {
-          PageLogger.instance.error('AssessmentCreateController: Error after addQuestions', Exception(notifier.currentError));
-          formError = AppErrorMapper.toUserMessage(notifier.currentError);
+        if (detailNotifier.currentError != null) {
+          PageLogger.instance.error('AssessmentCreateController: Error after addQuestions', Exception(detailNotifier.currentError));
+          formError = AppErrorMapper.toUserMessage(detailNotifier.currentError);
           isSaving = false;
           notifyListeners();
           return null;
@@ -404,7 +406,8 @@ class AssessmentCreateController extends ChangeNotifier {
 
       PageLogger.instance.log('AssessmentCreateController: Clearing draft');
       await clearDraft();
-      notifier.clearMessages();
+      listNotifier.clearMessages();
+      detailNotifier.clearMessages();
       isSaving = false;
       notifyListeners();
       return assessment;

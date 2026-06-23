@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -27,8 +26,7 @@ bool _submissionsHaveChanged(List<SubmissionSummary> current, List<SubmissionSum
 
 ResultFuture<List<SubmissionSummary>> getSubmissions(
   AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssessmentRemoteDataSource remoteDataSource, {
   required String assessmentId,
   bool skipBackgroundRefresh = false,
 }) async {
@@ -47,12 +45,10 @@ ResultFuture<List<SubmissionSummary>> getSubmissions(
               if (_submissionsHaveChanged(current, fresh)) {
                 await localDataSource.cacheSubmissions(assessmentId, fresh);
                 RepoLogger.instance.log('getSubmissions: Background refresh cached ${fresh.length} submissions');
-                dataEventBus.notifyAssessmentDetailChanged(assessmentId);
               }
             } on CacheException {
               await localDataSource.cacheSubmissions(assessmentId, fresh);
               RepoLogger.instance.log('getSubmissions: Background refresh cached ${fresh.length} submissions');
-              dataEventBus.notifyAssessmentDetailChanged(assessmentId);
             } catch (e) {
               RepoLogger.instance.log('getSubmissions: Background refresh failed: $e');
             }

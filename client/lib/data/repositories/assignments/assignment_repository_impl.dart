@@ -1,4 +1,3 @@
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -16,19 +15,16 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   final AssignmentLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
   final StorageService _storageService;
-  final DataEventBus _dataEventBus;
 
   AssignmentRepositoryImpl({
     required AssignmentRemoteDataSource remoteDataSource,
     required AssignmentLocalDataSource localDataSource,
     required SyncQueue syncQueue,
     required StorageService storageService,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _syncQueue = syncQueue,
-        _storageService = storageService,
-        _dataEventBus = dataEventBus;
+        _storageService = storageService;
 
   @override
   ResultFuture<MutationResult<Assignment>> createAssignment({
@@ -74,7 +70,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
         _localDataSource,
         _remoteDataSource,
         _storageService,
-        _dataEventBus,
         classId: classId,
         publishedOnly: publishedOnly,
         skipBackgroundRefresh: skipBackgroundRefresh,
@@ -85,7 +80,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.getAssignmentDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assignmentId: assignmentId,
       );
 
@@ -156,7 +150,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.getSubmissions(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assignmentId: assignmentId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
@@ -166,7 +159,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.getSubmissionDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         submissionId: submissionId,
       );
 
@@ -200,7 +192,6 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
       ops.getStudentAssignmentSubmission(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assignmentId: assignmentId,
         studentId: studentId,
       );

@@ -10,7 +10,18 @@ use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
 use crate::modules::entitlement::EntitlementService;
 use crate::middleware::{RateLimitLayer, RateLimitStore};
 use crate::modules::setup::service::SetupService;
-use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
+use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService, PushDelegate};
+use crate::modules::sync::service_operations::push::{
+    class_push_delegate::ClassPushDelegate,
+    assessment_push_delegate::AssessmentPushDelegate,
+    assignment_push_delegate::AssignmentPushDelegate,
+    admin_user_push_delegate::AdminUserPushDelegate,
+    learning_material_push_delegate::LearningMaterialPushDelegate,
+    question_push_delegate::QuestionPushDelegate,
+    submission_push_delegate::SubmissionPushDelegate,
+    grading_push_delegate::GradingPushDelegate,
+    tos_push_delegate::TosPushDelegate,
+};
 use crate::modules::grading::service::GradeComputationService;
 
 use crate::modules::assessment::service::AssessmentService;
@@ -52,17 +63,26 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
     let manifest_repo = ManifestRepository::new(db.clone());
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
 
+    let delegates: Vec<Arc<dyn PushDelegate>> = vec![
+        Arc::new(ClassPushDelegate::new(class_service.clone())),
+        Arc::new(AssessmentPushDelegate::new(assessment_service.clone())),
+        Arc::new(AssignmentPushDelegate::new(assignment_service.clone())),
+        Arc::new(AdminUserPushDelegate::new(admin_service.clone())),
+        Arc::new(LearningMaterialPushDelegate::new(material_service.clone())),
+        Arc::new(QuestionPushDelegate::new(assessment_service.clone())),
+        Arc::new(SubmissionPushDelegate::new(
+            assessment_service.clone(),
+            assignment_service.clone(),
+            material_service.clone(),
+        )),
+        Arc::new(GradingPushDelegate::new(grade_computation_service.clone())),
+        Arc::new(TosPushDelegate::new(tos_service.clone())),
+    ];
+
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
-        class_service.clone(),
-        assessment_service.clone(),
-        assignment_service.clone(),
-        material_service.clone(),
-        auth_service.clone(),
-        admin_service.clone(),
-        grade_computation_service.clone(),
-        tos_service.clone(),
         processed_ops_repo,
+        delegates,
     ));
     let sync_conflict_service = Arc::new(SyncConflictService::new());
     let sync_full_service = Arc::new(SyncFullService::new(

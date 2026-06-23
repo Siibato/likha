@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -13,8 +12,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<MutationResult<GradeItem>> createGradeItem(
   GradingLocalDataSource localDataSource,
-  SyncQueue syncQueue,
-  DataEventBus dataEventBus, {
+  SyncQueue syncQueue, {
   required String classId,
   required Map<String, dynamic> data,
 }) async {
@@ -60,8 +58,6 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       );
 
     });
-
-    dataEventBus.notifyGradesChanged(classId);
 
     return Right(MutationResult(entity: helpers.itemToEntity(model), status: SyncStatus.pending));
   } catch (e) {

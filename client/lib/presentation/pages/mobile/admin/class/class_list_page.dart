@@ -26,7 +26,7 @@ class _AdminClassListPageState extends ConsumerState<AdminClassListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadAllClasses();
+      ref.read(classListProvider.notifier).loadAllClasses();
     });
   }
 
@@ -58,9 +58,9 @@ class _AdminClassListPageState extends ConsumerState<AdminClassListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
-    final filteredClasses = _getFilteredAndSortedClasses(classState.classes);
+    final filteredClasses = _getFilteredAndSortedClasses(classListState.classes);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -91,10 +91,10 @@ class _AdminClassListPageState extends ConsumerState<AdminClassListPage> {
           ),
           Expanded(
             child: ContentStateBuilder(
-              isLoading: classState.isLoading && classState.classes.isEmpty,
+              isLoading: classListState.isLoading && classListState.classes.isEmpty,
               isEmpty: filteredClasses.isEmpty,
-              onRefresh: () => ref.read(classProvider.notifier).loadAllClasses(),
-              onRetry: () => ref.read(classProvider.notifier).loadAllClasses(),
+              onRefresh: () => ref.read(classListProvider.notifier).loadAllClasses(),
+              onRetry: () => ref.read(classListProvider.notifier).loadAllClasses(),
               emptyState: _searchQuery.isEmpty
                   ? const EmptyClassesState()
                   : EmptySearchClassesState(searchQuery: _searchQuery),
@@ -115,7 +115,7 @@ class _AdminClassListPageState extends ConsumerState<AdminClassListPage> {
                       MaterialPageRoute(
                         builder: (_) => AdminClassDetailPage(classId: cls.id),
                       ),
-                    ).then((_) => ref.read(classProvider.notifier).loadAllClasses()),
+                    ).then((_) => ref.read(classListProvider.notifier).loadAllClasses()),
                   );
                 },
               ),

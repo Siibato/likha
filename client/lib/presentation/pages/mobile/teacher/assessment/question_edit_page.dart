@@ -6,7 +6,7 @@ import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/domain/assessments/usecases/update_question.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/question_form_controller.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_form_body.dart';
 import 'package:likha/presentation/widgets/shared/cards/question_type_display.dart';
 
@@ -55,7 +55,7 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
       return;
     }
 
-    await ref.read(teacherAssessmentProvider.notifier).updateQuestion(
+    await ref.read(assessmentDetailProvider.notifier).updateQuestion(
           UpdateQuestionParams(
             questionId: widget.question.id,
             data: _controller.buildPayload(),
@@ -63,18 +63,18 @@ class _EditQuestionPageState extends ConsumerState<EditQuestionPage> {
         );
 
     if (!mounted) return;
-    final state = ref.read(teacherAssessmentProvider);
+    final state = ref.read(assessmentDetailProvider);
     if (state.error == null) {
       Navigator.pop(context, true);
     } else {
       _controller.setFormError(AppErrorMapper.toUserMessage(state.error));
-      ref.read(teacherAssessmentProvider.notifier).clearMessages();
+      ref.read(assessmentDetailProvider.notifier).clearMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(assessmentDetailProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,

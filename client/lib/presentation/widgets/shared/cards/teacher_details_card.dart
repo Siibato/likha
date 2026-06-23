@@ -128,11 +128,11 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
               ),
               const Spacer(),
               if (_showSaved)
-                Row(
+                const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.check_circle_rounded, size: 16, color: AppColors.semanticSuccess),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       'Saved',
                       style: TextStyle(
@@ -141,7 +141,7 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
                         color: AppColors.semanticSuccess,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                   ],
                 )
               else if (widget.isLoading)

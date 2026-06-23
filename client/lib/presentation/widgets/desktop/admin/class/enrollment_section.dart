@@ -39,8 +39,8 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
     _searchController = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
-      ref.read(classProvider.notifier).searchStudents(query: null);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(studentSearchProvider.notifier).searchStudents(query: null);
     });
 
     _searchController.addListener(_onSearchChanged);
@@ -56,9 +56,9 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
       });
 
       if (query.isNotEmpty) {
-        ref.read(classProvider.notifier).searchStudents(query: query);
+        ref.read(studentSearchProvider.notifier).searchStudents(query: query);
       } else {
-        ref.read(classProvider.notifier).searchStudents(query: null);
+        ref.read(studentSearchProvider.notifier).searchStudents(query: null);
       }
     });
   }
@@ -72,22 +72,23 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
 
   void _handleEnrollToggle(String studentId, bool isEnrolled) {
     if (isEnrolled) {
-      ref.read(classProvider.notifier).removeStudent(classId: widget.classId, studentId: studentId);
+      ref.read(classDetailProvider.notifier).removeStudent(classId: widget.classId, studentId: studentId);
     } else {
-      ref.read(classProvider.notifier).addStudent(classId: widget.classId, studentId: studentId);
+      ref.read(classDetailProvider.notifier).addStudent(classId: widget.classId, studentId: studentId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classDetailState = ref.watch(classDetailProvider);
+    final studentSearchState = ref.watch(studentSearchProvider);
 
-    ref.listen<ClassState>(classProvider, (prev, next) {
+    ref.listen<ClassDetailState>(classDetailProvider, (prev, next) {
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ref.read(classProvider.notifier).clearMessages();
+        ref.read(classDetailProvider.notifier).clearMessages();
       }
       if (next.error != null && prev?.error != next.error) {
-        ref.read(classProvider.notifier).clearMessages();
+        ref.read(classDetailProvider.notifier).clearMessages();
       }
     });
 
@@ -115,7 +116,7 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
             onClear: () {
               _searchController.clear();
               setState(() => _searchQuery = '');
-              ref.read(classProvider.notifier).searchStudents(query: null);
+              ref.read(studentSearchProvider.notifier).searchStudents(query: null);
             },
           ),
         ),
@@ -124,8 +125,8 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
         // Students count
         Text(
           _searchQuery.isEmpty
-              ? 'All Students (${classState.searchResults.length})'
-              : 'Search Results (${classState.searchResults.length})',
+              ? 'All Students (${studentSearchState.searchResults.length})'
+              : 'Search Results (${studentSearchState.searchResults.length})',
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -135,9 +136,9 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
         const SizedBox(height: 12),
 
         // Student list
-        if (classState.isLoading && classState.searchResults.isEmpty)
+        if (studentSearchState.isLoading && studentSearchState.searchResults.isEmpty)
           const LoadingState(message: 'Loading students...')
-        else if (classState.searchResults.isEmpty)
+        else if (studentSearchState.searchResults.isEmpty)
           EmptyState.generic(
             title: _searchQuery.isEmpty ? 'No students available' : 'No students found',
             subtitle: _searchQuery.isEmpty 
@@ -148,13 +149,13 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
                 : Icons.person_search_rounded,
           )
         else
-          _buildStudentTable(classState),
+          _buildStudentTable(studentSearchState, classDetailState),
       ],
     );
   }
 
-  Widget _buildStudentTable(ClassState classState) {
-    final allResults = classState.searchResults;
+  Widget _buildStudentTable(StudentSearchState studentSearchState, ClassDetailState classDetailState) {
+    final allResults = studentSearchState.searchResults;
     final totalPages = (allResults.length / _pageSize).ceil();
     if (_currentPage >= totalPages && totalPages > 0) {
       _currentPage = totalPages - 1;
@@ -198,8 +199,8 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
                 ...pageResults.asMap().entries.map((entry) {
                   final index = entry.key;
                   final student = entry.value;
-                  final isParticipant = classState.participantIds.contains(student.id);
-                  final isStudentLoading = classState.loadingStudentIds.contains(student.id);
+                  final isParticipant = classDetailState.participantIds.contains(student.id);
+                  final isStudentLoading = classDetailState.loadingStudentIds.contains(student.id);
 
                   return Column(
                     children: [

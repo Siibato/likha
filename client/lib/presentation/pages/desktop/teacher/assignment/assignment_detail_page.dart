@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_detail_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_info_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_instructions_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_status_badge.dart';
@@ -28,17 +29,17 @@ class _AssignmentDetailPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assignmentProvider.notifier)
+          .read(assignmentDetailProvider.notifier)
           .loadAssignmentDetail(widget.assignmentId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(assignmentDetailProvider);
     final assignment = state.currentAssignment;
 
-    ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
+    ref.listen<AssignmentListState>(assignmentListProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -47,7 +48,7 @@ class _AssignmentDetailPageState
             backgroundColor: AppColors.semanticSuccess,
           ),
         );
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(assignmentListProvider.notifier).clearMessages();
 
         if (next.successMessage == 'Assignment deleted') {
           Navigator.of(context).pop(true);
@@ -62,7 +63,7 @@ class _AssignmentDetailPageState
             backgroundColor: AppColors.semanticError,
           ),
         );
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(assignmentListProvider.notifier).clearMessages();
       }
     });
 
