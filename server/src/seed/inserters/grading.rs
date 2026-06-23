@@ -25,7 +25,9 @@ pub async fn insert_grade_items(
             updated_at: Set(now),
             deleted_at: Set(None),
         };
-        item.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        item.insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())
@@ -48,7 +50,10 @@ pub async fn insert_grade_records(
             updated_at: Set(now),
             deleted_at: Set(None),
         };
-        record.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        record
+            .insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())
@@ -71,7 +76,10 @@ pub async fn insert_grade_scores(
             updated_at: Set(now),
             deleted_at: Set(None),
         };
-        score.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        score
+            .insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())
@@ -95,7 +103,10 @@ pub async fn insert_term_grades(
             updated_at: Set(now),
             deleted_at: Set(None),
         };
-        grade.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        grade
+            .insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())

@@ -1,14 +1,20 @@
-use uuid::Uuid;
+use crate::modules::auth::UserRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::entitlement::repository::EntitlementRepository;
-use crate::modules::auth::UserRepository;
 use crate::tests::common::test_db::test_db;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_get_accessible_classes_returns_empty_for_new_user() {
     let db = test_db().await;
     let user = UserRepository::new(db.clone())
-        .create_account("newuser".to_string(), "New".to_string(), "User".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "newuser".to_string(),
+            "New".to_string(),
+            "User".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
         .expect("user");
     let repo = EntitlementRepository::new(db);

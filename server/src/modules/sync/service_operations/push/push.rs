@@ -1,8 +1,8 @@
-use uuid::Uuid;
-use serde_json::Value;
-use crate::utils::AppResult;
-use super::sync_push_service::{PushResponse, OperationResult, SyncQueueEntry};
 use super::result_helpers::error_result;
+use super::sync_push_service::{OperationResult, PushResponse, SyncQueueEntry};
+use crate::utils::AppResult;
+use serde_json::Value;
+use uuid::Uuid;
 
 impl super::SyncPushService {
     pub async fn push_operations(
@@ -17,12 +17,14 @@ impl super::SyncPushService {
         };
 
         // Count operations by entity type for logging
-        let mut op_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut op_counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
         for op in &operations {
             *op_counts.entry(op.entity_type.clone()).or_insert(0) += 1;
         }
 
-        let op_summary = op_counts.iter()
+        let op_summary = op_counts
+            .iter()
             .map(|(k, v)| format!("{}={}", k, v))
             .collect::<Vec<_>>()
             .join(", ");
@@ -46,11 +48,7 @@ impl super::SyncPushService {
                 }
                 Err(e) => {
                     // Log the error, but process anyway (fail-open to avoid data loss)
-                    tracing::warn!(
-                        "Failed to check processed operations for {}: {}",
-                        op.id,
-                        e
-                    );
+                    tracing::warn!("Failed to check processed operations for {}: {}", op.id, e);
                 }
             }
 
@@ -75,13 +73,10 @@ impl super::SyncPushService {
                 );
             }
 
-            let _ = self.processed_ops_repo.save_processed(
-                &op.id,
-                user_id,
-                &op.entity_type,
-                &op.operation,
-                &result,
-            ).await;
+            let _ = self
+                .processed_ops_repo
+                .save_processed(&op.id, user_id, &op.entity_type, &op.operation, &result)
+                .await;
 
             results.push(result);
         }
@@ -95,11 +90,14 @@ impl super::SyncPushService {
         user_role: &str,
         op: &SyncQueueEntry,
     ) -> OperationResult {
-        let class_id = op.payload.get("class_id")
+        let class_id = op
+            .payload
+            .get("class_id")
             .and_then(|v| v.as_str())
             .and_then(|s| uuid::Uuid::parse_str(s).ok());
 
-        if let Err(_) = self.entitlement_service
+        if let Err(_) = self
+            .entitlement_service
             .assert_can_sync_operation(user_id, user_role, &op.operation, &op.entity_type, class_id)
             .await
         {

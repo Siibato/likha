@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::AppResult;
 use crate::modules::learning_material::schema::{CreateMaterialRequest, MaterialResponse};
+use crate::utils::error::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn create_material(
@@ -25,7 +25,14 @@ impl crate::modules::learning_material::service::LearningMaterialService {
 
         let material = self
             .material_repo
-            .create_material(class_id, title, description, content_text, order_index, client_id)
+            .create_material(
+                class_id,
+                title,
+                description,
+                content_text,
+                order_index,
+                client_id,
+            )
             .await?;
 
         let _ = self

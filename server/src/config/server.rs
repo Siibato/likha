@@ -35,14 +35,14 @@ pub struct ServerConfig {
 
 impl ServerConfig {
     pub fn from_env() -> Self {
-        let db_encryption_key = env::var("DB_ENCRYPTION_KEY")
-            .expect("DB_ENCRYPTION_KEY must be set in .env file");
+        let db_encryption_key =
+            env::var("DB_ENCRYPTION_KEY").expect("DB_ENCRYPTION_KEY must be set in .env file");
 
         Validator::validate_encryption_key(&db_encryption_key)
             .unwrap_or_else(|e| panic!("Invalid DB_ENCRYPTION_KEY: {}", e));
 
-        let file_encryption_key = env::var("FILE_ENCRYPTION_KEY")
-            .expect("FILE_ENCRYPTION_KEY must be set in .env file");
+        let file_encryption_key =
+            env::var("FILE_ENCRYPTION_KEY").expect("FILE_ENCRYPTION_KEY must be set in .env file");
 
         Validator::validate_encryption_key(&file_encryption_key)
             .unwrap_or_else(|e| panic!("Invalid FILE_ENCRYPTION_KEY: {}", e));
@@ -77,13 +77,13 @@ impl ServerConfig {
                 .expect("JWT_EXPIRATION must be a valid number"),
             file_storage_path: env::var("FILE_STORAGE_PATH")
                 .unwrap_or_else(|_| "./uploads".to_string()),
-            school_code: env::var("SCHOOL_CODE")
-                .expect("SCHOOL_CODE must be set in .env file"),
+            school_code: env::var("SCHOOL_CODE").expect("SCHOOL_CODE must be set in .env file"),
             db_encryption_key,
             file_encryption_key,
             allowed_origins,
             max_body_size_bytes,
-            redis_url: env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string()),
+            redis_url: env::var("REDIS_URL")
+                .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
             cache_enabled: env::var("CACHE_ENABLED")
                 .unwrap_or_else(|_| "true".to_string())
                 .parse::<bool>()
@@ -104,7 +104,9 @@ impl ServerConfig {
             node_id: env::var("NODE_ID").unwrap_or_else(|_| Uuid::new_v4().to_string()),
             node_ip: env::var("NODE_IP").unwrap_or_else(|_| net::detect_local_ip()),
             mesh_group_id: env::var("MESH_GROUP_ID").ok().filter(|s| !s.is_empty()),
-            replication_secret: env::var("REPLICATION_SECRET").ok().filter(|s| !s.is_empty()),
+            replication_secret: env::var("REPLICATION_SECRET")
+                .ok()
+                .filter(|s| !s.is_empty()),
             replication_interval_seconds: env::var("REPLICATION_INTERVAL_SECONDS")
                 .unwrap_or_else(|_| "30".to_string())
                 .parse()

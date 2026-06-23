@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessments;
 
 pub async fn unpublish_assessment(
     db: &DatabaseConnection,
@@ -19,8 +19,7 @@ pub async fn unpublish_assessment(
     assessment.is_published = Set(false);
     assessment.updated_at = Set(Utc::now().naive_utc());
 
-    assessment
-        .update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to unpublish assessment: {}", e)))
+    assessment.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to unpublish assessment: {}", e))
+    })
 }

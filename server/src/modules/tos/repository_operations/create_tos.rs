@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::table_of_specifications;
 use crate::utils::{AppError, AppResult};
+use ::entity::table_of_specifications;
 
 pub async fn create_tos(
     db: &DatabaseConnection,

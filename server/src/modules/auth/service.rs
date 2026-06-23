@@ -17,11 +17,7 @@ pub struct AuthService {
 }
 
 impl AuthService {
-    pub fn new(
-        db: DatabaseConnection,
-        jwt_secret: String,
-        jwt_expiration: i64,
-    ) -> Self {
+    pub fn new(db: DatabaseConnection, jwt_secret: String, jwt_expiration: i64) -> Self {
         Self {
             user_repo: UserRepository::new(db.clone()),
             activity_log_repo: ActivityLogRepository::new(db.clone()),
@@ -39,35 +35,76 @@ impl AuthService {
     }
 
     // Authentication operations
-    pub async fn check_username(&self, request: crate::modules::auth::schema::CheckUsernameRequest) -> crate::utils::AppResult<crate::modules::auth::schema::CheckUsernameResponse> {
+    pub async fn check_username(
+        &self,
+        request: crate::modules::auth::schema::CheckUsernameRequest,
+    ) -> crate::utils::AppResult<crate::modules::auth::schema::CheckUsernameResponse> {
         crate::modules::auth::service_operations::check_username(&self.user_repo, request).await
     }
 
-    pub async fn activate_account(&self, request: crate::modules::auth::schema::ActivateAccountRequest) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
-        let result = crate::modules::auth::service_operations::activate_account(&self.user_repo, &self.activity_log_repo, &self.jwt_service, request).await?;
+    pub async fn activate_account(
+        &self,
+        request: crate::modules::auth::schema::ActivateAccountRequest,
+    ) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
+        let result = crate::modules::auth::service_operations::activate_account(
+            &self.user_repo,
+            &self.activity_log_repo,
+            &self.jwt_service,
+            request,
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_user_profile(result.user.id).await;
         }
         Ok(result)
     }
 
-    pub async fn login(&self, request: crate::modules::auth::schema::LoginRequest, ip: &str) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
-        crate::modules::auth::service_operations::login(&self.user_repo, &self.login_attempt_repo, &self.activity_log_repo, &self.jwt_service, request, ip).await
+    pub async fn login(
+        &self,
+        request: crate::modules::auth::schema::LoginRequest,
+        ip: &str,
+    ) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
+        crate::modules::auth::service_operations::login(
+            &self.user_repo,
+            &self.login_attempt_repo,
+            &self.activity_log_repo,
+            &self.jwt_service,
+            request,
+            ip,
+        )
+        .await
     }
 
-    pub async fn refresh_token(&self, refresh_token: &str) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
-        crate::modules::auth::service_operations::refresh_token(&self.user_repo, &self.jwt_service, refresh_token).await
+    pub async fn refresh_token(
+        &self,
+        refresh_token: &str,
+    ) -> crate::utils::AppResult<crate::modules::auth::schema::AuthResponse> {
+        crate::modules::auth::service_operations::refresh_token(
+            &self.user_repo,
+            &self.jwt_service,
+            refresh_token,
+        )
+        .await
     }
 
-    pub async fn get_current_user(&self, user_id: uuid::Uuid) -> crate::utils::AppResult<crate::modules::auth::schema::UserResponse> {
+    pub async fn get_current_user(
+        &self,
+        user_id: uuid::Uuid,
+    ) -> crate::utils::AppResult<crate::modules::auth::schema::UserResponse> {
         crate::modules::auth::service_operations::get_current_user(&self.user_repo, user_id).await
     }
 
-    pub async fn get_current_user_cached(&self, user_id: uuid::Uuid) -> crate::utils::AppResult<crate::modules::auth::schema::UserResponse> {
+    pub async fn get_current_user_cached(
+        &self,
+        user_id: uuid::Uuid,
+    ) -> crate::utils::AppResult<crate::modules::auth::schema::UserResponse> {
         use crate::cache::CacheKey;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::UserProfile(user_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::auth::schema::UserResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::auth::schema::UserResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }

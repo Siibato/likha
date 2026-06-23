@@ -1,8 +1,8 @@
-use uuid::Uuid;
-use md5;
-use crate::utils::AppResult;
-use crate::modules::assignment::schema::*;
 use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::assignment::schema::*;
+use crate::utils::AppResult;
+use md5;
+use uuid::Uuid;
 
 pub async fn get_assignments_metadata(
     assignment_repo: &AssignmentRepository,

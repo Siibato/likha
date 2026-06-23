@@ -2,7 +2,9 @@ use serde::Serialize;
 use serde_json::Value;
 
 // ===== PUSH SYNC SCHEMAS (re-export from old services) =====
-pub use crate::modules::sync::service_operations::push::sync_push_service::{SyncQueueEntry, OperationResult, PushResponse};
+pub use crate::modules::sync::service_operations::push::sync_push_service::{
+    OperationResult, PushResponse, SyncQueueEntry,
+};
 
 // ===== DELTA SYNC SCHEMAS (re-export from old services) =====
 pub use crate::modules::sync::service_operations::delta::sync_delta_service::DeltaRequest;
@@ -53,8 +55,12 @@ pub enum DeltaResponse {
 }
 
 // ===== FULL SYNC SCHEMAS (re-export from old services) =====
-pub use crate::modules::sync::service_operations::full::sync_full_service::{FullSyncRequest, FullSyncResponse};
+pub use crate::modules::sync::service_operations::full::sync_full_service::{
+    FullSyncRequest, FullSyncResponse,
+};
 
 // ===== CONFLICT RESOLUTION SCHEMAS =====
 
-pub use crate::modules::sync::service_operations::conflict_service::{ConflictResolutionRequest, ConflictResolutionResponse};
+pub use crate::modules::sync::service_operations::conflict_service::{
+    ConflictResolutionRequest, ConflictResolutionResponse,
+};

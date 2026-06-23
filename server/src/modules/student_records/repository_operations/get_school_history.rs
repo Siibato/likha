@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::student_school_history;
 use crate::utils::{AppError, AppResult};
+use ::entity::student_school_history;
 
 pub async fn get_school_history(
     db: &DatabaseConnection,

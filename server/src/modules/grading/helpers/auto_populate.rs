@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::AppResult;
 use crate::modules::grading::repository::GradeComputationRepository;
+use crate::utils::AppResult;
+use uuid::Uuid;
 
 /// Auto-create a linked grade item when an assessment/assignment is published with grading metadata.
 /// Idempotent — if a linked item already exists, does nothing.
@@ -14,11 +14,17 @@ pub async fn create_linked_grade_item(
     term_number: i32,
     total_points: f64,
 ) -> AppResult<()> {
-    if repo.find_by_source(source_type, &source_id.to_string()).await?.is_some() {
+    if repo
+        .find_by_source(source_type, &source_id.to_string())
+        .await?
+        .is_some()
+    {
         return Ok(());
     }
 
-    let existing = repo.get_items_by_component(class_id, term_number, component).await?;
+    let existing = repo
+        .get_items_by_component(class_id, term_number, component)
+        .await?;
     let order_index = existing.len() as i32;
 
     repo.create_item(
@@ -30,7 +36,8 @@ pub async fn create_linked_grade_item(
         source_type.to_string(),
         Some(source_id.to_string()),
         order_index,
-    ).await?;
+    )
+    .await?;
 
     Ok(())
 }
@@ -45,9 +52,12 @@ pub async fn auto_populate_score(
     student_id: Uuid,
     score: f64,
 ) -> AppResult<Option<uuid::Uuid>> {
-    let grade_item = repo.find_by_source(source_type, &source_id.to_string()).await?;
+    let grade_item = repo
+        .find_by_source(source_type, &source_id.to_string())
+        .await?;
     if let Some(item) = grade_item {
-        repo.upsert_score(item.id, student_id, Some(score), true).await?;
+        repo.upsert_score(item.id, student_id, Some(score), true)
+            .await?;
         Ok(Some(item.id))
     } else {
         Ok(None)

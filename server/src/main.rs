@@ -1,10 +1,10 @@
-use axum::Router;
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, ACCEPT, HeaderName, HeaderValue};
+use axum::http::header::{HeaderName, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::Method;
+use axum::Router;
 use chrono::Utc;
 use dotenv::dotenv;
 use reqwest::Client;
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -14,7 +14,7 @@ use tower_http::timeout::TimeoutLayer;
 use url::Url;
 use uuid::Uuid;
 
-use server::cache::{RedisCache, CacheTtl};
+use server::cache::{CacheTtl, RedisCache};
 use server::middleware::{RateLimitLayer, RateLimitStore};
 use server::modules::assessment::service::AssessmentService;
 use server::modules::assignment::service::AssignmentService;
@@ -24,31 +24,26 @@ use server::modules::document_export::service::DocumentExportService;
 use server::modules::entitlement::EntitlementService;
 use server::modules::grading::service::GradeComputationService;
 use server::modules::learning_material::service::LearningMaterialService;
+use server::modules::replication::worker::spawn_replication_worker;
 use server::modules::replication::{
-    run_dynamic_replication,
-    DiscoveryConfig,
-    DiscoveryService,
-    PeerInfo,
-    PeerManager,
-    PeerStatus,
+    run_dynamic_replication, DiscoveryConfig, DiscoveryService, PeerInfo, PeerManager, PeerStatus,
     ReplicationService,
 };
-use server::modules::replication::worker::spawn_replication_worker;
 use server::modules::setup::service::SetupService;
 use server::modules::student_records::service::StudentRecordsService;
-use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
-use server::modules::sync::service::{SyncConflictService, SyncDeltaService, SyncFullService, SyncPushService, PushDelegate};
+use server::modules::sync::service::{
+    PushDelegate, SyncConflictService, SyncDeltaService, SyncFullService, SyncPushService,
+};
 use server::modules::sync::service_operations::push::{
-    class_push_delegate::ClassPushDelegate,
-    assessment_push_delegate::AssessmentPushDelegate,
-    assignment_push_delegate::AssignmentPushDelegate,
     admin_user_push_delegate::AdminUserPushDelegate,
-    learning_material_push_delegate::LearningMaterialPushDelegate,
-    question_push_delegate::QuestionPushDelegate,
-    submission_push_delegate::SubmissionPushDelegate,
+    assessment_push_delegate::AssessmentPushDelegate,
+    assignment_push_delegate::AssignmentPushDelegate, class_push_delegate::ClassPushDelegate,
     grading_push_delegate::GradingPushDelegate,
+    learning_material_push_delegate::LearningMaterialPushDelegate,
+    question_push_delegate::QuestionPushDelegate, submission_push_delegate::SubmissionPushDelegate,
     tos_push_delegate::TosPushDelegate,
 };
+use server::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
 use server::modules::tos::service::TosService;
 use server::utils::file_encryption::parse_key;
 
@@ -68,7 +63,8 @@ async fn main() {
     if args.len() > 1 {
         match args[1].as_str() {
             "delete-db" => {
-                let db_path = config.database_url
+                let db_path = config
+                    .database_url
                     .replace("sqlite://", "")
                     .replace("sqlite:", "")
                     .split('?')
@@ -81,7 +77,6 @@ async fn main() {
                     std::process::exit(1);
                 }
 
-
                 if std::path::Path::new(&db_path).exists() {
                     std::fs::remove_file(&db_path).expect("Failed to delete database file");
                     println!("Database deleted: {}", db_path);
@@ -92,16 +87,20 @@ async fn main() {
             }
             "create-db" => {
                 println!("Creating database and running migrations...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
-                    .await
-                    .expect("Failed to connect to database");
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
                 seed_admin(&db).await.expect("Failed to seed admin account");
                 println!("Database created and migrations applied successfully");
                 return;
             }
             "reset-db" => {
-                let db_path = config.database_url
+                let db_path = config
+                    .database_url
                     .replace("sqlite://", "")
                     .replace("sqlite:", "")
                     .split('?')
@@ -109,23 +108,33 @@ async fn main() {
                     .unwrap_or("")
                     .to_string();
 
-                if !db_path.is_empty() && db_path != ":memory:" && std::path::Path::new(&db_path).exists() {
+                if !db_path.is_empty()
+                    && db_path != ":memory:"
+                    && std::path::Path::new(&db_path).exists()
+                {
                     std::fs::remove_file(&db_path).expect("Failed to delete database file");
                     println!("Old database deleted: {}", db_path);
                 }
 
                 println!("Creating fresh database and running migrations...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
-                    .await
-                    .expect("Failed to connect to database");
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
                 run_migrations(&db).await.expect("Failed to run migrations");
                 seed_admin(&db).await.expect("Failed to seed admin account");
 
                 #[cfg(feature = "seed")]
                 if args.iter().any(|arg| arg == "--with-seed") {
-                    activate_admin(&db).await.expect("Failed to activate admin account");
+                    activate_admin(&db)
+                        .await
+                        .expect("Failed to activate admin account");
                     println!("Seeding manual testing world...");
-                    server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
+                    server::seed::scenarios::manual::seed_manual_world(&db)
+                        .await
+                        .expect("Manual seed failed");
                     println!("Manual seed complete.");
                 }
 
@@ -133,38 +142,58 @@ async fn main() {
                 return;
             }
             "clear-invalid-attempts" => {
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
-                    .await
-                    .expect("Failed to connect to database");
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
                 let repo = server::modules::auth::LoginAttemptRepository::new(db);
-                repo.clear_all_attempts().await.expect("Failed to clear attempts");
+                repo.clear_all_attempts()
+                    .await
+                    .expect("Failed to clear attempts");
                 println!("All login attempt records cleared.");
                 return;
             }
             #[cfg(feature = "seed")]
             "seed-e2e" => {
                 println!("Seeding deterministic E2E world...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
+                activate_admin(&db)
                     .await
-                    .expect("Failed to connect to database");
-                activate_admin(&db).await.expect("Failed to activate admin account");
-                server::seed::scenarios::e2e::seed_e2e_world(&db).await.expect("E2E seed failed");
+                    .expect("Failed to activate admin account");
+                server::seed::scenarios::e2e::seed_e2e_world(&db)
+                    .await
+                    .expect("E2E seed failed");
                 println!("E2E seed complete.");
                 return;
             }
             #[cfg(feature = "seed")]
             "seed-manual" => {
                 println!("Seeding manual testing world...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
+                activate_admin(&db)
                     .await
-                    .expect("Failed to connect to database");
-                activate_admin(&db).await.expect("Failed to activate admin account");
-                server::seed::scenarios::manual::seed_manual_world(&db).await.expect("Manual seed failed");
+                    .expect("Failed to activate admin account");
+                server::seed::scenarios::manual::seed_manual_world(&db)
+                    .await
+                    .expect("Manual seed failed");
                 println!("Manual seed complete.");
 
                 // Optional: --export-manifest <path>
                 if let Some(flag_pos) = args.iter().position(|a| a == "--export-manifest") {
-                    let manifest_path = args.get(flag_pos + 1)
+                    let manifest_path = args
+                        .get(flag_pos + 1)
                         .map(|s| s.as_str())
                         .unwrap_or("../load-tests/seed-manifest.json");
 
@@ -175,7 +204,10 @@ async fn main() {
                     let assignments = server::seed::fixtures::manual::manual_assignments(&ctx);
 
                     let manifest = server::seed::manifest::build_manifest(
-                        &users, &classes, &assessments, &assignments,
+                        &users,
+                        &classes,
+                        &assessments,
+                        &assignments,
                     );
                     server::seed::manifest::export_manifest(&manifest, manifest_path)
                         .expect("Failed to export seed manifest");
@@ -186,52 +218,98 @@ async fn main() {
             #[cfg(feature = "seed")]
             "seed-realistic" => {
                 println!("Seeding realistic demo world...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
+                activate_admin(&db)
                     .await
-                    .expect("Failed to connect to database");
-                activate_admin(&db).await.expect("Failed to activate admin account");
-                server::seed::scenarios::realistic::seed_realistic_world(&db).await.expect("Realistic seed failed");
+                    .expect("Failed to activate admin account");
+                server::seed::scenarios::realistic::seed_realistic_world(&db)
+                    .await
+                    .expect("Realistic seed failed");
                 println!("Realistic seed complete.");
                 return;
             }
             #[cfg(feature = "seed")]
             "seed-advisory" => {
                 println!("Seeding advisory world...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
+                activate_admin(&db)
                     .await
-                    .expect("Failed to connect to database");
-                activate_admin(&db).await.expect("Failed to activate admin account");
-                server::seed::scenarios::advisory::seed_advisory_world(&db).await.expect("Advisory seed failed");
+                    .expect("Failed to activate admin account");
+                server::seed::scenarios::advisory::seed_advisory_world(&db)
+                    .await
+                    .expect("Advisory seed failed");
                 println!("Advisory seed complete.");
                 return;
             }
             #[cfg(feature = "seed")]
             "seed-demo" => {
                 println!("Seeding focused demo world...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
+                activate_admin(&db)
                     .await
-                    .expect("Failed to connect to database");
-                activate_admin(&db).await.expect("Failed to activate admin account");
-                server::seed::scenarios::demo::seed_demo_world(&db).await.expect("Demo seed failed");
+                    .expect("Failed to activate admin account");
+                server::seed::scenarios::demo::seed_demo_world(&db)
+                    .await
+                    .expect("Demo seed failed");
                 println!("Demo seed complete.");
                 return;
             }
             "deseed" => {
                 use sea_orm::ConnectionTrait;
                 println!("Clearing all seeded data and re-initializing...");
-                let db = server::db::establish_connection(&config.database_url, &config.db_encryption_key)
-                    .await
-                    .expect("Failed to connect to database");
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
 
                 let tables = vec![
-                    "users", "classes", "enrollments", "assessments", "assessment_questions",
-                    "question_choices", "answer_keys", "tos_competencies", "table_of_specifications",
-                    "assignments", "learning_materials", "assessment_submissions", "submission_answers",
-                    "submission_answer_items", "assignment_submissions", "grade_record", "grade_items",
-                    "grade_scores", "term_grades", "activity_logs", "advisory_class_students",
-                    "sync_manifest", "sync_processed_operations",
-                    "student_school_history", "previous_school_subjects", "previous_school_attendance",
-                    "attendance_records", "core_values_records", "core_values", "learner_details",
+                    "users",
+                    "classes",
+                    "enrollments",
+                    "assessments",
+                    "assessment_questions",
+                    "question_choices",
+                    "answer_keys",
+                    "tos_competencies",
+                    "table_of_specifications",
+                    "assignments",
+                    "learning_materials",
+                    "assessment_submissions",
+                    "submission_answers",
+                    "submission_answer_items",
+                    "assignment_submissions",
+                    "grade_record",
+                    "grade_items",
+                    "grade_scores",
+                    "term_grades",
+                    "activity_logs",
+                    "advisory_class_students",
+                    "sync_manifest",
+                    "sync_processed_operations",
+                    "student_school_history",
+                    "previous_school_subjects",
+                    "previous_school_attendance",
+                    "attendance_records",
+                    "core_values_records",
+                    "core_values",
+                    "learner_details",
                 ];
 
                 for table in tables {
@@ -279,9 +357,7 @@ async fn main() {
         .expect("Failed to connect to database");
 
     // Run migrations
-    run_migrations(&db)
-        .await
-        .expect("Failed to run migrations");
+    run_migrations(&db).await.expect("Failed to run migrations");
 
     // Seed default admin account
     seed_admin(&db).await.expect("Failed to seed admin account");
@@ -295,41 +371,57 @@ async fn main() {
     let redis_cache = RedisCache::new(&config.redis_url, config.cache_enabled, cache_ttl).await;
 
     // Initialize services
-    let auth_service = Arc::new(server::modules::auth::service::AuthService::new(
-        db.clone(),
-        config.jwt_secret.clone(),
-        config.jwt_expiration,
-    ).with_cache(redis_cache.clone()));
+    let auth_service = Arc::new(
+        server::modules::auth::service::AuthService::new(
+            db.clone(),
+            config.jwt_secret.clone(),
+            config.jwt_expiration,
+        )
+        .with_cache(redis_cache.clone()),
+    );
 
-    let admin_service = Arc::new(server::modules::admin::service::AdminService::new(db.clone()).with_cache(redis_cache.clone()));
+    let admin_service = Arc::new(
+        server::modules::admin::service::AdminService::new(db.clone())
+            .with_cache(redis_cache.clone()),
+    );
 
     let class_service = Arc::new(ClassService::new(db.clone()).with_cache(redis_cache.clone()));
 
-    let assessment_service = Arc::new(AssessmentService::new(db.clone()).with_cache(redis_cache.clone()));
+    let assessment_service =
+        Arc::new(AssessmentService::new(db.clone()).with_cache(redis_cache.clone()));
 
     // Parse file encryption key from hex string
-    let file_encryption_key = parse_key(&config.file_encryption_key)
-        .expect("Invalid FILE_ENCRYPTION_KEY format");
+    let file_encryption_key =
+        parse_key(&config.file_encryption_key).expect("Invalid FILE_ENCRYPTION_KEY format");
 
-    let assignment_service = Arc::new(AssignmentService::new(db.clone(), file_encryption_key).with_cache(redis_cache.clone()));
-    let material_service = Arc::new(LearningMaterialService::new(
-        db.clone(),
-        config.file_storage_path.clone(),
-        file_encryption_key,
-    ).with_cache(redis_cache.clone()));
+    let assignment_service = Arc::new(
+        AssignmentService::new(db.clone(), file_encryption_key).with_cache(redis_cache.clone()),
+    );
+    let material_service = Arc::new(
+        LearningMaterialService::new(
+            db.clone(),
+            config.file_storage_path.clone(),
+            file_encryption_key,
+        )
+        .with_cache(redis_cache.clone()),
+    );
 
     // Initialize new offline-first sync services
-    let _entitlement_repo = server::modules::entitlement::repository::EntitlementRepository::new(db.clone());
+    let _entitlement_repo =
+        server::modules::entitlement::repository::EntitlementRepository::new(db.clone());
     let manifest_repo = ManifestRepository::new(db.clone());
 
     let entitlement_service = Arc::new(EntitlementService::new(db.clone()));
 
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
-    let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()).with_cache(redis_cache.clone()));
+    let grade_computation_service =
+        Arc::new(GradeComputationService::new(db.clone()).with_cache(redis_cache.clone()));
     let tos_service = Arc::new(TosService::new(db.clone()).with_cache(redis_cache.clone()));
 
     let setup_service = Arc::new(
-        SetupService::new(db.clone(), config.school_code.clone()).await.with_cache(redis_cache.clone()),
+        SetupService::new(db.clone(), config.school_code.clone())
+            .await
+            .with_cache(redis_cache.clone()),
     );
 
     let delegates: Vec<Arc<dyn PushDelegate>> = vec![
@@ -368,17 +460,16 @@ async fn main() {
         db.clone(),
     ));
 
-    let student_records_service = Arc::new(
-        StudentRecordsService::new(db.clone(), grade_computation_service.clone()),
-    );
+    let student_records_service = Arc::new(StudentRecordsService::new(
+        db.clone(),
+        grade_computation_service.clone(),
+    ));
 
-    let document_export_service = Arc::new(
-        DocumentExportService::new(
-            grade_computation_service.clone(),
-            setup_service.clone(),
-            student_records_service.clone(),
-        ),
-    );
+    let document_export_service = Arc::new(DocumentExportService::new(
+        grade_computation_service.clone(),
+        setup_service.clone(),
+        student_records_service.clone(),
+    ));
 
     let replication_service = Arc::new(ReplicationService::new(db.clone(), config.node_id.clone()));
 
@@ -402,10 +493,7 @@ async fn main() {
         replication_service.clone(),
     );
 
-    initialize_replication_infrastructure(
-        &config,
-        replication_service.clone(),
-    ).await;
+    initialize_replication_infrastructure(&config, replication_service.clone()).await;
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -415,9 +503,12 @@ async fn main() {
         .await
         .expect("Failed to bind to address");
 
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .expect("Failed to start server");
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .expect("Failed to start server");
 }
 
 fn create_app(
@@ -447,29 +538,54 @@ fn create_app(
         .merge(server::modules::auth::routes::routes(auth_service.clone()))
         .merge(server::modules::admin::routes::routes(admin_service))
         .merge(server::modules::class::routes::routes(class_service))
-        .merge(server::modules::assessment::routes::routes(assessment_service.clone()))
-        .merge(server::modules::assignment::routes::routes(assignment_service.clone()))
-        .merge(server::modules::learning_material::routes::routes(material_service))
-        .merge(server::modules::grading::routes::routes(grade_computation_service))
+        .merge(server::modules::assessment::routes::routes(
+            assessment_service.clone(),
+        ))
+        .merge(server::modules::assignment::routes::routes(
+            assignment_service.clone(),
+        ))
+        .merge(server::modules::learning_material::routes::routes(
+            material_service,
+        ))
+        .merge(server::modules::grading::routes::routes(
+            grade_computation_service,
+        ))
         .merge(server::modules::tos::routes::routes(tos_service))
         .merge(server::modules::setup::routes::routes(setup_service))
-        .merge(server::modules::document_export::routes::routes(document_export_service))
-        .merge(server::modules::student_records::routes::routes(student_records_service))
-        .merge(server::modules::tasks::routes::routes(assignment_service, assessment_service))
+        .merge(server::modules::document_export::routes::routes(
+            document_export_service,
+        ))
+        .merge(server::modules::student_records::routes::routes(
+            student_records_service,
+        ))
+        .merge(server::modules::tasks::routes::routes(
+            assignment_service,
+            assessment_service,
+        ))
         .merge(server::modules::sync::routes::routes(
             sync_push_service,
             sync_conflict_service,
             sync_full_service,
             sync_delta_service,
         ))
-        .merge(server::modules::replication::routes::routes(replication_service))
+        .merge(server::modules::replication::routes::routes(
+            replication_service,
+        ))
         .layer(RateLimitLayer::new(rate_limit_store, jwt_secret));
 
-    Router::new().nest("/api/v1", api)
-        .layer(RequestBodyLimitLayer::new(config.max_body_size_bytes as usize))
-        .layer(TimeoutLayer::with_status_code(axum::http::StatusCode::REQUEST_TIMEOUT, Duration::from_secs(60)))
+    Router::new()
+        .nest("/api/v1", api)
+        .layer(RequestBodyLimitLayer::new(
+            config.max_body_size_bytes as usize,
+        ))
+        .layer(TimeoutLayer::with_status_code(
+            axum::http::StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(60),
+        ))
         .layer(build_cors_layer(config))
-        .layer(axum::middleware::from_fn(server::middleware::add_security_headers))
+        .layer(axum::middleware::from_fn(
+            server::middleware::add_security_headers,
+        ))
         .layer(server::middleware::logging_middleware())
 }
 
@@ -485,7 +601,13 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
     ];
 
     let idempotency_key: HeaderName = "idempotency-key".parse().expect("valid header name");
-    let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id, idempotency_key];
+    let allowed_headers = [
+        AUTHORIZATION,
+        CONTENT_TYPE,
+        ACCEPT,
+        x_device_id,
+        idempotency_key,
+    ];
 
     if config.allowed_origins.is_empty() {
         // Deny all cross-origin requests when ALLOWED_ORIGINS is not configured.
@@ -533,7 +655,10 @@ async fn initialize_replication_infrastructure(
             );
             tracing::info!("Started static replication worker targeting {}", peer_url);
         } else {
-            tracing::warn!("Invalid PEER_URL '{}'; static replication worker not started", peer_url);
+            tracing::warn!(
+                "Invalid PEER_URL '{}'; static replication worker not started",
+                peer_url
+            );
         }
     }
 
@@ -696,4 +821,3 @@ async fn activate_admin(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     tracing::info!("Admin account activated (username: admin, status: active)");
     Ok(())
 }
-

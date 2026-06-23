@@ -1,19 +1,19 @@
-use futures::future::try_join_all;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
+use futures::future::try_join_all;
 use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::auth::schema::MessageResponse;
-use crate::utils::response::success_response;
 use crate::modules::grading::schema::*;
 use crate::modules::grading::service::GradeComputationService;
 use crate::utils::auth_guards::require_teacher;
+use crate::utils::response::success_response;
 
 // ===== GRADING CONFIG =====
 
@@ -65,7 +65,13 @@ pub async fn update_grading_config(
         return r;
     }
     match service
-        .update_grading_config(class_id, request.term_number, request.ww_weight, request.pt_weight, request.qa_weight)
+        .update_grading_config(
+            class_id,
+            request.term_number,
+            request.ww_weight,
+            request.pt_weight,
+            request.qa_weight,
+        )
         .await
     {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
@@ -130,9 +136,13 @@ pub async fn delete_grade_item(
         return r;
     }
     match service.delete_grade_item(id).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Grade item deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Grade item deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -164,7 +174,9 @@ pub async fn update_item_scores(
     }
     tracing::info!(
         "update_item_scores: item_id={} scores_count={} teacher_id={}",
-        item_id, request.scores.len(), auth_user.user_id
+        item_id,
+        request.scores.len(),
+        auth_user.user_id
     );
     let scores: Vec<(Uuid, f64)> = request
         .scores
@@ -173,7 +185,11 @@ pub async fn update_item_scores(
         .collect();
     match service.save_scores(item_id, scores).await {
         Ok(response) => {
-            tracing::info!("update_item_scores: saved {} scores for item_id={}", response.len(), item_id);
+            tracing::info!(
+                "update_item_scores: saved {} scores for item_id={}",
+                response.len(),
+                item_id
+            );
             success_response(response, StatusCode::OK).into_response()
         }
         Err(e) => {
@@ -336,24 +352,19 @@ pub async fn get_my_term_grades(
 
 // ===== UTILITY =====
 
-pub async fn get_deped_presets(
-    _auth_user: AuthUser,
-) -> impl IntoResponse {
-    let presets: Vec<PresetInfo> = crate::modules::grading::helpers::deped_weights::get_all_presets()
-        .into_iter()
-        .map(|(key, label, preset)| PresetInfo {
-            key: key.to_string(),
-            label: label.to_string(),
-            ww: preset.ww,
-            pt: preset.pt,
-            qa: preset.qa,
-        })
-        .collect();
-    success_response(
-        DepEdPresetsResponse { presets },
-        StatusCode::OK,
-    )
-    .into_response()
+pub async fn get_deped_presets(_auth_user: AuthUser) -> impl IntoResponse {
+    let presets: Vec<PresetInfo> =
+        crate::modules::grading::helpers::deped_weights::get_all_presets()
+            .into_iter()
+            .map(|(key, label, preset)| PresetInfo {
+                key: key.to_string(),
+                label: label.to_string(),
+                ww: preset.ww,
+                pt: preset.pt,
+                qa: preset.qa,
+            })
+            .collect();
+    success_response(DepEdPresetsResponse { presets }, StatusCode::OK).into_response()
 }
 
 // ===== GENERAL AVERAGE =====
@@ -366,7 +377,10 @@ pub async fn get_general_averages(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.compute_general_averages(class_id, auth_user.user_id).await {
+    match service
+        .compute_general_averages(class_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -382,7 +396,10 @@ pub async fn get_sf9(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.compute_sf9(class_id, student_id, auth_user.user_id).await {
+    match service
+        .compute_sf9(class_id, student_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -397,7 +414,10 @@ pub async fn get_sf10(
         return r;
     }
     // SF10 initially returns the same data as SF9 (current school year only)
-    match service.compute_sf9(class_id, student_id, auth_user.user_id).await {
+    match service
+        .compute_sf9(class_id, student_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

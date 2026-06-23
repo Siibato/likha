@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_record;
 use crate::utils::{AppError, AppResult};
+use ::entity::grade_record;
 
 pub async fn get_all_configs(
     db: &DatabaseConnection,

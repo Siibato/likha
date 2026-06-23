@@ -2,7 +2,6 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::Value;
 use uuid::Uuid;
 
-use ::entity::{student_school_history, users, previous_school_subjects, previous_school_attendance};
 use crate::modules::admin::csv_handler;
 use crate::modules::student_records::import_schema::{
     AttendanceCsvRow, ImportResultResponse, PreviewResponse, PreviewRowResponse,
@@ -10,6 +9,9 @@ use crate::modules::student_records::import_schema::{
 };
 use crate::modules::student_records::repository_operations as ops;
 use crate::utils::{AppError, AppResult};
+use ::entity::{
+    previous_school_attendance, previous_school_subjects, student_school_history, users,
+};
 
 /// Resolve a username to a user UUID.
 async fn resolve_user_id(db: &DatabaseConnection, username: &str) -> AppResult<Option<Uuid>> {
@@ -77,7 +79,14 @@ pub async fn preview_school_history(
                     match resolve_user_id(db, &username).await {
                         Ok(Some(student_id)) => {
                             // Check for existing record
-                            match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
+                            match resolve_school_history_id(
+                                db,
+                                student_id,
+                                &school_name,
+                                &school_year,
+                            )
+                            .await
+                            {
                                 Ok(Some(_)) => {
                                     warnings.push("Record exists and will be updated".to_string());
                                 }
@@ -98,7 +107,12 @@ pub async fn preview_school_history(
             }
         };
 
-        rows.push(PreviewRowResponse { row_index, data: row_data, errors, warnings });
+        rows.push(PreviewRowResponse {
+            row_index,
+            data: row_data,
+            errors,
+            warnings,
+        });
     }
 
     Ok(PreviewResponse { rows })
@@ -145,19 +159,41 @@ pub async fn preview_subjects(
                 if errors.is_empty() {
                     match resolve_user_id(db, &username).await {
                         Ok(Some(student_id)) => {
-                            match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
+                            match resolve_school_history_id(
+                                db,
+                                student_id,
+                                &school_name,
+                                &school_year,
+                            )
+                            .await
+                            {
                                 Ok(Some(history_id)) => {
                                     // Check for duplicate subject
                                     let existing = previous_school_subjects::Entity::find()
-                                        .filter(previous_school_subjects::Column::StudentId.eq(student_id))
-                                        .filter(previous_school_subjects::Column::SchoolHistoryId.eq(history_id))
-                                        .filter(previous_school_subjects::Column::SubjectName.eq(&subject_name))
+                                        .filter(
+                                            previous_school_subjects::Column::StudentId
+                                                .eq(student_id),
+                                        )
+                                        .filter(
+                                            previous_school_subjects::Column::SchoolHistoryId
+                                                .eq(history_id),
+                                        )
+                                        .filter(
+                                            previous_school_subjects::Column::SubjectName
+                                                .eq(&subject_name),
+                                        )
                                         .one(db)
                                         .await
-                                        .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)));
+                                        .map_err(|e| {
+                                            AppError::InternalServerError(format!(
+                                                "Database error: {}",
+                                                e
+                                            ))
+                                        });
 
                                     match existing {
-                                        Ok(Some(_)) => warnings.push("Record exists and will be updated".to_string()),
+                                        Ok(Some(_)) => warnings
+                                            .push("Record exists and will be updated".to_string()),
                                         Ok(None) => {}
                                         Err(e) => errors.push(format!("Database error: {}", e)),
                                     }
@@ -179,7 +215,12 @@ pub async fn preview_subjects(
             }
         };
 
-        rows.push(PreviewRowResponse { row_index, data: row_data, errors, warnings });
+        rows.push(PreviewRowResponse {
+            row_index,
+            data: row_data,
+            errors,
+            warnings,
+        });
     }
 
     Ok(PreviewResponse { rows })
@@ -222,20 +263,44 @@ pub async fn preview_attendance(
                 if errors.is_empty() {
                     match resolve_user_id(db, &username).await {
                         Ok(Some(student_id)) => {
-                            match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
+                            match resolve_school_history_id(
+                                db,
+                                student_id,
+                                &school_name,
+                                &school_year,
+                            )
+                            .await
+                            {
                                 Ok(Some(history_id)) => {
                                     // Check for duplicate attendance
                                     let existing = previous_school_attendance::Entity::find()
-                                        .filter(previous_school_attendance::Column::StudentId.eq(student_id))
-                                        .filter(previous_school_attendance::Column::SchoolHistoryId.eq(history_id))
-                                        .filter(previous_school_attendance::Column::SchoolYear.eq(&school_year))
-                                        .filter(previous_school_attendance::Column::Month.eq(&month))
+                                        .filter(
+                                            previous_school_attendance::Column::StudentId
+                                                .eq(student_id),
+                                        )
+                                        .filter(
+                                            previous_school_attendance::Column::SchoolHistoryId
+                                                .eq(history_id),
+                                        )
+                                        .filter(
+                                            previous_school_attendance::Column::SchoolYear
+                                                .eq(&school_year),
+                                        )
+                                        .filter(
+                                            previous_school_attendance::Column::Month.eq(&month),
+                                        )
                                         .one(db)
                                         .await
-                                        .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)));
+                                        .map_err(|e| {
+                                            AppError::InternalServerError(format!(
+                                                "Database error: {}",
+                                                e
+                                            ))
+                                        });
 
                                     match existing {
-                                        Ok(Some(_)) => warnings.push("Record exists and will be updated".to_string()),
+                                        Ok(Some(_)) => warnings
+                                            .push("Record exists and will be updated".to_string()),
                                         Ok(None) => {}
                                         Err(e) => errors.push(format!("Database error: {}", e)),
                                     }
@@ -257,7 +322,12 @@ pub async fn preview_attendance(
             }
         };
 
-        rows.push(PreviewRowResponse { row_index, data: row_data, errors, warnings });
+        rows.push(PreviewRowResponse {
+            row_index,
+            data: row_data,
+            errors,
+            warnings,
+        });
     }
 
     Ok(PreviewResponse { rows })
@@ -299,32 +369,77 @@ pub async fn import_school_history(
         };
 
         // Check if existing — upsert
-        let existing = resolve_school_history_id(db, student_id, &school_name, &school_year).await.unwrap_or(None);
+        let existing = resolve_school_history_id(db, student_id, &school_name, &school_year)
+            .await
+            .unwrap_or(None);
 
         if let Some(history_id) = existing {
             // Update
             if let Err(e) = ops::update_school_history(
-                db, history_id,
-                Some(school_name), None, Some(grade_level), Some(school_year),
+                db,
+                history_id,
+                Some(school_name),
+                None,
+                Some(grade_level),
+                Some(school_year),
                 Some(row.section.filter(|s| !s.trim().is_empty())),
-                row.date_from.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.parse::<chrono::NaiveDate>().ok()) }).flatten().map(Some),
-                row.date_to.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.parse::<chrono::NaiveDate>().ok()) }).flatten().map(Some),
+                row.date_from
+                    .as_ref()
+                    .and_then(|s| {
+                        if s.trim().is_empty() {
+                            None
+                        } else {
+                            Some(s.parse::<chrono::NaiveDate>().ok())
+                        }
+                    })
+                    .flatten()
+                    .map(Some),
+                row.date_to
+                    .as_ref()
+                    .and_then(|s| {
+                        if s.trim().is_empty() {
+                            None
+                        } else {
+                            Some(s.parse::<chrono::NaiveDate>().ok())
+                        }
+                    })
+                    .flatten()
+                    .map(Some),
                 Some(row.record_type.unwrap_or_else(|| "transferred".to_string())),
-            ).await {
+            )
+            .await
+            {
                 errors.push(format!("Row {}: failed to update: {}", i + 1, e));
                 continue;
             }
         } else {
             // Create
             if let Err(e) = ops::create_school_history(
-                db, student_id, school_name,
+                db,
+                student_id,
+                school_name,
                 row.school_id.filter(|s| !s.trim().is_empty()),
-                grade_level, school_year,
+                grade_level,
+                school_year,
                 row.section.filter(|s| !s.trim().is_empty()),
-                row.date_from.as_deref().and_then(|s| if s.trim().is_empty() { None } else { s.parse::<chrono::NaiveDate>().ok() }),
-                row.date_to.as_deref().and_then(|s| if s.trim().is_empty() { None } else { s.parse::<chrono::NaiveDate>().ok() }),
+                row.date_from.as_deref().and_then(|s| {
+                    if s.trim().is_empty() {
+                        None
+                    } else {
+                        s.parse::<chrono::NaiveDate>().ok()
+                    }
+                }),
+                row.date_to.as_deref().and_then(|s| {
+                    if s.trim().is_empty() {
+                        None
+                    } else {
+                        s.parse::<chrono::NaiveDate>().ok()
+                    }
+                }),
                 row.record_type.unwrap_or_else(|| "transferred".to_string()),
-            ).await {
+            )
+            .await
+            {
                 errors.push(format!("Row {}: failed to create: {}", i + 1, e));
                 continue;
             }
@@ -356,7 +471,11 @@ pub async fn import_subjects(
         let school_name = row.school_name.unwrap_or_default().trim().to_string();
         let school_year = row.school_year.unwrap_or_default().trim().to_string();
         let subject_name = row.subject_name.unwrap_or_default().trim().to_string();
-        let term_type = row.term_type.unwrap_or_else(|| "quarterly".to_string()).trim().to_string();
+        let term_type = row
+            .term_type
+            .unwrap_or_else(|| "quarterly".to_string())
+            .trim()
+            .to_string();
 
         let student_id = match resolve_user_id(db, &username).await {
             Ok(Some(id)) => id,
@@ -370,27 +489,39 @@ pub async fn import_subjects(
             }
         };
 
-        let history_id = match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
-            Ok(Some(id)) => id,
-            Ok(None) => {
-                errors.push(format!("Row {}: school history not found", i + 1));
-                continue;
-            }
-            Err(e) => {
-                errors.push(format!("Row {}: {}", i + 1, e));
-                continue;
-            }
-        };
+        let history_id =
+            match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
+                Ok(Some(id)) => id,
+                Ok(None) => {
+                    errors.push(format!("Row {}: school history not found", i + 1));
+                    continue;
+                }
+                Err(e) => {
+                    errors.push(format!("Row {}: {}", i + 1, e));
+                    continue;
+                }
+            };
 
-        let term_grades = vec![row.term1_grade, row.term2_grade, row.term3_grade, row.term4_grade];
+        let term_grades = vec![
+            row.term1_grade,
+            row.term2_grade,
+            row.term3_grade,
+            row.term4_grade,
+        ];
 
         if let Err(e) = ops::upsert_previous_subject(
-            db, student_id, history_id, subject_name,
+            db,
+            student_id,
+            history_id,
+            subject_name,
             row.subject_group.filter(|s| !s.trim().is_empty()),
-            term_type, term_grades,
+            term_type,
+            term_grades,
             row.final_grade,
             row.descriptor.filter(|s| !s.trim().is_empty()),
-        ).await {
+        )
+        .await
+        {
             errors.push(format!("Row {}: failed to upsert: {}", i + 1, e));
             continue;
         }
@@ -434,25 +565,33 @@ pub async fn import_attendance(
             }
         };
 
-        let history_id = match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
-            Ok(Some(id)) => id,
-            Ok(None) => {
-                errors.push(format!("Row {}: school history not found", i + 1));
-                continue;
-            }
-            Err(e) => {
-                errors.push(format!("Row {}: {}", i + 1, e));
-                continue;
-            }
-        };
+        let history_id =
+            match resolve_school_history_id(db, student_id, &school_name, &school_year).await {
+                Ok(Some(id)) => id,
+                Ok(None) => {
+                    errors.push(format!("Row {}: school history not found", i + 1));
+                    continue;
+                }
+                Err(e) => {
+                    errors.push(format!("Row {}: {}", i + 1, e));
+                    continue;
+                }
+            };
 
         let school_days = row.school_days.unwrap_or(0);
         let days_present = row.days_present.unwrap_or(0);
 
         if let Err(e) = ops::upsert_previous_attendance(
-            db, student_id, history_id, school_year, month,
-            school_days, days_present,
-        ).await {
+            db,
+            student_id,
+            history_id,
+            school_year,
+            month,
+            school_days,
+            days_present,
+        )
+        .await
+        {
             errors.push(format!("Row {}: failed to upsert: {}", i + 1, e));
             continue;
         }

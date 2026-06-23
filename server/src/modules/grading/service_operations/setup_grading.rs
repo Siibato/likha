@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::grading::schema::ClassGradingSetupResponse;
 use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn setup_grading(

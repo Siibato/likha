@@ -1,9 +1,9 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::{table_of_specifications, tos_competencies};
 use crate::modules::tos::repository_operations as ops;
 use crate::utils::AppResult;
+use ::entity::{table_of_specifications, tos_competencies};
 
 pub use ops::MelcRow;
 
@@ -38,18 +38,38 @@ impl TosRepository {
         creating_percentage: f64,
     ) -> AppResult<table_of_specifications::Model> {
         ops::create_tos(
-            &self.db, id, class_id, term_number, title, classification_mode,
-            total_items, time_unit, easy_percentage, medium_percentage, hard_percentage,
-            remembering_percentage, understanding_percentage, applying_percentage,
-            analyzing_percentage, evaluating_percentage, creating_percentage,
-        ).await
+            &self.db,
+            id,
+            class_id,
+            term_number,
+            title,
+            classification_mode,
+            total_items,
+            time_unit,
+            easy_percentage,
+            medium_percentage,
+            hard_percentage,
+            remembering_percentage,
+            understanding_percentage,
+            applying_percentage,
+            analyzing_percentage,
+            evaluating_percentage,
+            creating_percentage,
+        )
+        .await
     }
 
-    pub async fn find_tos_by_id(&self, id: Uuid) -> AppResult<Option<table_of_specifications::Model>> {
+    pub async fn find_tos_by_id(
+        &self,
+        id: Uuid,
+    ) -> AppResult<Option<table_of_specifications::Model>> {
         ops::find_tos_by_id(&self.db, id).await
     }
 
-    pub async fn find_tos_by_class(&self, class_id: Uuid) -> AppResult<Vec<table_of_specifications::Model>> {
+    pub async fn find_tos_by_class(
+        &self,
+        class_id: Uuid,
+    ) -> AppResult<Vec<table_of_specifications::Model>> {
         ops::find_tos_by_class(&self.db, class_id).await
     }
 
@@ -79,11 +99,23 @@ impl TosRepository {
         creating_percentage: Option<f64>,
     ) -> AppResult<table_of_specifications::Model> {
         ops::update_tos(
-            &self.db, id, title, classification_mode, total_items, time_unit,
-            easy_percentage, medium_percentage, hard_percentage, remembering_percentage,
-            understanding_percentage, applying_percentage, analyzing_percentage,
-            evaluating_percentage, creating_percentage,
-        ).await
+            &self.db,
+            id,
+            title,
+            classification_mode,
+            total_items,
+            time_unit,
+            easy_percentage,
+            medium_percentage,
+            hard_percentage,
+            remembering_percentage,
+            understanding_percentage,
+            applying_percentage,
+            analyzing_percentage,
+            evaluating_percentage,
+            creating_percentage,
+        )
+        .await
     }
 
     pub async fn soft_delete_tos(&self, id: Uuid) -> AppResult<()> {
@@ -111,17 +143,37 @@ impl TosRepository {
         creating_count: Option<i32>,
     ) -> AppResult<tos_competencies::Model> {
         ops::create_competency(
-            &self.db, id, tos_id, competency_code, competency_text, time_units_taught,
-            order_index, easy_count, medium_count, hard_count, remembering_count,
-            understanding_count, applying_count, analyzing_count, evaluating_count, creating_count,
-        ).await
+            &self.db,
+            id,
+            tos_id,
+            competency_code,
+            competency_text,
+            time_units_taught,
+            order_index,
+            easy_count,
+            medium_count,
+            hard_count,
+            remembering_count,
+            understanding_count,
+            applying_count,
+            analyzing_count,
+            evaluating_count,
+            creating_count,
+        )
+        .await
     }
 
-    pub async fn find_competencies_by_tos(&self, tos_id: Uuid) -> AppResult<Vec<tos_competencies::Model>> {
+    pub async fn find_competencies_by_tos(
+        &self,
+        tos_id: Uuid,
+    ) -> AppResult<Vec<tos_competencies::Model>> {
         ops::find_competencies_by_tos(&self.db, tos_id).await
     }
 
-    pub async fn find_competency_by_id(&self, id: Uuid) -> AppResult<Option<tos_competencies::Model>> {
+    pub async fn find_competency_by_id(
+        &self,
+        id: Uuid,
+    ) -> AppResult<Option<tos_competencies::Model>> {
         ops::find_competency_by_id(&self.db, id).await
     }
 
@@ -143,10 +195,23 @@ impl TosRepository {
         creating_count: Option<Option<i32>>,
     ) -> AppResult<tos_competencies::Model> {
         ops::update_competency(
-            &self.db, id, competency_code, competency_text, time_units_taught, order_index,
-            easy_count, medium_count, hard_count, remembering_count, understanding_count,
-            applying_count, analyzing_count, evaluating_count, creating_count,
-        ).await
+            &self.db,
+            id,
+            competency_code,
+            competency_text,
+            time_units_taught,
+            order_index,
+            easy_count,
+            medium_count,
+            hard_count,
+            remembering_count,
+            understanding_count,
+            applying_count,
+            analyzing_count,
+            evaluating_count,
+            creating_count,
+        )
+        .await
     }
 
     pub async fn soft_delete_competency(&self, id: Uuid) -> AppResult<()> {
@@ -156,7 +221,22 @@ impl TosRepository {
     pub async fn bulk_create_competencies(
         &self,
         tos_id: Uuid,
-        competencies: Vec<(Option<Uuid>, Option<String>, String, i32, i32, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>,
+        competencies: Vec<(
+            Option<Uuid>,
+            Option<String>,
+            String,
+            i32,
+            i32,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+        )>,
     ) -> AppResult<Vec<tos_competencies::Model>> {
         ops::bulk_create_competencies(&self.db, tos_id, competencies).await
     }
@@ -172,6 +252,15 @@ impl TosRepository {
         limit: i64,
         offset: i64,
     ) -> AppResult<Vec<MelcRow>> {
-        ops::search_melcs(&self.db, subject, grade_level, quarter, query, limit, offset).await
+        ops::search_melcs(
+            &self.db,
+            subject,
+            grade_level,
+            quarter,
+            query,
+            limit,
+            offset,
+        )
+        .await
     }
 }

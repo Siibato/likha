@@ -17,8 +17,17 @@ pub async fn update_school_code(
         ));
     }
 
-    repo.update_settings(Some(trimmed.clone()), None, None, None, None, None, None, None)
-        .await?;
+    repo.update_settings(
+        Some(trimmed.clone()),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    .await?;
 
     // Log the school code change
     let _ = activity_log_repo

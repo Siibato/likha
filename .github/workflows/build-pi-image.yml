@@ -78,17 +78,21 @@ jobs:
       - name: Compress output image
         run: |
           mkdir -p release
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
           for img in pi-gen/deploy/*.img; do
             if [ -f "$img" ]; then
               xz -T0 -v "$img"
-              mv "$img.xz" "release/likha-server-${{ github.ref_name || inputs.version }}.img.xz"
+              mv "$img.xz" "release/likha-server-${SAFE_VERSION}.img.xz"
             fi
           done
 
       - name: Compute image metadata
         id: meta
         run: |
-          IMG_XZ="release/likha-server-${{ github.ref_name || inputs.version }}.img.xz"
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
+          IMG_XZ="release/likha-server-${SAFE_VERSION}.img.xz"
           if [ -f "$IMG_XZ" ]; then
             SIZE_XZ=$(stat -c%s "$IMG_XZ")
             # pi-gen images are ~3 GB uncompressed; exact size is hard to get without extraction
@@ -108,9 +112,10 @@ jobs:
       - name: Update os_list.json manifest
         run: |
           VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
           SIZE_XZ="${{ steps.meta.outputs.image_download_size }}"
           EXTRACT="${{ steps.meta.outputs.extract_size }}"
-          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/likha-server-${VERSION}.img.xz"
+          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/likha-server-${SAFE_VERSION}.img.xz"
 
           mkdir -p deployment/imager-manifest
           cat > deployment/imager-manifest/os_list.json <<EOF

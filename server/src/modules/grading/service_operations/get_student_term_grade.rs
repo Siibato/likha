@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::grading::schema::TermGradeResponse;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_student_term_grade(

@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::activity_logs;
-use crate::utils::{AppError, AppResult};
 use super::ManifestEntry;
+use crate::utils::{AppError, AppResult};
+use ::entity::activity_logs;
 
 pub async fn get_activity_logs_manifest(
     db: &DatabaseConnection,

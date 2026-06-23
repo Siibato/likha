@@ -1,8 +1,8 @@
 //! Advisory enrollments: teacher + 30 students in all 4 classes.
 
-use crate::seed::specs::EnrollmentSpec;
-use super::users::{uid, STUDENT_DATA};
 use super::classes::cid;
+use super::users::{uid, STUDENT_DATA};
+use crate::seed::specs::EnrollmentSpec;
 
 pub fn advisory_enrollments() -> Vec<EnrollmentSpec> {
     let mut enrollments = Vec::with_capacity(124);

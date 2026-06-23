@@ -1,10 +1,10 @@
-use chrono::{Duration, Utc};
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::auth::schema::AuthResponse;
-use crate::utils::password::PasswordService;
-use crate::modules::auth::UserRepository;
-use crate::utils::jwt::JwtService;
 use crate::modules::auth::helpers::user_to_response;
+use crate::modules::auth::schema::AuthResponse;
+use crate::modules::auth::UserRepository;
+use crate::utils::error::{AppError, AppResult};
+use crate::utils::jwt::JwtService;
+use crate::utils::password::PasswordService;
+use chrono::{Duration, Utc};
 
 pub async fn refresh_token(
     user_repo: &UserRepository,

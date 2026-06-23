@@ -37,7 +37,11 @@ async fn create_class_unauthenticated_returns_401() {
     let db = test_db().await;
     let app = build_test_app(db).await;
 
-    let req = json_req("POST", "/api/v1/classes", Some(json!({ "title": "Math 101" })));
+    let req = json_req(
+        "POST",
+        "/api/v1/classes",
+        Some(json!({ "title": "Math 101" })),
+    );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
 }
@@ -200,7 +204,12 @@ async fn search_students_returns_200() {
     let teacher = seed_teacher(&db).await;
     let app = build_test_app(db).await;
 
-    let req = authed_req("GET", "/api/v1/students/search?q=test", &teacher.token, None);
+    let req = authed_req(
+        "GET",
+        "/api/v1/students/search?q=test",
+        &teacher.token,
+        None,
+    );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
 }

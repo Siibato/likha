@@ -1,10 +1,10 @@
+use crate::cache::CacheKey;
+use crate::modules::grading::helpers::deped_weights;
+use crate::modules::grading::schema::{GradeSummaryResponse, GradeSummaryRow};
+use crate::utils::{AppError, AppResult};
 use futures::future::join_all;
 use sea_orm::EntityTrait;
 use uuid::Uuid;
-use crate::cache::CacheKey;
-use crate::modules::grading::schema::{GradeSummaryResponse, GradeSummaryRow};
-use crate::utils::{AppError, AppResult};
-use crate::modules::grading::helpers::deped_weights;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_grade_summary(
@@ -21,13 +21,12 @@ impl crate::modules::grading::service::GradeComputationService {
         let (config_opt, term_grades_data, participants) = tokio::try_join!(
             self.repo.get_config(class_id, term_number),
             self.repo.get_all_for_class(class_id, term_number),
-            self.class_repo.find_participants_by_class_id(class_id, None),
+            self.class_repo
+                .find_participants_by_class_id(class_id, None),
         )?;
 
         let config = config_opt.ok_or_else(|| {
-            AppError::BadRequest(
-                "Grading config not set up for this class/term".to_string(),
-            )
+            AppError::BadRequest("Grading config not set up for this class/term".to_string())
         })?;
 
         let name_futures = participants.iter().map(|p| async move {
@@ -36,7 +35,11 @@ impl crate::modules::grading::service::GradeComputationService {
                 .await
                 .ok()
                 .flatten();
-            (p.user_id, user.map(|u| format!("{}, {}", u.last_name, u.first_name)).unwrap_or_else(|| "Unknown".to_string()))
+            (
+                p.user_id,
+                user.map(|u| format!("{}, {}", u.last_name, u.first_name))
+                    .unwrap_or_else(|| "Unknown".to_string()),
+            )
         });
         let name_pairs = join_all(name_futures).await;
         let student_name_map: std::collections::HashMap<Uuid, String> =

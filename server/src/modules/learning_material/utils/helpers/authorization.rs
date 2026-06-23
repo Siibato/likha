@@ -1,15 +1,23 @@
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
-    pub async fn verify_teacher_owns_class(&self, class_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
+    pub async fn verify_teacher_owns_class(
+        &self,
+        class_id: Uuid,
+        teacher_id: Uuid,
+    ) -> AppResult<()> {
         let _ = self
             .class_repo
             .find_by_id(class_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden(
                 "You can only manage materials in your own classes".to_string(),
             ));

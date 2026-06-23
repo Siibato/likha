@@ -46,7 +46,6 @@ Future<Map<String, dynamic>> getCachedSf9(
     checkField('school_year');
     checkField('section');
     checkField('lrn');
-    checkField('age');
     checkField('sex');
     checkField('track_strand');
     checkField('curriculum');

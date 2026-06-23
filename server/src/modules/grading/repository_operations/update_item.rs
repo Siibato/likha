@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_items;
 use crate::utils::{AppError, AppResult};
+use ::entity::grade_items;
 
 pub async fn update_item(
     db: &DatabaseConnection,
@@ -22,12 +22,24 @@ pub async fn update_item(
         .ok_or_else(|| AppError::NotFound("Grade item not found".to_string()))?
         .into();
 
-    if let Some(title) = title { item.title = Set(title); }
-    if let Some(component) = component { item.component = Set(component); }
-    if let Some(total_points) = total_points { item.total_points = Set(total_points); }
-    if let Some(order_index) = order_index { item.order_index = Set(order_index); }
-    if let Some(source_type) = source_type { item.source_type = Set(source_type); }
-    if let Some(source_id) = source_id { item.source_id = Set(Some(source_id)); }
+    if let Some(title) = title {
+        item.title = Set(title);
+    }
+    if let Some(component) = component {
+        item.component = Set(component);
+    }
+    if let Some(total_points) = total_points {
+        item.total_points = Set(total_points);
+    }
+    if let Some(order_index) = order_index {
+        item.order_index = Set(order_index);
+    }
+    if let Some(source_type) = source_type {
+        item.source_type = Set(source_type);
+    }
+    if let Some(source_id) = source_id {
+        item.source_id = Set(Some(source_id));
+    }
     item.updated_at = Set(Utc::now().naive_utc());
 
     item.update(db)

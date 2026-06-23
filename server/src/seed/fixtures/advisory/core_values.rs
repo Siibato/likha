@@ -1,9 +1,9 @@
 //! Advisory core values: 4 DepEd core values × 4 terms per student.
 
+use super::classes::cid;
+use super::users::{uid, STUDENT_DATA};
 use crate::seed::specs::CoreValuesSpec;
 use crate::seed::tools::seed_id;
-use super::users::{uid, STUDENT_DATA};
-use super::classes::cid;
 
 const CORE_VALUE_IDS: [i32; 4] = [1, 2, 3, 4];
 

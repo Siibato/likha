@@ -1,15 +1,15 @@
-use std::sync::Arc;
 use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
-use crate::modules::sync::ManifestRepository;
 use crate::modules::entitlement::EntitlementService;
 use crate::modules::setup::schema::SchoolDetailsResponse;
+use crate::modules::sync::ManifestRepository;
 
 /// Request for full sync
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct FullSyncRequest {
     pub device_id: String,
-    pub class_ids: Option<Vec<String>>,  // empty/null = base data only; non-empty = batch request
+    pub class_ids: Option<Vec<String>>, // empty/null = base data only; non-empty = batch request
 }
 
 #[derive(Debug, Clone, serde::Serialize)]

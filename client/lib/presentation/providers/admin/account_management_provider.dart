@@ -5,6 +5,7 @@ import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
 import 'package:likha/domain/auth/usecases/delete_account.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
+import 'package:likha/domain/auth/usecases/username_exists.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
@@ -49,6 +50,7 @@ class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
   final LockAccount _lockAccount;
   final UpdateAccount _updateAccount;
   final DeleteAccount _deleteAccount;
+  final UsernameExists _usernameExists;
 
   AccountManagementNotifier(
     this.ref,
@@ -58,6 +60,7 @@ class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
     this._lockAccount,
     this._updateAccount,
     this._deleteAccount,
+    this._usernameExists,
   ) : super(AccountManagementState());
 
   Future<void> loadAccounts() async {
@@ -93,6 +96,16 @@ class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
     Map<String, dynamic>? teacherDetails,
   }) async {
     ProviderLogger.instance.log('createAccount START: username=$username, firstName=$firstName, lastName=$lastName, role=$role');
+
+    final exists = await _usernameExists(username);
+    if (exists) {
+      ProviderLogger.instance.log('createAccount: Duplicate username detected');
+      state = state.copyWith(
+        error: 'Username already exists',
+      );
+      return;
+    }
+
     final previousAccounts = List<User>.from(state.accounts);
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -109,6 +122,7 @@ class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
     );
 
     state = state.copyWith(
+      isLoading: true,
       clearError: true,
       clearSuccess: true,
       accounts: [tempUser, ...state.accounts],
@@ -129,6 +143,7 @@ class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
         final userMessage = AppErrorMapper.fromFailure(failure);
         ProviderLogger.instance.log('User message: $userMessage');
         state = state.copyWith(
+          isLoading: false,
           accounts: previousAccounts,
           error: userMessage,
         );
@@ -137,10 +152,10 @@ class AccountManagementNotifier extends StateNotifier<AccountManagementState> {
         final user = mutationResult.entity;
         ProviderLogger.instance.log('createAccount SUCCESS: user id=${user.id}, username=${user.username}');
         state = state.copyWith(
+          isLoading: false,
           accounts: state.accounts.map((a) => a.id == tempId ? user : a).toList(),
           successMessage: 'Account created successfully',
         );
-        ref.invalidate(accountManagementProvider);
       },
     );
   }
@@ -346,5 +361,6 @@ final accountManagementProvider =
     sl<LockAccount>(),
     sl<UpdateAccount>(),
     sl<DeleteAccount>(),
+    sl<UsernameExists>(),
   );
 });

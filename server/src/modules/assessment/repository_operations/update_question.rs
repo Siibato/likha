@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessment_questions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessment_questions;
 
 pub async fn update_question(
     db: &DatabaseConnection,

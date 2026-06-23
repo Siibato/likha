@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::student_school_history;
 use crate::utils::{AppError, AppResult};
+use ::entity::student_school_history;
 
 pub async fn create_school_history(
     db: &DatabaseConnection,
@@ -34,7 +34,7 @@ pub async fn create_school_history(
         updated_at: sea_orm::ActiveValue::Set(now),
         deleted_at: sea_orm::ActiveValue::Set(None),
     };
-    am.insert(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to create school history: {}", e)))
+    am.insert(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to create school history: {}", e))
+    })
 }

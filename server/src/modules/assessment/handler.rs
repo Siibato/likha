@@ -9,10 +9,10 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::assessment::schema::*;
-use crate::modules::auth::schema::MessageResponse;
-use crate::utils::response::success_response;
 use crate::modules::assessment::service::AssessmentService;
-use crate::utils::auth_guards::{require_teacher, require_student};
+use crate::modules::auth::schema::MessageResponse;
+use crate::utils::auth_guards::{require_student, require_teacher};
+use crate::utils::response::success_response;
 
 // ===== TEACHER: ASSESSMENT CRUD =====
 
@@ -33,7 +33,10 @@ pub async fn create_assessment(
         request.title
     );
 
-    match service.create_assessment(class_id, request, auth_user.user_id, None).await {
+    match service
+        .create_assessment(class_id, request, auth_user.user_id, None)
+        .await
+    {
         Ok(response) => {
             tracing::info!(
                 "Assessment created successfully - assessment_id: {}, class_id: {}, teacher_id: {}",
@@ -42,7 +45,7 @@ pub async fn create_assessment(
                 auth_user.user_id
             );
             success_response(response, StatusCode::CREATED).into_response()
-        },
+        }
         Err(e) => {
             tracing::error!(
                 "Assessment creation failed - class_id: {}, teacher_id: {}, error: {:?}",
@@ -51,7 +54,7 @@ pub async fn create_assessment(
                 e
             );
             e.into_response()
-        },
+        }
     }
 }
 
@@ -93,7 +96,10 @@ pub async fn update_assessment(
         return r;
     }
 
-    match service.update_assessment(assessment_id, request, auth_user.user_id).await {
+    match service
+        .update_assessment(assessment_id, request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -108,10 +114,17 @@ pub async fn delete_assessment(
         return r;
     }
 
-    match service.delete_assessment(assessment_id, auth_user.user_id).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Assessment deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+    match service
+        .delete_assessment(assessment_id, auth_user.user_id)
+        .await
+    {
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Assessment deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -125,7 +138,10 @@ pub async fn publish_assessment(
         return r;
     }
 
-    match service.publish_assessment(assessment_id, auth_user.user_id).await {
+    match service
+        .publish_assessment(assessment_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -140,7 +156,10 @@ pub async fn unpublish_assessment(
         return r;
     }
 
-    match service.unpublish_assessment(assessment_id, auth_user.user_id).await {
+    match service
+        .unpublish_assessment(assessment_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -155,7 +174,10 @@ pub async fn release_results(
         return r;
     }
 
-    match service.release_results(assessment_id, auth_user.user_id).await {
+    match service
+        .release_results(assessment_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -173,7 +195,10 @@ pub async fn add_questions(
         return r;
     }
 
-    match service.add_questions(assessment_id, request, auth_user.user_id).await {
+    match service
+        .add_questions(assessment_id, request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -189,7 +214,10 @@ pub async fn update_question(
         return r;
     }
 
-    match service.update_question(question_id, request, auth_user.user_id).await {
+    match service
+        .update_question(question_id, request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -204,10 +232,17 @@ pub async fn delete_question(
         return r;
     }
 
-    match service.delete_question(question_id, auth_user.user_id).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Question deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+    match service
+        .delete_question(question_id, auth_user.user_id)
+        .await
+    {
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Question deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -221,11 +256,17 @@ pub async fn reorder_questions(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.reorder_questions(assessment_id, request, auth_user.user_id).await {
+    match service
+        .reorder_questions(assessment_id, request, auth_user.user_id)
+        .await
+    {
         Ok(()) => success_response(
-            MessageResponse { message: "Questions reordered".to_string() },
+            MessageResponse {
+                message: "Questions reordered".to_string(),
+            },
             StatusCode::OK,
-        ).into_response(),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -241,7 +282,10 @@ pub async fn get_submissions(
         return r;
     }
 
-    match service.get_submissions_cached(assessment_id, auth_user.user_id).await {
+    match service
+        .get_submissions_cached(assessment_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -256,7 +300,10 @@ pub async fn get_submission_detail(
         return r;
     }
 
-    match service.get_submission_detail_cached(submission_id, auth_user.user_id).await {
+    match service
+        .get_submission_detail_cached(submission_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -272,7 +319,10 @@ pub async fn override_answer(
         return r;
     }
 
-    match service.override_answer(answer_id, request, auth_user.user_id).await {
+    match service
+        .override_answer(answer_id, request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -288,7 +338,10 @@ pub async fn grade_essay_answer(
         return r;
     }
 
-    match service.grade_essay_answer(answer_id, request, auth_user.user_id).await {
+    match service
+        .grade_essay_answer(answer_id, request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -303,7 +356,10 @@ pub async fn get_statistics(
         return r;
     }
 
-    match service.get_statistics(assessment_id, auth_user.user_id).await {
+    match service
+        .get_statistics(assessment_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -320,7 +376,10 @@ pub async fn start_assessment(
         return r;
     }
 
-    match service.start_assessment(assessment_id, auth_user.user_id, None).await {
+    match service
+        .start_assessment(assessment_id, auth_user.user_id, None)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -336,10 +395,17 @@ pub async fn save_answers(
         return r;
     }
 
-    match service.save_answers(submission_id, request, auth_user.user_id).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Answers saved".to_string(),
-        }, StatusCode::OK).into_response(),
+    match service
+        .save_answers(submission_id, request, auth_user.user_id)
+        .await
+    {
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Answers saved".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -359,7 +425,10 @@ pub async fn submit_assessment(
         auth_user.user_id
     );
 
-    match service.submit_assessment(submission_id, auth_user.user_id).await {
+    match service
+        .submit_assessment(submission_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => {
             tracing::info!(
                 "Assessment submitted successfully - submission_id: {}, student_id: {}, total_points: {}",
@@ -368,7 +437,7 @@ pub async fn submit_assessment(
                 response.total_points
             );
             success_response(response, StatusCode::OK).into_response()
-        },
+        }
         Err(e) => {
             tracing::error!(
                 "Assessment submission failed - submission_id: {}, student_id: {}, error: {:?}",
@@ -377,7 +446,7 @@ pub async fn submit_assessment(
                 e
             );
             e.into_response()
-        },
+        }
     }
 }
 
@@ -386,7 +455,10 @@ pub async fn get_student_results(
     auth_user: AuthUser,
     Path(submission_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    match service.get_student_results_cached(submission_id, auth_user.user_id, &auth_user.role).await {
+    match service
+        .get_student_results_cached(submission_id, auth_user.user_id, &auth_user.role)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -411,11 +483,17 @@ pub async fn reorder_assessments(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.reorder_assessments(class_id, request, auth_user.user_id).await {
+    match service
+        .reorder_assessments(class_id, request, auth_user.user_id)
+        .await
+    {
         Ok(()) => success_response(
-            MessageResponse { message: "Assessments reordered".to_string() },
+            MessageResponse {
+                message: "Assessments reordered".to_string(),
+            },
             StatusCode::OK,
-        ).into_response(),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -425,12 +503,23 @@ pub async fn get_student_submission(
     auth_user: AuthUser,
     Path((assessment_id, student_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    match service.get_student_submission_cached(assessment_id, student_id, auth_user.user_id, &auth_user.role).await {
+    match service
+        .get_student_submission_cached(
+            assessment_id,
+            student_id,
+            auth_user.user_id,
+            &auth_user.role,
+        )
+        .await
+    {
         Ok(Some(response)) => success_response(response, StatusCode::OK).into_response(),
         Ok(None) => success_response(
-            crate::modules::auth::schema::MessageResponse { message: "No submission found".to_string() },
+            crate::modules::auth::schema::MessageResponse {
+                message: "No submission found".to_string(),
+            },
             StatusCode::NO_CONTENT,
-        ).into_response(),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -443,7 +532,10 @@ pub async fn get_student_assessment_submissions(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.get_student_assessment_submissions_cached(class_id, student_id, auth_user.user_id).await {
+    match service
+        .get_student_assessment_submissions_cached(class_id, student_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

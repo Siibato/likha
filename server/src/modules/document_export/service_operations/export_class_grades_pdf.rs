@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::modules::document_export::helpers::deped_header::DepedHeaderData;
 use crate::modules::document_export::helpers::grade_table::GradeTableData;
 use crate::modules::document_export::helpers::grade_table::StudentRow;
-use crate::modules::document_export::helpers::pdf_engine::{PdfEngine, grey300, yellow};
+use crate::modules::document_export::helpers::pdf_engine::{grey300, yellow, PdfEngine};
 use crate::modules::document_export::service::DocumentExportService;
 use crate::modules::grading::service::GradeComputationService;
 use crate::modules::setup::service::SetupService;
@@ -40,7 +40,10 @@ impl ColWidths {
         let flex = (total_printable - fixed).max(0.0);
         let units = item_cols + tps_total;
         if units == 0 {
-            return Self { item_w: 11.0, tps_w: 13.0 };
+            return Self {
+                item_w: 11.0,
+                tps_w: 13.0,
+            };
         }
         let unit = flex / units as f32;
         let tps_w = (unit * 1.2).max(11.0);
@@ -82,7 +85,9 @@ pub async fn run(
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let grade_data = grade_service.get_all_grade_data(class_id, term_number).await?;
+    let grade_data = grade_service
+        .get_all_grade_data(class_id, term_number)
+        .await?;
     let settings = setup_service.get_school_details().await?;
     let class_model = grade_service
         .class_repo
@@ -93,7 +98,9 @@ pub async fn run(
         .class_repo
         .find_teacher_of_class(class_id)
         .await?;
-    let teacher_name = teacher.map(|t| format!("{}, {}", t.last_name, t.first_name)).unwrap_or_default();
+    let teacher_name = teacher
+        .map(|t| format!("{}, {}", t.last_name, t.first_name))
+        .unwrap_or_default();
 
     let header = DepedHeaderData::from_settings(
         &settings,
@@ -125,11 +132,24 @@ pub async fn run(
         };
         let layer = engine.get_layer(pidx, lidx);
 
-        let seal_img = seal_bytes.as_ref().and_then(|(b, w, h)| PdfEngine::load_png(b).ok().map(|img| (img, *w, *h)));
-        let logo_img = logo_bytes.as_ref().and_then(|(b, w, h)| PdfEngine::load_png(b).ok().map(|img| (img, *w, *h)));
+        let seal_img = seal_bytes
+            .as_ref()
+            .and_then(|(b, w, h)| PdfEngine::load_png(b).ok().map(|img| (img, *w, *h)));
+        let logo_img = logo_bytes
+            .as_ref()
+            .and_then(|(b, w, h)| PdfEngine::load_png(b).ok().map(|img| (img, *w, *h)));
         draw_header(&engine, &layer, &header, seal_img, logo_img);
         let cw = ColWidths::compute(&table);
-        draw_table(&engine, &layer, &table, cw, start, end, MARGIN, PAGE_H - MARGIN - 46.0_f32);
+        draw_table(
+            &engine,
+            &layer,
+            &table,
+            cw,
+            start,
+            end,
+            MARGIN,
+            PAGE_H - MARGIN - 46.0_f32,
+        );
     }
 
     engine
@@ -147,7 +167,9 @@ fn load_asset_with_size(name: &str) -> Option<(Vec<u8>, u32, u32)> {
 }
 
 fn img_scale(px: u32, target_mm: f32) -> f32 {
-    if px == 0 { return 1.0; }
+    if px == 0 {
+        return 1.0;
+    }
     let native_mm = px as f32 * 25.4 / 300.0;
     target_mm / native_mm
 }
@@ -194,7 +216,14 @@ fn draw_header(
         );
     }
 
-    engine.draw_text(layer, "Class Record", 16.0, Mm(PAGE_W / 2.0 - 30.0), Mm(top - 12.0), true);
+    engine.draw_text(
+        layer,
+        "Class Record",
+        16.0,
+        Mm(PAGE_W / 2.0 - 30.0),
+        Mm(top - 12.0),
+        true,
+    );
     engine.draw_text(
         layer,
         "(Pursuant to DepEd Order 8 series of 2015)",
@@ -206,7 +235,15 @@ fn draw_header(
 
     let y = top - 30.0;
     let field_w = (PAGE_W - 2.0 * MARGIN) / 3.0;
-    draw_meta_field(engine, layer, "REGION", &header.region, Mm(left), Mm(y), Mm(field_w));
+    draw_meta_field(
+        engine,
+        layer,
+        "REGION",
+        &header.region,
+        Mm(left),
+        Mm(y),
+        Mm(field_w),
+    );
     draw_meta_field(
         engine,
         layer,
@@ -257,11 +294,27 @@ fn draw_header(
 
     let y3 = y2 - 8.0;
     engine.draw_text(layer, &header.term_label, 8.0, Mm(left), Mm(y3), true);
-    let gs_val = format!("{} {}", header.grade_level, header.section).trim().to_string();
-    engine.draw_text(layer, "GRADE & SECTION:", 7.0, Mm(left + 22.0), Mm(y3), true);
+    let gs_val = format!("{} {}", header.grade_level, header.section)
+        .trim()
+        .to_string();
+    engine.draw_text(
+        layer,
+        "GRADE & SECTION:",
+        7.0,
+        Mm(left + 22.0),
+        Mm(y3),
+        true,
+    );
     engine.draw_text(layer, &gs_val, 8.0, Mm(left + 58.0), Mm(y3), false);
     engine.draw_text(layer, "TEACHER:", 7.0, Mm(left + 118.0), Mm(y3), true);
-    engine.draw_text(layer, &header.teacher_name, 8.0, Mm(left + 142.0), Mm(y3), false);
+    engine.draw_text(
+        layer,
+        &header.teacher_name,
+        8.0,
+        Mm(left + 142.0),
+        Mm(y3),
+        false,
+    );
     engine.draw_text(layer, "SUBJECT:", 7.0, Mm(left + 190.0), Mm(y3), true);
     engine.draw_text(layer, &header.subject, 8.0, Mm(left + 214.0), Mm(y3), false);
 
@@ -296,7 +349,15 @@ fn draw_meta_field(
 ) {
     engine.draw_text(layer, label, 7.0, x, y, true);
     let val = if value.is_empty() { " " } else { value };
-    engine.draw_rect(layer, Mm(x.0 + 20.0), y, Mm(w.0 - 20.0), Mm(5.0), None, true);
+    engine.draw_rect(
+        layer,
+        Mm(x.0 + 20.0),
+        y,
+        Mm(w.0 - 20.0),
+        Mm(5.0),
+        None,
+        true,
+    );
     engine.draw_text(layer, val, 8.0, Mm(x.0 + 22.0), Mm(y.0 + 1.0), false);
 }
 
@@ -455,7 +516,16 @@ fn draw_column_headers(
             continue;
         }
         for (i, _) in section.items.iter().enumerate() {
-            draw_cell(engine, layer, &format!("{}", i + 1), cx, y_top, cw.item_w, HEADER_H, true);
+            draw_cell(
+                engine,
+                layer,
+                &format!("{}", i + 1),
+                cx,
+                y_top,
+                cw.item_w,
+                HEADER_H,
+                true,
+            );
             cx += cw.item_w;
         }
         draw_cell(engine, layer, "Total", cx, y_top, cw.tps_w, HEADER_H, true);
@@ -573,7 +643,16 @@ fn draw_student_row(
             Some(t) => format!("{:.1}", t),
             None => String::new(),
         };
-        draw_cell(engine, layer, &total_text, cx, y_top, cw.tps_w, ROW_H, false);
+        draw_cell(
+            engine,
+            layer,
+            &total_text,
+            cx,
+            y_top,
+            cw.tps_w,
+            ROW_H,
+            false,
+        );
         cx += cw.tps_w;
         let ps_text = match result.ps {
             Some(p) => format!("{:.2}", p),
@@ -616,7 +695,14 @@ fn draw_cell(
     if !text.is_empty() {
         let text_w = text.len() as f32 * 1.2;
         let tx = x + (w - text_w) / 2.0;
-        engine.draw_text(layer, text, 7.0, Mm(tx.max(x + 1.0)), Mm(y_top - h + 2.0), bold);
+        engine.draw_text(
+            layer,
+            text,
+            7.0,
+            Mm(tx.max(x + 1.0)),
+            Mm(y_top - h + 2.0),
+            bold,
+        );
     }
 }
 
@@ -645,10 +731,25 @@ fn draw_yellow_cell(
     w: f32,
     h: f32,
 ) {
-    engine.draw_rect(layer, Mm(x), Mm(y_top - h), Mm(w), Mm(h), Some(yellow()), true);
+    engine.draw_rect(
+        layer,
+        Mm(x),
+        Mm(y_top - h),
+        Mm(w),
+        Mm(h),
+        Some(yellow()),
+        true,
+    );
     if !text.is_empty() {
         let text_w = text.len() as f32 * 1.2;
         let tx = x + (w - text_w) / 2.0;
-        engine.draw_text(layer, text, 7.0, Mm(tx.max(x + 1.0)), Mm(y_top - h + 2.0), true);
+        engine.draw_text(
+            layer,
+            text,
+            7.0,
+            Mm(tx.max(x + 1.0)),
+            Mm(y_top - h + 2.0),
+            true,
+        );
     }
 }

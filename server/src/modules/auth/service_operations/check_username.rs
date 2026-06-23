@@ -1,6 +1,6 @@
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::auth::schema::{CheckUsernameRequest, CheckUsernameResponse};
 use crate::modules::auth::UserRepository;
+use crate::utils::error::{AppError, AppResult};
 
 pub async fn check_username(
     user_repo: &UserRepository,

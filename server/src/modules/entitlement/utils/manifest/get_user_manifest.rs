@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::AppResult;
 use crate::modules::sync::manifest_repository::ManifestEntry;
 use crate::modules::sync::sync_scope::SyncScope;
+use crate::utils::AppResult;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct UserManifest {
@@ -73,14 +73,25 @@ impl crate::modules::entitlement::service::EntitlementService {
         };
 
         let assessment_ids: Vec<Uuid> = assessments.iter().map(|a| a.id).collect();
-        tracing::debug!("Manifest building: Found {} assessments", assessment_ids.len());
+        tracing::debug!(
+            "Manifest building: Found {} assessments",
+            assessment_ids.len()
+        );
 
         let assessment_questions = if scope.include_questions && !assessment_ids.is_empty() {
-            tracing::debug!("Manifest building: Fetching questions for {} assessments", assessment_ids.len());
-            let questions = self.manifest_repo
+            tracing::debug!(
+                "Manifest building: Fetching questions for {} assessments",
+                assessment_ids.len()
+            );
+            let questions = self
+                .manifest_repo
                 .get_questions_manifest(assessment_ids.clone())
                 .await?;
-            tracing::debug!("Manifest building: Found {} questions for {} assessments", questions.len(), assessment_ids.len());
+            tracing::debug!(
+                "Manifest building: Found {} questions for {} assessments",
+                questions.len(),
+                assessment_ids.len()
+            );
             if questions.is_empty() {
                 tracing::debug!("Manifest building: No questions found for assessments");
             }

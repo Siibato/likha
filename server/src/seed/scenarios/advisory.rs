@@ -27,18 +27,30 @@ pub async fn seed_advisory_world(db: &DatabaseConnection) -> Result<(), AppError
     let previous_subjects = fixtures::advisory_previous_subjects();
     let previous_attendance = fixtures::advisory_previous_attendance();
 
-    let students: Vec<_> = users.iter().filter(|u| u.role == "student").cloned().collect();
+    let students: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "student")
+        .cloned()
+        .collect();
 
     // Generate gradebook data for subject classes
     let grade_records = advisory_grades::generate_grade_records();
     let grade_items = advisory_grades::generate_grade_items();
-    let grade_scores = advisory_grades::generate_grade_scores(&students, &enrollments, &grade_items);
+    let grade_scores =
+        advisory_grades::generate_grade_scores(&students, &enrollments, &grade_items);
     let term_grades = advisory_grades::generate_term_grades(
-        &students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx,
+        &students,
+        &grade_records,
+        &grade_scores,
+        &grade_items,
+        &enrollments,
+        &ctx,
     );
 
     // Insert in FK-safe order
-    disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    disable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
@@ -58,17 +70,28 @@ pub async fn seed_advisory_world(db: &DatabaseConnection) -> Result<(), AppError
     inserters::school_history::insert_previous_subjects(db, &previous_subjects).await?;
     inserters::school_history::insert_previous_attendance(db, &previous_attendance).await?;
 
-    enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    enable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     println!(
         "Advisory seed complete: {} users, {} classes, {} enrollments, {} learner details, \
          {} grade records, {} grade items, {} grade scores, {} term grades, \
          {} attendance records, {} core values records, \
          {} school history, {} previous subjects, {} previous attendance",
-        users.len(), classes.len(), enrollments.len(), learner_details.len(),
-        grade_records.len(), grade_items.len(), grade_scores.len(), term_grades.len(),
-        attendance.len(), core_values.len(),
-        school_history.len(), previous_subjects.len(), previous_attendance.len()
+        users.len(),
+        classes.len(),
+        enrollments.len(),
+        learner_details.len(),
+        grade_records.len(),
+        grade_items.len(),
+        grade_scores.len(),
+        term_grades.len(),
+        attendance.len(),
+        core_values.len(),
+        school_history.len(),
+        previous_subjects.len(),
+        previous_attendance.len()
     );
 
     Ok(())

@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use crate::modules::auth::helpers::user_to_response;
+use uuid::Uuid;
 
 fn make_user(account_status: &str) -> ::entity::users::Model {
     ::entity::users::Model {

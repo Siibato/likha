@@ -52,7 +52,9 @@ pub async fn run(
         .map_err(|e| AppError::InternalServerError(format!("PDF init: {}", e)))?;
 
     let seal_bytes = load_asset("deped_seal.png");
-    let seal_img = seal_bytes.as_ref().and_then(|b| PdfEngine::load_png(b).ok());
+    let seal_img = seal_bytes
+        .as_ref()
+        .and_then(|b| PdfEngine::load_png(b).ok());
 
     let school_name = settings.school_name.clone().unwrap_or_default();
     let region = settings.school_region.clone().unwrap_or_default();

@@ -27,6 +27,7 @@ abstract class AuthRepository {
   ResultVoid logout();
 
   Future<bool> isAuthenticated();
+  Future<bool> usernameExists({required String username});
 
   // Admin methods
   ResultFuture<MutationResult<User>> createAccount({

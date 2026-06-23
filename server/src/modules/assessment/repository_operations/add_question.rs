@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessment_questions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessment_questions;
 
 pub async fn add_question(
     db: &DatabaseConnection,

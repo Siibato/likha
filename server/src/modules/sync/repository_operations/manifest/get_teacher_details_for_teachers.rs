@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::teacher_details;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::teacher_details;
 
 pub async fn get_teacher_details_for_teachers(
     db: &DatabaseConnection,
@@ -16,6 +16,5 @@ pub async fn get_teacher_details_for_teachers(
     let query = teacher_details::Entity::find()
         .filter(teacher_details::Column::UserId.is_in(teacher_ids))
         .filter(teacher_details::Column::DeletedAt.is_null());
-    helpers::paginate_query(db, query, limit, |r| helpers::teacher_details_to_json(r))
-        .await
+    helpers::paginate_query(db, query, limit, |r| helpers::teacher_details_to_json(r)).await
 }

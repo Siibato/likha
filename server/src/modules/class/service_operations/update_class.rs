@@ -1,9 +1,9 @@
-use uuid::Uuid;
+use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::{ClassResponse, UpdateClassRequest};
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::validators::Validator;
-use crate::modules::class::schema::{ClassResponse, UpdateClassRequest};
-use crate::modules::class::repository::ClassRepository;
-use crate::modules::auth::UserRepository;
+use uuid::Uuid;
 
 pub async fn update_class(
     class_repo: &ClassRepository,
@@ -46,14 +46,23 @@ pub async fn update_class(
             .ok_or_else(|| AppError::NotFound("New teacher not found".to_string()))?;
 
         if new_teacher.role != "teacher" {
-            return Err(AppError::BadRequest("User must have teacher role".to_string()));
+            return Err(AppError::BadRequest(
+                "User must have teacher role".to_string(),
+            ));
         }
 
-        if class_repo.is_teacher_of_class(new_teacher_id, class_id).await? {
-            return Err(AppError::BadRequest("Teacher is already assigned to this class".to_string()));
+        if class_repo
+            .is_teacher_of_class(new_teacher_id, class_id)
+            .await?
+        {
+            return Err(AppError::BadRequest(
+                "Teacher is already assigned to this class".to_string(),
+            ));
         }
 
-        class_repo.reassign_teacher(class_id, new_teacher_id).await?;
+        class_repo
+            .reassign_teacher(class_id, new_teacher_id)
+            .await?;
     }
 
     let teacher_model = class_repo

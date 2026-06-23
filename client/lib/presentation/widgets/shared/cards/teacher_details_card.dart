@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/auth/entities/teacher_details.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 
 class TeacherDetailsCard extends StatefulWidget {
   final TeacherDetails? details;
@@ -28,7 +30,7 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
   late final TextEditingController _licenseIdCtrl;
   late final TextEditingController _rankCtrl;
   late final TextEditingController _positionCtrl;
-  late final TextEditingController _sexCtrl;
+  String? _selectedSex;
   late final TextEditingController _birthdateCtrl;
   late final TextEditingController _homeAddressCtrl;
   late final TextEditingController _dateHiredCtrl;
@@ -42,7 +44,7 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
     _licenseIdCtrl = TextEditingController(text: widget.details?.licenseId ?? '');
     _rankCtrl = TextEditingController(text: widget.details?.rank ?? '');
     _positionCtrl = TextEditingController(text: widget.details?.position ?? '');
-    _sexCtrl = TextEditingController(text: widget.details?.sex ?? '');
+    _selectedSex = widget.details?.sex;
     _birthdateCtrl = TextEditingController(text: widget.details?.birthdate ?? '');
     _homeAddressCtrl = TextEditingController(text: widget.details?.homeAddress ?? '');
     _dateHiredCtrl = TextEditingController(text: widget.details?.dateHired ?? '');
@@ -58,7 +60,7 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
       _licenseIdCtrl.text = widget.details?.licenseId ?? '';
       _rankCtrl.text = widget.details?.rank ?? '';
       _positionCtrl.text = widget.details?.position ?? '';
-      _sexCtrl.text = widget.details?.sex ?? '';
+      _selectedSex = widget.details?.sex;
       _birthdateCtrl.text = widget.details?.birthdate ?? '';
       _homeAddressCtrl.text = widget.details?.homeAddress ?? '';
       _dateHiredCtrl.text = widget.details?.dateHired ?? '';
@@ -73,7 +75,6 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
     _licenseIdCtrl.dispose();
     _rankCtrl.dispose();
     _positionCtrl.dispose();
-    _sexCtrl.dispose();
     _birthdateCtrl.dispose();
     _homeAddressCtrl.dispose();
     _dateHiredCtrl.dispose();
@@ -84,12 +85,35 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
     super.dispose();
   }
 
+  Future<void> _pickDate(TextEditingController controller, {DateTime? initialDate, DateTime? firstDate, DateTime? lastDate}) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: firstDate ?? DateTime(1900),
+      lastDate: lastDate ?? DateTime.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.accentCharcoal,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.accentCharcoal,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      controller.text = '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    }
+  }
+
   void _handleSave() {
     widget.onSave({
       'license_id': _licenseIdCtrl.text.isEmpty ? null : _licenseIdCtrl.text,
       'rank': _rankCtrl.text.isEmpty ? null : _rankCtrl.text,
       'position': _positionCtrl.text.isEmpty ? null : _positionCtrl.text,
-      'sex': _sexCtrl.text.isEmpty ? null : _sexCtrl.text,
+      'sex': _selectedSex,
       'birthdate': _birthdateCtrl.text.isEmpty ? null : _birthdateCtrl.text,
       'home_address': _homeAddressCtrl.text.isEmpty ? null : _homeAddressCtrl.text,
       'date_hired': _dateHiredCtrl.text.isEmpty ? null : _dateHiredCtrl.text,
@@ -187,18 +211,25 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
             enabled: !widget.isLoading,
           ),
           const SizedBox(height: 16),
-          StyledTextField(
-            controller: _sexCtrl,
+          StyledDropdown<String>(
+            value: _selectedSex,
             label: 'Sex',
             icon: Icons.wc_outlined,
             enabled: !widget.isLoading,
+            items: const [
+              DropdownMenuItem(value: 'Male', child: Text('Male')),
+              DropdownMenuItem(value: 'Female', child: Text('Female')),
+            ],
+            onChanged: (value) => setState(() => _selectedSex = value),
           ),
           const SizedBox(height: 16),
           StyledTextField(
             controller: _birthdateCtrl,
-            label: 'Birthdate (YYYY-MM-DD)',
+            label: 'Birthdate',
             icon: Icons.cake_outlined,
             enabled: !widget.isLoading,
+            readOnly: true,
+            onTap: () => _pickDate(_birthdateCtrl),
           ),
           const SizedBox(height: 16),
           StyledTextField(
@@ -210,9 +241,11 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
           const SizedBox(height: 16),
           StyledTextField(
             controller: _dateHiredCtrl,
-            label: 'Date Hired (YYYY-MM-DD)',
+            label: 'Date Hired',
             icon: Icons.event_outlined,
             enabled: !widget.isLoading,
+            readOnly: true,
+            onTap: () => _pickDate(_dateHiredCtrl),
           ),
           const SizedBox(height: 16),
           StyledTextField(
@@ -234,6 +267,8 @@ class _TeacherDetailsCardState extends State<TeacherDetailsCard> {
             label: 'Contact Number',
             icon: Icons.phone_outlined,
             enabled: !widget.isLoading,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
           ),
         ],
       ),

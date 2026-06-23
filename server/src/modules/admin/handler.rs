@@ -7,11 +7,14 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::modules::admin::schema::{CreateAccountRequest, LockAccountRequest, MessageResponse, ResetAccountRequest, SearchStudentsQuery, UpdateAccountRequest, UpdateAccountDetailsRequest};
-use crate::utils::response::success_response;
-use crate::modules::admin::service::AdminService;
 use crate::middleware::auth_middleware::AuthUser;
+use crate::modules::admin::schema::{
+    CreateAccountRequest, LockAccountRequest, MessageResponse, ResetAccountRequest,
+    SearchStudentsQuery, UpdateAccountDetailsRequest, UpdateAccountRequest,
+};
+use crate::modules::admin::service::AdminService;
 use crate::utils::auth_guards::require_admin;
+use crate::utils::response::success_response;
 
 pub async fn create_account(
     State(admin_service): State<Arc<AdminService>>,
@@ -22,7 +25,10 @@ pub async fn create_account(
         return e.into_response();
     }
 
-    match admin_service.create_account(request, auth_user.user_id, None).await {
+    match admin_service
+        .create_account(request, auth_user.user_id, None)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -51,7 +57,10 @@ pub async fn reset_account(
         return e.into_response();
     }
 
-    match admin_service.reset_account(request, auth_user.user_id).await {
+    match admin_service
+        .reset_account(request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -82,7 +91,10 @@ pub async fn update_account(
         return e.into_response();
     }
 
-    match admin_service.update_account(user_id, request, auth_user.user_id).await {
+    match admin_service
+        .update_account(user_id, request, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -127,11 +139,17 @@ pub async fn delete_account(
         return e.into_response();
     }
 
-    match admin_service.delete_account(user_id, auth_user.user_id).await {
+    match admin_service
+        .delete_account(user_id, auth_user.user_id)
+        .await
+    {
         Ok(_) => success_response(
-            MessageResponse { message: "Account deleted successfully".to_string() },
+            MessageResponse {
+                message: "Account deleted successfully".to_string(),
+            },
             StatusCode::OK,
-        ).into_response(),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }

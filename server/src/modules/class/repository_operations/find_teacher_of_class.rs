@@ -1,10 +1,13 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
-pub async fn find_teacher_of_class(db: &DatabaseConnection, class_id: Uuid) -> AppResult<Option<users::Model>> {
+pub async fn find_teacher_of_class(
+    db: &DatabaseConnection,
+    class_id: Uuid,
+) -> AppResult<Option<users::Model>> {
     let participant_with_user = class_participants::Entity::find()
         .filter(class_participants::Column::ClassId.eq(class_id))
         .filter(class_participants::Column::RemovedAt.is_null())

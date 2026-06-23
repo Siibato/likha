@@ -1,8 +1,8 @@
+use super::helpers::{get_difficulty_label, get_discrimination_label, get_verdict};
+use crate::modules::assessment::schema::*;
+use crate::utils::AppResult;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
-use crate::utils::AppResult;
-use crate::modules::assessment::schema::*;
-use super::helpers::{get_difficulty_label, get_discrimination_label, get_verdict};
 
 impl crate::modules::assessment::service::AssessmentService {
     pub(super) async fn compute_item_analysis(
@@ -14,14 +14,26 @@ impl crate::modules::assessment::service::AssessmentService {
         student_question_points: &HashMap<(Uuid, Uuid), f64>,
         submission_count: usize,
     ) -> AppResult<(Vec<ItemAnalysis>, Option<TestSummary>)> {
-        let mut sorted_students: Vec<_> = submitted.iter().map(|s| (s.user_id, s.total_points)).collect();
+        let mut sorted_students: Vec<_> = submitted
+            .iter()
+            .map(|s| (s.user_id, s.total_points))
+            .collect();
         sorted_students.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let n = (0.27 * submission_count as f64).ceil() as usize;
         let group_size = n.max(3);
 
-        let upper_group: HashSet<Uuid> = sorted_students.iter().take(group_size).map(|(id, _)| *id).collect();
-        let lower_group: HashSet<Uuid> = sorted_students.iter().rev().take(group_size).map(|(id, _)| *id).collect();
+        let upper_group: HashSet<Uuid> = sorted_students
+            .iter()
+            .take(group_size)
+            .map(|(id, _)| *id)
+            .collect();
+        let lower_group: HashSet<Uuid> = sorted_students
+            .iter()
+            .rev()
+            .take(group_size)
+            .map(|(id, _)| *id)
+            .collect();
 
         // Batch-load all choices for MC questions in a single query
         let mc_question_ids: Vec<Uuid> = questions
@@ -33,12 +45,16 @@ impl crate::modules::assessment::service::AssessmentService {
         let mut question_choices: HashMap<Uuid, Vec<(Uuid, String, bool)>> =
             HashMap::with_capacity(mc_question_ids.len());
         if !mc_question_ids.is_empty() {
-            let all_choices = self.assessment_repo.find_choices_by_question_ids(&mc_question_ids).await?;
+            let all_choices = self
+                .assessment_repo
+                .find_choices_by_question_ids(&mc_question_ids)
+                .await?;
             for c in all_choices {
-                question_choices
-                    .entry(c.question_id)
-                    .or_default()
-                    .push((c.id, c.choice_text, c.is_correct));
+                question_choices.entry(c.question_id).or_default().push((
+                    c.id,
+                    c.choice_text,
+                    c.is_correct,
+                ));
             }
         }
 
@@ -60,7 +76,8 @@ impl crate::modules::assessment::service::AssessmentService {
 
         // Pre-compute overall average points per question (for difficulty)
         let mut total_points_sum: HashMap<Uuid, f64> = HashMap::with_capacity(questions.len());
-        let mut total_answered_count: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        let mut total_answered_count: HashMap<Uuid, usize> =
+            HashMap::with_capacity(questions.len());
         for ((_, question_id), points) in student_question_points {
             *total_points_sum.entry(*question_id).or_insert(0.0) += points;
             *total_answered_count.entry(*question_id).or_insert(0) += 1;
@@ -75,8 +92,12 @@ impl crate::modules::assessment::service::AssessmentService {
                         .entry((*question_id, *choice_id))
                         .or_insert((0, 0, 0));
                     *total += 1;
-                    if upper_group.contains(student_id) { *upper += 1; }
-                    if lower_group.contains(student_id) { *lower += 1; }
+                    if upper_group.contains(student_id) {
+                        *upper += 1;
+                    }
+                    if lower_group.contains(student_id) {
+                        *lower += 1;
+                    }
                 }
             }
         }
@@ -94,23 +115,41 @@ impl crate::modules::assessment::service::AssessmentService {
             let avg_points = {
                 let sum = total_points_sum.get(&q.id).copied().unwrap_or(0.0);
                 let count = total_answered_count.get(&q.id).copied().unwrap_or(0);
-                if count > 0 { sum / count as f64 } else { 0.0 }
+                if count > 0 {
+                    sum / count as f64
+                } else {
+                    0.0
+                }
             };
             let upper_avg = {
                 let sum = upper_points_sum.get(&q.id).copied().unwrap_or(0.0);
                 let count = upper_count.get(&q.id).copied().unwrap_or(0);
-                if count > 0 { sum / count as f64 } else { 0.0 }
+                if count > 0 {
+                    sum / count as f64
+                } else {
+                    0.0
+                }
             };
             let lower_avg = {
                 let sum = lower_points_sum.get(&q.id).copied().unwrap_or(0.0);
                 let count = lower_count.get(&q.id).copied().unwrap_or(0);
-                if count > 0 { sum / count as f64 } else { 0.0 }
+                if count > 0 {
+                    sum / count as f64
+                } else {
+                    0.0
+                }
             };
 
-            let p = if max_points > 0.0 { avg_points / max_points } else { 0.0 };
+            let p = if max_points > 0.0 {
+                avg_points / max_points
+            } else {
+                0.0
+            };
             let d = if max_points > 0.0 {
                 (upper_avg / max_points) - (lower_avg / max_points)
-            } else { 0.0 };
+            } else {
+                0.0
+            };
 
             let difficulty_label = get_difficulty_label(p);
             let discrimination_label = get_discrimination_label(d);
@@ -138,9 +177,15 @@ impl crate::modules::assessment::service::AssessmentService {
 
                         let total_percentage = if total_students > 0 {
                             (total_selected as f64 / total_students as f64) * 100.0
-                        } else { 0.0 };
+                        } else {
+                            0.0
+                        };
 
-                        let is_effective = if *is_correct { true } else { lower_count > upper_count };
+                        let is_effective = if *is_correct {
+                            true
+                        } else {
+                            lower_count > upper_count
+                        };
 
                         distractor_results.push(DistractorAnalysis {
                             choice_id: *choice_id,
@@ -154,8 +199,12 @@ impl crate::modules::assessment::service::AssessmentService {
                     }
 
                     Some(distractor_results)
-                } else { None }
-            } else { None };
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
 
             item_analyses.push(ItemAnalysis {
                 question_id: q.id,
@@ -201,13 +250,19 @@ impl crate::modules::assessment::service::AssessmentService {
                             *student_correct.entry(*student_id).or_insert(0) += 1;
                         }
                     }
-                    let correct_counts: Vec<f64> = submitted.iter()
+                    let correct_counts: Vec<f64> = submitted
+                        .iter()
                         .map(|s| student_correct.get(&s.user_id).copied().unwrap_or(0) as f64)
                         .collect();
                     let mean_correct = correct_counts.iter().sum::<f64>() / n_students;
-                    let variance = correct_counts.iter()
-                        .map(|&c| { let d = c - mean_correct; d * d })
-                        .sum::<f64>() / n_students;
+                    let variance = correct_counts
+                        .iter()
+                        .map(|&c| {
+                            let d = c - mean_correct;
+                            d * d
+                        })
+                        .sum::<f64>()
+                        / n_students;
 
                     if variance > 0.0 {
                         Some((k / (k - 1.0)) * (1.0 - pq_sum / variance))
@@ -230,7 +285,9 @@ impl crate::modules::assessment::service::AssessmentService {
                 lower_group_size: lower_group.len(),
                 kr20,
             })
-        } else { None };
+        } else {
+            None
+        };
 
         Ok((item_analyses, test_summary))
     }

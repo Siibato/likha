@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::core_values_records;
 use crate::utils::{AppError, AppResult};
+use ::entity::core_values_records;
 
 pub async fn get_core_values(
     db: &DatabaseConnection,

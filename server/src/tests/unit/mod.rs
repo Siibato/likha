@@ -6,6 +6,6 @@
 //! - No database access
 //! - No network calls
 
+pub mod schema;
 pub mod services;
 pub mod utils;
-pub mod schema;

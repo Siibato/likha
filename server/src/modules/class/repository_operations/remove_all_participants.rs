@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::class_participants;
 use crate::utils::{AppError, AppResult};
+use ::entity::class_participants;
 
 pub async fn remove_all_participants(db: &DatabaseConnection, class_id: Uuid) -> AppResult<()> {
     let participants = class_participants::Entity::find()
@@ -21,10 +21,9 @@ pub async fn remove_all_participants(db: &DatabaseConnection, class_id: Uuid) ->
             updated_at: Set(now),
             ..Default::default()
         };
-        update
-            .update(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to remove participant: {}", e)))?;
+        update.update(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to remove participant: {}", e))
+        })?;
     }
 
     Ok(())

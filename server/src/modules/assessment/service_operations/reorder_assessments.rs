@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn reorder_assessments(
@@ -9,10 +9,17 @@ impl crate::modules::assessment::service::AssessmentService {
         request: ReorderAssessmentsRequest,
         teacher_id: Uuid,
     ) -> AppResult<()> {
-        let _class = self.class_repo.find_by_id(class_id).await?
+        let _class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden(
                 "You can only reorder assessments in your own classes".to_string(),
             ));

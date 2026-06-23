@@ -2,11 +2,11 @@ use uuid::Uuid;
 
 use crate::modules::grading::helpers::deped_weights;
 use crate::modules::student_records::schema::{
-    Sf10Response, Sf10SchoolHistory, Sf10PreviousSubject, Sf10AttendanceMonth,
-    Sf10YearRecord, Sf10SubjectRow,
+    Sf10AttendanceMonth, Sf10PreviousSubject, Sf10Response, Sf10SchoolHistory, Sf10SubjectRow,
+    Sf10YearRecord,
 };
-use crate::utils::{AppError, AppResult};
 use crate::modules::student_records::service::StudentRecordsService;
+use crate::utils::{calculate_current_age, AppError, AppResult};
 
 impl StudentRecordsService {
     pub async fn get_sf10(
@@ -16,30 +16,48 @@ impl StudentRecordsService {
         teacher_id: Uuid,
     ) -> AppResult<Sf10Response> {
         // Authorization: teacher must be the advisory teacher
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let class = self.class_repo.find_by_id(class_id).await?
+        let class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !class.is_advisory {
-            return Err(AppError::BadRequest("Class is not an advisory class".to_string()));
+            return Err(AppError::BadRequest(
+                "Class is not an advisory class".to_string(),
+            ));
         }
 
         // Verify student is enrolled
-        let enrolled_students = self.grade_service.repo.get_enrolled_student_ids(class_id).await?;
+        let enrolled_students = self
+            .grade_service
+            .repo
+            .get_enrolled_student_ids(class_id)
+            .await?;
         let student_name = enrolled_students
             .iter()
             .find(|(id, _, _)| *id == student_id)
             .map(|(_, first, last)| format!("{}, {}", last, first))
-            .ok_or_else(|| AppError::NotFound("Student not enrolled in this advisory class".to_string()))?;
+            .ok_or_else(|| {
+                AppError::NotFound("Student not enrolled in this advisory class".to_string())
+            })?;
 
         // Get learner details
         let learner_details = self.repo.get_learner_details(student_id).await?;
 
         // Get SF9 data for current school year (scholastic records)
-        let sf9 = self.grade_service.compute_sf9(class_id, student_id, teacher_id).await?;
+        let sf9 = self
+            .grade_service
+            .compute_sf9(class_id, student_id, teacher_id)
+            .await?;
 
         // Build current year record from SF9
         let current_year = Sf10YearRecord {
@@ -47,24 +65,30 @@ impl StudentRecordsService {
             grade_level: sf9.grade_level.clone().unwrap_or_default(),
             section: sf9.section.clone(),
             school_name: String::new(), // Will be filled from settings on export
-            subjects: sf9.subjects.iter().map(|s| Sf10SubjectRow {
-                class_title: s.class_title.clone(),
-                subject_group: s.subject_group.clone(),
-                term_grades: s.term_grades.clone(),
-                final_grade: s.final_grade,
-                descriptor: s.descriptor.clone(),
-            }).collect(),
+            subjects: sf9
+                .subjects
+                .iter()
+                .map(|s| Sf10SubjectRow {
+                    class_title: s.class_title.clone(),
+                    subject_group: s.subject_group.clone(),
+                    term_grades: s.term_grades.clone(),
+                    final_grade: s.final_grade,
+                    descriptor: s.descriptor.clone(),
+                })
+                .collect(),
             final_average: sf9.general_average.as_ref().and_then(|ga| ga.final_average),
-            descriptor: sf9.general_average.as_ref().and_then(|ga| ga.descriptor.clone()),
+            descriptor: sf9
+                .general_average
+                .as_ref()
+                .and_then(|ga| ga.descriptor.clone()),
             attendance: Vec::new(), // Filled below
         };
 
         // Get attendance for current school year
-        let current_attendance = self.repo.get_attendance(
-            student_id,
-            Some(class_id),
-            class.school_year.as_deref(),
-        ).await?;
+        let current_attendance = self
+            .repo
+            .get_attendance(student_id, Some(class_id), class.school_year.as_deref())
+            .await?;
 
         let current_attendance_months: Vec<Sf10AttendanceMonth> = current_attendance
             .iter()
@@ -85,12 +109,22 @@ impl StudentRecordsService {
         let mut school_history_entries: Vec<Sf10SchoolHistory> = Vec::new();
 
         for h in &history {
-            let subjects = self.repo.get_previous_subjects(student_id, Some(h.id)).await?;
-            let attendance = self.repo.get_previous_attendance(student_id, Some(h.id)).await?;
+            let subjects = self
+                .repo
+                .get_previous_subjects(student_id, Some(h.id))
+                .await?;
+            let attendance = self
+                .repo
+                .get_previous_attendance(student_id, Some(h.id))
+                .await?;
 
             let mut subject_rows: Vec<Sf10PreviousSubject> = Vec::new();
             for s in &subjects {
-                let term_grades = self.repo.get_term_grades_for_subject(s.id).await.unwrap_or_default();
+                let term_grades = self
+                    .repo
+                    .get_term_grades_for_subject(s.id)
+                    .await
+                    .unwrap_or_default();
                 subject_rows.push(Sf10PreviousSubject {
                     subject_name: s.subject_name.clone(),
                     subject_group: s.subject_group.clone(),
@@ -101,11 +135,14 @@ impl StudentRecordsService {
                 });
             }
 
-            let attendance_months: Vec<Sf10AttendanceMonth> = attendance.iter().map(|a| Sf10AttendanceMonth {
-                month: a.month.clone(),
-                school_days: a.school_days,
-                days_present: a.days_present,
-            }).collect();
+            let attendance_months: Vec<Sf10AttendanceMonth> = attendance
+                .iter()
+                .map(|a| Sf10AttendanceMonth {
+                    month: a.month.clone(),
+                    school_days: a.school_days,
+                    days_present: a.days_present,
+                })
+                .collect();
 
             school_history_entries.push(Sf10SchoolHistory {
                 id: h.id.to_string(),
@@ -124,14 +161,25 @@ impl StudentRecordsService {
 
         // Build previous year records from school history
         for h in &history {
-            let prev_subjects = self.repo.get_previous_subjects(student_id, Some(h.id)).await?;
-            let prev_attendance = self.repo.get_previous_attendance(student_id, Some(h.id)).await?;
+            let prev_subjects = self
+                .repo
+                .get_previous_subjects(student_id, Some(h.id))
+                .await?;
+            let prev_attendance = self
+                .repo
+                .get_previous_attendance(student_id, Some(h.id))
+                .await?;
 
             let mut subject_rows: Vec<Sf10SubjectRow> = Vec::new();
             for s in &prev_subjects {
                 let final_grade = s.final_grade;
-                let descriptor = final_grade.map(|fg| deped_weights::get_descriptor(fg).to_string());
-                let term_grades = self.repo.get_term_grades_for_subject(s.id).await.unwrap_or_default();
+                let descriptor =
+                    final_grade.map(|fg| deped_weights::get_descriptor(fg).to_string());
+                let term_grades = self
+                    .repo
+                    .get_term_grades_for_subject(s.id)
+                    .await
+                    .unwrap_or_default();
                 subject_rows.push(Sf10SubjectRow {
                     class_title: s.subject_name.clone(),
                     subject_group: s.subject_group.clone(),
@@ -141,11 +189,14 @@ impl StudentRecordsService {
                 });
             }
 
-            let attendance_months: Vec<Sf10AttendanceMonth> = prev_attendance.iter().map(|a| Sf10AttendanceMonth {
-                month: a.month.clone(),
-                school_days: a.school_days,
-                days_present: a.days_present,
-            }).collect();
+            let attendance_months: Vec<Sf10AttendanceMonth> = prev_attendance
+                .iter()
+                .map(|a| Sf10AttendanceMonth {
+                    month: a.month.clone(),
+                    school_days: a.school_days,
+                    days_present: a.days_present,
+                })
+                .collect();
 
             let final_avg = {
                 let finals: Vec<i32> = subject_rows.iter().filter_map(|s| s.final_grade).collect();
@@ -170,20 +221,33 @@ impl StudentRecordsService {
             });
         }
 
+        let computed_age =
+            calculate_current_age(learner_details.as_ref().and_then(|d| d.birthdate));
+
         Ok(Sf10Response {
             student_id: student_id.to_string(),
             student_name,
             lrn: learner_details.as_ref().and_then(|d| d.lrn.clone()),
-            birthdate: learner_details.as_ref().and_then(|d| d.birthdate.map(|b| b.to_string())),
+            birthdate: learner_details
+                .as_ref()
+                .and_then(|d| d.birthdate.map(|b| b.to_string())),
             birthplace: learner_details.as_ref().and_then(|d| d.birthplace.clone()),
-            home_address: learner_details.as_ref().and_then(|d| d.home_address.clone()),
+            home_address: learner_details
+                .as_ref()
+                .and_then(|d| d.home_address.clone()),
             sex: learner_details.as_ref().and_then(|d| d.sex.clone()),
-            age: learner_details.as_ref().and_then(|d| d.age),
+            age: computed_age,
             father_name: learner_details.as_ref().and_then(|d| d.father_name.clone()),
             mother_name: learner_details.as_ref().and_then(|d| d.mother_name.clone()),
-            guardian_name: learner_details.as_ref().and_then(|d| d.guardian_name.clone()),
-            guardian_contact: learner_details.as_ref().and_then(|d| d.guardian_contact.clone()),
-            track_strand: learner_details.as_ref().and_then(|d| d.track_strand.clone()),
+            guardian_name: learner_details
+                .as_ref()
+                .and_then(|d| d.guardian_name.clone()),
+            guardian_contact: learner_details
+                .as_ref()
+                .and_then(|d| d.guardian_contact.clone()),
+            track_strand: learner_details
+                .as_ref()
+                .and_then(|d| d.track_strand.clone()),
             curriculum: learner_details.as_ref().and_then(|d| d.curriculum.clone()),
             current_school_year: class.school_year.clone(),
             current_grade_level: class.grade_level.clone(),

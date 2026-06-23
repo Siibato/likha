@@ -164,6 +164,32 @@ class ClassListNotifier extends StateNotifier<ClassListState> {
     );
   }
 
+  void optimisticUpdateStudentCount(String classId, int delta) {
+    final updated = state.classes.map((c) {
+      if (c.id == classId) {
+        return ClassEntity(
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          teacherId: c.teacherId,
+          teacherUsername: c.teacherUsername,
+          teacherFullName: c.teacherFullName,
+          isArchived: c.isArchived,
+          isAdvisory: c.isAdvisory,
+          studentCount: (c.studentCount + delta).clamp(0, 999999),
+          termType: c.termType,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+          cachedAt: c.cachedAt,
+          syncStatus: c.syncStatus,
+        );
+      }
+      return c;
+    }).toList();
+
+    state = state.copyWith(classes: updated);
+  }
+
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }

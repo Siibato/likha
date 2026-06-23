@@ -10,14 +10,46 @@ pub struct WeightPreset {
 /// Get DepEd standard weight preset for a given subject group.
 pub fn get_preset(subject_group: &str) -> Option<WeightPreset> {
     match subject_group {
-        "language" => Some(WeightPreset { ww: 30.0, pt: 50.0, qa: 20.0 }),
-        "ap_esp" => Some(WeightPreset { ww: 30.0, pt: 50.0, qa: 20.0 }),
-        "math_sci" => Some(WeightPreset { ww: 40.0, pt: 40.0, qa: 20.0 }),
-        "mapeh_tle" => Some(WeightPreset { ww: 20.0, pt: 60.0, qa: 20.0 }),
-        "shs_core" => Some(WeightPreset { ww: 25.0, pt: 50.0, qa: 25.0 }),
-        "shs_academic" => Some(WeightPreset { ww: 25.0, pt: 45.0, qa: 30.0 }),
-        "shs_tvl" => Some(WeightPreset { ww: 25.0, pt: 45.0, qa: 30.0 }),
-        "shs_immersion" => Some(WeightPreset { ww: 35.0, pt: 40.0, qa: 25.0 }),
+        "language" => Some(WeightPreset {
+            ww: 30.0,
+            pt: 50.0,
+            qa: 20.0,
+        }),
+        "ap_esp" => Some(WeightPreset {
+            ww: 30.0,
+            pt: 50.0,
+            qa: 20.0,
+        }),
+        "math_sci" => Some(WeightPreset {
+            ww: 40.0,
+            pt: 40.0,
+            qa: 20.0,
+        }),
+        "mapeh_tle" => Some(WeightPreset {
+            ww: 20.0,
+            pt: 60.0,
+            qa: 20.0,
+        }),
+        "shs_core" => Some(WeightPreset {
+            ww: 25.0,
+            pt: 50.0,
+            qa: 25.0,
+        }),
+        "shs_academic" => Some(WeightPreset {
+            ww: 25.0,
+            pt: 45.0,
+            qa: 30.0,
+        }),
+        "shs_tvl" => Some(WeightPreset {
+            ww: 25.0,
+            pt: 45.0,
+            qa: 30.0,
+        }),
+        "shs_immersion" => Some(WeightPreset {
+            ww: 35.0,
+            pt: 40.0,
+            qa: 25.0,
+        }),
         _ => None,
     }
 }
@@ -25,14 +57,78 @@ pub fn get_preset(subject_group: &str) -> Option<WeightPreset> {
 /// Get all available presets with display labels.
 pub fn get_all_presets() -> Vec<(&'static str, &'static str, WeightPreset)> {
     vec![
-        ("language", "Languages (Mother Tongue, Filipino, English)", WeightPreset { ww: 30.0, pt: 50.0, qa: 20.0 }),
-        ("ap_esp", "AP, EsP", WeightPreset { ww: 30.0, pt: 50.0, qa: 20.0 }),
-        ("math_sci", "Science, Math", WeightPreset { ww: 40.0, pt: 40.0, qa: 20.0 }),
-        ("mapeh_tle", "MAPEH, EPP/TLE", WeightPreset { ww: 20.0, pt: 60.0, qa: 20.0 }),
-        ("shs_core", "SHS Core Subjects", WeightPreset { ww: 25.0, pt: 50.0, qa: 25.0 }),
-        ("shs_academic", "SHS Academic Track (ABM, HUMSS, STEM, GAS)", WeightPreset { ww: 25.0, pt: 45.0, qa: 30.0 }),
-        ("shs_tvl", "SHS TVL / Sports / Arts and Design Track", WeightPreset { ww: 25.0, pt: 45.0, qa: 30.0 }),
-        ("shs_immersion", "Work Immersion, Research, Business Enterprise, Exhibit/Performance", WeightPreset { ww: 35.0, pt: 40.0, qa: 25.0 }),
+        (
+            "language",
+            "Languages (Mother Tongue, Filipino, English)",
+            WeightPreset {
+                ww: 30.0,
+                pt: 50.0,
+                qa: 20.0,
+            },
+        ),
+        (
+            "ap_esp",
+            "AP, EsP",
+            WeightPreset {
+                ww: 30.0,
+                pt: 50.0,
+                qa: 20.0,
+            },
+        ),
+        (
+            "math_sci",
+            "Science, Math",
+            WeightPreset {
+                ww: 40.0,
+                pt: 40.0,
+                qa: 20.0,
+            },
+        ),
+        (
+            "mapeh_tle",
+            "MAPEH, EPP/TLE",
+            WeightPreset {
+                ww: 20.0,
+                pt: 60.0,
+                qa: 20.0,
+            },
+        ),
+        (
+            "shs_core",
+            "SHS Core Subjects",
+            WeightPreset {
+                ww: 25.0,
+                pt: 50.0,
+                qa: 25.0,
+            },
+        ),
+        (
+            "shs_academic",
+            "SHS Academic Track (ABM, HUMSS, STEM, GAS)",
+            WeightPreset {
+                ww: 25.0,
+                pt: 45.0,
+                qa: 30.0,
+            },
+        ),
+        (
+            "shs_tvl",
+            "SHS TVL / Sports / Arts and Design Track",
+            WeightPreset {
+                ww: 25.0,
+                pt: 45.0,
+                qa: 30.0,
+            },
+        ),
+        (
+            "shs_immersion",
+            "Work Immersion, Research, Business Enterprise, Exhibit/Performance",
+            WeightPreset {
+                ww: 35.0,
+                pt: 40.0,
+                qa: 25.0,
+            },
+        ),
     ]
 }
 

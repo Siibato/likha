@@ -49,7 +49,7 @@ pub fn encrypt_file(data: &[u8], key: &[u8; 32]) -> Vec<u8> {
 
     // Create sealing key
     let sealing_key = aead::LessSafeKey::new(
-        aead::UnboundKey::new(&AES_256_GCM, key).expect("Invalid key length")
+        aead::UnboundKey::new(&AES_256_GCM, key).expect("Invalid key length"),
     );
 
     // Encrypt in-place and append tag
@@ -82,7 +82,9 @@ pub fn decrypt_file(data: &[u8], key: &[u8; 32]) -> AppResult<Vec<u8>> {
 
     // Ensure we have enough data for marker + nonce + minimum ciphertext
     if data.len() < 1 + NONCE_SIZE + TAG_SIZE {
-        return Err(AppError::BadRequest("Encrypted file data too short".to_string()));
+        return Err(AppError::BadRequest(
+            "Encrypted file data too short".to_string(),
+        ));
     }
 
     // Extract nonce (skip marker byte)
@@ -95,13 +97,15 @@ pub fn decrypt_file(data: &[u8], key: &[u8; 32]) -> AppResult<Vec<u8>> {
 
     // Create opening key
     let opening_key = aead::LessSafeKey::new(
-        aead::UnboundKey::new(&AES_256_GCM, key).expect("Invalid key length")
+        aead::UnboundKey::new(&AES_256_GCM, key).expect("Invalid key length"),
     );
 
     // Decrypt in-place (automatically verifies authentication tag)
     let plaintext = opening_key
         .open_in_place(nonce, aead::Aad::empty(), &mut in_out)
-        .map_err(|_| AppError::BadRequest("Failed to decrypt file - wrong key or corrupted data".to_string()))?;
+        .map_err(|_| {
+            AppError::BadRequest("Failed to decrypt file - wrong key or corrupted data".to_string())
+        })?;
 
     Ok(plaintext.to_vec())
 }

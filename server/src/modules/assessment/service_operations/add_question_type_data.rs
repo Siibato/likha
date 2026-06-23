@@ -1,5 +1,5 @@
-use crate::utils::AppResult;
 use crate::modules::assessment::schema::*;
+use crate::utils::AppResult;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub(super) async fn add_question_type_data(
@@ -11,20 +11,24 @@ impl crate::modules::assessment::service::AssessmentService {
             "multiple_choice" => {
                 if let Some(choices) = &request.choices {
                     for choice in choices {
-                        self.assessment_repo.add_choice(
-                            question.id,
-                            choice.choice_text.clone(),
-                            choice.is_correct,
-                            choice.order_index,
-                            None,
-                        ).await?;
+                        self.assessment_repo
+                            .add_choice(
+                                question.id,
+                                choice.choice_text.clone(),
+                                choice.is_correct,
+                                choice.order_index,
+                                None,
+                            )
+                            .await?;
                     }
                 }
             }
             "identification" => {
                 if let Some(answers) = &request.correct_answers {
                     for answer in answers {
-                        self.assessment_repo.add_correct_answer(question.id, answer.clone()).await?;
+                        self.assessment_repo
+                            .add_correct_answer(question.id, answer.clone())
+                            .await?;
                     }
                 }
             }

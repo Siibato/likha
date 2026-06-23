@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::learning_materials;
 use crate::utils::{AppError, AppResult};
+use ::entity::learning_materials;
 
 pub async fn find_all(db: &DatabaseConnection) -> AppResult<Vec<learning_materials::Model>> {
     learning_materials::Entity::find()

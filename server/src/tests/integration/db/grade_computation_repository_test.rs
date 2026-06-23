@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::grading::repository::GradeComputationRepository;
 use crate::tests::common::test_db::test_db;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_upsert_config_and_get_config() {
@@ -22,7 +22,10 @@ async fn test_upsert_config_and_get_config() {
     assert_eq!(config.term_number, Some(1));
     assert!((config.ww_weight - 30.0).abs() < f64::EPSILON);
 
-    let found = repo.get_config(class_id, 1).await.expect("get_config failed");
+    let found = repo
+        .get_config(class_id, 1)
+        .await
+        .expect("get_config failed");
     assert!(found.is_some());
 }
 
@@ -36,10 +39,17 @@ async fn test_upsert_config_updates_on_conflict() {
         .id;
     let repo = GradeComputationRepository::new(db);
 
-    repo.upsert_config(class_id, 1, 30.0, 50.0, 20.0).await.expect("first upsert");
-    repo.upsert_config(class_id, 1, 25.0, 55.0, 20.0).await.expect("second upsert");
+    repo.upsert_config(class_id, 1, 30.0, 50.0, 20.0)
+        .await
+        .expect("first upsert");
+    repo.upsert_config(class_id, 1, 25.0, 55.0, 20.0)
+        .await
+        .expect("second upsert");
 
-    let configs = repo.get_all_configs(class_id).await.expect("get_all_configs failed");
+    let configs = repo
+        .get_all_configs(class_id)
+        .await
+        .expect("get_all_configs failed");
     assert_eq!(configs.len(), 1);
     assert!((configs[0].ww_weight - 25.0).abs() < f64::EPSILON);
 }
@@ -48,7 +58,10 @@ async fn test_upsert_config_updates_on_conflict() {
 async fn test_get_config_returns_none_for_unknown_class() {
     let db = test_db().await;
     let repo = GradeComputationRepository::new(db);
-    let found = repo.get_config(Uuid::new_v4(), 1).await.expect("get_config failed");
+    let found = repo
+        .get_config(Uuid::new_v4(), 1)
+        .await
+        .expect("get_config failed");
     assert!(found.is_none());
 }
 
@@ -62,6 +75,9 @@ async fn test_setup_defaults_creates_four_periods() {
         .id;
     let repo = GradeComputationRepository::new(db);
 
-    let configs = repo.setup_defaults(class_id, "language").await.expect("setup_defaults failed");
+    let configs = repo
+        .setup_defaults(class_id, "language")
+        .await
+        .expect("setup_defaults failed");
     assert_eq!(configs.len(), 4);
 }

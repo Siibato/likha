@@ -5,11 +5,7 @@ use crate::modules::grading::schema::Sf9Response;
 
 use super::layout::*;
 
-pub fn draw_page1_left(
-    engine: &PdfEngine,
-    layer: &PdfLayerReference,
-    sf9: &Sf9Response,
-) {
+pub fn draw_page1_left(engine: &PdfEngine, layer: &PdfLayerReference, sf9: &Sf9Response) {
     let left = LEFT_COL_LEFT;
     let top = CONTENT_TOP;
     let l_w = LEFT_COL_WIDTH;
@@ -22,7 +18,14 @@ pub fn draw_page1_left(
     y = att_bottom - GAP_XXL;
 
     // PARENT/GUARDIAN'S SIGNATURE
-    engine.draw_text(layer, "PARENT/GUARDIAN'S SIGNATURE", FONT_SIZE_HEADER, Mm(left + 5.0), Mm(y), true);
+    engine.draw_text(
+        layer,
+        "PARENT/GUARDIAN'S SIGNATURE",
+        FONT_SIZE_HEADER,
+        Mm(left + 5.0),
+        Mm(y),
+        true,
+    );
     y -= GAP_XL;
 
     let terms = ["Term 1", "Term 2", "Term 3"];
@@ -42,13 +45,29 @@ fn draw_attendance_table(
     sf9: &Sf9Response,
 ) -> f32 {
     let month_names = [
-        ("Jun", "June"), ("Jul", "July"), ("Aug", "August"), ("Sept", "September"),
-        ("Oct", "October"), ("Nov", "November"), ("Dec", "December"),
-        ("Jan", "January"), ("Feb", "February"), ("Mar", "March"), ("Apr", "April"),
+        ("Jun", "June"),
+        ("Jul", "July"),
+        ("Aug", "August"),
+        ("Sept", "September"),
+        ("Oct", "October"),
+        ("Nov", "November"),
+        ("Dec", "December"),
+        ("Jan", "January"),
+        ("Feb", "February"),
+        ("Mar", "March"),
+        ("Apr", "April"),
     ];
     let total_label = "Total";
-    let rows = ["No. of\nSchool\nDays", "No. of\nDays\nPresent", "No. of\nTimes\nAbsent"];
-    let row_labels_single = ["No. of School Days", "No. of Days Present", "No. of Times Absent"];
+    let rows = [
+        "No. of\nSchool\nDays",
+        "No. of\nDays\nPresent",
+        "No. of\nTimes\nAbsent",
+    ];
+    let row_labels_single = [
+        "No. of School Days",
+        "No. of Days Present",
+        "No. of Times Absent",
+    ];
 
     let label_column_width = 18.0;
     let data_column_width = (total_width - label_column_width) / (month_names.len() as f32 + 1.0);
@@ -56,8 +75,14 @@ fn draw_attendance_table(
     let row_height = 14.0;
 
     // Build a map month -> record for quick lookup (full month names as keys)
-    let att_map: std::collections::HashMap<&str, &crate::modules::grading::schema::Sf9AttendanceRecord> =
-        sf9.attendance.iter().map(|r| (r.month.as_str(), r)).collect();
+    let att_map: std::collections::HashMap<
+        &str,
+        &crate::modules::grading::schema::Sf9AttendanceRecord,
+    > = sf9
+        .attendance
+        .iter()
+        .map(|r| (r.month.as_str(), r))
+        .collect();
 
     // Header row
     engine.draw_rect(
@@ -80,7 +105,14 @@ fn draw_attendance_table(
             None,
             true,
         );
-        engine.draw_text(layer, abbr, FONT_SIZE_SMALL, Mm(current_x + 1.0), Mm(origin_y - header_height + 3.0), false);
+        engine.draw_text(
+            layer,
+            abbr,
+            FONT_SIZE_SMALL,
+            Mm(current_x + 1.0),
+            Mm(origin_y - header_height + 3.0),
+            false,
+        );
         current_x += data_column_width;
     }
     // Total column header
@@ -93,7 +125,14 @@ fn draw_attendance_table(
         None,
         true,
     );
-    engine.draw_text(layer, total_label, FONT_SIZE_SMALL, Mm(current_x + 1.0), Mm(origin_y - header_height + 3.0), false);
+    engine.draw_text(
+        layer,
+        total_label,
+        FONT_SIZE_SMALL,
+        Mm(current_x + 1.0),
+        Mm(origin_y - header_height + 3.0),
+        false,
+    );
 
     // Data rows
     let mut current_y = origin_y - header_height;
@@ -162,7 +201,14 @@ fn draw_attendance_table(
             );
             if !text.is_empty() {
                 let tx = current_x + data_column_width / 2.0 - text.len() as f32 * 1.8;
-                engine.draw_text(layer, &text, FONT_SIZE_SMALL, Mm(tx.max(current_x + 0.5)), Mm(current_y - row_height + 3.0), false);
+                engine.draw_text(
+                    layer,
+                    &text,
+                    FONT_SIZE_SMALL,
+                    Mm(tx.max(current_x + 0.5)),
+                    Mm(current_y - row_height + 3.0),
+                    false,
+                );
             }
             current_x += data_column_width;
         }
@@ -177,7 +223,14 @@ fn draw_attendance_table(
             true,
         );
         let tx = current_x + data_column_width / 2.0 - total.to_string().len() as f32 * 1.8;
-        engine.draw_text(layer, &total.to_string(), FONT_SIZE_SMALL, Mm(tx.max(current_x + 0.5)), Mm(current_y - row_height + 3.0), true);
+        engine.draw_text(
+            layer,
+            &total.to_string(),
+            FONT_SIZE_SMALL,
+            Mm(tx.max(current_x + 0.5)),
+            Mm(current_y - row_height + 3.0),
+            true,
+        );
 
         current_y -= row_height;
     }

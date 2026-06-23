@@ -12,6 +12,7 @@ import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
 import 'package:likha/domain/auth/usecases/lock_account.dart';
 import 'package:likha/domain/auth/usecases/reset_account.dart';
 import 'package:likha/domain/auth/usecases/update_account.dart';
+import 'package:likha/domain/auth/usecases/username_exists.dart';
 import 'package:likha/presentation/providers/admin/account_management_provider.dart';
 
 import '../../../../helpers/fake_entities.dart';
@@ -27,6 +28,7 @@ class MockResetAccount extends Mock implements ResetAccount {}
 class MockLockAccount extends Mock implements LockAccount {}
 class MockUpdateAccount extends Mock implements UpdateAccount {}
 class MockDeleteAccount extends Mock implements DeleteAccount {}
+class MockUsernameExists extends Mock implements UsernameExists {}
 
 AccountManagementNotifier _buildNotifier({
   Ref? ref,
@@ -36,6 +38,7 @@ AccountManagementNotifier _buildNotifier({
   MockLockAccount? lockAccount,
   MockUpdateAccount? updateAccount,
   MockDeleteAccount? deleteAccount,
+  MockUsernameExists? usernameExists,
 }) {
   return AccountManagementNotifier(
     ref ?? _FakeRef(),
@@ -45,6 +48,7 @@ AccountManagementNotifier _buildNotifier({
     lockAccount ?? MockLockAccount(),
     updateAccount ?? MockUpdateAccount(),
     deleteAccount ?? MockDeleteAccount(),
+    usernameExists ?? MockUsernameExists(),
   );
 }
 
@@ -97,14 +101,19 @@ void main() {
     group('createAccount', () {
       test('should optimistically add temp user and replace on success', () async {
         final createAccount = MockCreateAccount();
+        final usernameExists = MockUsernameExists();
         final realUser = FakeEntities.user(id: 'real-1');
+        when(() => usernameExists(any())).thenAnswer((_) async => false);
         when(() => createAccount(any())).thenAnswer(
           (_) async => Right(MutationResult(
             entity: realUser,
             status: SyncStatus.synced,
           )),
         );
-        final notifier = _buildNotifier(createAccount: createAccount);
+        final notifier = _buildNotifier(
+          createAccount: createAccount,
+          usernameExists: usernameExists,
+        );
 
         await notifier.createAccount(
           username: 'newuser',
@@ -121,10 +130,15 @@ void main() {
 
       test('should rollback accounts on failure', () async {
         final createAccount = MockCreateAccount();
+        final usernameExists = MockUsernameExists();
+        when(() => usernameExists(any())).thenAnswer((_) async => false);
         when(() => createAccount(any())).thenAnswer(
           (_) async => const Left(tFailure),
         );
-        final notifier = _buildNotifier(createAccount: createAccount);
+        final notifier = _buildNotifier(
+          createAccount: createAccount,
+          usernameExists: usernameExists,
+        );
 
         await notifier.createAccount(
           username: 'newuser',
@@ -136,6 +150,28 @@ void main() {
         expect(notifier.state.accounts, isEmpty);
         expect(notifier.state.error, isNotNull);
         expect(notifier.state.successMessage, isNull);
+      });
+
+      test('should reject duplicate username without calling createAccount', () async {
+        final createAccount = MockCreateAccount();
+        final usernameExists = MockUsernameExists();
+        when(() => usernameExists(any())).thenAnswer((_) async => true);
+        final notifier = _buildNotifier(
+          createAccount: createAccount,
+          usernameExists: usernameExists,
+        );
+
+        await notifier.createAccount(
+          username: 'existinguser',
+          firstName: 'New',
+          lastName: 'User',
+          role: 'student',
+        );
+
+        expect(notifier.state.accounts, isEmpty);
+        expect(notifier.state.error, 'Username already exists');
+        expect(notifier.state.successMessage, isNull);
+        verifyNever(() => createAccount(any()));
       });
     });
 

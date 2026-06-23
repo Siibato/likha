@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
 pub async fn find_participants_with_users_by_class_id(
     db: &DatabaseConnection,
@@ -17,7 +17,8 @@ pub async fn find_participants_with_users_by_class_id(
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-    let mut result: Vec<(class_participants::Model, users::Model)> = if let Some(role_filter) = role {
+    let mut result: Vec<(class_participants::Model, users::Model)> = if let Some(role_filter) = role
+    {
         participant_with_user
             .into_iter()
             .filter_map(|(participant, user)| {
@@ -28,9 +29,7 @@ pub async fn find_participants_with_users_by_class_id(
     } else {
         participant_with_user
             .into_iter()
-            .filter_map(|(participant, user)| {
-                user.map(|u| (participant, u))
-            })
+            .filter_map(|(participant, user)| user.map(|u| (participant, u)))
             .collect()
     };
 

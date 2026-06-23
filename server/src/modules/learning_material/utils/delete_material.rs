@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn delete_material(&self, material_id: Uuid, teacher_id: Uuid) -> AppResult<()> {

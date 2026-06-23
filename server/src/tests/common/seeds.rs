@@ -1,8 +1,8 @@
+use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
-use crate::modules::class::repository::ClassRepository;
-use crate::modules::auth::UserRepository;
 
 use super::jwt_helper::{make_admin_token, make_student_token, make_teacher_token};
 
@@ -119,7 +119,10 @@ async fn activate_user(db: &DatabaseConnection, user_id: Uuid) {
     let mut active: users::ActiveModel = user.into();
     active.account_status = Set("active".to_string());
     active.activated_at = Set(Some(Utc::now().naive_utc()));
-    active.update(db).await.expect("activate_user: update failed");
+    active
+        .update(db)
+        .await
+        .expect("activate_user: update failed");
 }
 
 async fn set_password(db: &DatabaseConnection, user_id: Uuid, password: &str) {

@@ -20,7 +20,9 @@ pub async fn seed_e2e_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let assignments = fixtures::e2e_assignments(&ctx);
     let materials = fixtures::e2e_materials(&ctx);
 
-    disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    disable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
     inserters::classes::insert_classes(db, &classes).await?;
@@ -47,7 +49,9 @@ pub async fn seed_e2e_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let grade_records = fixtures::e2e_grade_records();
     inserters::grading::insert_grade_records(db, &grade_records, ctx.now()).await?;
 
-    enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    enable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     println!("E2E seed complete.");
     Ok(())

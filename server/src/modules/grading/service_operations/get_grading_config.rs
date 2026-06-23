@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::grading::schema::{ClassGradingSetupResponse, GradingConfigResponse};
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_grading_config(&self, class_id: Uuid) -> AppResult<ClassGradingSetupResponse> {
@@ -15,7 +15,10 @@ impl crate::modules::grading::service::GradeComputationService {
             grade_level: class.grade_level.unwrap_or_default(),
             school_year: class.school_year.unwrap_or_default(),
             term_type: class.term_type,
-            configs: configs.into_iter().map(GradingConfigResponse::from).collect(),
+            configs: configs
+                .into_iter()
+                .map(GradingConfigResponse::from)
+                .collect(),
         })
     }
 }

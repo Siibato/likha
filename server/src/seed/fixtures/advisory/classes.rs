@@ -1,7 +1,7 @@
 //! Advisory classes: English 10, Math 10, Science 10 (graded) + Advisory 10 (non-graded).
 
 use crate::seed::specs::ClassSpec;
-use crate::seed::tools::{SeedContext, seed_id};
+use crate::seed::tools::{seed_id, SeedContext};
 
 pub fn cid(key: &str) -> uuid::Uuid {
     seed_id("classes", key)

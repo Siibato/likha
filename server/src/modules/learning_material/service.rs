@@ -1,9 +1,9 @@
-use sea_orm::DatabaseConnection;
-use std::sync::Arc;
 use crate::cache::{CacheInvalidator, RedisCache};
 use crate::modules::admin::ActivityLogRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::learning_material::repository::LearningMaterialRepository;
+use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
 pub const MAX_FILE_SIZE_MB: i64 = 50;
 pub const MAX_FILES_PER_MATERIAL: usize = 10;
@@ -19,7 +19,11 @@ pub struct LearningMaterialService {
 }
 
 impl LearningMaterialService {
-    pub fn new(db: DatabaseConnection, file_storage_path: String, file_encryption_key: [u8; 32]) -> Self {
+    pub fn new(
+        db: DatabaseConnection,
+        file_storage_path: String,
+        file_encryption_key: [u8; 32],
+    ) -> Self {
         Self {
             material_repo: LearningMaterialRepository::new(db.clone()),
             class_repo: ClassRepository::new(db.clone()),

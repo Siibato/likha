@@ -1,8 +1,8 @@
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
-use crate::utils::AppError;
 use crate::modules::class::repository::ClassRepository;
 use crate::seed::specs::{ClassSpec, EnrollmentSpec};
+use crate::utils::AppError;
 use ::entity::classes;
 
 pub async fn insert_classes(db: &DatabaseConnection, specs: &[ClassSpec]) -> Result<(), AppError> {
@@ -30,7 +30,9 @@ pub async fn insert_classes(db: &DatabaseConnection, specs: &[ClassSpec]) -> Res
         am.created_at = Set(spec.created_at);
         am.updated_at = Set(spec.created_at);
         am.deleted_at = Set(spec.deleted_at);
-        am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        am.update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())

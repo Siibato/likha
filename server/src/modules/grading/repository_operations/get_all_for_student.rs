@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::term_grades;
 use crate::utils::{AppError, AppResult};
+use ::entity::term_grades;
 
 pub async fn get_all_for_student(
     db: &DatabaseConnection,

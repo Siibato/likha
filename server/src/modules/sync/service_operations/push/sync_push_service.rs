@@ -1,6 +1,6 @@
-use std::sync::Arc;
-use crate::modules::entitlement::EntitlementService;
 use super::delegate::PushDelegate;
+use crate::modules::entitlement::EntitlementService;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct SyncQueueEntry {

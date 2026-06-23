@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::classes;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::classes;
 
 pub async fn get_classes_paginated(
     db: &DatabaseConnection,
@@ -23,7 +23,14 @@ pub async fn get_classes_paginated(
         let (teacher_id, teacher_username, teacher_first_name, teacher_last_name) = teacher_map
             .get(&r.id)
             .map(|t| (t.0.to_string(), t.1.clone(), t.2.clone(), t.3.clone()))
-            .unwrap_or_else(|| ("".to_string(), "".to_string(), "".to_string(), "".to_string()));
+            .unwrap_or_else(|| {
+                (
+                    "".to_string(),
+                    "".to_string(),
+                    "".to_string(),
+                    "".to_string(),
+                )
+            });
 
         serde_json::json!({
             "id": r.id.to_string(),

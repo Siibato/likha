@@ -1,5 +1,5 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use chrono::Utc;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 
 use crate::seed::specs::LearnerDetailsSpec;
 use crate::utils::AppError;
@@ -16,7 +16,6 @@ pub async fn insert_learner_details(
             id: Set(spec.id),
             user_id: Set(spec.user_id),
             lrn: Set(spec.lrn.clone()),
-            age: Set(spec.age),
             sex: Set(spec.sex.clone()),
             track_strand: Set(spec.track_strand.clone()),
             curriculum: Set(spec.curriculum.clone()),

@@ -1,9 +1,9 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::grade_record;
-use crate::utils::{AppError, AppResult};
 use super::upsert_config::upsert_config;
+use crate::utils::{AppError, AppResult};
+use ::entity::grade_record;
 
 pub async fn setup_defaults(
     db: &DatabaseConnection,

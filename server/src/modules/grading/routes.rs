@@ -35,40 +35,19 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
             "/classes/{class_id}/grade-items/batch",
             post(handler::create_grade_items_batch),
         )
-        .route(
-            "/grade-items/{id}",
-            put(handler::update_grade_item),
-        )
-        .route(
-            "/grade-items/{id}",
-            delete(handler::delete_grade_item),
-        )
+        .route("/grade-items/{id}", put(handler::update_grade_item))
+        .route("/grade-items/{id}", delete(handler::delete_grade_item))
         // Scores
-        .route(
-            "/grade-items/{id}/scores",
-            get(handler::get_item_scores),
-        )
-        .route(
-            "/grade-items/{id}/scores",
-            put(handler::update_item_scores),
-        )
-        .route(
-            "/grade-scores/batch",
-            put(handler::update_scores_batch),
-        )
-        .route(
-            "/grade-scores/{id}/override",
-            put(handler::override_score),
-        )
+        .route("/grade-items/{id}/scores", get(handler::get_item_scores))
+        .route("/grade-items/{id}/scores", put(handler::update_item_scores))
+        .route("/grade-scores/batch", put(handler::update_scores_batch))
+        .route("/grade-scores/{id}/override", put(handler::override_score))
         .route(
             "/grade-scores/{id}/override",
             delete(handler::delete_score_override),
         )
         // Computed Grades
-        .route(
-            "/classes/{class_id}/grades",
-            get(handler::get_grades),
-        )
+        .route("/classes/{class_id}/grades", get(handler::get_grades))
         .route(
             "/classes/{class_id}/grades/compute",
             post(handler::compute_grades),
@@ -86,19 +65,13 @@ pub fn routes(grade_service: Arc<GradeComputationService>) -> Router {
             get(handler::get_all_grade_data),
         )
         // Student
-        .route(
-            "/classes/{class_id}/my-grades",
-            get(handler::get_my_grades),
-        )
+        .route("/classes/{class_id}/my-grades", get(handler::get_my_grades))
         .route(
             "/classes/{class_id}/my-grades/{term_number}",
             get(handler::get_my_term_grades),
         )
         // Utility
-        .route(
-            "/grading/deped-presets",
-            get(handler::get_deped_presets),
-        )
+        .route("/grading/deped-presets", get(handler::get_deped_presets))
         // General Average (GSA)
         .route(
             "/classes/{class_id}/grades/general-average",

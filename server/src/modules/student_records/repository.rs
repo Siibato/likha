@@ -1,13 +1,13 @@
+use chrono::NaiveDate;
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
-use chrono::NaiveDate;
 
-use ::entity::{
-    attendance_records, core_values_records, learner_details,
-    previous_school_attendance, previous_school_subjects, student_school_history,
-};
 use crate::modules::student_records::repository_operations as ops;
 use crate::utils::AppResult;
+use ::entity::{
+    attendance_records, core_values_records, learner_details, previous_school_attendance,
+    previous_school_subjects, student_school_history,
+};
 
 #[derive(Clone)]
 pub struct StudentRecordsRepository {
@@ -20,7 +20,10 @@ impl StudentRecordsRepository {
     }
 
     // ── Learner Details ──
-    pub async fn get_learner_details(&self, user_id: Uuid) -> AppResult<Option<learner_details::Model>> {
+    pub async fn get_learner_details(
+        &self,
+        user_id: Uuid,
+    ) -> AppResult<Option<learner_details::Model>> {
         ops::get_learner_details(&self.db, user_id).await
     }
 
@@ -28,7 +31,6 @@ impl StudentRecordsRepository {
         &self,
         user_id: Uuid,
         lrn: Option<String>,
-        age: Option<i32>,
         sex: Option<String>,
         track_strand: Option<String>,
         curriculum: Option<String>,
@@ -44,11 +46,24 @@ impl StudentRecordsRepository {
         date_admitted: Option<NaiveDate>,
     ) -> AppResult<learner_details::Model> {
         ops::upsert_learner_details(
-            &self.db, user_id, lrn, age, sex, track_strand, curriculum,
-            birthdate, birthplace, home_address, father_name, father_contact,
-            mother_name, mother_contact,
-            guardian_name, guardian_contact, date_admitted,
-        ).await
+            &self.db,
+            user_id,
+            lrn,
+            sex,
+            track_strand,
+            curriculum,
+            birthdate,
+            birthplace,
+            home_address,
+            father_name,
+            father_contact,
+            mother_name,
+            mother_contact,
+            guardian_name,
+            guardian_contact,
+            date_admitted,
+        )
+        .await
     }
 
     // ── Attendance ──
@@ -71,9 +86,15 @@ impl StudentRecordsRepository {
         days_present: i32,
     ) -> AppResult<attendance_records::Model> {
         ops::upsert_attendance(
-            &self.db, student_id, class_id, school_year, month,
-            school_days, days_present,
-        ).await
+            &self.db,
+            student_id,
+            class_id,
+            school_year,
+            month,
+            school_days,
+            days_present,
+        )
+        .await
     }
 
     // ── Core Values ──
@@ -96,13 +117,22 @@ impl StudentRecordsRepository {
         marking: String,
     ) -> AppResult<core_values_records::Model> {
         ops::upsert_core_values(
-            &self.db, student_id, class_id, school_year, term_number,
-            core_value_id, marking,
-        ).await
+            &self.db,
+            student_id,
+            class_id,
+            school_year,
+            term_number,
+            core_value_id,
+            marking,
+        )
+        .await
     }
 
     // ── School History ──
-    pub async fn get_school_history(&self, student_id: Uuid) -> AppResult<Vec<student_school_history::Model>> {
+    pub async fn get_school_history(
+        &self,
+        student_id: Uuid,
+    ) -> AppResult<Vec<student_school_history::Model>> {
         ops::get_school_history(&self.db, student_id).await
     }
 
@@ -119,9 +149,18 @@ impl StudentRecordsRepository {
         record_type: String,
     ) -> AppResult<student_school_history::Model> {
         ops::create_school_history(
-            &self.db, student_id, school_name, school_id, grade_level,
-            school_year, section, date_from, date_to, record_type,
-        ).await
+            &self.db,
+            student_id,
+            school_name,
+            school_id,
+            grade_level,
+            school_year,
+            section,
+            date_from,
+            date_to,
+            record_type,
+        )
+        .await
     }
 
     pub async fn update_school_history(
@@ -137,9 +176,18 @@ impl StudentRecordsRepository {
         record_type: Option<String>,
     ) -> AppResult<student_school_history::Model> {
         ops::update_school_history(
-            &self.db, id, school_name, school_id, grade_level, school_year,
-            section, date_from, date_to, record_type,
-        ).await
+            &self.db,
+            id,
+            school_name,
+            school_id,
+            grade_level,
+            school_year,
+            section,
+            date_from,
+            date_to,
+            record_type,
+        )
+        .await
     }
 
     pub async fn delete_school_history(&self, id: Uuid) -> AppResult<()> {
@@ -167,9 +215,17 @@ impl StudentRecordsRepository {
         descriptor: Option<String>,
     ) -> AppResult<previous_school_subjects::Model> {
         ops::upsert_previous_subject(
-            &self.db, student_id, school_history_id, subject_name, subject_group,
-            term_type, term_grades, final_grade, descriptor,
-        ).await
+            &self.db,
+            student_id,
+            school_history_id,
+            subject_name,
+            subject_group,
+            term_type,
+            term_grades,
+            final_grade,
+            descriptor,
+        )
+        .await
     }
 
     pub async fn get_term_grades_for_subject(
@@ -198,8 +254,14 @@ impl StudentRecordsRepository {
         days_present: i32,
     ) -> AppResult<previous_school_attendance::Model> {
         ops::upsert_previous_attendance(
-            &self.db, student_id, school_history_id, school_year, month,
-            school_days, days_present,
-        ).await
+            &self.db,
+            student_id,
+            school_history_id,
+            school_year,
+            month,
+            school_days,
+            days_present,
+        )
+        .await
     }
 }

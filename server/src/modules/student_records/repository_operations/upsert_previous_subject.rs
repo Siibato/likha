@@ -2,9 +2,9 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
+use crate::utils::{AppError, AppResult};
 use ::entity::previous_school_subjects;
 use ::entity::previous_school_term_grades;
-use crate::utils::{AppError, AppResult};
 
 pub async fn upsert_previous_subject(
     db: &DatabaseConnection,
@@ -34,9 +34,9 @@ pub async fn upsert_previous_subject(
         am.final_grade = sea_orm::ActiveValue::Set(final_grade);
         am.descriptor = sea_orm::ActiveValue::Set(descriptor);
         am.updated_at = sea_orm::ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update subject: {}", e)))?
+        am.update(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to update subject: {}", e))
+        })?
     } else {
         let am = previous_school_subjects::ActiveModel {
             id: sea_orm::ActiveValue::Set(Uuid::new_v4()),
@@ -51,9 +51,9 @@ pub async fn upsert_previous_subject(
             updated_at: sea_orm::ActiveValue::Set(now),
             deleted_at: sea_orm::ActiveValue::Set(None),
         };
-        am.insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to insert subject: {}", e)))?
+        am.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to insert subject: {}", e))
+        })?
     };
 
     // Upsert child term grades
@@ -72,7 +72,9 @@ pub async fn upsert_previous_subject(
             previous_school_term_grades::Entity::delete_by_id(etg.id)
                 .exec(db)
                 .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to delete term grade: {}", e)))?;
+                .map_err(|e| {
+                    AppError::InternalServerError(format!("Failed to delete term grade: {}", e))
+                })?;
         }
     }
 
@@ -90,9 +92,9 @@ pub async fn upsert_previous_subject(
             let mut am: previous_school_term_grades::ActiveModel = tg_model.into();
             am.grade = sea_orm::ActiveValue::Set(*grade);
             am.updated_at = sea_orm::ActiveValue::Set(now);
-            am.update(db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to update term grade: {}", e)))?;
+            am.update(db).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to update term grade: {}", e))
+            })?;
         } else {
             let am = previous_school_term_grades::ActiveModel {
                 id: sea_orm::ActiveValue::Set(Uuid::new_v4()),
@@ -103,9 +105,9 @@ pub async fn upsert_previous_subject(
                 updated_at: sea_orm::ActiveValue::Set(now),
                 deleted_at: sea_orm::ActiveValue::Set(None),
             };
-            am.insert(db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to insert term grade: {}", e)))?;
+            am.insert(db).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to insert term grade: {}", e))
+            })?;
         }
     }
 

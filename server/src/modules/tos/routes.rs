@@ -21,10 +21,7 @@ pub fn routes(tos_service: Arc<TosService>) -> Router {
                 .delete(handler::delete_tos),
         )
         // Competencies
-        .route(
-            "/tos/{tos_id}/competencies",
-            post(handler::add_competency),
-        )
+        .route("/tos/{tos_id}/competencies", post(handler::add_competency))
         .route(
             "/tos/competencies/{id}",
             put(handler::update_competency).delete(handler::delete_competency),

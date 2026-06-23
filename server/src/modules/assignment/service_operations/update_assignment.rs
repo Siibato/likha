@@ -1,8 +1,8 @@
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult, parse_datetime, validators::Validator};
+use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::assignment::schema::*;
 use crate::modules::class::repository::ClassRepository;
-use crate::modules::assignment::repository::AssignmentRepository;
+use crate::utils::{parse_datetime, validators::Validator, AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn update_assignment(
     assignment_repo: &AssignmentRepository,
@@ -11,18 +11,27 @@ pub async fn update_assignment(
     request: UpdateAssignmentRequest,
     teacher_id: Uuid,
 ) -> AppResult<AssignmentResponse> {
-    let assignment = assignment_repo.find_by_id(assignment_id).await?
+    let assignment = assignment_repo
+        .find_by_id(assignment_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-    let _class = class_repo.find_by_id(assignment.class_id).await?
+    let _class = class_repo
+        .find_by_id(assignment.class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-    if !class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
+    if !class_repo
+        .is_teacher_of_class(teacher_id, assignment.class_id)
+        .await?
+    {
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
     if assignment.is_published {
-        return Err(AppError::BadRequest("Cannot edit a published assignment".to_string()));
+        return Err(AppError::BadRequest(
+            "Cannot edit a published assignment".to_string(),
+        ));
     }
 
     let title = Validator::validate_optional_title(request.title)?;
@@ -46,22 +55,28 @@ pub async fn update_assignment(
         None
     };
 
-    let updated = assignment_repo.update_assignment(
-        assignment_id,
-        title,
-        instructions,
-        request.total_points,
-        request.allows_text_submission,
-        request.allows_file_submission,
-        allowed_file_types,
-        max_file_size_mb,
-        due_at,
-        request.term_number.map(|q| Some(q)),
-        request.component.clone().map(|c| Some(c)),
-    ).await?;
+    let updated = assignment_repo
+        .update_assignment(
+            assignment_id,
+            title,
+            instructions,
+            request.total_points,
+            request.allows_text_submission,
+            request.allows_file_submission,
+            allowed_file_types,
+            max_file_size_mb,
+            due_at,
+            request.term_number.map(|q| Some(q)),
+            request.component.clone().map(|c| Some(c)),
+        )
+        .await?;
 
-    let submission_count = assignment_repo.count_submissions_by_assignment(assignment_id).await?;
-    let graded_count = assignment_repo.count_graded_by_assignment(assignment_id).await?;
+    let submission_count = assignment_repo
+        .count_submissions_by_assignment(assignment_id)
+        .await?;
+    let graded_count = assignment_repo
+        .count_graded_by_assignment(assignment_id)
+        .await?;
 
     Ok(AssignmentResponse {
         id: updated.id,

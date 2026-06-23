@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::question_choices;
 use crate::utils::{AppError, AppResult};
+use ::entity::question_choices;
 
 pub async fn find_choices_by_question_ids(
     db: &DatabaseConnection,

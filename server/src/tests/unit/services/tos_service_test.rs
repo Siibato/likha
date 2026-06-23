@@ -7,8 +7,8 @@
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
 use crate::modules::tos::schema::{
-    CreateTosRequest, CreateCompetencyRequest, BulkAddCompetenciesRequest,
-    MelcSearchResponse, MelcEntry,
+    BulkAddCompetenciesRequest, CreateCompetencyRequest, CreateTosRequest, MelcEntry,
+    MelcSearchResponse,
 };
 
 #[test]

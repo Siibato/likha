@@ -79,6 +79,7 @@ import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
+import 'package:likha/domain/auth/usecases/username_exists.dart';
 import 'package:likha/domain/auth/usecases/get_account_details.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
@@ -462,6 +463,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => Logout(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
   sl.registerLazySingleton(() => CheckUsername(sl()));
+  sl.registerLazySingleton(() => UsernameExists(sl()));
   sl.registerLazySingleton(() => ActivateAccount(sl()));
   sl.registerLazySingleton(() => CreateAccount(sl()));
   sl.registerLazySingleton(() => GetAllAccounts(sl()));

@@ -2,12 +2,12 @@ use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::cache::{CacheKey, CacheInvalidator, RedisCache};
-use crate::modules::class::repository::ClassRepository;
+use crate::cache::{CacheInvalidator, CacheKey, RedisCache};
 use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::modules::class::schema::{
-    ClassResponse, ClassListResponse, ClassDetailResponse, EnrollmentResponse,
-    ClassMetadataResponse, CreateClassRequest, UpdateClassRequest,
+    ClassDetailResponse, ClassListResponse, ClassMetadataResponse, ClassResponse,
+    CreateClassRequest, EnrollmentResponse, UpdateClassRequest,
 };
 use crate::modules::class::service_operations as ops;
 use crate::utils::AppResult;
@@ -41,7 +41,14 @@ impl ClassService {
         teacher_id: Uuid,
         client_id: Option<Uuid>,
     ) -> AppResult<ClassResponse> {
-        let result = ops::create_class(&self.class_repo, &self.user_repo, request, teacher_id, client_id).await?;
+        let result = ops::create_class(
+            &self.class_repo,
+            &self.user_repo,
+            request,
+            teacher_id,
+            client_id,
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_teacher_classes(teacher_id).await;
         }
@@ -55,7 +62,15 @@ impl ClassService {
         teacher_id: Uuid,
         caller_role: &str,
     ) -> AppResult<ClassResponse> {
-        let result = ops::update_class(&self.class_repo, &self.user_repo, class_id, request, teacher_id, caller_role).await?;
+        let result = ops::update_class(
+            &self.class_repo,
+            &self.user_repo,
+            class_id,
+            request,
+            teacher_id,
+            caller_role,
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_class_and_enrolled(class_id).await;
             inv.invalidate_teacher_classes(teacher_id).await;
@@ -70,7 +85,8 @@ impl ClassService {
                 return Ok(cached);
             }
         }
-        let result = ops::get_teacher_classes(&self.class_repo, &self.user_repo, teacher_id).await?;
+        let result =
+            ops::get_teacher_classes(&self.class_repo, &self.user_repo, teacher_id).await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::ClassListTeacher(teacher_id).as_str();
             cache.set(&key, &result, cache.ttl.list_seconds).await;
@@ -128,7 +144,15 @@ impl ClassService {
         teacher_id: Uuid,
         role: &str,
     ) -> AppResult<EnrollmentResponse> {
-        let result = ops::add_student(&self.class_repo, &self.user_repo, class_id, student_id, teacher_id, role).await?;
+        let result = ops::add_student(
+            &self.class_repo,
+            &self.user_repo,
+            class_id,
+            student_id,
+            teacher_id,
+            role,
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_student_classes(student_id).await;
             inv.invalidate_class_and_enrolled(class_id).await;
@@ -143,7 +167,8 @@ impl ClassService {
         teacher_id: Uuid,
         role: &str,
     ) -> AppResult<()> {
-        let result = ops::remove_student(&self.class_repo, class_id, student_id, teacher_id, role).await?;
+        let result =
+            ops::remove_student(&self.class_repo, class_id, student_id, teacher_id, role).await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_student_classes(student_id).await;
             inv.invalidate_class_and_enrolled(class_id).await;
@@ -170,7 +195,11 @@ impl ClassService {
         Ok(result)
     }
 
-    pub async fn get_classes_metadata(&self, user_id: Uuid, role: &str) -> AppResult<ClassMetadataResponse> {
+    pub async fn get_classes_metadata(
+        &self,
+        user_id: Uuid,
+        role: &str,
+    ) -> AppResult<ClassMetadataResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::ClassMetadata(user_id, role.to_string()).as_str();
             if let Some(cached) = cache.get::<ClassMetadataResponse>(&key).await {

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::refresh_tokens;
 use crate::utils::{AppError, AppResult};
+use ::entity::refresh_tokens;
 
 pub async fn revoke_refresh_token(db: &DatabaseConnection, token_id: Uuid) -> AppResult<()> {
     let token = refresh_tokens::ActiveModel {

@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn get_tos(&self, tos_id: Uuid) -> AppResult<TosResponse> {
@@ -11,7 +11,8 @@ impl crate::modules::tos::service::TosService {
                 return Ok(cached);
             }
         }
-        let tos = self.tos_repo
+        let tos = self
+            .tos_repo
             .find_tos_by_id(tos_id)
             .await?
             .ok_or_else(|| AppError::NotFound("TOS not found".to_string()))?;

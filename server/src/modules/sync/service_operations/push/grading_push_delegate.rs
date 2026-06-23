@@ -1,12 +1,14 @@
-use std::sync::Arc;
-use async_trait::async_trait;
-use uuid::Uuid;
-use chrono::Utc;
-use crate::modules::grading::service::GradeComputationService;
-use crate::modules::grading::schema::{CreateGradeItemRequest, UpdateGradeItemRequest};
 use super::delegate::PushDelegate;
+use super::result_helpers::{
+    error_result, parse_i32_field, parse_str_field, parse_uuid_field, success_result,
+};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
-use super::result_helpers::{error_result, success_result, parse_uuid_field, parse_str_field, parse_i32_field};
+use crate::modules::grading::schema::{CreateGradeItemRequest, UpdateGradeItemRequest};
+use crate::modules::grading::service::GradeComputationService;
+use async_trait::async_trait;
+use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct GradingPushDelegate {
     pub grade_computation_service: Arc<GradeComputationService>,
@@ -14,18 +16,27 @@ pub struct GradingPushDelegate {
 
 impl GradingPushDelegate {
     pub fn new(grade_computation_service: Arc<GradeComputationService>) -> Self {
-        Self { grade_computation_service }
+        Self {
+            grade_computation_service,
+        }
     }
 
     async fn recompute_after_score_change(&self, grade_item_id: Uuid) {
-        if let Ok(Some(item)) = self.grade_computation_service.repo.find_item(grade_item_id).await {
-            if let Err(e) = self.grade_computation_service
+        if let Ok(Some(item)) = self
+            .grade_computation_service
+            .repo
+            .find_item(grade_item_id)
+            .await
+        {
+            if let Err(e) = self
+                .grade_computation_service
                 .compute_class_term(item.class_id, item.term_number.unwrap_or(1))
                 .await
             {
                 tracing::warn!(
                     "Failed to recompute term grades after score change for item {}: {}",
-                    grade_item_id, e
+                    grade_item_id,
+                    e
                 );
             }
         }
@@ -73,11 +84,17 @@ impl GradingPushDelegate {
                     Ok(v) => v,
                     Err(e) => return error_result(op, &e),
                 };
-                let semester = op.payload.get("semester").and_then(|v| v.as_i64()).map(|v| v as i32);
+                let semester = op
+                    .payload
+                    .get("semester")
+                    .and_then(|v| v.as_i64())
+                    .map(|v| v as i32);
 
-                match self.grade_computation_service.setup_grading(
-                    class_id, grade_level, subject_group, school_year, semester,
-                ).await {
+                match self
+                    .grade_computation_service
+                    .setup_grading(class_id, grade_level, subject_group, school_year, semester)
+                    .await
+                {
                     Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => error_result(op, &e.to_string()),
                 }
@@ -91,24 +108,35 @@ impl GradingPushDelegate {
                     Ok(v) => v,
                     Err(e) => return error_result(op, &e),
                 };
-                let ww_weight = op.payload.get("ww_weight")
+                let ww_weight = op
+                    .payload
+                    .get("ww_weight")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(0.0);
-                let pt_weight = op.payload.get("pt_weight")
+                let pt_weight = op
+                    .payload
+                    .get("pt_weight")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(0.0);
-                let qa_weight = op.payload.get("qa_weight")
+                let qa_weight = op
+                    .payload
+                    .get("qa_weight")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(0.0);
 
-                match self.grade_computation_service.update_grading_config(
-                    class_id, term_number, ww_weight, pt_weight, qa_weight,
-                ).await {
+                match self
+                    .grade_computation_service
+                    .update_grading_config(class_id, term_number, ww_weight, pt_weight, qa_weight)
+                    .await
+                {
                     Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => error_result(op, &e.to_string()),
                 }
             }
-            _ => error_result(op, &format!("Unknown grade_config operation: {}", op.operation)),
+            _ => error_result(
+                op,
+                &format!("Unknown grade_config operation: {}", op.operation),
+            ),
         }
     }
 
@@ -131,7 +159,9 @@ impl GradingPushDelegate {
                     Ok(v) => v,
                     Err(e) => return error_result(op, &e),
                 };
-                let total_points = op.payload.get("total_points")
+                let total_points = op
+                    .payload
+                    .get("total_points")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(100.0);
 
@@ -140,11 +170,23 @@ impl GradingPushDelegate {
                     component,
                     term_number: Some(term_number),
                     total_points,
-                    source_type: op.payload.get("source_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    source_id: op.payload.get("source_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    source_type: op
+                        .payload
+                        .get("source_type")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    source_id: op
+                        .payload
+                        .get("source_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                 };
 
-                match self.grade_computation_service.create_grade_item(class_id, request).await {
+                match self
+                    .grade_computation_service
+                    .create_grade_item(class_id, request)
+                    .await
+                {
                     Ok(r) => success_result(op, Some(r.id), Some(Utc::now().to_rfc3339())),
                     Err(e) => error_result(op, &e.to_string()),
                 }
@@ -155,15 +197,39 @@ impl GradingPushDelegate {
                     Err(e) => return error_result(op, &e),
                 };
                 let request = UpdateGradeItemRequest {
-                    title: op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    component: op.payload.get("component").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    title: op
+                        .payload
+                        .get("title")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    component: op
+                        .payload
+                        .get("component")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                     total_points: op.payload.get("total_points").and_then(|v| v.as_f64()),
-                    order_index: op.payload.get("order_index").and_then(|v| v.as_i64()).map(|v| v as i32),
-                    source_type: op.payload.get("source_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    source_id: op.payload.get("source_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    order_index: op
+                        .payload
+                        .get("order_index")
+                        .and_then(|v| v.as_i64())
+                        .map(|v| v as i32),
+                    source_type: op
+                        .payload
+                        .get("source_type")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    source_id: op
+                        .payload
+                        .get("source_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                 };
 
-                match self.grade_computation_service.update_grade_item(id, request).await {
+                match self
+                    .grade_computation_service
+                    .update_grade_item(id, request)
+                    .await
+                {
                     Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => error_result(op, &e.to_string()),
                 }
@@ -178,7 +244,10 @@ impl GradingPushDelegate {
                     Err(e) => error_result(op, &e.to_string()),
                 }
             }
-            _ => error_result(op, &format!("Unknown grade_item operation: {}", op.operation)),
+            _ => error_result(
+                op,
+                &format!("Unknown grade_item operation: {}", op.operation),
+            ),
         }
     }
 
@@ -197,7 +266,8 @@ impl GradingPushDelegate {
 
                 let mut parsed_scores: Vec<(Uuid, f64)> = Vec::new();
                 for entry in scores_array {
-                    let student_id = match entry.get("student_id")
+                    let student_id = match entry
+                        .get("student_id")
                         .and_then(|v| v.as_str())
                         .and_then(|s| Uuid::parse_str(s).ok())
                     {
@@ -211,13 +281,19 @@ impl GradingPushDelegate {
                     parsed_scores.push((student_id, score));
                 }
 
-                match self.grade_computation_service.save_scores(grade_item_id, parsed_scores).await {
+                match self
+                    .grade_computation_service
+                    .save_scores(grade_item_id, parsed_scores)
+                    .await
+                {
                     Ok(_) => {
                         self.recompute_after_score_change(grade_item_id).await;
                         success_result(op, None, Some(Utc::now().to_rfc3339()))
                     }
                     Err(e) => {
-                        let error_msg = if e.to_string().contains("does not exist") || e.to_string().contains("FOREIGN KEY constraint failed") {
+                        let error_msg = if e.to_string().contains("does not exist")
+                            || e.to_string().contains("FOREIGN KEY constraint failed")
+                        {
                             format!("Foreign key constraint failed: {}. This usually happens when the grade item or student no longer exists. The operation will be skipped.", e)
                         } else {
                             e.to_string()
@@ -231,12 +307,17 @@ impl GradingPushDelegate {
                     Ok(v) => v,
                     Err(e) => return error_result(op, &e),
                 };
-                let override_score = match op.payload.get("override_score").and_then(|v| v.as_f64()) {
+                let override_score = match op.payload.get("override_score").and_then(|v| v.as_f64())
+                {
                     Some(s) => s,
                     None => return error_result(op, "Missing or invalid override_score"),
                 };
 
-                match self.grade_computation_service.set_override(score_id, override_score).await {
+                match self
+                    .grade_computation_service
+                    .set_override(score_id, override_score)
+                    .await
+                {
                     Ok(score_resp) => {
                         if let Ok(item_id) = Uuid::parse_str(&score_resp.grade_item_id) {
                             self.recompute_after_score_change(item_id).await;
@@ -252,7 +333,11 @@ impl GradingPushDelegate {
                     Err(e) => return error_result(op, &e),
                 };
 
-                match self.grade_computation_service.clear_override(score_id).await {
+                match self
+                    .grade_computation_service
+                    .clear_override(score_id)
+                    .await
+                {
                     Ok(score_resp) => {
                         if let Ok(item_id) = Uuid::parse_str(&score_resp.grade_item_id) {
                             self.recompute_after_score_change(item_id).await;
@@ -262,7 +347,10 @@ impl GradingPushDelegate {
                     Err(e) => error_result(op, &e.to_string()),
                 }
             }
-            _ => error_result(op, &format!("Unknown grade_score operation: {}", op.operation)),
+            _ => error_result(
+                op,
+                &format!("Unknown grade_score operation: {}", op.operation),
+            ),
         }
     }
 }

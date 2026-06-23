@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::previous_school_subjects;
 use crate::utils::{AppError, AppResult};
+use ::entity::previous_school_subjects;
 
 pub async fn get_previous_subjects(
     db: &DatabaseConnection,

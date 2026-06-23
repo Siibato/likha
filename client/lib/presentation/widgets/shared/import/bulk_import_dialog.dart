@@ -23,7 +23,7 @@ class _BulkImportDialogState extends ConsumerState<BulkImportDialog> {
   bool _isDownloading = false;
 
   static const _columns = [
-    'username', 'first_name', 'last_name', 'lrn', 'age', 'sex',
+    'username', 'first_name', 'last_name', 'lrn', 'sex',
   ];
 
   @override

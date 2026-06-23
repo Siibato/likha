@@ -1,6 +1,8 @@
-use uuid::Uuid;
-use crate::modules::grading::schema::{GradeItemResponse, GradeScoreResponse, CreateGradeItemRequest};
+use crate::modules::grading::schema::{
+    CreateGradeItemRequest, GradeItemResponse, GradeScoreResponse,
+};
 use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn create_grade_item(
@@ -31,8 +33,10 @@ impl crate::modules::grading::service::GradeComputationService {
             .await?;
 
         let score_models = self.repo.get_scores_by_item(item.id).await?;
-        let scores: Vec<GradeScoreResponse> =
-            score_models.into_iter().map(GradeScoreResponse::from).collect();
+        let scores: Vec<GradeScoreResponse> = score_models
+            .into_iter()
+            .map(GradeScoreResponse::from)
+            .collect();
 
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_class_grades(class_id, term_number).await;

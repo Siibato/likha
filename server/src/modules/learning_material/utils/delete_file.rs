@@ -1,7 +1,7 @@
-use std::path::PathBuf;
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::file_service;
+use std::path::PathBuf;
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn delete_file(&self, file_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
@@ -27,7 +27,11 @@ impl crate::modules::learning_material::service::LearningMaterialService {
         }
 
         if let (Some(hash), Some(path)) = (file.file_hash, file.file_path) {
-            if let Ok(count) = self.material_repo.count_active_by_hash(&hash, file_id).await {
+            if let Ok(count) = self
+                .material_repo
+                .count_active_by_hash(&hash, file_id)
+                .await
+            {
                 if count == 0 {
                     file_service::delete_file(&PathBuf::from(&path)).await;
                 }

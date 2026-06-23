@@ -21,7 +21,11 @@ async fn test_setup_class_grade_config() {
     assert_eq!(configs.len(), 4);
     for config in &configs {
         let total = config.ww_weight + config.pt_weight + config.qa_weight;
-        assert!((total - 100.0).abs() < 0.01, "Weights should sum to 100, got {}", total);
+        assert!(
+            (total - 100.0).abs() < 0.01,
+            "Weights should sum to 100, got {}",
+            total
+        );
     }
 }
 

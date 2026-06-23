@@ -53,6 +53,7 @@ mod m20260622_000001_fix_core_values_sf9_alignment;
 mod m20260622_000002_rebuild_core_values_records;
 mod m20260622_000003_create_replication_state;
 mod m20260622_000004_add_replication_timestamps;
+mod m20260623_000001_drop_age_from_learner_details;
 
 pub struct Migrator;
 
@@ -113,6 +114,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260622_000002_rebuild_core_values_records::Migration),
             Box::new(m20260622_000003_create_replication_state::Migration),
             Box::new(m20260622_000004_add_replication_timestamps::Migration),
+            Box::new(m20260623_000001_drop_age_from_learner_details::Migration),
         ]
     }
 }

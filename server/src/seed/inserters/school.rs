@@ -23,7 +23,10 @@ pub async fn insert_school_details(
         model.school_head_name = Set(spec.school_head_name.clone());
         model.school_head_position = Set(spec.school_head_position.clone());
         model.updated_at = Set(spec.updated_at);
-        model.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        model
+            .update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     } else {
         let model = school_details::ActiveModel {
             id: Set(spec.id),
@@ -37,7 +40,10 @@ pub async fn insert_school_details(
             school_head_position: Set(spec.school_head_position.clone()),
             updated_at: Set(spec.updated_at),
         };
-        model.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        model
+            .insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
     Ok(())
 }

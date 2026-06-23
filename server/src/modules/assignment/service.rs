@@ -2,12 +2,12 @@ use sea_orm::DatabaseConnection;
 use std::env;
 use std::sync::Arc;
 
-use crate::cache::{CacheKey, CacheInvalidator, RedisCache};
-use crate::modules::assignment::repository::AssignmentRepository;
+use crate::cache::{CacheInvalidator, CacheKey, RedisCache};
 use crate::modules::admin::ActivityLogRepository;
+use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::assignment::service_operations as ops;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::grading::repository::GradeComputationRepository;
-use crate::modules::assignment::service_operations as ops;
 use crate::utils::AppResult;
 
 pub struct AssignmentService {
@@ -23,8 +23,8 @@ pub struct AssignmentService {
 
 impl AssignmentService {
     pub fn new(db: DatabaseConnection, file_encryption_key: [u8; 32]) -> Self {
-        let file_storage_path = env::var("FILE_STORAGE_PATH")
-            .unwrap_or_else(|_| "./uploads".to_string());
+        let file_storage_path =
+            env::var("FILE_STORAGE_PATH").unwrap_or_else(|_| "./uploads".to_string());
 
         Self {
             assignment_repo: AssignmentRepository::new(db.clone()),
@@ -59,7 +59,8 @@ impl AssignmentService {
             request,
             teacher_id,
             client_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_teacher_assignments(teacher_id).await;
         }
@@ -74,7 +75,10 @@ impl AssignmentService {
     ) -> AppResult<crate::modules::assignment::schema::AssignmentListResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssignmentListByClass(class_id, user_id, role.to_string()).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assignment::schema::AssignmentListResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assignment::schema::AssignmentListResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
@@ -84,7 +88,8 @@ impl AssignmentService {
             class_id,
             user_id,
             role,
-        ).await?;
+        )
+        .await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssignmentListByClass(class_id, user_id, role.to_string()).as_str();
             cache.set(&key, &result, cache.ttl.list_seconds).await;
@@ -105,7 +110,10 @@ impl AssignmentService {
         };
 
         if let Some(ref cache) = self.cache {
-            if let Some(cached) = cache.get::<crate::modules::assignment::schema::AssignmentResponse>(&cache_key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assignment::schema::AssignmentResponse>(&cache_key)
+                .await
+            {
                 return Ok(cached);
             }
         }
@@ -116,10 +124,13 @@ impl AssignmentService {
             assignment_id,
             user_id,
             role,
-        ).await?;
+        )
+        .await?;
 
         if let Some(ref cache) = self.cache {
-            cache.set(&cache_key, &result, cache.ttl.detail_seconds).await;
+            cache
+                .set(&cache_key, &result, cache.ttl.detail_seconds)
+                .await;
         }
 
         Ok(result)
@@ -131,15 +142,16 @@ impl AssignmentService {
     ) -> AppResult<crate::modules::assignment::schema::AssignmentListResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssignmentListStudent(student_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assignment::schema::AssignmentListResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assignment::schema::AssignmentListResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
-        let result = ops::get_student_assignments(
-            &self.assignment_repo,
-            &self.class_repo,
-            student_id,
-        ).await?;
+        let result =
+            ops::get_student_assignments(&self.assignment_repo, &self.class_repo, student_id)
+                .await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssignmentListStudent(student_id).as_str();
             cache.set(&key, &result, cache.ttl.list_seconds).await;
@@ -159,7 +171,8 @@ impl AssignmentService {
             assignment_id,
             request,
             teacher_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assignment_detail(assignment_id).await;
             inv.invalidate_teacher_assignments(teacher_id).await;
@@ -179,7 +192,8 @@ impl AssignmentService {
             &self.grade_computation_repo,
             assignment_id,
             teacher_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assignment_detail(assignment_id).await;
             inv.invalidate_teacher_assignments(teacher_id).await;
@@ -198,7 +212,8 @@ impl AssignmentService {
             &self.activity_log_repo,
             assignment_id,
             teacher_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assignment_detail(assignment_id).await;
             inv.invalidate_teacher_assignments(teacher_id).await;
@@ -217,7 +232,8 @@ impl AssignmentService {
             &self.activity_log_repo,
             assignment_id,
             teacher_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assignment_detail(assignment_id).await;
             inv.invalidate_teacher_assignments(teacher_id).await;
@@ -237,7 +253,8 @@ impl AssignmentService {
             class_id,
             assignment_ids,
             teacher_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_teacher_assignments(teacher_id).await;
         }
@@ -248,10 +265,7 @@ impl AssignmentService {
         &self,
         class_id: uuid::Uuid,
     ) -> AppResult<crate::modules::assignment::schema::AssignmentMetadataResponse> {
-        ops::get_assignments_metadata(
-            &self.assignment_repo,
-            class_id,
-        ).await
+        ops::get_assignments_metadata(&self.assignment_repo, class_id).await
     }
 
     pub async fn create_or_get_submission(
@@ -266,7 +280,8 @@ impl AssignmentService {
             assignment_id,
             student_id,
             client_submission_id,
-        ).await
+        )
+        .await
     }
 
     pub async fn get_submission_detail(
@@ -281,7 +296,8 @@ impl AssignmentService {
             submission_id,
             user_id,
             role,
-        ).await
+        )
+        .await
     }
 
     pub async fn submit_assignment(
@@ -296,7 +312,8 @@ impl AssignmentService {
             submission_id,
             student_id,
             text_content,
-        ).await
+        )
+        .await
     }
 
     pub async fn upload_file(
@@ -316,7 +333,8 @@ impl AssignmentService {
             file_name,
             file_type,
             file_data,
-        ).await
+        )
+        .await
     }
 
     pub async fn download_file(
@@ -329,19 +347,12 @@ impl AssignmentService {
             &self.file_encryption_key,
             file_id,
             user_id,
-        ).await
+        )
+        .await
     }
 
-    pub async fn delete_file(
-        &self,
-        file_id: uuid::Uuid,
-        student_id: uuid::Uuid,
-    ) -> AppResult<()> {
-        ops::delete_file(
-            &self.assignment_repo,
-            file_id,
-            student_id,
-        ).await
+    pub async fn delete_file(&self, file_id: uuid::Uuid, student_id: uuid::Uuid) -> AppResult<()> {
+        ops::delete_file(&self.assignment_repo, file_id, student_id).await
     }
 
     pub async fn get_submissions(
@@ -354,7 +365,8 @@ impl AssignmentService {
             &self.class_repo,
             assignment_id,
             teacher_id,
-        ).await
+        )
+        .await
     }
 
     pub async fn get_student_assignment_submission(
@@ -371,7 +383,8 @@ impl AssignmentService {
             student_id,
             user_id,
             role,
-        ).await
+        )
+        .await
     }
 
     pub async fn get_student_assignment_submissions(
@@ -386,7 +399,8 @@ impl AssignmentService {
             assignment_id,
             student_id,
             teacher_id,
-        ).await
+        )
+        .await
     }
 
     pub async fn grade_submission(
@@ -404,7 +418,8 @@ impl AssignmentService {
             submission_id,
             request,
             teacher_id,
-        ).await
+        )
+        .await
     }
 
     pub async fn return_submission(
@@ -418,6 +433,7 @@ impl AssignmentService {
             &self.activity_log_repo,
             submission_id,
             teacher_id,
-        ).await
+        )
+        .await
     }
 }

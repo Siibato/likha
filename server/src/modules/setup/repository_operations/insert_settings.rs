@@ -1,10 +1,13 @@
 use chrono::Utc;
 use sea_orm::*;
 
-use ::entity::school_details;
 use crate::utils::AppResult;
+use ::entity::school_details;
 
-pub async fn insert_settings(db: &DatabaseConnection, default_code: String) -> AppResult<school_details::Model> {
+pub async fn insert_settings(
+    db: &DatabaseConnection,
+    default_code: String,
+) -> AppResult<school_details::Model> {
     let model = school_details::ActiveModel {
         id: Set(1),
         school_code: Set(default_code.to_uppercase()),
@@ -17,8 +20,7 @@ pub async fn insert_settings(db: &DatabaseConnection, default_code: String) -> A
         school_head_position: Set(None),
         updated_at: Set(Utc::now().naive_utc()),
     };
-    model
-        .insert(db)
-        .await
-        .map_err(|e| crate::utils::error::AppError::InternalServerError(format!("Database error: {}", e)))
+    model.insert(db).await.map_err(|e| {
+        crate::utils::error::AppError::InternalServerError(format!("Database error: {}", e))
+    })
 }

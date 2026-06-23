@@ -185,7 +185,8 @@ pub fn draw_page1_right(
     ) - 2.0;
 
     y -= GAP_TIGHT;
-    let parent_letter = "The school welcomes you should you desire to know more about your child's progress.";
+    let parent_letter =
+        "The school welcomes you should you desire to know more about your child's progress.";
     y = draw_wrapped_text(
         engine,
         layer,

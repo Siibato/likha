@@ -8,6 +8,7 @@ import 'package:likha/presentation/widgets/desktop/admin/class/class_data_table.
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/search/search_filter_bar.dart';
 
 class AdminClassesPage extends ConsumerStatefulWidget {
   const AdminClassesPage({super.key});
@@ -18,14 +19,22 @@ class AdminClassesPage extends ConsumerStatefulWidget {
 }
 
 class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _selectedFilter;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classListProvider.notifier).loadAllClasses();
+      ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true);
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _showDeleteConfirmation(ClassEntity cls) {
@@ -47,6 +56,9 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
     final classListState = ref.watch(classListProvider);
 
     final filteredClasses = classListState.classes.where((c) {
+      if (_selectedFilter == 'active' && c.isArchived) return false;
+      if (_selectedFilter == 'archived' && !c.isArchived) return false;
+      if (_selectedFilter == 'advisory' && !c.isAdvisory) return false;
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return c.title.toLowerCase().contains(q) ||
@@ -64,7 +76,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
             MaterialPageRoute(
               builder: (_) => const AdminCreateClassPage(),
             ),
-          ).then((_) => ref.read(classListProvider.notifier).loadAllClasses()),
+          ).then((_) => ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true)),
           icon: const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create Class'),
           style: FilledButton.styleFrom(
@@ -80,34 +92,15 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderLight),
-            ),
-            child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: const InputDecoration(
-                hintText: 'Search classes...',
-                hintStyle: TextStyle(
-                  color: AppColors.foregroundTertiary,
-                  fontSize: 14,
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: AppColors.foregroundTertiary,
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
-              ),
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.foregroundPrimary,
-              ),
-            ),
+          SearchFilterBar.classes(
+            controller: _searchController,
+            onSearchChanged: (v) => setState(() => _searchQuery = v),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+            },
+            selectedFilter: _selectedFilter,
+            onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
           ),
           const SizedBox(height: 20),
 
@@ -131,8 +124,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                   builder: (_) =>
                       AdminClassDetailPage(classId: cls.id),
                 ),
-              ).then(
-                  (_) => ref.read(classListProvider.notifier).loadAllClasses()),
+              ).then((_) => ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true)),
               onDelete: (cls) => _showDeleteConfirmation(cls),
             ),
         ],

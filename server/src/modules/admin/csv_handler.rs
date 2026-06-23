@@ -1,12 +1,19 @@
 use axum::extract::Multipart;
-use serde::de::DeserializeOwned;
 use csv::ReaderBuilder;
+use serde::de::DeserializeOwned;
 
 /// Extract raw bytes from the first file field in a Multipart body.
 pub async fn extract_csv_bytes(multipart: &mut Multipart) -> Result<Vec<u8>, String> {
-    while let Some(field) = multipart.next_field().await.map_err(|e| format!("Multipart error: {}", e))? {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| format!("Multipart error: {}", e))?
+    {
         let _name = field.name().unwrap_or("file").to_string();
-        let bytes = field.bytes().await.map_err(|e| format!("Failed to read field: {}", e))?;
+        let bytes = field
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read field: {}", e))?;
         if !bytes.is_empty() {
             return Ok(bytes.to_vec());
         }

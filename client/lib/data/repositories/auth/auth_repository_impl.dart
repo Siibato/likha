@@ -116,6 +116,10 @@ class AuthRepositoryImpl implements AuthRepository {
       ops.isAuthenticated(_storageService);
 
   @override
+  Future<bool> usernameExists({required String username}) =>
+      _localDataSource.usernameExists(username);
+
+  @override
   ResultFuture<MutationResult<User>> createAccount({
     required String username,
     required String firstName,

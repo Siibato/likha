@@ -1,8 +1,8 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::class::schema::{ClassResponse, ClassListResponse};
-use crate::modules::class::repository::ClassRepository;
 use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::{ClassListResponse, ClassResponse};
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn get_teacher_classes(
     class_repo: &ClassRepository,
@@ -43,5 +43,7 @@ pub async fn get_teacher_classes(
         });
     }
 
-    Ok(ClassListResponse { classes: class_responses })
+    Ok(ClassListResponse {
+        classes: class_responses,
+    })
 }

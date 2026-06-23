@@ -1,9 +1,9 @@
-use uuid::Uuid;
-use std::collections::HashMap;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::class::schema::{ClassResponse, ClassListResponse};
 use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::{ClassListResponse, ClassResponse};
+use crate::utils::error::{AppError, AppResult};
 use ::entity::users;
+use std::collections::HashMap;
+use uuid::Uuid;
 
 pub async fn get_student_classes(
     class_repo: &ClassRepository,
@@ -18,7 +18,9 @@ pub async fn get_student_classes(
     let class_ids: Vec<Uuid> = classes.iter().map(|c| c.id).collect();
 
     // Batch fetch teachers and student counts in 2 queries
-    let teachers = class_repo.find_teachers_for_classes(class_ids.clone()).await?;
+    let teachers = class_repo
+        .find_teachers_for_classes(class_ids.clone())
+        .await?;
     let student_counts = class_repo.count_students_for_classes(class_ids).await?;
 
     // Build lookup maps
@@ -48,5 +50,7 @@ pub async fn get_student_classes(
         });
     }
 
-    Ok(ClassListResponse { classes: class_responses })
+    Ok(ClassListResponse {
+        classes: class_responses,
+    })
 }

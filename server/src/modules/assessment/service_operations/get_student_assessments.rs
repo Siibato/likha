@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::AppResult;
 use crate::utils::fmt_utc;
+use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_student_assessments(

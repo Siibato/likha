@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learning_materials;
 use crate::utils::{AppError, AppResult};
+use ::entity::learning_materials;
 
 pub async fn get_max_order_index(db: &DatabaseConnection, class_id: Uuid) -> AppResult<i32> {
     let result = learning_materials::Entity::find()

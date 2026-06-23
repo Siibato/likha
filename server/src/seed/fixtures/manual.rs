@@ -12,8 +12,8 @@
 use uuid::Uuid;
 
 use crate::seed::specs::*;
-use crate::seed::tools::SeedContext;
 use crate::seed::tools::seed_id;
+use crate::seed::tools::SeedContext;
 
 use super::shared::*;
 
@@ -274,20 +274,20 @@ pub fn manual_enrollments() -> Vec<EnrollmentSpec> {
 
     // Class IDs in order (15 classes + 1 deleted)
     let class_ids = [
-        class_id("math_8a"),      // 0 - teacher_01
-        class_id("science_8a"),   // 1 - teacher_01
-        class_id("english_8a"),   // 2 - teacher_01
-        class_id("math_10a"),     // 3 - teacher_02
-        class_id("science_10a"),  // 4 - teacher_02
-        class_id("english_10a"),  // 5 - teacher_02
-        class_id("math_12a"),     // 6 - teacher_03
-        class_id("science_12a"),  // 7 - teacher_03
-        class_id("english_12a"),  // 8 - teacher_03
-        class_id("math_8b"),      // 9 - teacher_04
-        class_id("science_8b"),  // 10 - teacher_04
-        class_id("english_8b"),   // 11 - teacher_04
-        class_id("advisory_8a"),  // 12 - teacher_05
-        class_id("advisory_10a"), // 13 - teacher_05
+        class_id("math_8a"),           // 0 - teacher_01
+        class_id("science_8a"),        // 1 - teacher_01
+        class_id("english_8a"),        // 2 - teacher_01
+        class_id("math_10a"),          // 3 - teacher_02
+        class_id("science_10a"),       // 4 - teacher_02
+        class_id("english_10a"),       // 5 - teacher_02
+        class_id("math_12a"),          // 6 - teacher_03
+        class_id("science_12a"),       // 7 - teacher_03
+        class_id("english_12a"),       // 8 - teacher_03
+        class_id("math_8b"),           // 9 - teacher_04
+        class_id("science_8b"),        // 10 - teacher_04
+        class_id("english_8b"),        // 11 - teacher_04
+        class_id("advisory_8a"),       // 12 - teacher_05
+        class_id("advisory_10a"),      // 13 - teacher_05
         class_id("math_10b_archived"), // 14 - teacher_05
     ];
 
@@ -344,13 +344,16 @@ pub fn manual_enrollments() -> Vec<EnrollmentSpec> {
         let student_id = user_id(&username);
 
         // Check if student is in any grade 8 class - if so, add to advisory 8A
-        let in_grade_8 = grade_8_classes.iter().any(|&class_idx| {
-            (class_idx as u32 + student_idx * 3) % 15 < 7
-        });
+        let in_grade_8 = grade_8_classes
+            .iter()
+            .any(|&class_idx| (class_idx as u32 + student_idx * 3) % 15 < 7);
 
         if in_grade_8 {
             // Check if not already enrolled
-            if !enrollments.iter().any(|e| e.class_id == advisory_8a_id && e.user_id == student_id) {
+            if !enrollments
+                .iter()
+                .any(|e| e.class_id == advisory_8a_id && e.user_id == student_id)
+            {
                 enrollments.push(EnrollmentSpec {
                     class_id: advisory_8a_id,
                     user_id: student_id,
@@ -359,12 +362,15 @@ pub fn manual_enrollments() -> Vec<EnrollmentSpec> {
         }
 
         // Check if student is in any grade 10 class - if so, add to advisory 10A
-        let in_grade_10 = grade_10_classes.iter().any(|&class_idx| {
-            (class_idx as u32 + student_idx * 3) % 15 < 7
-        });
+        let in_grade_10 = grade_10_classes
+            .iter()
+            .any(|&class_idx| (class_idx as u32 + student_idx * 3) % 15 < 7);
 
         if in_grade_10 {
-            if !enrollments.iter().any(|e| e.class_id == advisory_10a_id && e.user_id == student_id) {
+            if !enrollments
+                .iter()
+                .any(|e| e.class_id == advisory_10a_id && e.user_id == student_id)
+            {
                 enrollments.push(EnrollmentSpec {
                     class_id: advisory_10a_id,
                     user_id: student_id,
@@ -392,7 +398,12 @@ pub fn manual_tos() -> Vec<TosSpec> {
         ("english_8b", "English 8B", 2, "bloom"),
         ("advisory_8a", "Advisory 8A", 2, "bloom"),
         ("advisory_10a", "Advisory 10A", 2, "bloom"),
-        ("math_10b_archived", "Mathematics 10B (Archived)", 2, "bloom"),
+        (
+            "math_10b_archived",
+            "Mathematics 10B (Archived)",
+            2,
+            "bloom",
+        ),
     ];
 
     let mut tos_list = Vec::with_capacity(15);
@@ -429,88 +440,178 @@ pub fn manual_tos() -> Vec<TosSpec> {
 
 pub fn manual_competencies() -> Vec<CompetencySpec> {
     let class_tos_mappings = [
-        ("math_8a", vec![
-            ("M8AL-Ia-1", "factors completely different types of polynomials"),
-            ("M8AL-Ib-1", "solves problems involving factors of polynomials"),
-            ("M8AL-Ic-1", "illustrates rational algebraic expressions"),
-            ("M8AL-Id-1", "performs operations on rational algebraic expressions"),
-        ]),
-        ("science_8a", vec![
-            ("S8MT-Ia-1", "describe the arrangement of elements in the periodic table"),
-            ("S8MT-Ib-1", "trace the development of the periodic table"),
-            ("S8MT-Ic-1", "use the periodic table to find information about an element"),
-            ("S8MT-Id-1", "describe the formation of ionic and covalent bonds"),
-        ]),
-        ("english_8a", vec![
-            ("E8OL-Ia-1", "use appropriate listening strategies based on purpose"),
-            ("E8OL-Ib-1", "employ analytical listening for information"),
-            ("E8OL-Ic-1", "distinguish between fact and opinion"),
-        ]),
-        ("math_10a", vec![
-            ("M10AL-Ia-1", "generates patterns"),
-            ("M10AL-Ib-1", "illustrates an arithmetic sequence"),
-            ("M10AL-Ic-1", "solves problems involving arithmetic sequences"),
-            ("M10AL-Id-1", "illustrates a geometric sequence"),
-        ]),
-        ("science_10a", vec![
-            ("S10MT-Ia-1", "explain the formation of ions"),
-            ("S10MT-Ib-1", "write formulas of ionic compounds"),
-            ("S10MT-Ic-1", "name ionic compounds"),
-        ]),
-        ("english_10a", vec![
-            ("E10OL-Ia-1", "listen for important points"),
-            ("E10OL-Ib-1", "note specific details"),
-            ("E10OL-Ic-1", "employ correct listening strategies"),
-            ("E10OL-Id-1", "assess the effectiveness of listening strategies"),
-        ]),
-        ("math_12a", vec![
-            ("M12GM-Ia-1", "represents real-life situations using functions"),
-            ("M12GM-Ib-1", "evaluates functions"),
-            ("M12GM-Ic-1", "performs operations on functions"),
-        ]),
-        ("science_12a", vec![
-            ("S12LL-Ia-1", "explain the structure and function of DNA"),
-            ("S12LL-Ib-1", "explain the process of protein synthesis"),
-            ("S12LL-Ic-1", "describe how mutations affect the phenotype"),
-            ("S12LL-Id-1", "explain how genes are inherited"),
-        ]),
-        ("english_12a", vec![
-            ("E12OL-Ia-1", "formulate assumptions"),
-            ("E12OL-Ib-1", "analyze intentions of speakers"),
-            ("E12OL-Ic-1", "assess the effectiveness of communication"),
-        ]),
-        ("math_8b", vec![
-            ("M8AL-IIa-1", "differentiates linear inequalities from linear equations"),
-            ("M8AL-IIa-2", "illustrates and graphs linear inequalities"),
-            ("M8AL-IIa-3", "solves problems involving linear inequalities"),
-            ("M8AL-IIb-1", "solves a system of linear inequalities"),
-        ]),
-        ("science_8b", vec![
-            ("S8LT-IIIa-1", "explain the major stages of the cell cycle"),
-            ("S8LT-IIIb-1", "describe the process of mitosis and meiosis"),
-            ("S8LT-IIIc-1", "explain the different types of asexual reproduction"),
-            ("S8LT-IIId-1", "describe the process of sexual reproduction"),
-        ]),
-        ("english_8b", vec![
-            ("E8OL-IVa-1", "distinguish the types of speech context"),
-            ("E8OL-IVb-1", "identifies the types of speech act"),
-            ("E8OL-IVc-1", "provides appropriate responses"),
-        ]),
-        ("advisory_8a", vec![
-            ("AD8PH-Ia-1", "demonstrates positive personal health practices"),
-            ("AD8PH-Ib-1", "explains the dimensions of holistic health"),
-            ("AD8PH-Ic-1", "analyzes the dimensions of holistic health"),
-        ]),
-        ("advisory_10a", vec![
-            ("AD10PH-Ia-1", "applies decision-making skills"),
-            ("AD10PH-Ib-1", "analyzes health information"),
-            ("AD10PH-Ic-1", "demonstrates health appraisal skills"),
-        ]),
-        ("math_10b_archived", vec![
-            ("M10AL-IIa-1", "illustrates polynomial functions"),
-            ("M10AL-IIb-1", "graphs polynomial functions"),
-            ("M10AL-IIc-1", "solves problems involving polynomial functions"),
-        ]),
+        (
+            "math_8a",
+            vec![
+                (
+                    "M8AL-Ia-1",
+                    "factors completely different types of polynomials",
+                ),
+                (
+                    "M8AL-Ib-1",
+                    "solves problems involving factors of polynomials",
+                ),
+                ("M8AL-Ic-1", "illustrates rational algebraic expressions"),
+                (
+                    "M8AL-Id-1",
+                    "performs operations on rational algebraic expressions",
+                ),
+            ],
+        ),
+        (
+            "science_8a",
+            vec![
+                (
+                    "S8MT-Ia-1",
+                    "describe the arrangement of elements in the periodic table",
+                ),
+                ("S8MT-Ib-1", "trace the development of the periodic table"),
+                (
+                    "S8MT-Ic-1",
+                    "use the periodic table to find information about an element",
+                ),
+                (
+                    "S8MT-Id-1",
+                    "describe the formation of ionic and covalent bonds",
+                ),
+            ],
+        ),
+        (
+            "english_8a",
+            vec![
+                (
+                    "E8OL-Ia-1",
+                    "use appropriate listening strategies based on purpose",
+                ),
+                ("E8OL-Ib-1", "employ analytical listening for information"),
+                ("E8OL-Ic-1", "distinguish between fact and opinion"),
+            ],
+        ),
+        (
+            "math_10a",
+            vec![
+                ("M10AL-Ia-1", "generates patterns"),
+                ("M10AL-Ib-1", "illustrates an arithmetic sequence"),
+                (
+                    "M10AL-Ic-1",
+                    "solves problems involving arithmetic sequences",
+                ),
+                ("M10AL-Id-1", "illustrates a geometric sequence"),
+            ],
+        ),
+        (
+            "science_10a",
+            vec![
+                ("S10MT-Ia-1", "explain the formation of ions"),
+                ("S10MT-Ib-1", "write formulas of ionic compounds"),
+                ("S10MT-Ic-1", "name ionic compounds"),
+            ],
+        ),
+        (
+            "english_10a",
+            vec![
+                ("E10OL-Ia-1", "listen for important points"),
+                ("E10OL-Ib-1", "note specific details"),
+                ("E10OL-Ic-1", "employ correct listening strategies"),
+                (
+                    "E10OL-Id-1",
+                    "assess the effectiveness of listening strategies",
+                ),
+            ],
+        ),
+        (
+            "math_12a",
+            vec![
+                (
+                    "M12GM-Ia-1",
+                    "represents real-life situations using functions",
+                ),
+                ("M12GM-Ib-1", "evaluates functions"),
+                ("M12GM-Ic-1", "performs operations on functions"),
+            ],
+        ),
+        (
+            "science_12a",
+            vec![
+                ("S12LL-Ia-1", "explain the structure and function of DNA"),
+                ("S12LL-Ib-1", "explain the process of protein synthesis"),
+                ("S12LL-Ic-1", "describe how mutations affect the phenotype"),
+                ("S12LL-Id-1", "explain how genes are inherited"),
+            ],
+        ),
+        (
+            "english_12a",
+            vec![
+                ("E12OL-Ia-1", "formulate assumptions"),
+                ("E12OL-Ib-1", "analyze intentions of speakers"),
+                ("E12OL-Ic-1", "assess the effectiveness of communication"),
+            ],
+        ),
+        (
+            "math_8b",
+            vec![
+                (
+                    "M8AL-IIa-1",
+                    "differentiates linear inequalities from linear equations",
+                ),
+                ("M8AL-IIa-2", "illustrates and graphs linear inequalities"),
+                (
+                    "M8AL-IIa-3",
+                    "solves problems involving linear inequalities",
+                ),
+                ("M8AL-IIb-1", "solves a system of linear inequalities"),
+            ],
+        ),
+        (
+            "science_8b",
+            vec![
+                ("S8LT-IIIa-1", "explain the major stages of the cell cycle"),
+                ("S8LT-IIIb-1", "describe the process of mitosis and meiosis"),
+                (
+                    "S8LT-IIIc-1",
+                    "explain the different types of asexual reproduction",
+                ),
+                ("S8LT-IIId-1", "describe the process of sexual reproduction"),
+            ],
+        ),
+        (
+            "english_8b",
+            vec![
+                ("E8OL-IVa-1", "distinguish the types of speech context"),
+                ("E8OL-IVb-1", "identifies the types of speech act"),
+                ("E8OL-IVc-1", "provides appropriate responses"),
+            ],
+        ),
+        (
+            "advisory_8a",
+            vec![
+                (
+                    "AD8PH-Ia-1",
+                    "demonstrates positive personal health practices",
+                ),
+                ("AD8PH-Ib-1", "explains the dimensions of holistic health"),
+                ("AD8PH-Ic-1", "analyzes the dimensions of holistic health"),
+            ],
+        ),
+        (
+            "advisory_10a",
+            vec![
+                ("AD10PH-Ia-1", "applies decision-making skills"),
+                ("AD10PH-Ib-1", "analyzes health information"),
+                ("AD10PH-Ic-1", "demonstrates health appraisal skills"),
+            ],
+        ),
+        (
+            "math_10b_archived",
+            vec![
+                ("M10AL-IIa-1", "illustrates polynomial functions"),
+                ("M10AL-IIb-1", "graphs polynomial functions"),
+                (
+                    "M10AL-IIc-1",
+                    "solves problems involving polynomial functions",
+                ),
+            ],
+        ),
     ];
 
     let mut competencies = Vec::with_capacity(60);
@@ -543,45 +644,227 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     // Class configs: (class_key, class_id, tos_id, term, component_base)
     let class_configs = [
         // T1
-        ("math_8a", class_id("math_8a"), tos_id("math_8a_tos"), 1, "written_work"),
-        ("science_8a", class_id("science_8a"), tos_id("science_8a_tos"), 1, "written_work"),
-        ("english_8a", class_id("english_8a"), tos_id("english_8a_tos"), 1, "performance_task"),
-        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 1, "term_assessment"),
-        ("science_10a", class_id("science_10a"), tos_id("science_10a_tos"), 1, "written_work"),
-        ("english_10a", class_id("english_10a"), tos_id("english_10a_tos"), 1, "performance_task"),
-        ("math_12a", class_id("math_12a"), tos_id("math_12a_tos"), 1, "written_work"),
-        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 1, "term_assessment"),
-        ("english_12a", class_id("english_12a"), tos_id("english_12a_tos"), 1, "performance_task"),
+        (
+            "math_8a",
+            class_id("math_8a"),
+            tos_id("math_8a_tos"),
+            1,
+            "written_work",
+        ),
+        (
+            "science_8a",
+            class_id("science_8a"),
+            tos_id("science_8a_tos"),
+            1,
+            "written_work",
+        ),
+        (
+            "english_8a",
+            class_id("english_8a"),
+            tos_id("english_8a_tos"),
+            1,
+            "performance_task",
+        ),
+        (
+            "math_10a",
+            class_id("math_10a"),
+            tos_id("math_10a_tos"),
+            1,
+            "term_assessment",
+        ),
+        (
+            "science_10a",
+            class_id("science_10a"),
+            tos_id("science_10a_tos"),
+            1,
+            "written_work",
+        ),
+        (
+            "english_10a",
+            class_id("english_10a"),
+            tos_id("english_10a_tos"),
+            1,
+            "performance_task",
+        ),
+        (
+            "math_12a",
+            class_id("math_12a"),
+            tos_id("math_12a_tos"),
+            1,
+            "written_work",
+        ),
+        (
+            "science_12a",
+            class_id("science_12a"),
+            tos_id("science_12a_tos"),
+            1,
+            "term_assessment",
+        ),
+        (
+            "english_12a",
+            class_id("english_12a"),
+            tos_id("english_12a_tos"),
+            1,
+            "performance_task",
+        ),
         // T2
-        ("math_8b", class_id("math_8b"), tos_id("math_8b_tos"), 2, "written_work"),
-        ("science_8b", class_id("science_8b"), tos_id("science_8b_tos"), 2, "performance_task"),
-        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 2, "term_assessment"),
-        ("advisory_8a", class_id("advisory_8a"), tos_id("advisory_8a_tos"), 2, "written_work"),
-        ("advisory_10a", class_id("advisory_10a"), tos_id("advisory_10a_tos"), 2, "performance_task"),
-        ("math_10b_archived", class_id("math_10b_archived"), tos_id("math_10b_archived_tos"), 2, "written_work"),
+        (
+            "math_8b",
+            class_id("math_8b"),
+            tos_id("math_8b_tos"),
+            2,
+            "written_work",
+        ),
+        (
+            "science_8b",
+            class_id("science_8b"),
+            tos_id("science_8b_tos"),
+            2,
+            "performance_task",
+        ),
+        (
+            "english_8b",
+            class_id("english_8b"),
+            tos_id("english_8b_tos"),
+            2,
+            "term_assessment",
+        ),
+        (
+            "advisory_8a",
+            class_id("advisory_8a"),
+            tos_id("advisory_8a_tos"),
+            2,
+            "written_work",
+        ),
+        (
+            "advisory_10a",
+            class_id("advisory_10a"),
+            tos_id("advisory_10a_tos"),
+            2,
+            "performance_task",
+        ),
+        (
+            "math_10b_archived",
+            class_id("math_10b_archived"),
+            tos_id("math_10b_archived_tos"),
+            2,
+            "written_work",
+        ),
         // T3
-        ("math_8a", class_id("math_8a"), tos_id("math_8a_tos"), 3, "written_work"),
-        ("science_8a", class_id("science_8a"), tos_id("science_8a_tos"), 3, "written_work"),
-        ("english_8a", class_id("english_8a"), tos_id("english_8a_tos"), 3, "performance_task"),
-        ("math_10a", class_id("math_10a"), tos_id("math_10a_tos"), 3, "term_assessment"),
-        ("science_10a", class_id("science_10a"), tos_id("science_10a_tos"), 3, "written_work"),
-        ("english_10a", class_id("english_10a"), tos_id("english_10a_tos"), 3, "performance_task"),
-        ("math_12a", class_id("math_12a"), tos_id("math_12a_tos"), 3, "written_work"),
-        ("science_12a", class_id("science_12a"), tos_id("science_12a_tos"), 3, "term_assessment"),
-        ("english_12a", class_id("english_12a"), tos_id("english_12a_tos"), 3, "performance_task"),
+        (
+            "math_8a",
+            class_id("math_8a"),
+            tos_id("math_8a_tos"),
+            3,
+            "written_work",
+        ),
+        (
+            "science_8a",
+            class_id("science_8a"),
+            tos_id("science_8a_tos"),
+            3,
+            "written_work",
+        ),
+        (
+            "english_8a",
+            class_id("english_8a"),
+            tos_id("english_8a_tos"),
+            3,
+            "performance_task",
+        ),
+        (
+            "math_10a",
+            class_id("math_10a"),
+            tos_id("math_10a_tos"),
+            3,
+            "term_assessment",
+        ),
+        (
+            "science_10a",
+            class_id("science_10a"),
+            tos_id("science_10a_tos"),
+            3,
+            "written_work",
+        ),
+        (
+            "english_10a",
+            class_id("english_10a"),
+            tos_id("english_10a_tos"),
+            3,
+            "performance_task",
+        ),
+        (
+            "math_12a",
+            class_id("math_12a"),
+            tos_id("math_12a_tos"),
+            3,
+            "written_work",
+        ),
+        (
+            "science_12a",
+            class_id("science_12a"),
+            tos_id("science_12a_tos"),
+            3,
+            "term_assessment",
+        ),
+        (
+            "english_12a",
+            class_id("english_12a"),
+            tos_id("english_12a_tos"),
+            3,
+            "performance_task",
+        ),
         // T4
-        ("math_8b", class_id("math_8b"), tos_id("math_8b_tos"), 4, "written_work"),
-        ("science_8b", class_id("science_8b"), tos_id("science_8b_tos"), 4, "performance_task"),
-        ("english_8b", class_id("english_8b"), tos_id("english_8b_tos"), 4, "term_assessment"),
-        ("advisory_8a", class_id("advisory_8a"), tos_id("advisory_8a_tos"), 4, "written_work"),
-        ("advisory_10a", class_id("advisory_10a"), tos_id("advisory_10a_tos"), 4, "performance_task"),
-        ("math_10b_archived", class_id("math_10b_archived"), tos_id("math_10b_archived_tos"), 4, "written_work"),
+        (
+            "math_8b",
+            class_id("math_8b"),
+            tos_id("math_8b_tos"),
+            4,
+            "written_work",
+        ),
+        (
+            "science_8b",
+            class_id("science_8b"),
+            tos_id("science_8b_tos"),
+            4,
+            "performance_task",
+        ),
+        (
+            "english_8b",
+            class_id("english_8b"),
+            tos_id("english_8b_tos"),
+            4,
+            "term_assessment",
+        ),
+        (
+            "advisory_8a",
+            class_id("advisory_8a"),
+            tos_id("advisory_8a_tos"),
+            4,
+            "written_work",
+        ),
+        (
+            "advisory_10a",
+            class_id("advisory_10a"),
+            tos_id("advisory_10a_tos"),
+            4,
+            "performance_task",
+        ),
+        (
+            "math_10b_archived",
+            class_id("math_10b_archived"),
+            tos_id("math_10b_archived_tos"),
+            4,
+            "written_work",
+        ),
     ];
 
     let mut assessments = Vec::with_capacity(45);
     let mut assessment_counter = 0;
 
-    for (class_idx, (class_key, class_id, tos_id, term, _base_component)) in class_configs.iter().enumerate() {
+    for (class_idx, (class_key, class_id, tos_id, term, _base_component)) in
+        class_configs.iter().enumerate()
+    {
         // 1-3 assessments per class (deterministic: 1 + class_idx % 3)
         let num_assessments = 1 + (class_idx % 3);
 
@@ -592,9 +875,24 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             // Time window: 60% closed, 30% open, 10% future
             let time_window = assess_global_idx % 10;
             let (open_at, close_at, is_closed, is_future) = match time_window {
-                0..=5 => (now - chrono::Duration::days(7), now - chrono::Duration::days(1), true, false),      // Closed (60%)
-                6..=8 => (now - chrono::Duration::days(1), now + chrono::Duration::days(7), false, false), // Open (30%)
-                _ => (now + chrono::Duration::days(1), now + chrono::Duration::days(14), false, true),  // Future (10%)
+                0..=5 => (
+                    now - chrono::Duration::days(7),
+                    now - chrono::Duration::days(1),
+                    true,
+                    false,
+                ), // Closed (60%)
+                6..=8 => (
+                    now - chrono::Duration::days(1),
+                    now + chrono::Duration::days(7),
+                    false,
+                    false,
+                ), // Open (30%)
+                _ => (
+                    now + chrono::Duration::days(1),
+                    now + chrono::Duration::days(14),
+                    false,
+                    true,
+                ), // Future (10%)
             };
 
             let is_published = !is_future;
@@ -608,13 +906,8 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             };
 
             // Generate questions
-            let questions = generate_questions(
-                class_key,
-                class_idx,
-                assess_idx,
-                *term,
-                question_count,
-            );
+            let questions =
+                generate_questions(class_key, class_idx, assess_idx, *term, question_count);
 
             let total_points: i32 = questions.iter().map(|q| q.points).sum();
 
@@ -625,13 +918,24 @@ pub fn manual_assessments(ctx: &SeedContext) -> Vec<AssessmentSpec> {
             // Time limit: 30, 45, or 60 minutes
             let time_limit = 30 + ((class_idx + assess_idx) % 3) * 15;
 
-            let assess_id = assessment_id(&format!("{}_t{}_assess_{}", class_key, term, assess_idx));
+            let assess_id =
+                assessment_id(&format!("{}_t{}_assess_{}", class_key, term, assess_idx));
 
             assessments.push(AssessmentSpec {
                 id: assess_id,
                 class_id: *class_id,
-                title: format!("Assessment {} - {} ({})", assess_idx + 1, class_key.replace('_', " "),
-                    if is_closed { "Closed" } else if is_future { "Future" } else { "Open" }),
+                title: format!(
+                    "Assessment {} - {} ({})",
+                    assess_idx + 1,
+                    class_key.replace('_', " "),
+                    if is_closed {
+                        "Closed"
+                    } else if is_future {
+                        "Future"
+                    } else {
+                        "Open"
+                    }
+                ),
                 description: Some("Seeded assessment for manual testing".into()),
                 time_limit_minutes: time_limit as i32,
                 open_at,
@@ -712,7 +1016,11 @@ fn generate_questions(
             essay_count += 1;
             ("essay", false, vec![]) // 10% essay (capped)
         } else {
-            ("enumeration", false, vec!["item1".into(), "item2".into(), "item3".into()]) // 15% enumeration
+            (
+                "enumeration",
+                false,
+                vec!["item1".into(), "item2".into(), "item3".into()],
+            ) // 15% enumeration
         };
 
         // Difficulty rotates
@@ -720,25 +1028,64 @@ fn generate_questions(
         let difficulty = difficulties[q_idx % 3];
 
         // Cognitive level rotates
-        let cognitive_levels = ["remembering", "understanding", "applying", "analyzing", "evaluating", "creating"];
+        let cognitive_levels = [
+            "remembering",
+            "understanding",
+            "applying",
+            "analyzing",
+            "evaluating",
+            "creating",
+        ];
         let cognitive_level = cognitive_levels[q_idx % 6];
 
         // Points: 1, 2, or 5
-        let points = if q_type == "essay" { 5 } else if difficulty == "hard" { 2 } else { 1 };
+        let points = if q_type == "essay" {
+            5
+        } else if difficulty == "hard" {
+            2
+        } else {
+            1
+        };
 
         // Competency assignment
         let tos_competency_id = comp_ids.get(q_idx % comp_ids.len()).copied();
 
-        let q_id = question_id(&format!("{}_t{}_assess_{}", class_key, term_number, assess_idx), q_idx as u32);
+        let q_id = question_id(
+            &format!("{}_t{}_assess_{}", class_key, term_number, assess_idx),
+            q_idx as u32,
+        );
 
         // Generate choices for MCQ
         let choices = if has_choices {
-            let q_id_str = format!("{}_t{}_assess_{}_q{}", class_key, term_number, assess_idx, q_idx);
+            let q_id_str = format!(
+                "{}_t{}_assess_{}_q{}",
+                class_key, term_number, assess_idx, q_idx
+            );
             vec![
-                ChoiceSpec { id: choice_id(&q_id_str, 0), text: "Option A".into(), is_correct: true, order: 0 },
-                ChoiceSpec { id: choice_id(&q_id_str, 1), text: "Option B".into(), is_correct: false, order: 1 },
-                ChoiceSpec { id: choice_id(&q_id_str, 2), text: "Option C".into(), is_correct: false, order: 2 },
-                ChoiceSpec { id: choice_id(&q_id_str, 3), text: "Option D".into(), is_correct: false, order: 3 },
+                ChoiceSpec {
+                    id: choice_id(&q_id_str, 0),
+                    text: "Option A".into(),
+                    is_correct: true,
+                    order: 0,
+                },
+                ChoiceSpec {
+                    id: choice_id(&q_id_str, 1),
+                    text: "Option B".into(),
+                    is_correct: false,
+                    order: 1,
+                },
+                ChoiceSpec {
+                    id: choice_id(&q_id_str, 2),
+                    text: "Option C".into(),
+                    is_correct: false,
+                    order: 2,
+                },
+                ChoiceSpec {
+                    id: choice_id(&q_id_str, 3),
+                    text: "Option D".into(),
+                    is_correct: false,
+                    order: 3,
+                },
             ]
         } else {
             vec![]
@@ -816,9 +1163,9 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
 
             // Due dates: 40% past, 40% soon, 20% future
             let due_date = match assign_global_idx % 10 {
-                0..=3 => ctx.days_ago(5),          // Past due (40%)
-                4..=7 => ctx.days_from_now(2),      // Due soon (40%)
-                _ => ctx.days_from_now(14),        // Future (20%)
+                0..=3 => ctx.days_ago(5),      // Past due (40%)
+                4..=7 => ctx.days_from_now(2), // Due soon (40%)
+                _ => ctx.days_from_now(14),    // Future (20%)
             };
 
             // Component rotates
@@ -832,12 +1179,17 @@ pub fn manual_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
                 _ => 50,
             };
 
-            let assign_id = assignment_id(&format!("{}_t{}_assign_{}", class_key, term, assign_idx));
+            let assign_id =
+                assignment_id(&format!("{}_t{}_assign_{}", class_key, term, assign_idx));
 
             assignments.push(AssignmentSpec {
                 id: assign_id,
                 class_id: *class_id,
-                title: format!("Assignment {} - {}", assign_idx + 1, class_key.replace('_', " ")),
+                title: format!(
+                    "Assignment {} - {}",
+                    assign_idx + 1,
+                    class_key.replace('_', " ")
+                ),
                 instructions: "Submit your answer as plain text.".into(),
                 total_points: points,
                 allows_text_submission: true,
@@ -893,11 +1245,7 @@ pub fn manual_materials(ctx: &SeedContext) -> Vec<MaterialSpec> {
         ("math_10b_archived", class_id("math_10b_archived")),
     ];
 
-    let topics = [
-        "Introduction",
-        "Fundamental Concepts",
-        "Advanced Topics",
-    ];
+    let topics = ["Introduction", "Fundamental Concepts", "Advanced Topics"];
 
     let lorem_content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
 

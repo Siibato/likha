@@ -20,7 +20,10 @@ pub async fn insert_materials(
             updated_at: Set(spec.created_at),
             deleted_at: Set(None),
         };
-        model.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        model
+            .insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
     Ok(())
 }

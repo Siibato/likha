@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::class_participants;
 use crate::utils::{AppError, AppResult};
+use ::entity::class_participants;
 use std::collections::HashMap;
 
 pub async fn count_students_for_classes(
@@ -25,5 +25,8 @@ pub async fn count_students_for_classes(
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-    Ok(rows.into_iter().map(|(id, count)| (id, count as usize)).collect())
+    Ok(rows
+        .into_iter()
+        .map(|(id, count)| (id, count as usize))
+        .collect())
 }

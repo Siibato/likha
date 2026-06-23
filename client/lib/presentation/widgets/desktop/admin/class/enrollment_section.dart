@@ -87,7 +87,6 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
     ref.listen<EnrollmentState>(enrollmentProvider, (prev, next) {
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
         ref.read(enrollmentProvider.notifier).clearMessages();
-        ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
       }
       if (next.error != null && prev?.error != next.error) {
         ref.read(enrollmentProvider.notifier).clearMessages();
@@ -366,16 +365,6 @@ class _StudentRow extends StatelessWidget {
                             color: AppColors.foregroundDark,
                           ),
                         ),
-                        if (student.email != null && student.email.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            student.email,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.foregroundTertiary,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),

@@ -1,32 +1,41 @@
-use std::path::PathBuf;
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult};
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::utils::file_service;
+use crate::utils::{AppError, AppResult};
+use std::path::PathBuf;
+use uuid::Uuid;
 
 pub async fn delete_file(
     assignment_repo: &AssignmentRepository,
     file_id: Uuid,
     student_id: Uuid,
 ) -> AppResult<()> {
-    let file = assignment_repo.find_file_by_id(file_id).await?
+    let file = assignment_repo
+        .find_file_by_id(file_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("File not found".to_string()))?;
 
-    let submission = assignment_repo.find_submission_by_id(file.submission_id).await?
+    let submission = assignment_repo
+        .find_submission_by_id(file.submission_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
     if submission.student_id != student_id {
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    if submission.status != "draft" && submission.status != "returned" && submission.status != "submitted" {
+    if submission.status != "draft"
+        && submission.status != "returned"
+        && submission.status != "submitted"
+    {
         return Err(AppError::BadRequest(
             "Can only delete files from draft, returned, or submitted (before deadline) submissions".to_string(),
         ));
     }
 
     if submission.status == "submitted" {
-        let assignment = assignment_repo.find_by_id(submission.assignment_id).await?
+        let assignment = assignment_repo
+            .find_by_id(submission.assignment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
         let now = chrono::Utc::now().naive_utc();
         if now > assignment.due_at {

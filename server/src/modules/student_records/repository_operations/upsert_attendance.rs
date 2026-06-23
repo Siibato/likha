@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::attendance_records;
 use crate::utils::{AppError, AppResult};
+use ::entity::attendance_records;
 
 pub async fn upsert_attendance(
     db: &DatabaseConnection,
@@ -43,9 +43,9 @@ pub async fn upsert_attendance(
         ],
     );
 
-    db.execute(stmt)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to upsert attendance: {}", e)))?;
+    db.execute(stmt).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to upsert attendance: {}", e))
+    })?;
 
     attendance_records::Entity::find()
         .filter(attendance_records::Column::StudentId.eq(student_id))
@@ -55,5 +55,7 @@ pub async fn upsert_attendance(
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-        .ok_or_else(|| AppError::InternalServerError("Attendance record not found after upsert".to_string()))
+        .ok_or_else(|| {
+            AppError::InternalServerError("Attendance record not found after upsert".to_string())
+        })
 }

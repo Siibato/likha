@@ -138,11 +138,7 @@ async fn get_grades_unauthenticated_returns_401() {
     let class_id = seed_class(&db, teacher.id).await;
     let app = build_test_app(db).await;
 
-    let req = json_req(
-        "GET",
-        &format!("/api/v1/classes/{class_id}/grades"),
-        None,
-    );
+    let req = json_req("GET", &format!("/api/v1/classes/{class_id}/grades"), None);
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
 }

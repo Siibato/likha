@@ -18,6 +18,7 @@ abstract class AuthLocalDataSource {
   Future<void> clearActivityLogsForUser(String userId);
   Future<void> deleteAccountLocally(String userId, {Transaction? txn});
   Future<void> clearAllCache();
+  Future<bool> usernameExists(String username);
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -70,4 +71,8 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   @override
   Future<void> clearAllCache() =>
       ops.clearAllCache(localDatabase);
+
+  @override
+  Future<bool> usernameExists(String username) =>
+      ops.usernameExists(localDatabase, username);
 }

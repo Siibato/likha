@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::utils::{parse_datetime, fmt_utc, validators::Validator};
 use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
+use crate::utils::{fmt_utc, parse_datetime, validators::Validator};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn update_assessment(
@@ -10,18 +10,30 @@ impl crate::modules::assessment::service::AssessmentService {
         request: UpdateAssessmentRequest,
         teacher_id: Uuid,
     ) -> AppResult<AssessmentResponse> {
-        let assessment = self.assessment_repo.find_by_id(assessment_id).await?
+        let assessment = self
+            .assessment_repo
+            .find_by_id(assessment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let _class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self
+            .class_repo
+            .find_by_id(assessment.class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, assessment.class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
         if assessment.is_published {
-            return Err(AppError::BadRequest("Cannot edit a published assessment".to_string()));
+            return Err(AppError::BadRequest(
+                "Cannot edit a published assessment".to_string(),
+            ));
         }
 
         let title = Validator::validate_optional_title(request.title)?;
@@ -35,27 +47,36 @@ impl crate::modules::assessment::service::AssessmentService {
             None => None,
         };
 
-        let updated = self.assessment_repo.update_assessment(
-            assessment_id,
-            title,
-            request.description,
-            request.time_limit_minutes,
-            open_at,
-            close_at,
-            request.show_results_immediately,
-            request.term_number.map(|q| Some(q)),
-            request.component.clone().map(|c| Some(c)),
-            request.tos_id,
-        ).await?;
+        let updated = self
+            .assessment_repo
+            .update_assessment(
+                assessment_id,
+                title,
+                request.description,
+                request.time_limit_minutes,
+                open_at,
+                close_at,
+                request.show_results_immediately,
+                request.term_number.map(|q| Some(q)),
+                request.component.clone().map(|c| Some(c)),
+                request.tos_id,
+            )
+            .await?;
 
-        let question_count = self.assessment_repo
-            .find_questions_by_assessment_id(assessment_id).await?.len();
-        let submission_count = self.assessment_repo
-            .count_submissions_by_assessment_id(assessment_id).await?;
+        let question_count = self
+            .assessment_repo
+            .find_questions_by_assessment_id(assessment_id)
+            .await?
+            .len();
+        let submission_count = self
+            .assessment_repo
+            .count_submissions_by_assessment_id(assessment_id)
+            .await?;
 
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_assessment_detail(assessment_id).await;
-            inv.invalidate_assessments(teacher_id, assessment.class_id).await;
+            inv.invalidate_assessments(teacher_id, assessment.class_id)
+                .await;
         }
 
         Ok(AssessmentResponse {

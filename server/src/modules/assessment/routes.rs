@@ -59,10 +59,7 @@ pub fn routes(assessment_service: Arc<AssessmentService>) -> Router {
             "/assessments/{id}/questions/reorder",
             post(assessment_handler::reorder_questions),
         )
-        .route(
-            "/questions/{id}",
-            put(assessment_handler::update_question),
-        )
+        .route("/questions/{id}", put(assessment_handler::update_question))
         .route(
             "/questions/{id}",
             delete(assessment_handler::delete_question),

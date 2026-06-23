@@ -32,25 +32,20 @@ impl SyncConflictService {
         resolution: &str,
     ) -> AppResult<ConflictResolutionResponse> {
         match resolution {
-            "server_wins" => {
-                Ok(ConflictResolutionResponse {
-                    success: true,
-                    message: Some("Conflict resolved using server-wins strategy".to_string()),
-                    resolved_entity: None,
-                })
-            }
-            "client_wins" => {
-                Ok(ConflictResolutionResponse {
-                    success: true,
-                    message: Some("Conflict resolved: client data would be restored".to_string()),
-                    resolved_entity: None,
-                })
-            }
+            "server_wins" => Ok(ConflictResolutionResponse {
+                success: true,
+                message: Some("Conflict resolved using server-wins strategy".to_string()),
+                resolved_entity: None,
+            }),
+            "client_wins" => Ok(ConflictResolutionResponse {
+                success: true,
+                message: Some("Conflict resolved: client data would be restored".to_string()),
+                resolved_entity: None,
+            }),
             _ => Err(AppError::BadRequest(format!(
                 "Unknown resolution strategy: {}",
                 resolution
             ))),
         }
     }
-
 }

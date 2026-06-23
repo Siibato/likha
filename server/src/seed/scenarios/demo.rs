@@ -29,29 +29,58 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let materials = fixtures::demo_materials(&ctx);
     let answers = fixtures::demo_answers();
 
-    let teachers: Vec<_> = users.iter().filter(|u| u.role == "teacher").cloned().collect();
-    let students: Vec<_> = users.iter().filter(|u| u.role == "student").cloned().collect();
+    let teachers: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "teacher")
+        .cloned()
+        .collect();
+    let students: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "student")
+        .cloned()
+        .collect();
 
     // Generate submissions using tiered answer bank
     let assessment_submissions = generators::demo_submissions::generate_assessment_submissions(
-        &ctx, &assessments, &students, &enrollments, &answers,
+        &ctx,
+        &assessments,
+        &students,
+        &enrollments,
+        &answers,
     );
     let assignment_submissions = generators::demo_submissions::generate_assignment_submissions(
-        &ctx, &assignments, &students, &teachers, &enrollments, &answers,
+        &ctx,
+        &assignments,
+        &students,
+        &teachers,
+        &enrollments,
+        &answers,
     );
 
     // Generate gradebook data derived from submissions
     let grade_records = generators::demo_grades::generate_grade_records(&classes);
-    let grade_items = generators::demo_grades::generate_grade_items(&assessments, &assignments, &ctx);
+    let grade_items =
+        generators::demo_grades::generate_grade_items(&assessments, &assignments, &ctx);
     let grade_scores = generators::demo_grades::generate_grade_scores(
-        &grade_items, &students, &assessment_submissions, &assignment_submissions, &enrollments,
+        &grade_items,
+        &students,
+        &assessment_submissions,
+        &assignment_submissions,
+        &enrollments,
     );
     let term_grades = generators::demo_grades::generate_term_grades(
-        &grade_records, &grade_scores, &grade_items, &students, &enrollments, &ctx,
+        &grade_records,
+        &grade_scores,
+        &grade_items,
+        &students,
+        &enrollments,
+        &ctx,
     );
 
     // Insert everything in FK-safe order
-    disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    disable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
@@ -79,7 +108,9 @@ pub async fn seed_demo_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
     inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
-    enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    enable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     // Build and export manifest
     let manifest = build_manifest(&users, &classes, &assessments, &assignments);

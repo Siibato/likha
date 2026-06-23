@@ -1,5 +1,5 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use chrono::Utc;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 
 use crate::seed::specs::{AttendanceSpec, CoreValuesSpec};
 use crate::utils::AppError;

@@ -1,6 +1,5 @@
 use crate::modules::auth::schema::{
-    ActivateAccountRequest, CheckUsernameRequest, CreateAccountRequest, LoginRequest,
-    UserResponse,
+    ActivateAccountRequest, CheckUsernameRequest, CreateAccountRequest, LoginRequest, UserResponse,
 };
 use uuid::Uuid;
 

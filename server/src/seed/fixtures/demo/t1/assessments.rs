@@ -1,13 +1,18 @@
 //! T1 assessments for demo seeding: Plate Tectonics.
 
+use super::super::{aid, build_questions, cid, compid, tid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, tid, compid, aid, build_questions};
 
 pub fn demo_assessments_t1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(20);
     let now = ctx.now();
-    let comps = &[compid("s10t1_comp_0"), compid("s10t1_comp_1"), compid("s10t1_comp_2"), compid("s10t1_comp_3")];
+    let comps = &[
+        compid("s10t1_comp_0"),
+        compid("s10t1_comp_1"),
+        compid("s10t1_comp_2"),
+        compid("s10t1_comp_3"),
+    ];
 
     let quiz1_qs = build_questions("t1_quiz1",
         &[
@@ -76,33 +81,64 @@ pub fn demo_assessments_t1(ctx: &SeedContext) -> Vec<AssessmentSpec> {
 
     vec![
         AssessmentSpec {
-            id: aid("t1_quiz1"), class_id: cid("sci10"),
+            id: aid("t1_quiz1"),
+            class_id: cid("sci10"),
             title: "T1 Quiz 1: Earth's Structure & Plate Boundaries".into(),
             description: Some("10-item quiz on Earth's interior and basic plate tectonics.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(7), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t1"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 1,
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(7),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t1"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 1,
             questions: quiz1_qs,
         },
         AssessmentSpec {
-            id: aid("t1_quiz2"), class_id: cid("sci10"),
+            id: aid("t1_quiz2"),
+            class_id: cid("sci10"),
             title: "T1 Quiz 2: Earthquakes & Volcanoes".into(),
-            description: Some("10-item quiz on earthquakes, volcanoes, and the Ring of Fire.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(5), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t1"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 1,
+            description: Some(
+                "10-item quiz on earthquakes, volcanoes, and the Ring of Fire.".into(),
+            ),
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(5),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t1"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 1,
             questions: quiz2_qs,
         },
         AssessmentSpec {
-            id: aid("t1_exam"), class_id: cid("sci10"),
+            id: aid("t1_exam"),
+            class_id: cid("sci10"),
             title: "T1 Term Exam: Earth & Space Science".into(),
-            description: Some("25-item term assessment on plate tectonics, earthquakes, and volcanoes.".into()),
-            time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "term_assessment".into(),
-            tos_id: tid("sci10_tos_t1"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 1,
+            description: Some(
+                "25-item term assessment on plate tectonics, earthquakes, and volcanoes.".into(),
+            ),
+            time_limit_minutes: 60,
+            open_at: now - chrono::Duration::days(10),
+            close_at: now - chrono::Duration::days(2),
+            show_results_immediately: true,
+            total_points: 25,
+            component: "term_assessment".into(),
+            tos_id: tid("sci10_tos_t1"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 1,
             questions: exam_qs,
         },
     ]

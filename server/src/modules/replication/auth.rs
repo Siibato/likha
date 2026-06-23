@@ -56,16 +56,14 @@ where
             let secret = std::env::var("REPLICATION_SECRET").unwrap_or_default();
 
             if secret.is_empty() || token != secret {
-                return Err(
-                    (
-                        StatusCode::UNAUTHORIZED,
-                        Json(AuthError {
-                            error: "Unauthorized".to_string(),
-                            message: "Invalid replication secret".to_string(),
-                        }),
-                    )
-                        .into_response(),
-                );
+                return Err((
+                    StatusCode::UNAUTHORIZED,
+                    Json(AuthError {
+                        error: "Unauthorized".to_string(),
+                        message: "Invalid replication secret".to_string(),
+                    }),
+                )
+                    .into_response());
             }
 
             Ok(ReplicationAuth)

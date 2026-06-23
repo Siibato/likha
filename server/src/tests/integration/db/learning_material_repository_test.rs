@@ -27,7 +27,10 @@ async fn test_create_and_find_material() {
     assert_eq!(material.title, "Lesson 1");
     assert_eq!(material.class_id, class_id);
 
-    let found = repo.find_by_id(material.id).await.expect("find_by_id failed");
+    let found = repo
+        .find_by_id(material.id)
+        .await
+        .expect("find_by_id failed");
     assert!(found.is_some());
 }
 
@@ -41,8 +44,12 @@ async fn test_find_by_class_id() {
         .id;
     let repo = LearningMaterialRepository::new(db);
 
-    repo.create_material(class_id, "M1".to_string(), None, None, 0, None).await.expect("m1");
-    repo.create_material(class_id, "M2".to_string(), None, None, 1, None).await.expect("m2");
+    repo.create_material(class_id, "M1".to_string(), None, None, 0, None)
+        .await
+        .expect("m1");
+    repo.create_material(class_id, "M2".to_string(), None, None, 1, None)
+        .await
+        .expect("m2");
 
     let list = repo.find_by_class_id(class_id).await.expect("find failed");
     assert_eq!(list.len(), 2);
@@ -53,6 +60,9 @@ async fn test_find_by_class_id() {
 async fn test_find_by_class_id_returns_empty() {
     let db = test_db().await;
     let repo = LearningMaterialRepository::new(db);
-    let list = repo.find_by_class_id(uuid::Uuid::new_v4()).await.expect("find failed");
+    let list = repo
+        .find_by_class_id(uuid::Uuid::new_v4())
+        .await
+        .expect("find failed");
     assert!(list.is_empty());
 }

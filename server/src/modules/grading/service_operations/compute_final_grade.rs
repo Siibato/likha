@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::grading::schema::{FinalGradeResponse, TermGradeResponse};
 use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn compute_final_grade(
@@ -15,10 +15,7 @@ impl crate::modules::grading::service::GradeComputationService {
                 return Ok(cached);
             }
         }
-        let terms = self
-            .repo
-            .get_all_for_student(class_id, student_id)
-            .await?;
+        let terms = self.repo.get_all_for_student(class_id, student_id).await?;
 
         let term_responses: Vec<TermGradeResponse> =
             terms.into_iter().map(TermGradeResponse::from).collect();

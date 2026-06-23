@@ -3,8 +3,8 @@ use sea_orm::*;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ::entity::activity_logs;
 use crate::utils::{AppError, AppResult};
+use ::entity::activity_logs;
 
 pub async fn get_activity_logs_since(
     db: &DatabaseConnection,

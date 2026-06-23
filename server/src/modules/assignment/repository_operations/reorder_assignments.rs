@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn reorder_assignments(
     db: &DatabaseConnection,
@@ -21,7 +21,9 @@ pub async fn reorder_assignments(
         assignments::Entity::update(assignment)
             .exec(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to reorder assignment: {}", e)))?;
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to reorder assignment: {}", e))
+            })?;
     }
 
     Ok(())

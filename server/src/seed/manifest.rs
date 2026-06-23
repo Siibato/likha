@@ -107,7 +107,10 @@ pub fn build_manifest(
     }
 }
 
-pub fn export_manifest(manifest: &SeedManifest, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn export_manifest(
+    manifest: &SeedManifest,
+    path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let json = serde_json::to_string_pretty(manifest)?;
     std::fs::write(path, json)?;
     println!("Seed manifest exported to: {}", path);

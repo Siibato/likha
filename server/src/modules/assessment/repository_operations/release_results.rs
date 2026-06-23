@@ -2,13 +2,10 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessments;
 
-pub async fn release_results(
-    db: &DatabaseConnection,
-    id: Uuid,
-) -> AppResult<assessments::Model> {
+pub async fn release_results(db: &DatabaseConnection, id: Uuid) -> AppResult<assessments::Model> {
     let mut assessment: assessments::ActiveModel = assessments::Entity::find_by_id(id)
         .one(db)
         .await

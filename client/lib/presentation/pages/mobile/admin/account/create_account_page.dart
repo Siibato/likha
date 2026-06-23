@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -23,7 +24,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
 
-  final _sexController = TextEditingController();
+  String? _selectedSex;
   final _birthdateController = TextEditingController();
   final _homeAddressController = TextEditingController();
 
@@ -57,7 +58,6 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     _usernameController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _sexController.dispose();
     _birthdateController.dispose();
     _homeAddressController.dispose();
     _lrnController.dispose();
@@ -81,6 +81,29 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     super.dispose();
   }
 
+  Future<void> _pickDate(TextEditingController controller, {DateTime? initialDate, DateTime? firstDate, DateTime? lastDate}) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: firstDate ?? DateTime(1900),
+      lastDate: lastDate ?? DateTime.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.accentCharcoal,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.accentCharcoal,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      controller.text = '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    }
+  }
+
   Future<void> _handleCreate() async {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
@@ -96,7 +119,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     if (_selectedRole == 'student') {
       learnerDetails = {
         if (_lrnController.text.trim().isNotEmpty) 'lrn': _lrnController.text.trim(),
-        if (_sexController.text.trim().isNotEmpty) 'sex': _sexController.text.trim(),
+        if (_selectedSex != null) 'sex': _selectedSex,
         if (_birthdateController.text.trim().isNotEmpty) 'birthdate': _birthdateController.text.trim(),
         if (_birthplaceController.text.trim().isNotEmpty) 'birthplace': _birthplaceController.text.trim(),
         if (_homeAddressController.text.trim().isNotEmpty) 'home_address': _homeAddressController.text.trim(),
@@ -116,7 +139,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
         if (_licenseIdController.text.trim().isNotEmpty) 'license_id': _licenseIdController.text.trim(),
         if (_rankController.text.trim().isNotEmpty) 'rank': _rankController.text.trim(),
         if (_positionController.text.trim().isNotEmpty) 'position': _positionController.text.trim(),
-        if (_sexController.text.trim().isNotEmpty) 'sex': _sexController.text.trim(),
+        if (_selectedSex != null) 'sex': _selectedSex,
         if (_birthdateController.text.trim().isNotEmpty) 'birthdate': _birthdateController.text.trim(),
         if (_homeAddressController.text.trim().isNotEmpty) 'home_address': _homeAddressController.text.trim(),
         if (_dateHiredController.text.trim().isNotEmpty) 'date_hired': _dateHiredController.text.trim(),
@@ -296,20 +319,37 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   label: 'LRN',
                   icon: Icons.badge_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(12),
+                  ],
                 ),
                 const SizedBox(height: 16),
-                StyledTextField(
-                  controller: _sexController,
+                StyledDropdown<String>(
+                  value: _selectedSex,
                   label: 'Sex',
                   icon: Icons.wc_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSex = value;
+                      _formError = null;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
                   controller: _birthdateController,
-                  label: 'Birthdate (YYYY-MM-DD)',
+                  label: 'Birthdate',
                   icon: Icons.cake_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  readOnly: true,
+                  onTap: () => _pickDate(_birthdateController),
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -338,6 +378,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   label: "Father's Contact",
                   icon: Icons.phone_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -352,6 +394,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   label: "Mother's Contact",
                   icon: Icons.phone_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -366,6 +410,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   label: "Guardian's Contact",
                   icon: Icons.phone_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -384,9 +430,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                 const SizedBox(height: 16),
                 StyledTextField(
                   controller: _dateAdmittedController,
-                  label: 'Date Admitted (YYYY-MM-DD)',
+                  label: 'Date Admitted',
                   icon: Icons.event_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  readOnly: true,
+                  onTap: () => _pickDate(_dateAdmittedController),
                 ),
               ],
               if (_selectedRole == 'teacher') ...[
@@ -424,18 +472,30 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   enabled: !accountMgmtState.isLoading,
                 ),
                 const SizedBox(height: 16),
-                StyledTextField(
-                  controller: _sexController,
+                StyledDropdown<String>(
+                  value: _selectedSex,
                   label: 'Sex',
                   icon: Icons.wc_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSex = value;
+                      _formError = null;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
                   controller: _birthdateController,
-                  label: 'Birthdate (YYYY-MM-DD)',
+                  label: 'Birthdate',
                   icon: Icons.cake_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  readOnly: true,
+                  onTap: () => _pickDate(_birthdateController),
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -447,9 +507,11 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                 const SizedBox(height: 16),
                 StyledTextField(
                   controller: _dateHiredController,
-                  label: 'Date Hired (YYYY-MM-DD)',
+                  label: 'Date Hired',
                   icon: Icons.event_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  readOnly: true,
+                  onTap: () => _pickDate(_dateHiredController),
                 ),
                 const SizedBox(height: 16),
                 StyledTextField(
@@ -471,12 +533,14 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                   label: 'Contact Number',
                   icon: Icons.phone_outlined,
                   enabled: !accountMgmtState.isLoading,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
                 ),
               ],
               const SizedBox(height: 32),
               StyledButton(
                 text: 'Create Account',
-                isLoading: accountMgmtState.isLoading,
+                isLoading: _isSubmitting || accountMgmtState.isLoading,
                 onPressed: _handleCreate,
               ),
               const SizedBox(height: 24),

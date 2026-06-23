@@ -1,8 +1,8 @@
 //! T1 assignments for demo seeding: Plate Tectonics.
 
+use super::super::{asid, cid};
 use crate::seed::specs::AssignmentSpec;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, asid};
 
 pub fn demo_assignments_t1(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     let created = ctx.days_ago(18);

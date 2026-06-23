@@ -2,9 +2,9 @@ use chrono::NaiveDateTime;
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::{class_participants, classes, users};
 use crate::modules::class::repository_operations as ops;
 use crate::utils::AppResult;
+use ::entity::{class_participants, classes, users};
 
 pub struct ClassRepository {
     db: DatabaseConnection,
@@ -25,7 +25,11 @@ impl ClassRepository {
         ops::create_class(&self.db, title, description, client_id, is_advisory).await
     }
 
-    pub async fn find_by_user_id(&self, user_id: Uuid, role: &str) -> AppResult<Vec<classes::Model>> {
+    pub async fn find_by_user_id(
+        &self,
+        user_id: Uuid,
+        role: &str,
+    ) -> AppResult<Vec<classes::Model>> {
         ops::find_by_user_id(&self.db, user_id, role).await
     }
 
@@ -51,11 +55,19 @@ impl ClassRepository {
         ops::update_class(&self.db, id, title, description, is_advisory).await
     }
 
-    pub async fn add_participant(&self, class_id: Uuid, user_id: Uuid) -> AppResult<class_participants::Model> {
+    pub async fn add_participant(
+        &self,
+        class_id: Uuid,
+        user_id: Uuid,
+    ) -> AppResult<class_participants::Model> {
         ops::add_participant(&self.db, class_id, user_id).await
     }
 
-    pub async fn add_student(&self, class_id: Uuid, student_id: Uuid) -> AppResult<class_participants::Model> {
+    pub async fn add_student(
+        &self,
+        class_id: Uuid,
+        student_id: Uuid,
+    ) -> AppResult<class_participants::Model> {
         ops::add_student(&self.db, class_id, student_id).await
     }
 
@@ -83,7 +95,10 @@ impl ClassRepository {
         ops::find_participants_by_user_id(&self.db, user_id, role).await
     }
 
-    pub async fn find_classes_by_student_id(&self, student_id: Uuid) -> AppResult<Vec<classes::Model>> {
+    pub async fn find_classes_by_student_id(
+        &self,
+        student_id: Uuid,
+    ) -> AppResult<Vec<classes::Model>> {
         ops::find_classes_by_student_id(&self.db, student_id).await
     }
 
@@ -99,11 +114,17 @@ impl ClassRepository {
         ops::find_teacher_of_class(&self.db, class_id).await
     }
 
-    pub async fn find_teachers_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<Vec<(Uuid, users::Model)>> {
+    pub async fn find_teachers_for_classes(
+        &self,
+        class_ids: Vec<Uuid>,
+    ) -> AppResult<Vec<(Uuid, users::Model)>> {
         ops::find_teachers_for_classes(&self.db, class_ids).await
     }
 
-    pub async fn count_students_for_classes(&self, class_ids: Vec<Uuid>) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+    pub async fn count_students_for_classes(
+        &self,
+        class_ids: Vec<Uuid>,
+    ) -> AppResult<std::collections::HashMap<Uuid, usize>> {
         ops::count_students_for_classes(&self.db, class_ids).await
     }
 
@@ -119,11 +140,17 @@ impl ClassRepository {
         ops::is_teacher_of_class(&self.db, user_id, class_id).await
     }
 
-    pub async fn get_metadata(&self, teacher_id: Uuid) -> AppResult<(NaiveDateTime, usize, String)> {
+    pub async fn get_metadata(
+        &self,
+        teacher_id: Uuid,
+    ) -> AppResult<(NaiveDateTime, usize, String)> {
         ops::get_metadata(&self.db, teacher_id).await
     }
 
-    pub async fn find_student_enrollments(&self, student_id: Uuid) -> AppResult<Vec<class_participants::Model>> {
+    pub async fn find_student_enrollments(
+        &self,
+        student_id: Uuid,
+    ) -> AppResult<Vec<class_participants::Model>> {
         ops::find_student_enrollments(&self.db, student_id).await
     }
 

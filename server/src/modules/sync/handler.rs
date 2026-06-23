@@ -1,15 +1,12 @@
-use axum::{
-    extract::State,
-    extract::Json,
-    http::StatusCode,
-    response::IntoResponse,
-};
+use axum::{extract::Json, extract::State, http::StatusCode, response::IntoResponse};
 use std::sync::Arc;
 
 use crate::middleware::auth_middleware::AuthUser;
+use crate::modules::sync::schema::{ConflictResolutionRequest, DeltaRequest, FullSyncRequest};
+use crate::modules::sync::service::{
+    SyncConflictService, SyncDeltaService, SyncFullService, SyncPushService,
+};
 use crate::utils::response::success_response;
-use crate::modules::sync::service::{SyncPushService, SyncDeltaService, SyncFullService, SyncConflictService};
-use crate::modules::sync::schema::{DeltaRequest, FullSyncRequest, ConflictResolutionRequest};
 
 /// POST /sync/push - Push sync operations
 pub async fn push(
@@ -17,7 +14,8 @@ pub async fn push(
     auth_user: AuthUser,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    let op_count = payload.get("operations")
+    let op_count = payload
+        .get("operations")
         .and_then(|ops| ops.as_array())
         .map(|arr| arr.len())
         .unwrap_or(0);
@@ -126,4 +124,3 @@ pub async fn resolve_conflict(
         Err(e) => e.into_response(),
     }
 }
-

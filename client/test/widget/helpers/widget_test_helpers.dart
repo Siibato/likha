@@ -248,7 +248,12 @@ class FakeEnrollmentNotifier extends EnrollmentNotifier {
 
   FakeEnrollmentNotifier([EnrollmentState? initialState])
       : _fixedState = initialState ?? EnrollmentState(),
-        super(_MockAddStudent(), _MockRemoveStudent()) {
+        super(
+          _MockAddStudent(),
+          _MockRemoveStudent(),
+          FakeClassDetailNotifier(),
+          FakeClassListNotifier(),
+        ) {
     state = _fixedState;
   }
 

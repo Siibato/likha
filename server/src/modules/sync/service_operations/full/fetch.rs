@@ -3,16 +3,16 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use crate::utils::AppResult;
-use crate::modules::sync::helpers::enrich_questions;
-use crate::modules::sync::sync_scope::SyncScope;
 use crate::modules::setup::repository::SetupRepository;
 use crate::modules::setup::schema::SchoolDetailsResponse;
+use crate::modules::sync::helpers::enrich_questions;
+use crate::modules::sync::sync_scope::SyncScope;
+use crate::utils::AppResult;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
-use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 use super::enrich_submissions::enrich_assessment_submissions;
 use super::statistics::format_student_results;
+use super::sync_full_service::{FullSyncRequest, FullSyncResponse};
 
 impl super::SyncFullService {
     /// Get full sync data for user
@@ -58,7 +58,8 @@ impl super::SyncFullService {
         );
 
         // Fetch the logged-in user's own record
-        let user = self.manifest_repo
+        let user = self
+            .manifest_repo
             .get_users_paginated(vec![user_id], 1)
             .await?
             .records
@@ -67,16 +68,16 @@ impl super::SyncFullService {
 
         // BASE REQUEST: Return only structural data, no entity content
         if is_base_request {
-            tracing::debug!("BASE REQUEST detected for user_id={} - returning only structural data", user_id);
+            tracing::debug!(
+                "BASE REQUEST detected for user_id={} - returning only structural data",
+                user_id
+            );
 
             // Fetch classes and enrollments (always needed)
             tracing::debug!("Fetching classes for user_id={}", user_id);
             let classes = self
                 .manifest_repo
-                .get_classes_paginated(
-                    manifest.classes.iter().map(|e| e.id).collect(),
-                    10000,
-                )
+                .get_classes_paginated(manifest.classes.iter().map(|e| e.id).collect(), 10000)
                 .await?
                 .records;
             tracing::debug!("BASE REQUEST: Fetched {} classes", classes.len());
@@ -93,7 +94,8 @@ impl super::SyncFullService {
             tracing::debug!("BASE REQUEST: Fetched {} enrollments", enrollments.len());
 
             // Compute student count per class from enrollments (no additional queries needed)
-            let mut student_count_by_class: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+            let mut student_count_by_class: std::collections::HashMap<String, usize> =
+                std::collections::HashMap::new();
             for enrollment in &enrollments {
                 if let Some(serde_json::Value::String(class_id)) = enrollment.get("class_id") {
                     *student_count_by_class.entry(class_id.clone()).or_insert(0) += 1;
@@ -126,7 +128,11 @@ impl super::SyncFullService {
             let enrolled_students = match user_role {
                 "student" => Vec::new(),
                 _ => {
-                    tracing::debug!("Fetching {} enrolled students for user_id={}", student_ids.len(), user_id);
+                    tracing::debug!(
+                        "Fetching {} enrolled students for user_id={}",
+                        student_ids.len(),
+                        user_id
+                    );
                     if student_ids.is_empty() {
                         Vec::new()
                     } else {
@@ -221,19 +227,29 @@ impl super::SyncFullService {
         }
 
         // BATCH REQUEST: Filter manifest by requested class_ids and fetch entity data
-        tracing::debug!("BATCH REQUEST detected for user_id={}, role={} with {} class_ids", user_id, user_role, class_ids.len());
+        tracing::debug!(
+            "BATCH REQUEST detected for user_id={}, role={} with {} class_ids",
+            user_id,
+            user_role,
+            class_ids.len()
+        );
 
         // Security: intersect requested class_ids with entitled class_ids
-        let entitled_class_ids: std::collections::HashSet<Uuid> = manifest.classes.iter().map(|e| e.id).collect();
+        let entitled_class_ids: std::collections::HashSet<Uuid> =
+            manifest.classes.iter().map(|e| e.id).collect();
         let batch_class_ids: Vec<Uuid> = class_ids
             .iter()
             .filter_map(|id| Uuid::parse_str(id).ok())
             .filter(|id| entitled_class_ids.contains(id))
             .collect();
-        let _batch_class_id_set: std::collections::HashSet<Uuid> = batch_class_ids.iter().cloned().collect();
+        let _batch_class_id_set: std::collections::HashSet<Uuid> =
+            batch_class_ids.iter().cloned().collect();
 
         if batch_class_ids.is_empty() {
-            tracing::warn!("All requested class_ids are invalid for user_id={}", user_id);
+            tracing::warn!(
+                "All requested class_ids are invalid for user_id={}",
+                user_id
+            );
             let now = Utc::now();
             return Ok(FullSyncResponse {
                 sync_token: now.to_rfc3339(),
@@ -307,7 +323,11 @@ impl super::SyncFullService {
                 .records;
             actual_batch_assessment_ids = assessments
                 .iter()
-                .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .filter_map(|a| {
+                    a.get("id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
             tracing::debug!("Fetched {} assessments", assessments.len());
         }
@@ -324,8 +344,11 @@ impl super::SyncFullService {
                     .map(|e| e.id)
                     .collect()
             };
-            tracing::debug!("BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
-                question_ids.len(), actual_batch_assessment_ids.len());
+            tracing::debug!(
+                "BATCH REQUEST: Found {} question_ids in manifest for {} assessments",
+                question_ids.len(),
+                actual_batch_assessment_ids.len()
+            );
 
             tracing::debug!("Fetching questions for batch");
             questions = if question_ids.is_empty() {
@@ -337,19 +360,40 @@ impl super::SyncFullService {
                     .await?
                     .records
             };
-            tracing::debug!("Fetched {} questions total for {} question_ids", questions.len(), question_ids.len());
+            tracing::debug!(
+                "Fetched {} questions total for {} question_ids",
+                questions.len(),
+                question_ids.len()
+            );
 
             let mut questions_by_assessment: HashMap<String, Vec<&Value>> = HashMap::new();
             for q in &questions {
                 if let Some(ass_id) = q.get("assessment_id").and_then(|v| v.as_str()) {
-                    questions_by_assessment.entry(ass_id.to_string()).or_insert_with(Vec::new).push(q);
+                    questions_by_assessment
+                        .entry(ass_id.to_string())
+                        .or_insert_with(Vec::new)
+                        .push(q);
                 }
             }
             for assessment in &assessments {
-                let ass_id = assessment.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
-                let ass_title = assessment.get("title").and_then(|v| v.as_str()).unwrap_or("unknown");
-                let q_count = questions_by_assessment.get(ass_id).map(|v| v.len()).unwrap_or(0);
-                tracing::debug!("Assessment '{}' ({}): {} questions", ass_title, ass_id, q_count);
+                let ass_id = assessment
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+                let ass_title = assessment
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+                let q_count = questions_by_assessment
+                    .get(ass_id)
+                    .map(|v| v.len())
+                    .unwrap_or(0);
+                tracing::debug!(
+                    "Assessment '{}' ({}): {} questions",
+                    ass_title,
+                    ass_id,
+                    q_count
+                );
             }
 
             tracing::debug!("Enriching {} questions", questions.len());
@@ -365,55 +409,97 @@ impl super::SyncFullService {
                 .records;
             actual_batch_assignment_ids = assignments
                 .iter()
-                .filter_map(|a| a.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .filter_map(|a| {
+                    a.get("id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
             tracing::debug!("Fetched {} assignments", assignments.len());
         }
 
         let assessment_submissions: Vec<Value>;
         if scope.include_submissions {
-            let assessment_submission_ids: Vec<Uuid> = manifest.assessment_submissions.iter().map(|e| e.id).collect();
-            tracing::debug!("Fetching {} assessment submissions", assessment_submission_ids.len());
+            let assessment_submission_ids: Vec<Uuid> = manifest
+                .assessment_submissions
+                .iter()
+                .map(|e| e.id)
+                .collect();
+            tracing::debug!(
+                "Fetching {} assessment submissions",
+                assessment_submission_ids.len()
+            );
             assessment_submissions = if assessment_submission_ids.is_empty() {
                 Vec::new()
             } else {
                 match user_role {
                     "student" => {
                         self.manifest_repo
-                            .get_student_submissions_for_assessments(user_id, actual_batch_assessment_ids.clone(), 10000)
+                            .get_student_submissions_for_assessments(
+                                user_id,
+                                actual_batch_assessment_ids.clone(),
+                                10000,
+                            )
                             .await?
                             .records
                     }
                     _ => {
-                        self.get_all_assessment_submissions_for_assessments(&actual_batch_assessment_ids, 10000)
-                            .await?
+                        self.get_all_assessment_submissions_for_assessments(
+                            &actual_batch_assessment_ids,
+                            10000,
+                        )
+                        .await?
                     }
                 }
             };
-            tracing::debug!("Fetched {} assessment submissions", assessment_submissions.len());
+            tracing::debug!(
+                "Fetched {} assessment submissions",
+                assessment_submissions.len()
+            );
 
-            let assignment_submission_ids: Vec<Uuid> = manifest.assignment_submissions.iter().map(|e| e.id).collect();
-            tracing::debug!("Fetching {} assignment submissions", assignment_submission_ids.len());
+            let assignment_submission_ids: Vec<Uuid> = manifest
+                .assignment_submissions
+                .iter()
+                .map(|e| e.id)
+                .collect();
+            tracing::debug!(
+                "Fetching {} assignment submissions",
+                assignment_submission_ids.len()
+            );
             assignment_submissions = if assignment_submission_ids.is_empty() {
                 Vec::new()
             } else {
                 match user_role {
                     "student" => {
                         self.manifest_repo
-                            .get_student_assignment_submissions_for_assignments(user_id, actual_batch_assignment_ids.clone(), 10000)
+                            .get_student_assignment_submissions_for_assignments(
+                                user_id,
+                                actual_batch_assignment_ids.clone(),
+                                10000,
+                            )
                             .await?
                             .records
                     }
                     _ => {
-                        self.get_all_assignment_submissions_for_assignments(&actual_batch_assignment_ids, 10000)
-                            .await?
+                        self.get_all_assignment_submissions_for_assignments(
+                            &actual_batch_assignment_ids,
+                            10000,
+                        )
+                        .await?
                     }
                 }
             };
-            tracing::debug!("Fetched {} assignment submissions", assignment_submissions.len());
+            tracing::debug!(
+                "Fetched {} assignment submissions",
+                assignment_submissions.len()
+            );
 
-            tracing::debug!("Enriching {} assessment submissions", assessment_submissions.len());
-            enriched_assessment_submissions = enrich_assessment_submissions(&self.db, assessment_submissions).await?;
+            tracing::debug!(
+                "Enriching {} assessment submissions",
+                assessment_submissions.len()
+            );
+            enriched_assessment_submissions =
+                enrich_assessment_submissions(&self.db, assessment_submissions).await?;
         }
 
         if scope.include_learning_materials {
@@ -429,25 +515,43 @@ impl super::SyncFullService {
         if scope.include_files {
             let material_ids: Vec<Uuid> = learning_materials
                 .iter()
-                .filter_map(|m| m.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .filter_map(|m| {
+                    m.get("id")
+                        .and_then(|id| id.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
-            tracing::debug!("Fetching material files for {} materials", material_ids.len());
+            tracing::debug!(
+                "Fetching material files for {} materials",
+                material_ids.len()
+            );
             material_files = if material_ids.is_empty() {
                 Vec::new()
             } else {
-                self.manifest_repo.get_material_files_for_materials(material_ids).await?
+                self.manifest_repo
+                    .get_material_files_for_materials(material_ids)
+                    .await?
             };
             tracing::debug!("Fetched {} material files", material_files.len());
 
             let submission_ids: Vec<Uuid> = assignment_submissions
                 .iter()
-                .filter_map(|s| s.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .filter_map(|s| {
+                    s.get("id")
+                        .and_then(|id| id.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
-            tracing::debug!("Fetching submission files for {} submissions", submission_ids.len());
+            tracing::debug!(
+                "Fetching submission files for {} submissions",
+                submission_ids.len()
+            );
             submission_files = if submission_ids.is_empty() {
                 Vec::new()
             } else {
-                self.manifest_repo.get_submission_files_for_submissions(submission_ids).await?
+                self.manifest_repo
+                    .get_submission_files_for_submissions(submission_ids)
+                    .await?
             };
             tracing::debug!("Fetched {} submission files", submission_files.len());
         }
@@ -461,7 +565,10 @@ impl super::SyncFullService {
                     vec![]
                 }
                 _ => {
-                    tracing::debug!("User is {} - skipping server-side statistics (computed client-side)", user_role);
+                    tracing::debug!(
+                        "User is {} - skipping server-side statistics (computed client-side)",
+                        user_role
+                    );
                     vec![]
                 }
             };
@@ -470,7 +577,8 @@ impl super::SyncFullService {
                 "student" => {
                     tracing::debug!("User is student - formatting student results from {} submissions and {} assessments",
                         enriched_assessment_submissions.len(), assessments.len());
-                    let results = format_student_results(&enriched_assessment_submissions, &assessments);
+                    let results =
+                        format_student_results(&enriched_assessment_submissions, &assessments);
                     tracing::debug!("Formatted {} student results", results.len());
                     if !results.is_empty() {
                         tracing::debug!("Student results: {:?}", results);
@@ -478,7 +586,10 @@ impl super::SyncFullService {
                     results
                 }
                 _ => {
-                    tracing::debug!("User is {} - skipping student results formatting (computed client-side)", user_role);
+                    tracing::debug!(
+                        "User is {} - skipping student results formatting (computed client-side)",
+                        user_role
+                    );
                     vec![]
                 }
             };
@@ -487,15 +598,21 @@ impl super::SyncFullService {
         if scope.include_grade_data {
             tracing::debug!("Fetching grading data for batch");
             let (grade_configs_result, grade_items_result) = tokio::try_join!(
-                self.manifest_repo.get_grade_configs_for_classes(batch_class_ids.clone()),
-                self.manifest_repo.get_grade_items_for_classes(batch_class_ids.clone()),
+                self.manifest_repo
+                    .get_grade_configs_for_classes(batch_class_ids.clone()),
+                self.manifest_repo
+                    .get_grade_items_for_classes(batch_class_ids.clone()),
             )?;
             grade_configs = grade_configs_result;
             grade_items_data = grade_items_result;
 
             let grade_item_ids: Vec<Uuid> = grade_items_data
                 .iter()
-                .filter_map(|gi| gi.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .filter_map(|gi| {
+                    gi.get("id")
+                        .and_then(|id| id.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
 
             grade_scores_data = if grade_item_ids.is_empty() {
@@ -528,18 +645,28 @@ impl super::SyncFullService {
                 }
             };
 
-            tracing::debug!("Fetched grading data: configs={}, items={}, scores={}, term_grades={}",
-                grade_configs.len(), grade_items_data.len(), grade_scores_data.len(), term_grades_data.len());
+            tracing::debug!(
+                "Fetched grading data: configs={}, items={}, scores={}, term_grades={}",
+                grade_configs.len(),
+                grade_items_data.len(),
+                grade_scores_data.len(),
+                term_grades_data.len()
+            );
         }
 
         if scope.include_tos {
-            table_of_specifications = self.manifest_repo
+            table_of_specifications = self
+                .manifest_repo
                 .get_table_of_specifications_for_classes(batch_class_ids.clone())
                 .await?;
 
             let tos_ids: Vec<Uuid> = table_of_specifications
                 .iter()
-                .filter_map(|tos| tos.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+                .filter_map(|tos| {
+                    tos.get("id")
+                        .and_then(|id| id.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
 
             tos_competencies = if tos_ids.is_empty() {
@@ -550,13 +677,18 @@ impl super::SyncFullService {
                     .await?
             };
 
-            tracing::debug!("Fetched TOS data: table_of_specifications={}, tos_competencies={}",
-                table_of_specifications.len(), tos_competencies.len());
+            tracing::debug!(
+                "Fetched TOS data: table_of_specifications={}, tos_competencies={}",
+                table_of_specifications.len(),
+                tos_competencies.len()
+            );
         }
 
         // NOTE: activity_logs are already sent in the base request.
         // Skip redundant re-fetching in batch requests.
-        tracing::debug!("BATCH REQUEST: skipping redundant activity_logs (already in base response)");
+        tracing::debug!(
+            "BATCH REQUEST: skipping redundant activity_logs (already in base response)"
+        );
 
         // Fetch student records if scoped
         let mut learner_details: Vec<Value> = Vec::new();
@@ -573,11 +705,15 @@ impl super::SyncFullService {
 
             // Derive student_ids from class_participants for the batch's classes
             let participants = ::entity::class_participants::Entity::find()
-                .filter(::entity::class_participants::Column::ClassId.is_in(batch_class_ids.clone()))
+                .filter(
+                    ::entity::class_participants::Column::ClassId.is_in(batch_class_ids.clone()),
+                )
                 .filter(::entity::class_participants::Column::RemovedAt.is_null())
                 .all(&self.db)
                 .await
-                .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?;
+                .map_err(|e| {
+                    crate::utils::AppError::InternalServerError(format!("Database error: {}", e))
+                })?;
 
             let student_ids: Vec<Uuid> = participants
                 .iter()
@@ -609,7 +745,12 @@ impl super::SyncFullService {
                     .filter(::entity::users::Column::DeletedAt.is_null())
                     .all(&self.db)
                     .await
-                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .map_err(|e| {
+                        crate::utils::AppError::InternalServerError(format!(
+                            "Database error: {}",
+                            e
+                        ))
+                    })?
                     .into_iter()
                     .map(|u| u.id)
                     .collect()
@@ -622,7 +763,12 @@ impl super::SyncFullService {
                     .filter(::entity::users::Column::DeletedAt.is_null())
                     .all(&self.db)
                     .await
-                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .map_err(|e| {
+                        crate::utils::AppError::InternalServerError(format!(
+                            "Database error: {}",
+                            e
+                        ))
+                    })?
                     .into_iter()
                     .map(|u| u.id)
                     .collect::<HashSet<_>>()
@@ -663,8 +809,13 @@ impl super::SyncFullService {
                 .records;
 
             // Fetch term grades for those subjects
-            let subject_ids: Vec<Uuid> = previous_school_subjects.iter()
-                .filter_map(|s| s.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+            let subject_ids: Vec<Uuid> = previous_school_subjects
+                .iter()
+                .filter_map(|s| {
+                    s.get("id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
             previous_school_term_grades = if subject_ids.is_empty() {
                 Vec::new()

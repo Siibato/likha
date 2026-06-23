@@ -23,13 +23,25 @@ class ClassModel extends ClassEntity {
   });
 
   factory ClassModel.fromJson(Map<String, dynamic> json) {
+    String teacherFullName = '';
+    final rawFullName = json['teacher_full_name'];
+    if (rawFullName is String && rawFullName.isNotEmpty) {
+      teacherFullName = rawFullName;
+    } else {
+      final firstName = json['teacher_first_name'] as String? ?? '';
+      final lastName = json['teacher_last_name'] as String? ?? '';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        teacherFullName = '$lastName, $firstName'.trim();
+      }
+    }
+
     return ClassModel(
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
       teacherId: json['teacher_id'] as String,
-      teacherUsername: json['teacher_username'] as String,
-      teacherFullName: json['teacher_full_name'] as String,
+      teacherUsername: json['teacher_username'] as String? ?? '',
+      teacherFullName: teacherFullName,
       isArchived: json['is_archived'] as bool,
       isAdvisory: json['is_advisory'] as bool? ?? false,
       studentCount: json['student_count'] as int? ?? 0,

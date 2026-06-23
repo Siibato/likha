@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::classes;
-use crate::utils::{AppError, AppResult};
 use super::ManifestEntry;
+use crate::utils::{AppError, AppResult};
+use ::entity::classes;
 
 pub async fn get_classes_manifest(
     db: &DatabaseConnection,

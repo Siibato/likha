@@ -1,7 +1,7 @@
+use crate::modules::grading::helpers::deped_weights::transmute_grade;
 use crate::modules::grading::schema::{
     AllGradeDataResponse, GradeItemResponse, GradeScoreResponse,
 };
-use crate::modules::grading::helpers::deped_weights::transmute_grade;
 
 pub struct SectionInfo {
     pub items: Vec<GradeItemResponse>,
@@ -41,10 +41,7 @@ impl GradeTableData {
         let term_items: Vec<&GradeItemResponse> = data
             .grade_items
             .iter()
-            .filter(|i| {
-                i.term_number == Some(term_number)
-                    || i.term_number.is_none()
-            })
+            .filter(|i| i.term_number == Some(term_number) || i.term_number.is_none())
             .collect();
 
         let ww_items: Vec<GradeItemResponse> = term_items

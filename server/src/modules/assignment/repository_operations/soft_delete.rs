@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn soft_delete(db: &DatabaseConnection, id: Uuid) -> AppResult<()> {
     let assignment = assignments::ActiveModel {
@@ -16,7 +16,9 @@ pub async fn soft_delete(db: &DatabaseConnection, id: Uuid) -> AppResult<()> {
     assignments::Entity::update(assignment)
         .exec(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to delete assignment: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to delete assignment: {}", e))
+        })?;
 
     Ok(())
 }

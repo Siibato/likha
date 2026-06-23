@@ -434,7 +434,7 @@ pub struct TestSummary {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StudentAssessmentSubmissionItem {
     pub assessment_id: Uuid,
-    pub id: Uuid,                       // submission id
+    pub id: Uuid, // submission id
     pub student_id: Uuid,
     pub student_first_name: String,
     pub student_last_name: String,

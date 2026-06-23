@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::submission_files;
 use crate::utils::{AppError, AppResult};
+use ::entity::submission_files;
 
 pub async fn find_active_file_path_by_hash(
     db: &DatabaseConnection,

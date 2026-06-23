@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
-use crate::utils::{AppError, AppResult};
 use super::ManifestEntry;
+use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
 pub async fn get_enrollments_manifest(
     db: &DatabaseConnection,
@@ -26,10 +26,7 @@ pub async fn get_enrollments_manifest(
 
     let mut result = Vec::new();
     for p in participants {
-        if let Ok(Some(user)) = users::Entity::find_by_id(p.user_id)
-            .one(db)
-            .await
-        {
+        if let Ok(Some(user)) = users::Entity::find_by_id(p.user_id).one(db).await {
             if user.role == "student" {
                 result.push(ManifestEntry {
                     id: p.id,

@@ -1,8 +1,8 @@
 //! Term 3 assessments for realistic seeding.
 
+use super::super::{aid, build_questions_from_bank, cid, compid, mc_choices, qid, tid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, tid, compid, aid, qid, mc_choices, build_questions_from_bank};
 
 pub fn realistic_assessments_t3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(100);
@@ -114,13 +114,22 @@ pub fn realistic_assessments_t3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     );
     let eng_t3_exam_points: i32 = eng_t3_exam_qs.iter().map(|q| q.points).sum();
     assessments.push(AssessmentSpec {
-        id: aid("eng_t3_exam"), class_id: cid("english_9a"),
+        id: aid("eng_t3_exam"),
+        class_id: cid("english_9a"),
         title: "Term 3 Exam: English 9".into(),
         description: Some("15-item term assessment on research skills and media literacy.".into()),
-        time_limit_minutes: 60, open_at: now - chrono::Duration::days(82), close_at: now - chrono::Duration::days(76),
-        show_results_immediately: true, total_points: eng_t3_exam_points, component: "term_assessment".into(),
-        tos_id: tid("english_9a_tos_t3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, term_number: 3,
+        time_limit_minutes: 60,
+        open_at: now - chrono::Duration::days(82),
+        close_at: now - chrono::Duration::days(76),
+        show_results_immediately: true,
+        total_points: eng_t3_exam_points,
+        component: "term_assessment".into(),
+        tos_id: tid("english_9a_tos_t3"),
+        created_at: created,
+        deleted_at: None,
+        is_published: true,
+        results_released: true,
+        term_number: 3,
         questions: eng_t3_exam_qs,
     });
 
@@ -269,13 +278,22 @@ pub fn realistic_assessments_t3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     );
     let sci_t3_exam_points: i32 = sci_t3_exam_qs.iter().map(|q| q.points).sum();
     assessments.push(AssessmentSpec {
-        id: aid("sci_t3_exam"), class_id: cid("science_9a"),
+        id: aid("sci_t3_exam"),
+        class_id: cid("science_9a"),
         title: "Term 3 Exam: Science 9".into(),
         description: Some("15-item term assessment on motion, forces, and energy.".into()),
-        time_limit_minutes: 60, open_at: now - chrono::Duration::days(83), close_at: now - chrono::Duration::days(77),
-        show_results_immediately: true, total_points: sci_t3_exam_points, component: "term_assessment".into(),
-        tos_id: tid("science_9a_tos_t3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, term_number: 3,
+        time_limit_minutes: 60,
+        open_at: now - chrono::Duration::days(83),
+        close_at: now - chrono::Duration::days(77),
+        show_results_immediately: true,
+        total_points: sci_t3_exam_points,
+        component: "term_assessment".into(),
+        tos_id: tid("science_9a_tos_t3"),
+        created_at: created,
+        deleted_at: None,
+        is_published: true,
+        results_released: true,
+        term_number: 3,
         questions: sci_t3_exam_qs,
     });
 
@@ -464,13 +482,22 @@ pub fn realistic_assessments_t3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     );
     let adv_t3_exam_points: i32 = adv_t3_exam_qs.iter().map(|q| q.points).sum();
     assessments.push(AssessmentSpec {
-        id: aid("adv_t3_exam"), class_id: cid("advisory_9a"),
+        id: aid("adv_t3_exam"),
+        class_id: cid("advisory_9a"),
         title: "Term 3 Exam: Advisory 9-A".into(),
         description: Some("15-item term assessment on social skills and decision-making.".into()),
-        time_limit_minutes: 45, open_at: now - chrono::Duration::days(83), close_at: now - chrono::Duration::days(77),
-        show_results_immediately: true, total_points: adv_t3_exam_points, component: "term_assessment".into(),
-        tos_id: tid("advisory_9a_tos_t3"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, term_number: 3,
+        time_limit_minutes: 45,
+        open_at: now - chrono::Duration::days(83),
+        close_at: now - chrono::Duration::days(77),
+        show_results_immediately: true,
+        total_points: adv_t3_exam_points,
+        component: "term_assessment".into(),
+        tos_id: tid("advisory_9a_tos_t3"),
+        created_at: created,
+        deleted_at: None,
+        is_published: true,
+        results_released: true,
+        term_number: 3,
         questions: adv_t3_exam_qs,
     });
 

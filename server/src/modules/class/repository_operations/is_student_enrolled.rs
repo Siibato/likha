@@ -1,10 +1,14 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
-pub async fn is_student_enrolled(db: &DatabaseConnection, class_id: Uuid, student_id: Uuid) -> AppResult<bool> {
+pub async fn is_student_enrolled(
+    db: &DatabaseConnection,
+    class_id: Uuid,
+    student_id: Uuid,
+) -> AppResult<bool> {
     let participant = class_participants::Entity::find()
         .filter(class_participants::Column::ClassId.eq(class_id))
         .filter(class_participants::Column::UserId.eq(student_id))

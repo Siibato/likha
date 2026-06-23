@@ -2,9 +2,9 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::term_grades;
-use crate::utils::{AppError, AppResult};
 use super::get_term_grade::get_term_grade;
+use crate::utils::{AppError, AppResult};
+use ::entity::term_grades;
 
 pub async fn upsert_term_grade(
     db: &DatabaseConnection,
@@ -46,11 +46,13 @@ pub async fn upsert_term_grade(
         ],
     );
 
-    db.execute(stmt)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to upsert term grade: {}", e)))?;
+    db.execute(stmt).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to upsert term grade: {}", e))
+    })?;
 
     get_term_grade(db, class_id, student_id, term_number)
         .await?
-        .ok_or_else(|| AppError::InternalServerError("Term grade not found after upsert".to_string()))
+        .ok_or_else(|| {
+            AppError::InternalServerError("Term grade not found after upsert".to_string())
+        })
 }

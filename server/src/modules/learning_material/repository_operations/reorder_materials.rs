@@ -2,10 +2,14 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learning_materials;
 use crate::utils::{AppError, AppResult};
+use ::entity::learning_materials;
 
-pub async fn reorder_materials(db: &DatabaseConnection, _class_id: Uuid, material_ids: Vec<Uuid>) -> AppResult<()> {
+pub async fn reorder_materials(
+    db: &DatabaseConnection,
+    _class_id: Uuid,
+    material_ids: Vec<Uuid>,
+) -> AppResult<()> {
     for (index, id) in material_ids.iter().enumerate() {
         let material = learning_materials::ActiveModel {
             id: Set(*id),
@@ -16,7 +20,9 @@ pub async fn reorder_materials(db: &DatabaseConnection, _class_id: Uuid, materia
         learning_materials::Entity::update(material)
             .exec(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to reorder material: {}", e)))?;
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to reorder material: {}", e))
+            })?;
     }
     Ok(())
 }

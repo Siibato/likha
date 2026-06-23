@@ -1,8 +1,8 @@
+use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, Statement};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use sea_orm::{ConnectionTrait, Statement, DbBackend, DatabaseConnection};
 
 use crate::modules::sync::service_operations::push::OperationResult;
 
@@ -49,7 +49,8 @@ pub async fn save_processed(
     cache.insert(operation_id.to_string(), (user_id, result.clone()));
 
     // Run cleanup: remove old entries (older than 30 days)
-    let cleanup_sql = "DELETE FROM processed_operations WHERE created_at < datetime('now', '-30 days')";
+    let cleanup_sql =
+        "DELETE FROM processed_operations WHERE created_at < datetime('now', '-30 days')";
     let cleanup_statement = Statement::from_sql_and_values(DbBackend::Sqlite, cleanup_sql, []);
     let _ = db.execute(cleanup_statement).await;
 

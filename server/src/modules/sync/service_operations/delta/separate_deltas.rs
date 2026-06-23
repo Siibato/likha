@@ -1,5 +1,5 @@
-use serde_json::Value;
 use super::sync_delta_service::EntityDeltas;
+use serde_json::Value;
 
 /// Partitions records into updated and soft-deleted based on the `deleted_at` field.
 /// Records with non-null `deleted_at` → `deleted` list (by ID only).

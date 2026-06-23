@@ -61,7 +61,10 @@ pub async fn read_file(
 
     if let Some(key) = encryption_key {
         decrypt_file(&data, key).map_err(|e| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Decryption failed: {}", e))
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Decryption failed: {}", e),
+            )
         })
     } else {
         Ok(data)

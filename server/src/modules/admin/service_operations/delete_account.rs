@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::auth::UserRepository;
 use crate::modules::admin::ActivityLogRepository;
+use crate::modules::auth::UserRepository;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn delete_account(
     user_repo: &UserRepository,
@@ -9,7 +9,9 @@ pub async fn delete_account(
     user_id: Uuid,
     admin_id: Uuid,
 ) -> AppResult<()> {
-    let user = user_repo.find_by_id(user_id).await?
+    let user = user_repo
+        .find_by_id(user_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
     user_repo.soft_delete(user_id).await?;

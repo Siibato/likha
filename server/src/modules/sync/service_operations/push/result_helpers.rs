@@ -38,10 +38,7 @@ pub fn parse_uuid_field(payload: &serde_json::Value, field: &str) -> Result<uuid
         .and_then(|s| uuid::Uuid::parse_str(s).map_err(|_| format!("Invalid {}", field)))
 }
 
-pub fn parse_str_field(
-    payload: &serde_json::Value,
-    field: &str,
-) -> Result<String, String> {
+pub fn parse_str_field(payload: &serde_json::Value, field: &str) -> Result<String, String> {
     payload
         .get(field)
         .and_then(|v| v.as_str())
@@ -49,10 +46,7 @@ pub fn parse_str_field(
         .map(String::from)
 }
 
-pub fn parse_i32_field(
-    payload: &serde_json::Value,
-    field: &str,
-) -> Result<i32, String> {
+pub fn parse_i32_field(payload: &serde_json::Value, field: &str) -> Result<i32, String> {
     payload
         .get(field)
         .and_then(|v| v.as_i64())

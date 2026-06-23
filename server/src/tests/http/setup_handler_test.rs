@@ -173,7 +173,12 @@ async fn get_school_details_as_admin_returns_200() {
     let admin = seed_admin(&db).await;
     let app = build_test_app(db).await;
 
-    let req = authed_req("GET", "/api/v1/admin/setup/school-settings", &admin.token, None);
+    let req = authed_req(
+        "GET",
+        "/api/v1/admin/setup/school-settings",
+        &admin.token,
+        None,
+    );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
 }

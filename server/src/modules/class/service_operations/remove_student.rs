@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::class::repository::ClassRepository;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn remove_student(
     class_repo: &ClassRepository,

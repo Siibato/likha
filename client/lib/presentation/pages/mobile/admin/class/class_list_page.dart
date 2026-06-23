@@ -26,7 +26,7 @@ class _AdminClassListPageState extends ConsumerState<AdminClassListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classListProvider.notifier).loadAllClasses();
+      ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true);
     });
   }
 

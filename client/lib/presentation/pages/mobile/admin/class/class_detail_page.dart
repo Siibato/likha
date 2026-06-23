@@ -106,7 +106,6 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     ref.listen<EnrollmentState>(enrollmentProvider, (prev, next) {
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
         ref.read(enrollmentProvider.notifier).clearMessages();
-        ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
       }
       if (next.error != null && prev?.error != next.error) {
         ref.read(enrollmentProvider.notifier).clearMessages();
@@ -152,7 +151,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                   builder: (_) => AdminEditClassPage(classEntity: classInfo),
                 ),
               ).then((_) {
-                ref.read(classListProvider.notifier).loadAllClasses();
+                ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true);
                 ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
               }),
             ),

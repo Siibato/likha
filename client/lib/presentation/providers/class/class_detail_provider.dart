@@ -84,6 +84,20 @@ class ClassDetailNotifier extends StateNotifier<ClassDetailState> {
     }
   }
 
+  Future<void> refreshClassDetail(String classId) async {
+    final result = await _getClassDetail(classId);
+    result.fold(
+      (failure) {},
+      (detail) {
+        final ids = detail.students.map((e) => e.student.id).toSet();
+        state = state.copyWith(
+          currentClassDetail: detail,
+          participantIds: ids,
+        );
+      },
+    );
+  }
+
   Future<void> loadParticipantsOffline(String classId) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _getParticipants(classId: classId);
@@ -134,6 +148,57 @@ class ClassDetailNotifier extends StateNotifier<ClassDetailState> {
           );
         }
       },
+    );
+  }
+
+  void optimisticAddStudent(Participant participant) {
+    final currentDetail = state.currentClassDetail;
+    if (currentDetail == null) return;
+
+    final updatedStudents = [...currentDetail.students, participant]
+      ..sort((a, b) {
+        final lastCmp = a.student.lastName.toLowerCase().compareTo(
+            b.student.lastName.toLowerCase());
+        if (lastCmp != 0) return lastCmp;
+        return a.student.firstName.toLowerCase().compareTo(
+            b.student.firstName.toLowerCase());
+      });
+
+    state = state.copyWith(
+      currentClassDetail: _cloneDetailWithStudents(currentDetail, updatedStudents),
+      participantIds: {...state.participantIds, participant.student.id},
+    );
+  }
+
+  void optimisticRemoveStudent(String studentId) {
+    final currentDetail = state.currentClassDetail;
+    if (currentDetail == null) return;
+
+    final updatedStudents = currentDetail.students
+        .where((p) => p.student.id != studentId)
+        .toList();
+
+    final updatedIds = state.participantIds..remove(studentId);
+
+    state = state.copyWith(
+      currentClassDetail: _cloneDetailWithStudents(currentDetail, updatedStudents),
+      participantIds: updatedIds,
+    );
+  }
+
+  ClassDetail _cloneDetailWithStudents(ClassDetail detail, List<Participant> students) {
+    return ClassDetail(
+      id: detail.id,
+      title: detail.title,
+      description: detail.description,
+      teacherId: detail.teacherId,
+      isArchived: detail.isArchived,
+      isAdvisory: detail.isAdvisory,
+      gradeLevel: detail.gradeLevel,
+      schoolYear: detail.schoolYear,
+      students: students,
+      createdAt: detail.createdAt,
+      updatedAt: detail.updatedAt,
     );
   }
 

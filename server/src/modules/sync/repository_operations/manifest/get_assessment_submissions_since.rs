@@ -3,8 +3,8 @@ use sea_orm::*;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ::entity::assessment_submissions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessment_submissions;
 
 pub async fn get_assessment_submissions_since(
     db: &DatabaseConnection,

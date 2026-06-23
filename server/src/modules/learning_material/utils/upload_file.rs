@@ -1,9 +1,9 @@
+use crate::modules::learning_material::schema::FileMetadataResponse;
+use crate::modules::learning_material::service::{MAX_FILES_PER_MATERIAL, MAX_FILE_SIZE_MB};
+use crate::utils::error::{AppError, AppResult};
+use crate::utils::file_service;
 use std::path::PathBuf;
 use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::learning_material::schema::FileMetadataResponse;
-use crate::modules::learning_material::service::{MAX_FILE_SIZE_MB, MAX_FILES_PER_MATERIAL};
-use crate::utils::file_service;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn upload_file(
@@ -52,10 +52,21 @@ impl crate::modules::learning_material::service::LearningMaterialService {
 
         let file_hash = file_service::compute_hash(&file_data);
 
-        if let Ok(Some(existing_path)) = self.material_repo.find_active_file_path_by_hash(&file_hash).await {
+        if let Ok(Some(existing_path)) = self
+            .material_repo
+            .find_active_file_path_by_hash(&file_hash)
+            .await
+        {
             let file = self
                 .material_repo
-                .save_file(material_id, file_name.clone(), file_type.clone(), file_size, existing_path, file_hash)
+                .save_file(
+                    material_id,
+                    file_name.clone(),
+                    file_type.clone(),
+                    file_size,
+                    existing_path,
+                    file_hash,
+                )
                 .await?;
 
             let _ = self
@@ -85,15 +96,27 @@ impl crate::modules::learning_material::service::LearningMaterialService {
         disk_path.push("material_files");
         disk_path.push(&disk_filename);
 
-        if let Err(e) = file_service::write_file(&disk_path, &file_data, Some(&self.file_encryption_key)).await {
-            return Err(AppError::InternalServerError(format!("Failed to write file to disk: {}", e)));
+        if let Err(e) =
+            file_service::write_file(&disk_path, &file_data, Some(&self.file_encryption_key)).await
+        {
+            return Err(AppError::InternalServerError(format!(
+                "Failed to write file to disk: {}",
+                e
+            )));
         }
 
         let file_path = disk_path.to_string_lossy().to_string();
 
         match self
             .material_repo
-            .save_file(material_id, file_name.clone(), file_type.clone(), file_size, file_path, file_hash)
+            .save_file(
+                material_id,
+                file_name.clone(),
+                file_type.clone(),
+                file_size,
+                file_path,
+                file_hash,
+            )
             .await
         {
             Ok(file) => {

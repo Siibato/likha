@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::student_school_history;
 use crate::utils::{AppError, AppResult};
+use ::entity::student_school_history;
 
 pub async fn update_school_history(
     db: &DatabaseConnection,
@@ -52,7 +52,7 @@ pub async fn update_school_history(
     }
     am.updated_at = sea_orm::ActiveValue::Set(now);
 
-    am.update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to update school history: {}", e)))
+    am.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to update school history: {}", e))
+    })
 }

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::refresh_tokens;
 use crate::utils::{AppError, AppResult};
+use ::entity::refresh_tokens;
 
 pub async fn create_refresh_token(
     db: &DatabaseConnection,
@@ -22,8 +22,7 @@ pub async fn create_refresh_token(
         revoked_at: Set(None),
     };
 
-    refresh_token
-        .insert(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to create refresh token: {}", e)))
+    refresh_token.insert(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to create refresh token: {}", e))
+    })
 }

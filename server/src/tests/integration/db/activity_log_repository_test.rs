@@ -1,13 +1,19 @@
-use uuid::Uuid;
 use crate::modules::admin::ActivityLogRepository;
 use crate::modules::auth::UserRepository;
 use crate::tests::common::test_db::test_db;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_create_log_and_find_by_user() {
     let db = test_db().await;
     let user = UserRepository::new(db.clone())
-        .create_account("logger".to_string(), "Log".to_string(), "User".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "logger".to_string(),
+            "Log".to_string(),
+            "User".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
         .expect("user");
     let repo = ActivityLogRepository::new(db);
@@ -26,7 +32,10 @@ async fn test_create_log_and_find_by_user() {
 async fn test_find_by_user_id_returns_empty_for_unknown() {
     let db = test_db().await;
     let repo = ActivityLogRepository::new(db);
-    let logs = repo.find_by_user_id(Uuid::new_v4()).await.expect("find failed");
+    let logs = repo
+        .find_by_user_id(Uuid::new_v4())
+        .await
+        .expect("find failed");
     assert!(logs.is_empty());
 }
 
@@ -34,13 +43,21 @@ async fn test_find_by_user_id_returns_empty_for_unknown() {
 async fn test_multiple_logs_ordered_by_desc_created_at() {
     let db = test_db().await;
     let user = UserRepository::new(db.clone())
-        .create_account("loggerx".to_string(), "Log".to_string(), "X".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "loggerx".to_string(),
+            "Log".to_string(),
+            "X".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
         .expect("user");
     let repo = ActivityLogRepository::new(db);
 
     repo.create_log(user.id, "login", None).await.expect("log1");
-    repo.create_log(user.id, "view_class", None).await.expect("log2");
+    repo.create_log(user.id, "view_class", None)
+        .await
+        .expect("log2");
 
     let logs = repo.find_by_user_id(user.id).await.expect("find failed");
     assert_eq!(logs.len(), 2);

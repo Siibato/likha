@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::class_participants;
 use crate::utils::{AppError, AppResult};
+use ::entity::class_participants;
 
 pub async fn add_participant(
     db: &DatabaseConnection,
@@ -25,10 +25,9 @@ pub async fn add_participant(
                 updated_at: Set(Utc::now().naive_utc()),
                 ..Default::default()
             };
-            return update
-                .update(db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to add participant: {}", e)));
+            return update.update(db).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to add participant: {}", e))
+            });
         }
         return Ok(existing_participant);
     }

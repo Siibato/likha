@@ -1,4 +1,4 @@
-use rust_xlsxwriter::{Workbook, Worksheet, Format, FormatAlign, FormatBorder, Color};
+use rust_xlsxwriter::{Color, Format, FormatAlign, FormatBorder, Workbook, Worksheet};
 
 pub struct ExcelEngine {
     pub workbook: Workbook,
@@ -13,7 +13,9 @@ impl ExcelEngine {
     }
 
     pub fn worksheet(&mut self) -> &mut Worksheet {
-        self.workbook.worksheet_from_index(0).expect("worksheet exists")
+        self.workbook
+            .worksheet_from_index(0)
+            .expect("worksheet exists")
     }
 
     pub fn save(mut self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -48,9 +50,7 @@ pub fn yellow_fmt() -> Format {
 }
 
 pub fn label_fmt() -> Format {
-    Format::new()
-        .set_bold()
-        .set_font_size(7)
+    Format::new().set_bold().set_font_size(7)
 }
 
 pub fn underline_fmt() -> Format {

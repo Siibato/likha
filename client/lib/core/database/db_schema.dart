@@ -362,7 +362,6 @@ abstract final class SchoolDetailsCols {
 abstract final class LearnerDetailsCols {
   static const String userId = 'user_id';
   static const String lrn = 'lrn';
-  static const String age = 'age';
   static const String sex = 'sex';
   static const String trackStrand = 'track_strand';
   static const String curriculum = 'curriculum';

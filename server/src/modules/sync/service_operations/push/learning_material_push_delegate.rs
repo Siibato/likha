@@ -1,12 +1,12 @@
-use std::sync::Arc;
-use async_trait::async_trait;
-use uuid::Uuid;
-use chrono::Utc;
-use crate::modules::learning_material::service::LearningMaterialService;
-use crate::modules::learning_material::schema::{CreateMaterialRequest, UpdateMaterialRequest};
 use super::delegate::PushDelegate;
+use super::result_helpers::{error_result, parse_str_field, parse_uuid_field, success_result};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
-use super::result_helpers::{error_result, success_result, parse_uuid_field, parse_str_field};
+use crate::modules::learning_material::schema::{CreateMaterialRequest, UpdateMaterialRequest};
+use crate::modules::learning_material::service::LearningMaterialService;
+use async_trait::async_trait;
+use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct LearningMaterialPushDelegate {
     pub material_service: Arc<LearningMaterialService>,
@@ -42,14 +42,31 @@ impl PushDelegate for LearningMaterialPushDelegate {
                 };
                 let client_id = match parse_uuid_field(&op.payload, "id") {
                     Ok(id) => Some(id),
-                    Err(e) => return error_result(op, &format!("Client ID is required for material creation: {}", e)),
+                    Err(e) => {
+                        return error_result(
+                            op,
+                            &format!("Client ID is required for material creation: {}", e),
+                        )
+                    }
                 };
                 let request = CreateMaterialRequest {
                     title,
-                    description: op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    content_text: op.payload.get("content_text").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    description: op
+                        .payload
+                        .get("description")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    content_text: op
+                        .payload
+                        .get("content_text")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                 };
-                match self.material_service.create_material(class_id, request, user_id, client_id).await {
+                match self
+                    .material_service
+                    .create_material(class_id, request, user_id, client_id)
+                    .await
+                {
                     Ok(r) => success_result(op, Some(r.id.to_string()), Some(r.updated_at)),
                     Err(e) => error_result(op, &e.to_string()),
                 }
@@ -60,11 +77,27 @@ impl PushDelegate for LearningMaterialPushDelegate {
                     Err(e) => return error_result(op, &e),
                 };
                 let request = UpdateMaterialRequest {
-                    title: op.payload.get("title").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    description: op.payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    content_text: op.payload.get("content_text").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    title: op
+                        .payload
+                        .get("title")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    description: op
+                        .payload
+                        .get("description")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    content_text: op
+                        .payload
+                        .get("content_text")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                 };
-                match self.material_service.update_material(material_id, request, user_id).await {
+                match self
+                    .material_service
+                    .update_material(material_id, request, user_id)
+                    .await
+                {
                     Ok(r) => success_result(op, None, Some(r.updated_at)),
                     Err(e) => error_result(op, &e.to_string()),
                 }
@@ -74,7 +107,11 @@ impl PushDelegate for LearningMaterialPushDelegate {
                     Ok(v) => v,
                     Err(e) => return error_result(op, &e),
                 };
-                match self.material_service.soft_delete(material_id, user_id).await {
+                match self
+                    .material_service
+                    .soft_delete(material_id, user_id)
+                    .await
+                {
                     Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),
                     Err(e) => error_result(op, &e.to_string()),
                 }

@@ -1,8 +1,8 @@
-use chrono::Utc;
-use uuid::Uuid;
 use crate::modules::assessment::repository::AssessmentRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
+use chrono::Utc;
+use uuid::Uuid;
 
 async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {
     use crate::modules::auth::UserRepository;
@@ -13,12 +13,32 @@ async fn setup(db: &sea_orm::DatabaseConnection) -> (Uuid, Uuid, Uuid) {
         .id;
     let now = Utc::now().naive_utc();
     let assessment_id = AssessmentRepository::new(db.clone())
-        .create_assessment(class_id, "Quiz".to_string(), None, 30, now, now, false, 0, None, true, None, None, None)
+        .create_assessment(
+            class_id,
+            "Quiz".to_string(),
+            None,
+            30,
+            now,
+            now,
+            false,
+            0,
+            None,
+            true,
+            None,
+            None,
+            None,
+        )
         .await
         .expect("assessment")
         .id;
     let student_id = UserRepository::new(db.clone())
-        .create_account("student_sub".to_string(), "Student".to_string(), "Sub".to_string(), "student".to_string(), None)
+        .create_account(
+            "student_sub".to_string(),
+            "Student".to_string(),
+            "Sub".to_string(),
+            "student".to_string(),
+            None,
+        )
         .await
         .expect("student")
         .id;
@@ -39,7 +59,10 @@ async fn test_create_and_find_submission() {
     assert_eq!(sub.assessment_id, assessment_id);
     assert_eq!(sub.user_id, student_id);
 
-    let found = repo.find_submission_by_id(sub.id).await.expect("find_submission_by_id failed");
+    let found = repo
+        .find_submission_by_id(sub.id)
+        .await
+        .expect("find_submission_by_id failed");
     assert!(found.is_some());
 }
 
@@ -66,13 +89,34 @@ async fn test_count_by_assessment_id() {
     let db = test_db().await;
     let (_, assessment_id, student1) = setup(&db).await;
     let student2 = UserRepository::new(db.clone())
-        .create_account("student_sub2".to_string(), "S".to_string(), "2".to_string(), "student".to_string(), None)
+        .create_account(
+            "student_sub2".to_string(),
+            "S".to_string(),
+            "2".to_string(),
+            "student".to_string(),
+            None,
+        )
         .await
-        .expect("s2").id;
+        .expect("s2")
+        .id;
     let repo = AssessmentRepository::new(db);
 
-    assert_eq!(repo.count_submissions_by_assessment_id(assessment_id).await.expect("count failed"), 0);
-    repo.create_submission(assessment_id, student1, None).await.expect("s1");
-    repo.create_submission(assessment_id, student2, None).await.expect("s2");
-    assert_eq!(repo.count_submissions_by_assessment_id(assessment_id).await.expect("count failed"), 2);
+    assert_eq!(
+        repo.count_submissions_by_assessment_id(assessment_id)
+            .await
+            .expect("count failed"),
+        0
+    );
+    repo.create_submission(assessment_id, student1, None)
+        .await
+        .expect("s1");
+    repo.create_submission(assessment_id, student2, None)
+        .await
+        .expect("s2");
+    assert_eq!(
+        repo.count_submissions_by_assessment_id(assessment_id)
+            .await
+            .expect("count failed"),
+        2
+    );
 }

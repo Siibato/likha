@@ -6,6 +6,7 @@ import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.da
 import 'package:likha/presentation/providers/student_records_provider.dart';
 import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/student_records/skeletons/learner_details_skeleton.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 
 class LearnerDetailsSection extends ConsumerStatefulWidget {
   final String classId;
@@ -154,8 +155,7 @@ class _LearnerDetailsForm extends StatefulWidget {
 
 class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
   late TextEditingController _lrnCtrl;
-  late TextEditingController _ageCtrl;
-  late TextEditingController _sexCtrl;
+  String? _selectedSex;
   late TextEditingController _trackStrandCtrl;
   late TextEditingController _curriculumCtrl;
   late TextEditingController _birthplaceCtrl;
@@ -180,8 +180,7 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     final d = widget.state.details;
     if (!_initialized || widget.state.details != null) {
       _lrnCtrl.text = d?.lrn ?? '';
-      _ageCtrl.text = d?.age?.toString() ?? '';
-      _sexCtrl.text = d?.sex ?? '';
+      _selectedSex = d?.sex;
       _trackStrandCtrl.text = d?.trackStrand ?? '';
       _curriculumCtrl.text = d?.curriculum ?? '';
       _birthdate = _parseDate(d?.birthdate);
@@ -202,8 +201,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
   void initState() {
     super.initState();
     _lrnCtrl = TextEditingController();
-    _ageCtrl = TextEditingController();
-    _sexCtrl = TextEditingController();
     _trackStrandCtrl = TextEditingController();
     _curriculumCtrl = TextEditingController();
     _birthplaceCtrl = TextEditingController();
@@ -220,8 +217,6 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
   @override
   void dispose() {
     _lrnCtrl.dispose();
-    _ageCtrl.dispose();
-    _sexCtrl.dispose();
     _trackStrandCtrl.dispose();
     _curriculumCtrl.dispose();
     _birthplaceCtrl.dispose();
@@ -235,11 +230,21 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
     super.dispose();
   }
 
+  String _computeAgeDisplay(DateTime? birthdate) {
+    if (birthdate == null) return '';
+    final now = DateTime.now();
+    int age = now.year - birthdate.year;
+    if (now.month < birthdate.month ||
+        (now.month == birthdate.month && now.day < birthdate.day)) {
+      age--;
+    }
+    return age.toString();
+  }
+
   Future<void> _save() async {
     final data = <String, dynamic>{
       'lrn': _lrnCtrl.text.isEmpty ? null : _lrnCtrl.text,
-      'age': int.tryParse(_ageCtrl.text),
-      'sex': _sexCtrl.text.isEmpty ? null : _sexCtrl.text,
+      'sex': _selectedSex,
       'track_strand': _trackStrandCtrl.text.isEmpty ? null : _trackStrandCtrl.text,
       'curriculum': _curriculumCtrl.text.isEmpty ? null : _curriculumCtrl.text,
       'birthdate': _birthdate == null ? null : _formatDate(_birthdate!),
@@ -395,8 +400,20 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
             runSpacing: 16,
             children: [
               SizedBox(width: 220, child: _field('LRN', _lrnCtrl)),
-              SizedBox(width: 100, child: _field('Age', _ageCtrl)),
-              SizedBox(width: 100, child: _field('Sex', _sexCtrl)),
+              SizedBox(
+                width: 140,
+                child: StyledDropdown<String>(
+                  value: _selectedSex,
+                  label: 'Sex',
+                  icon: Icons.wc_outlined,
+                  enabled: !widget.state.isSaving,
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                  ],
+                  onChanged: (value) => setState(() => _selectedSex = value),
+                ),
+              ),
               SizedBox(width: 200, child: _field('Track / Strand', _trackStrandCtrl)),
               SizedBox(width: 200, child: _field('Curriculum', _curriculumCtrl)),
               SizedBox(
@@ -405,6 +422,13 @@ class _LearnerDetailsFormState extends State<_LearnerDetailsForm> {
                   'Birthdate',
                   _birthdate,
                   onChanged: (date) => setState(() => _birthdate = date),
+                ),
+              ),
+              SizedBox(
+                width: 100,
+                child: _field(
+                  'Age',
+                  TextEditingController(text: _computeAgeDisplay(_birthdate)),
                 ),
               ),
               SizedBox(width: 220, child: _field('Birthplace', _birthplaceCtrl)),

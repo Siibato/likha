@@ -25,11 +25,7 @@ impl EntitlementRepository {
     }
 
     /// Check if user teaches a specific class
-    pub async fn is_teacher_of_class(
-        &self,
-        teacher_id: Uuid,
-        class_id: Uuid,
-    ) -> AppResult<bool> {
+    pub async fn is_teacher_of_class(&self, teacher_id: Uuid, class_id: Uuid) -> AppResult<bool> {
         ops::is_teacher_of_class(&self.db, teacher_id, class_id).await
     }
 
