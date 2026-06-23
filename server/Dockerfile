@@ -27,6 +27,8 @@ WORKDIR /app
 
 COPY --from=builder /build/server ./server
 COPY --from=builder /build/migrations ./migrations
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 # Data and storage directories are expected to be mounted as Docker volumes
 RUN mkdir -p /app/data /app/storage
@@ -36,4 +38,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/api/v1/health || exit 1
 
-CMD ["./server"]
+CMD ["./docker-entrypoint.sh"]

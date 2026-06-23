@@ -314,7 +314,6 @@ class GradeInlineEditCell extends StatelessWidget {
           child: TextField(
             controller: ctrl,
             focusNode: focus,
-            autofocus: true,
             textAlign: TextAlign.center,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [

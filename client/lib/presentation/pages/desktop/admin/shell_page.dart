@@ -6,7 +6,6 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/pages/desktop/admin/account/account_management_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/class/class_list_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/dashboard_page.dart';
-import 'package:likha/presentation/pages/desktop/admin/design_system_page.dart';
 import 'package:likha/presentation/pages/desktop/admin/school_details_page.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
@@ -42,8 +41,6 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
             () => _navigateToIndex(2),
         SingleActivator(LogicalKeyboardKey.digit4, meta: _isMacOS, control: !_isMacOS):
             () => _navigateToIndex(3),
-        SingleActivator(LogicalKeyboardKey.digit5, meta: _isMacOS, control: !_isMacOS):
-            () => _navigateToIndex(4),
       },
       child: Focus(
         autofocus: true,
@@ -74,11 +71,6 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
                 selectedIcon: Icons.settings_rounded,
                 label: 'Settings',
               ),
-              DesktopNavDestination(
-                icon: Icons.palette_outlined,
-                selectedIcon: Icons.palette_rounded,
-                label: 'Design System',
-              ),
             ],
             onDestinationSelected: _navigateToIndex,
             onLogout: () => handleLogoutTap(context, ref),
@@ -92,11 +84,22 @@ class _AdminDesktopShellState extends ConsumerState<AdminDesktopShell> {
             child: IndexedStack(
               index: _currentIndex,
               children: [
-                AdminDashboardPage(onNavigate: _navigateToIndex),
-                const AccountManagementPage(),
-                const AdminClassesPage(),
-                const AdminSchoolDetailsPage(),
-                const DesignSystemPage(),
+                ExcludeFocus(
+                  excluding: _currentIndex != 0,
+                  child: AdminDashboardPage(onNavigate: _navigateToIndex),
+                ),
+                ExcludeFocus(
+                  excluding: _currentIndex != 1,
+                  child: const AccountManagementPage(),
+                ),
+                ExcludeFocus(
+                  excluding: _currentIndex != 2,
+                  child: const AdminClassesPage(),
+                ),
+                ExcludeFocus(
+                  excluding: _currentIndex != 3,
+                  child: const AdminSchoolDetailsPage(),
+                ),
               ],
             ),
           ),

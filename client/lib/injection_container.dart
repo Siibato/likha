@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/core/config/api_config.dart';
+import 'package:likha/core/config/app_config.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/services/school_setup_service_impl.dart';
 import 'package:likha/core/database/local_database.dart';
@@ -212,8 +216,16 @@ Future<void> init() async {
 
   // School setup service — registered early so ApiConstants.baseUrl can be set
   // before any network service is initialized.
+  // Use a plain Dio (no reachability gating) but still respect DEV_MODE cert handling.
+  final setupDio = Dio();
+  if (AppConfig.isDev) {
+    setupDio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () => HttpClient()
+        ..badCertificateCallback = (cert, host, port) => true,
+    );
+  }
   sl.registerLazySingleton<SchoolSetupService>(
-    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), Dio()),
+    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), setupDio),
   );
 
   // Bootstrap runtime base URL from stored school config (if available).
@@ -250,6 +262,12 @@ Future<void> init() async {
     ..options.connectTimeout = ApiConstants.connectTimeout
     ..options.receiveTimeout = ApiConstants.receiveTimeout
     ..options.responseType = ResponseType.json;
+  if (AppConfig.isDev) {
+    healthDio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () => HttpClient()
+        ..badCertificateCallback = (cert, host, port) => true,
+    );
+  }
 
   sl.registerSingleton<ServerReachabilityService>(
     ServerReachabilityServiceImpl(healthDio),
