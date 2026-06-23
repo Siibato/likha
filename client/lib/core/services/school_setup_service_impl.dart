@@ -34,7 +34,7 @@ class SchoolSetupServiceImpl implements SchoolSetupService {
     }
 
     // Verify against the default Pi server
-    final piUrl = dotenv.env['API_BASE_URL'] ?? 'http://192.168.1.1:8080';
+    final piUrl = dotenv.env['API_BASE_URL'] ?? 'https://192.168.1.1';
     try {
       final response = await _dio.get(
         '$piUrl/api/v1/setup/verify',

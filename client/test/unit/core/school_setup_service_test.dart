@@ -15,7 +15,7 @@ void main() {
   late MockSharedPreferences mockPrefs;
 
   setUpAll(() async {
-    dotenv.testLoad(fileInput: 'API_BASE_URL=http://192.168.1.1:8080');
+    dotenv.testLoad(fileInput: 'API_BASE_URL=https://192.168.1.1');
   });
 
   setUp(() {
@@ -67,6 +67,32 @@ void main() {
       );
     });
 
+    test('should use HTTPS fallback when API_BASE_URL is not set', () async {
+      // Clear dotenv so the hardcoded fallback is triggered
+      dotenv.testLoad(fileInput: '');
+
+      when(() => mockDio.get(
+        'https://192.168.1.1/api/v1/setup/verify',
+        queryParameters: any(named: 'queryParameters'),
+        options: any(named: 'options'),
+      )).thenAnswer((_) async => Response(
+        requestOptions: RequestOptions(path: ''),
+        statusCode: 200,
+        data: {'data': {'school_name': 'Test School'}},
+      ));
+
+      final result = await service.resolveShortCode('ABC123');
+
+      expect(result.isRight(), true);
+      result.fold(
+        (_) => fail('should be right'),
+        (config) => expect(config.serverUrl, 'https://192.168.1.1'),
+      );
+
+      // Restore dotenv for subsequent tests
+      dotenv.testLoad(fileInput: 'API_BASE_URL=https://192.168.1.1');
+    });
+
     test('should return ValidationFailure on 403 response', () async {
       when(() => mockDio.get(
         any(),
@@ -102,7 +128,7 @@ void main() {
     });
 
     test('should return ValidationFailure when name is empty', () async {
-      final result = await service.connectManual('http://192.168.1.1:8080', '');
+      final result = await service.connectManual('https://192.168.1.1', '');
 
       expect(result.isLeft(), true);
       result.fold(
@@ -120,7 +146,7 @@ void main() {
         type: DioExceptionType.connectionError,
       ));
 
-      final result = await service.connectManual('http://192.168.1.1:8080', 'My School');
+      final result = await service.connectManual('https://192.168.1.1', 'My School');
 
       expect(result.isLeft(), true);
       result.fold(
@@ -142,13 +168,13 @@ void main() {
 
     test('should return SchoolConfig when config is stored', () async {
       when(() => mockPrefs.getString('school_server_url'))
-          .thenReturn('http://192.168.1.1:8080');
+          .thenReturn('https://192.168.1.1');
       when(() => mockPrefs.getString('school_name')).thenReturn('Test School');
 
       final result = await service.getSchoolConfig();
 
       expect(result, isNotNull);
-      expect(result!.serverUrl, 'http://192.168.1.1:8080');
+      expect(result!.serverUrl, 'https://192.168.1.1');
       expect(result.schoolName, 'Test School');
     });
   });
