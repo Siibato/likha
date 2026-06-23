@@ -47,6 +47,8 @@ jobs:
           docker buildx build \
             --platform linux/arm64 \
             --load \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
             -t likha-server:latest \
             -f server/Dockerfile \
             server/
@@ -62,6 +64,11 @@ jobs:
           cp -r deployment/pi-image/stage-likha pi-gen/stage-likha
           # Ensure the image tar is where 01-run.sh expects it
           cp deployment/pi-image/stage-likha/likha-server-arm64.tar pi-gen/stage-likha/likha-server-arm64.tar || true
+
+      - name: Install qemu-user-static for pi-gen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
 
       - name: Build Pi image with pi-gen
         run: |

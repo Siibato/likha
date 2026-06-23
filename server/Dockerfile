@@ -12,7 +12,10 @@ COPY src/ ./src/
 COPY entity/ ./entity/
 COPY migrations/ ./migrations/
 
-RUN cargo build --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/build/target \
+    cargo build --release && \
+    cp /build/target/release/server /build/server
 
 # Stage 2: minimal runtime image
 FROM alpine:3.20 AS runtime
@@ -22,7 +25,7 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
-COPY --from=builder /build/target/release/server ./server
+COPY --from=builder /build/server ./server
 COPY --from=builder /build/migrations ./migrations
 
 # Data and storage directories are expected to be mounted as Docker volumes
