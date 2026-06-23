@@ -109,11 +109,12 @@ jobs:
 
           mkdir -p "$BUNDLE_DIR"
 
-          # Copy launcher scripts and README
+          # Copy launcher scripts, README, and config template
           cp deployment/imager-bundle/launch-mac.command "$BUNDLE_DIR/"
           cp deployment/imager-bundle/launch-windows.bat "$BUNDLE_DIR/"
           cp deployment/imager-bundle/README.txt "$BUNDLE_DIR/"
           cp deployment/imager-bundle/os_list_template.json "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/school-config.txt "$BUNDLE_DIR/"
 
           # Copy image with the simple name launchers expect
           cp "$IMG_XZ" "$BUNDLE_DIR/likha-server.img.xz"

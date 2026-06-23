@@ -19,24 +19,40 @@ STEP 2 — Insert your SD card
 ----------------------------
 Put the blank SD card into your computer using a card reader or USB adapter.
 
-STEP 3 — Run the launcher
+STEP 3 — Fill in your school configuration
+------------------------------------------
+Open "school-config.txt" in a text editor and fill in:
+  MESH_GROUP_ID=ESATQL-2026    (REQUIRED — all your Pis must share this ID)
+  SCHOOL_CODE=ESATQL           (optional — shown in the admin dashboard)
+
+Save the file.
+
+STEP 4 — Run the launcher
 -------------------------
   Mac:    Double-click "Launch Likha Imager.command"
   Windows: Double-click "Launch Likha Imager.bat"
 
 This will open Raspberry Pi Imager with "Likha Classroom Server" already selected.
+After flashing, the launcher will automatically copy your school config to the SD card.
 
-STEP 4 — Choose your device and fill in details
+STEP 5 — Choose your device and flash
 ------------------------------------------------
   1. Select "Raspberry Pi 4" or "Raspberry Pi 5"
   2. Click "Likha Classroom Server" (it should already be selected)
-  3. Click the gear icon (top right)
-  4. Type your School Code / Mesh Group ID (e.g., ESATQL-2026)
-  5. (Optional) Add WiFi details if your Pi will connect to existing school WiFi
-  6. Select your SD card under "Storage"
-  7. Click "Flash" and wait ~10 minutes
+  3. (Optional) Click the gear icon to set hostname, WiFi, or enable SSH
+  4. Select your SD card under "Storage"
+  5. Click "Flash" and wait ~10 minutes
 
-STEP 5 — Put the SD card in the Pi
+STEP 6 — Apply school config (auto or manual)
+-------------------------------------------
+When Pi Imager shows "Done", the launcher will try to copy school-config.txt
+to the SD card automatically. If it can't find the card, follow the prompt to
+copy it manually:
+  1. Re-insert the SD card into your computer
+  2. Copy "school-config.txt" to the boot partition
+  3. Rename the copied file to "likha-config.txt"
+
+STEP 7 — Put the SD card in the Pi
 -----------------------------------
 Once flashing is complete, eject the SD card, insert it into the Raspberry Pi,
 connect the Ethernet cable, and plug in power.

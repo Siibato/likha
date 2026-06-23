@@ -16,6 +16,14 @@ if not exist "%IMAGE_PATH%" (
     exit /b 1
 )
 
+set "SCHOOL_CONFIG=%BUNDLE_DIR%school-config.txt"
+findstr /R /C:"^MESH_GROUP_ID=$" "%SCHOOL_CONFIG%" >nul
+if %errorlevel% == 0 (
+    msg * "Please fill in MESH_GROUP_ID in school-config.txt before flashing."
+    start "" "%SCHOOL_CONFIG%"
+    exit /b 1
+)
+
 REM Find Raspberry Pi Imager
 set "IMAGER_EXE=C:\Program Files (x86)\Raspberry Pi Imager\rpi-imager.exe"
 if not exist "%IMAGER_EXE%" (
@@ -35,3 +43,23 @@ powershell -Command "(Get-Content '%MANIFEST%') -replace 'BUNDLE_DIR_PLACEHOLDER
 
 REM ---- Launch ----
 "%IMAGER_EXE%" --repo "%MANIFEST%"
+
+REM ---- Post-flash: copy school config to boot partition ----
+echo.
+echo ============================================
+echo Pi Imager is now open. Flash your SD card.
+echo When done, press any key to copy config...
+echo (Press Ctrl+C to skip)
+echo ============================================
+pause >nul
+
+for %%D in (D: E: F: G: H: I: J: K: L: M: N: O: P: Q: R: S: T: U: V: W: X: Y: Z:) do (
+    if exist "%%D\config.txt" (
+        copy /Y "%SCHOOL_CONFIG%" "%%D\likha-config.txt" >nul
+        echo School config copied to %%D\likha-config.txt
+        pause
+        goto :eof
+    )
+)
+echo Boot partition not found. Please re-insert SD card and copy school-config.txt manually.
+pause
