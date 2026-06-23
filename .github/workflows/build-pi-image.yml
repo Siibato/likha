@@ -95,17 +95,39 @@ jobs:
           IMG_XZ="release/likha-server-${SAFE_VERSION}.img.xz"
           if [ -f "$IMG_XZ" ]; then
             SIZE_XZ=$(stat -c%s "$IMG_XZ")
-            # pi-gen images are ~3 GB uncompressed; exact size is hard to get without extraction
-            # Use a conservative estimate or parse the raw .img if available
             echo "image_download_size=${SIZE_XZ}" >> "$GITHUB_OUTPUT"
-            echo "extract_size=3221225472" >> "$GITHUB_OUTPUT"  # ~3 GB
+            echo "extract_size=3221225472" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Create distributable bundle
+        run: |
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
+          IMG_XZ="release/likha-server-${SAFE_VERSION}.img.xz"
+          BUNDLE_NAME="likha-classroom-server-${SAFE_VERSION}"
+          BUNDLE_DIR="release/${BUNDLE_NAME}"
+
+          mkdir -p "$BUNDLE_DIR"
+
+          # Copy launcher scripts and README
+          cp deployment/imager-bundle/launch-mac.command "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/launch-windows.bat "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/README.txt "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/os_list_template.json "$BUNDLE_DIR/"
+
+          # Copy image with the simple name launchers expect
+          cp "$IMG_XZ" "$BUNDLE_DIR/likha-server.img.xz"
+
+          # Zip it up
+          (cd release && zip -r "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}")
 
       - name: Upload release artifact
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          files: release/*.img.xz
+          files: |
+            release/*.img.xz
+            release/*.zip
           tag_name: ${{ github.ref_name || inputs.version }}
           generate_release_notes: true
 
@@ -131,10 +153,9 @@ jobs:
                 "release_date": "$(date +%Y-%m-%d)",
                 "init_format": "systemd",
                 "devices": [
-                  "pi4",
-                  "pi5"
+                  "pi5-64bit",
+                  "pi4-64bit"
                 ],
-                "format": "custom",
                 "customization": {
                   "schema": {
                     "mesh_group_id": {
