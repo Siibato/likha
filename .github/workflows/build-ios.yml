@@ -1,0 +1,61 @@
+name: Build iOS
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v0.0.0-dev'
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: client
+        run: flutter pub get
+
+      # Uncomment the section below and add repository secrets to produce a signed IPA.
+      # Secrets required: IOS_P12_CERTIFICATE, IOS_P12_PASSWORD, IOS_MOBILE_PROVISIONING_PROFILE,
+      #                   IOS_KEYCHAIN_PASSWORD
+      # ------------------------------------------------------------------
+      # - name: Install Apple certificate and provisioning profile
+      #   uses: apple-actions/import-cp@main
+      #   with:
+      #     p12-file-base64: ${{ secrets.IOS_P12_CERTIFICATE }}
+      #     p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+      #     mobile-provisioning-profile-base64: ${{ secrets.IOS_MOBILE_PROVISIONING_PROFILE }}
+      # ------------------------------------------------------------------
+
+      - name: Build iOS (no codesign)
+        working-directory: client
+        run: flutter build ios --release --no-codesign
+
+      - name: Package app bundle
+        run: |
+          mkdir -p release
+          cd client/build/ios/Release-iphoneos
+          zip -r "../../../../release/likha-ios-${{ github.ref_name || inputs.version }}.zip" Runner.app
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: release/*
+          tag_name: ${{ github.ref_name || inputs.version }}
+          generate_release_notes: true
