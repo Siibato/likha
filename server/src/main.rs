@@ -311,7 +311,7 @@ async fn main() {
     let file_encryption_key = parse_key(&config.file_encryption_key)
         .expect("Invalid FILE_ENCRYPTION_KEY format");
 
-    let assignment_service = Arc::new(AssignmentService::new(db.clone()).with_cache(redis_cache.clone()));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone(), file_encryption_key).with_cache(redis_cache.clone()));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         config.file_storage_path.clone(),
@@ -488,8 +488,9 @@ fn build_cors_layer(config: &server::config::ServerConfig) -> CorsLayer {
     let allowed_headers = [AUTHORIZATION, CONTENT_TYPE, ACCEPT, x_device_id, idempotency_key];
 
     if config.allowed_origins.is_empty() {
+        // Deny all cross-origin requests when ALLOWED_ORIGINS is not configured.
+        // Mobile/native clients bypass CORS; this protects the web dashboard.
         return CorsLayer::new()
-            .allow_origin(tower_http::cors::AllowOrigin::mirror_request())
             .allow_methods(allowed_methods)
             .allow_headers(allowed_headers)
             .max_age(Duration::from_secs(3600));

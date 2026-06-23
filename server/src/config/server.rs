@@ -78,7 +78,7 @@ impl ServerConfig {
             file_storage_path: env::var("FILE_STORAGE_PATH")
                 .unwrap_or_else(|_| "./uploads".to_string()),
             school_code: env::var("SCHOOL_CODE")
-                .unwrap_or_else(|_| "CHANGE_ME".to_string()),
+                .expect("SCHOOL_CODE must be set in .env file"),
             db_encryption_key,
             file_encryption_key,
             allowed_origins,

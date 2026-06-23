@@ -22,20 +22,9 @@ pub struct AssignmentService {
 }
 
 impl AssignmentService {
-    pub fn new(db: DatabaseConnection) -> Self {
+    pub fn new(db: DatabaseConnection, file_encryption_key: [u8; 32]) -> Self {
         let file_storage_path = env::var("FILE_STORAGE_PATH")
             .unwrap_or_else(|_| "./uploads".to_string());
-        
-        let encryption_key_str = env::var("FILE_ENCRYPTION_KEY")
-            .unwrap_or_else(|_| "default-32-byte-encryption-key-1234".to_string());
-        
-        let mut file_encryption_key = [0u8; 32];
-        let key_bytes = encryption_key_str.as_bytes();
-        for (i, &byte) in key_bytes.iter().enumerate() {
-            if i < 32 {
-                file_encryption_key[i] = byte;
-            }
-        }
 
         Self {
             assignment_repo: AssignmentRepository::new(db.clone()),
