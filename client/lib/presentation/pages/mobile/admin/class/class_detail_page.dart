@@ -99,18 +99,17 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
   Widget build(BuildContext context) {
     final classDetailState = ref.watch(classDetailProvider);
     final classListState = ref.watch(classListProvider);
+    final enrollmentState = ref.watch(enrollmentProvider);
     final studentSearchState = ref.watch(studentSearchProvider);
     final detail = classDetailState.currentClassDetail;
 
-    ref.listen<ClassDetailState>(classDetailProvider, (prev, next) {
-      // Success snackbar
+    ref.listen<EnrollmentState>(enrollmentProvider, (prev, next) {
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ref.read(classDetailProvider.notifier).clearMessages();
+        ref.read(enrollmentProvider.notifier).clearMessages();
+        ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
       }
-
-      // Error snackbar
       if (next.error != null && prev?.error != next.error) {
-        ref.read(classDetailProvider.notifier).clearMessages();
+        ref.read(enrollmentProvider.notifier).clearMessages();
       }
     });
 
@@ -359,7 +358,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                         itemBuilder: (context, index) {
                           final student = studentSearchState.searchResults[index];
                           final isParticipant = classDetailState.participantIds.contains(student.id);
-                          final isLoading = classDetailState.loadingStudentIds.contains(student.id);
+                          final isLoading = enrollmentState.loadingStudentIds.contains(student.id);
 
                           return StudentActionCard(
                             student: student,
@@ -368,14 +367,14 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                             onAdd: isParticipant
                                 ? null
                                 : () {
-                                    ref.read(classDetailProvider.notifier).addStudent(
+                                    ref.read(enrollmentProvider.notifier).addStudent(
                                           classId: widget.classId,
                                           studentId: student.id,
                                         );
                                   },
                             onRemove: isParticipant
                                 ? () {
-                                    ref.read(classDetailProvider.notifier).removeStudent(
+                                    ref.read(enrollmentProvider.notifier).removeStudent(
                                           classId: widget.classId,
                                           studentId: student.id,
                                         );

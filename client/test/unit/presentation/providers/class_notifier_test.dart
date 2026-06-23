@@ -6,14 +6,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/domain/classes/usecases/add_student.dart';
 import 'package:likha/domain/classes/usecases/create_class.dart';
 import 'package:likha/domain/classes/usecases/delete_class.dart';
 import 'package:likha/domain/classes/usecases/get_all_classes.dart';
 import 'package:likha/domain/classes/usecases/get_class_detail.dart';
 import 'package:likha/domain/classes/usecases/get_my_classes.dart';
-import 'package:likha/domain/classes/usecases/get_participants.dart';
-import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
 import 'package:likha/presentation/providers/class/class_list_provider.dart';
@@ -27,10 +24,7 @@ class MockGetMyClasses extends Mock implements GetMyClasses {}
 class MockGetAllClasses extends Mock implements GetAllClasses {}
 class MockGetClassDetail extends Mock implements GetClassDetail {}
 class MockUpdateClass extends Mock implements UpdateClass {}
-class MockAddStudent extends Mock implements AddStudent {}
-class MockRemoveStudent extends Mock implements RemoveStudent {}
 class MockSearchStudents extends Mock implements SearchStudents {}
-class MockGetParticipants extends Mock implements GetParticipants {}
 class MockDeleteClass extends Mock implements DeleteClass {}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -59,7 +53,6 @@ void main() {
   setUpAll(() {
     registerFallbackValue(CreateClassParams(title: 'Test Class'));
     registerFallbackValue(UpdateClassParams(classId: 'c-1'));
-    registerFallbackValue(AddStudentParams(classId: 'c-1', studentId: 's-1'));
   });
 
   tearDownAll(() async {

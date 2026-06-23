@@ -109,17 +109,17 @@ lint:
 	@cd $(CLIENT_DIR) && flutter analyze
 
 docker-up: ## Build and start dev stack (no nginx, port 8080 exposed)
-	@docker-compose up -d --build
+	@docker compose up -d --build
 
 docker-up-nginx: ## Build and start full stack with nginx + TLS (ports 80/443)
 	@if [ ! -f nginx/certs/server.crt ]; then \
 		echo "No TLS certs found — generating self-signed..."; \
 		SERVER_IP=127.0.0.1 bash scripts/generate-certs.sh; \
 	fi
-	@docker-compose -f docker-compose.yml up -d --build
+	@docker compose -f docker-compose.yml up -d --build
 
 docker-down: ## Stop all containers
-	@docker-compose down
+	@docker compose down
 
 sync-pi-assets: ## Sync deployment assets (compose, scripts, systemd) into pi-gen stage
 	@cd $(PI_IMAGE_DIR) && ./sync-assets.sh

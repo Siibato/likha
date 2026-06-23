@@ -41,7 +41,10 @@ import 'package:likha/presentation/providers/assignment/assignment_list_provider
 import 'package:likha/presentation/providers/assignment/assignment_detail_provider.dart';
 import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 import 'package:likha/presentation/providers/auth_notifier.dart';
-import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/providers/class/class_detail_provider.dart';
+import 'package:likha/presentation/providers/class/class_list_provider.dart';
+import 'package:likha/presentation/providers/class/enrollment_provider.dart';
+import 'package:likha/presentation/providers/class/student_search_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -224,8 +227,6 @@ class FakeClassDetailNotifier extends ClassDetailNotifier {
       : _fixedState = initialState ?? ClassDetailState(),
         super(
           _MockGetClassDetail(),
-          _MockAddStudent(),
-          _MockRemoveStudent(),
           _MockGetParticipants(),
         ) {
     state = _fixedState;
@@ -233,6 +234,35 @@ class FakeClassDetailNotifier extends ClassDetailNotifier {
 
   @override
   Future<void> loadClassDetail(String classId) async {}
+
+  @override
+  Future<void> loadParticipants(String classId) async {}
+
+  @override
+  Future<void> loadParticipantsOffline(String classId) async {}
+}
+
+/// Stub [EnrollmentNotifier] with a fixed [EnrollmentState] and no-op methods.
+class FakeEnrollmentNotifier extends EnrollmentNotifier {
+  final EnrollmentState _fixedState;
+
+  FakeEnrollmentNotifier([EnrollmentState? initialState])
+      : _fixedState = initialState ?? EnrollmentState(),
+        super(_MockAddStudent(), _MockRemoveStudent()) {
+    state = _fixedState;
+  }
+
+  @override
+  Future<void> addStudent({
+    required String classId,
+    required String studentId,
+  }) async {}
+
+  @override
+  Future<void> removeStudent({
+    required String classId,
+    required String studentId,
+  }) async {}
 }
 
 /// Stub [StudentSearchNotifier] with a fixed [StudentSearchState] and no-op loads.

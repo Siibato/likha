@@ -72,23 +72,25 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
 
   void _handleEnrollToggle(String studentId, bool isEnrolled) {
     if (isEnrolled) {
-      ref.read(classDetailProvider.notifier).removeStudent(classId: widget.classId, studentId: studentId);
+      ref.read(enrollmentProvider.notifier).removeStudent(classId: widget.classId, studentId: studentId);
     } else {
-      ref.read(classDetailProvider.notifier).addStudent(classId: widget.classId, studentId: studentId);
+      ref.read(enrollmentProvider.notifier).addStudent(classId: widget.classId, studentId: studentId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final classDetailState = ref.watch(classDetailProvider);
+    final enrollmentState = ref.watch(enrollmentProvider);
     final studentSearchState = ref.watch(studentSearchProvider);
 
-    ref.listen<ClassDetailState>(classDetailProvider, (prev, next) {
+    ref.listen<EnrollmentState>(enrollmentProvider, (prev, next) {
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ref.read(classDetailProvider.notifier).clearMessages();
+        ref.read(enrollmentProvider.notifier).clearMessages();
+        ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
       }
       if (next.error != null && prev?.error != next.error) {
-        ref.read(classDetailProvider.notifier).clearMessages();
+        ref.read(enrollmentProvider.notifier).clearMessages();
       }
     });
 
@@ -149,12 +151,12 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
                 : Icons.person_search_rounded,
           )
         else
-          _buildStudentTable(studentSearchState, classDetailState),
+          _buildStudentTable(studentSearchState, classDetailState, enrollmentState),
       ],
     );
   }
 
-  Widget _buildStudentTable(StudentSearchState studentSearchState, ClassDetailState classDetailState) {
+  Widget _buildStudentTable(StudentSearchState studentSearchState, ClassDetailState classDetailState, EnrollmentState enrollmentState) {
     final allResults = studentSearchState.searchResults;
     final totalPages = (allResults.length / _pageSize).ceil();
     if (_currentPage >= totalPages && totalPages > 0) {
@@ -200,7 +202,7 @@ class _EnrollmentSectionState extends ConsumerState<EnrollmentSection> {
                   final index = entry.key;
                   final student = entry.value;
                   final isParticipant = classDetailState.participantIds.contains(student.id);
-                  final isStudentLoading = classDetailState.loadingStudentIds.contains(student.id);
+                  final isStudentLoading = enrollmentState.loadingStudentIds.contains(student.id);
 
                   return Column(
                     children: [
