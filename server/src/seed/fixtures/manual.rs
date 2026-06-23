@@ -1292,7 +1292,6 @@ pub fn manual_learner_details() -> Vec<LearnerDetailsSpec> {
     for i in 1..=70 {
         let username = student_username(i);
         let lrn = format!("136-1234-{:03}", i);
-        let age = (15 + (i % 3)) as i32; // Ages 15-17
         let sex = if i % 2 == 0 { "Female" } else { "Male" };
         let tracks = ["STEM", "ABM", "HUMSS"];
         let track = tracks[(i as usize) % 3];
@@ -1302,7 +1301,6 @@ pub fn manual_learner_details() -> Vec<LearnerDetailsSpec> {
             id: seed_id("learner_details", &username),
             user_id: user_id(&username),
             lrn: Some(lrn),
-            age: Some(age),
             sex: Some(sex.into()),
             track_strand: Some(track.into()),
             curriculum: Some(curriculum.into()),

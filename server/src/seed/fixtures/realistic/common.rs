@@ -1018,12 +1018,11 @@ pub fn realistic_learner_details() -> Vec<LearnerDetailsSpec> {
         ),
     ];
 
-    for (uname, lrn, age, sex, track, curriculum) in &data {
+    for (uname, lrn, _age, sex, track, curriculum) in &data {
         details.push(LearnerDetailsSpec {
             id: seed_id("learner_details", uname),
             user_id: uid(uname),
             lrn: Some((*lrn).into()),
-            age: Some(*age),
             sex: Some((*sex).into()),
             track_strand: Some((*track).into()),
             curriculum: Some((*curriculum).into()),
