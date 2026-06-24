@@ -19,7 +19,7 @@ BUILD_DIR         := builds
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-seed-demo2 db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-up-nginx docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
+.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-seed-demo2 db-delete build-server run-server build-apk build-macos build-windows build-ios build-all test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-up-nginx docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -77,14 +77,37 @@ build-server:
 run-server:
 	@cd $(SERVER_DIR) && ./target/release/server
 
-build-apk:
+build-apk: ## Build Android APK and copy to builds/
 	@cd $(CLIENT_DIR) && flutter build apk --release
+	@mkdir -p $(BUILD_DIR)
+	@cp $(CLIENT_DIR)/build/app/outputs/flutter-apk/app-release.apk $(BUILD_DIR)/likha-android.apk
+	@echo "Android APK -> $(BUILD_DIR)/likha-android.apk"
 
-build-macos:
-	@cd $(CLIENT_DIR) && flutter build macos
+build-macos: ## Build macOS app, zip it, and copy to builds/
+	@cd $(CLIENT_DIR) && flutter build macos --release
+	@mkdir -p $(BUILD_DIR)
+	@zip -r $(BUILD_DIR)/likha-macos.zip $(CLIENT_DIR)/build/macos/Build/Products/Release/likha.app
+	@echo "macOS app -> $(BUILD_DIR)/likha-macos.zip"
 
-build-windows:
-	@cd $(CLIENT_DIR) && flutter build windows
+build-windows: ## Build Windows app, zip it, and copy to builds/
+	@cd $(CLIENT_DIR) && flutter build windows --release
+	@mkdir -p $(BUILD_DIR)
+	@cd $(CLIENT_DIR)/build/windows/x64/Release && zip -r ../../../../../$(BUILD_DIR)/likha-windows.zip .
+	@echo "Windows app -> $(BUILD_DIR)/likha-windows.zip"
+
+build-ios: ## Build iOS app (no codesign), zip it, and copy to builds/
+	@cd $(CLIENT_DIR) && flutter build ios --release --no-codesign
+	@mkdir -p $(BUILD_DIR)
+	@cd $(CLIENT_DIR)/build/ios/Release-iphoneos && zip -r ../../../$(BUILD_DIR)/likha-ios.zip Runner.app
+	@echo "iOS app -> $(BUILD_DIR)/likha-ios.zip"
+
+build-all: build-apk build-macos build-ios ## Build all client apps and copy to builds/
+	@if [ "$$(uname)" = "MINGW" ] || [ "$$(uname)" = "MSYS" ] || [ "$$(uname)" = "CYGWIN" ] || [ "$$(uname)" = "Windows_NT" ]; then \
+		$(MAKE) build-windows; \
+	else \
+		echo "Skipping Windows build (requires Windows host)"; \
+	fi
+	@echo "All builds complete. Check $(BUILD_DIR)/"
 
 test-server:
 	@cd $(SERVER_DIR) && cargo test --features seed

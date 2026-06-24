@@ -37,8 +37,7 @@ jobs:
       - name: Package release
         run: |
           mkdir -p release
-          # The Xcode product name for this project is mobile.app
-          APP_NAME="mobile.app"
+          APP_NAME="likha.app"
           zip -r "release/likha-macos-${{ github.ref_name || inputs.version }}.zip" \
             "client/build/macos/Build/Products/Release/${APP_NAME}"
 
