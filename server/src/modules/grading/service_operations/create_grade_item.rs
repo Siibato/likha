@@ -18,6 +18,11 @@ impl crate::modules::grading::service::GradeComputationService {
         let order_index = existing.len() as i32;
         let source_type = request.source_type.unwrap_or_else(|| "manual".to_string());
         let source_id = request.source_id;
+        let item_id = request
+            .id
+            .as_ref()
+            .and_then(|s| Uuid::parse_str(s).ok());
+
         let item = self
             .repo
             .create_item(
@@ -29,6 +34,7 @@ impl crate::modules::grading::service::GradeComputationService {
                 source_type,
                 source_id,
                 order_index,
+                item_id,
             )
             .await?;
 

@@ -98,6 +98,7 @@ impl GradeComputationRepository {
         source_type: String,
         source_id: Option<String>,
         order_index: i32,
+        id: Option<Uuid>,
     ) -> AppResult<grade_items::Model> {
         ops::create_item(
             &self.db,
@@ -109,6 +110,7 @@ impl GradeComputationRepository {
             source_type,
             source_id,
             order_index,
+            id,
         )
         .await
     }

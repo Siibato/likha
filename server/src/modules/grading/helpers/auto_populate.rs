@@ -36,6 +36,7 @@ pub async fn create_linked_grade_item(
         source_type.to_string(),
         Some(source_id.to_string()),
         order_index,
+        None,
     )
     .await?;
 

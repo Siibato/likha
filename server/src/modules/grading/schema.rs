@@ -25,6 +25,7 @@ pub struct UpdateGradingConfigRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateGradeItemRequest {
+    pub id: Option<String>,
     pub title: String,
     pub component: String,
     pub term_number: Option<i32>,

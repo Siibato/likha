@@ -109,6 +109,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       classId: widget.classId,
       selectedTerm: _selectedTerm,
       ref: ref,
+      onCreated: _reloadGrades,
     );
   }
 

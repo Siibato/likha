@@ -15,9 +15,10 @@ pub async fn create_item(
     source_type: String,
     source_id: Option<String>,
     order_index: i32,
+    id: Option<Uuid>,
 ) -> AppResult<grade_items::Model> {
     let item = grade_items::ActiveModel {
-        id: Set(Uuid::new_v4()),
+        id: Set(id.unwrap_or_else(Uuid::new_v4)),
         class_id: Set(class_id),
         title: Set(title),
         component: Set(component),

@@ -95,6 +95,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       classId: widget.classId,
       selectedTerm: _selectedTerm,
       ref: ref,
+      onCreated: _reloadGrades,
     );
   }
 

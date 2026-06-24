@@ -21,6 +21,13 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
     final id = const Uuid().v4();
     final queueEntryId = const Uuid().v4();
 
+    final existing = await localDataSource.getItemsByClassTerm(
+      classId,
+      (data['term_number'] as num?)?.toInt() ?? 1,
+      component: data['component'] as String?,
+    );
+    final nextOrderIndex = existing.length;
+
     final model = GradeItemModel(
       id: id,
       classId: classId,
@@ -30,7 +37,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       totalPoints: (data['total_points'] as num).toDouble(),
       sourceType: (data['source_type'] as String?) ?? 'manual',
       sourceId: data['source_id'] as String?,
-      orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
+      orderIndex: (data['order_index'] as num?)?.toInt() ?? nextOrderIndex,
       createdAt: now,
       updatedAt: now,
     );

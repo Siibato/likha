@@ -94,9 +94,15 @@ class GradeItemsNotifier extends StateNotifier<GradeItemsState> {
       (failure) => state = state.copyWith(
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (mutationResult) => state = state.copyWith(
-        successMessage: 'Grade item created',
-      ),
+      (mutationResult) {
+        final newItem = mutationResult.entity;
+        final matchesTerm = newItem.termNumber == state.currentTerm;
+        final matchesComponent = state.currentComponent.isEmpty || newItem.component == state.currentComponent;
+        state = state.copyWith(
+          successMessage: 'Grade item created',
+          items: (matchesTerm && matchesComponent) ? [...state.items, newItem] : null,
+        );
+      },
     );
   }
 

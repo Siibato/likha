@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
@@ -60,6 +61,14 @@ ResultFuture<ClassGrades> getClassGrades(
           final freshSummary = remote_parsers.parseGradeSummary(raw);
 
           if (await _hasChanged(localDataSource, classId, termNumber, freshItems, freshScoresByItem, freshConfig, freshSummary)) {
+            // Purge stale synced items so locally-created pending rows don't
+            // collide with server rows that have a different generated ID.
+            await _deleteStaleSyncedItems(
+              localDataSource,
+              classId,
+              termNumber,
+              freshItems.map((i) => i.id).toSet(),
+            );
             // Save fresh data to local DB
             await localDataSource.saveItems(freshItems);
             for (final entry in freshScoresByItem.entries) {
@@ -246,4 +255,24 @@ List<dynamic> _mergeConfig(List<dynamic> current, dynamic fresh) {
   }
   if (!replaced) updated.add(fresh);
   return updated;
+}
+
+Future<void> _deleteStaleSyncedItems(
+  GradingLocalDataSource local,
+  String classId,
+  int term,
+  Set<String> freshIds,
+) async {
+  try {
+    final db = await local.localDatabase.database;
+    final placeholders = List.filled(freshIds.length, '?').join(',');
+    await db.delete(
+      DbTables.gradeItems,
+      where:
+          '${GradeItemsCols.classId} = ? AND ${GradeItemsCols.termNumber} = ? AND ${CommonCols.syncStatus} = ? AND ${CommonCols.id} NOT IN ($placeholders)',
+      whereArgs: [classId, term, 'synced', ...freshIds],
+    );
+  } catch (_) {
+    // ignore cleanup errors
+  }
 }

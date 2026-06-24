@@ -166,6 +166,11 @@ impl GradingPushDelegate {
                     .unwrap_or(100.0);
 
                 let request = CreateGradeItemRequest {
+                    id: op
+                        .payload
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
                     title,
                     component,
                     term_number: Some(term_number),
