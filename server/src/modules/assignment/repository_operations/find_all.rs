@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::assignments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn find_all(db: &DatabaseConnection) -> AppResult<Vec<assignments::Model>> {
     assignments::Entity::find()

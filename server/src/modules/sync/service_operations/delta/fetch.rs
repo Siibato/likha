@@ -1,13 +1,13 @@
 use chrono::{Duration, NaiveDateTime, Utc};
 use uuid::Uuid;
 
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use crate::utils::{AppError, AppResult};
 use crate::modules::sync::helpers::enrich_questions;
 use crate::modules::sync::sync_scope::SyncScope;
+use crate::utils::{AppError, AppResult};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
-use super::sync_delta_service::{DeltaRequest, DeltaResponse, DeltaPayload};
 use super::separate_deltas::separate_deltas;
+use super::sync_delta_service::{DeltaPayload, DeltaRequest, DeltaResponse};
 
 impl super::SyncDeltaService {
     /// Get delta sync data since last_sync_at
@@ -61,7 +61,10 @@ impl super::SyncDeltaService {
         tracing::debug!("Fetching class deltas since {}", last_sync_at);
         let classes = self
             .manifest_repo
-            .get_classes_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+            .get_classes_since(
+                manifest.classes.iter().map(|e| e.id).collect(),
+                last_sync_at,
+            )
             .await?;
         tracing::debug!("Got {} class deltas", classes.len());
 
@@ -102,12 +105,18 @@ impl super::SyncDeltaService {
         }
 
         if scope.include_questions {
-            let question_ids: Vec<Uuid> = manifest.assessment_questions.iter().map(|e| e.id).collect();
-            tracing::debug!("Fetching {} question deltas since {}", question_ids.len(), last_sync_at);
+            let question_ids: Vec<Uuid> =
+                manifest.assessment_questions.iter().map(|e| e.id).collect();
+            tracing::debug!(
+                "Fetching {} question deltas since {}",
+                question_ids.len(),
+                last_sync_at
+            );
             questions = if question_ids.is_empty() {
                 Vec::new()
             } else {
-                let raw_questions = self.manifest_repo
+                let raw_questions = self
+                    .manifest_repo
                     .get_questions_since(question_ids, last_sync_at)
                     .await?;
                 enrich_questions(&self.db, raw_questions, user_role).await?
@@ -116,17 +125,31 @@ impl super::SyncDeltaService {
         }
 
         if scope.include_submissions {
-            let assessment_submission_ids: Vec<Uuid> =
-                manifest.assessment_submissions.iter().map(|e| e.id).collect();
-            tracing::debug!("Fetching {} assessment submission deltas since {}", assessment_submission_ids.len(), last_sync_at);
+            let assessment_submission_ids: Vec<Uuid> = manifest
+                .assessment_submissions
+                .iter()
+                .map(|e| e.id)
+                .collect();
+            tracing::debug!(
+                "Fetching {} assessment submission deltas since {}",
+                assessment_submission_ids.len(),
+                last_sync_at
+            );
             assessment_submissions = if assessment_submission_ids.is_empty() {
                 Vec::new()
             } else {
                 self.manifest_repo
-                    .get_assessment_submissions_since(user_id, assessment_submission_ids, last_sync_at)
+                    .get_assessment_submissions_since(
+                        user_id,
+                        assessment_submission_ids,
+                        last_sync_at,
+                    )
                     .await?
             };
-            tracing::debug!("Got {} assessment submission deltas", assessment_submissions.len());
+            tracing::debug!(
+                "Got {} assessment submission deltas",
+                assessment_submissions.len()
+            );
         }
 
         if scope.include_assignments {
@@ -142,17 +165,31 @@ impl super::SyncDeltaService {
         }
 
         if scope.include_submissions {
-            let assignment_submission_ids: Vec<Uuid> =
-                manifest.assignment_submissions.iter().map(|e| e.id).collect();
-            tracing::debug!("Fetching {} assignment submission deltas since {}", assignment_submission_ids.len(), last_sync_at);
+            let assignment_submission_ids: Vec<Uuid> = manifest
+                .assignment_submissions
+                .iter()
+                .map(|e| e.id)
+                .collect();
+            tracing::debug!(
+                "Fetching {} assignment submission deltas since {}",
+                assignment_submission_ids.len(),
+                last_sync_at
+            );
             assignment_submissions = if assignment_submission_ids.is_empty() {
                 Vec::new()
             } else {
                 self.manifest_repo
-                    .get_assignment_submissions_since(user_id, assignment_submission_ids, last_sync_at)
+                    .get_assignment_submissions_since(
+                        user_id,
+                        assignment_submission_ids,
+                        last_sync_at,
+                    )
                     .await?
             };
-            tracing::debug!("Got {} assignment submission deltas", assignment_submissions.len());
+            tracing::debug!(
+                "Got {} assignment submission deltas",
+                assignment_submissions.len()
+            );
         }
 
         if scope.include_learning_materials {
@@ -169,14 +206,17 @@ impl super::SyncDeltaService {
 
         if scope.include_grade_data {
             let class_ids: Vec<Uuid> = manifest.classes.iter().map(|e| e.id).collect();
-            grade_configs_raw = self.manifest_repo
+            grade_configs_raw = self
+                .manifest_repo
                 .get_grade_configs_since(class_ids.clone(), last_sync_at)
                 .await?;
-            grade_items_raw = self.manifest_repo
+            grade_items_raw = self
+                .manifest_repo
                 .get_grade_items_since(class_ids.clone(), last_sync_at)
                 .await?;
 
-            let all_grade_item_ids: Vec<Uuid> = self.manifest_repo
+            let all_grade_item_ids: Vec<Uuid> = self
+                .manifest_repo
                 .get_grade_item_ids_for_classes(class_ids.clone())
                 .await?;
 
@@ -184,37 +224,61 @@ impl super::SyncDeltaService {
                 Vec::new()
             } else {
                 match user_role {
-                    "student" => self.manifest_repo
-                        .get_student_grade_scores_since(user_id, all_grade_item_ids, last_sync_at)
-                        .await?,
-                    _ => self.manifest_repo
-                        .get_all_grade_scores_since(all_grade_item_ids, last_sync_at)
-                        .await?,
+                    "student" => {
+                        self.manifest_repo
+                            .get_student_grade_scores_since(
+                                user_id,
+                                all_grade_item_ids,
+                                last_sync_at,
+                            )
+                            .await?
+                    }
+                    _ => {
+                        self.manifest_repo
+                            .get_all_grade_scores_since(all_grade_item_ids, last_sync_at)
+                            .await?
+                    }
                 }
             };
 
             term_grades_raw = match user_role {
-                "student" => self.manifest_repo
-                    .get_student_term_grades_since(user_id, class_ids, last_sync_at)
-                    .await?,
-                _ => self.manifest_repo
-                    .get_all_term_grades_since(class_ids, last_sync_at)
-                    .await?,
+                "student" => {
+                    self.manifest_repo
+                        .get_student_term_grades_since(user_id, class_ids, last_sync_at)
+                        .await?
+                }
+                _ => {
+                    self.manifest_repo
+                        .get_all_term_grades_since(class_ids, last_sync_at)
+                        .await?
+                }
             };
         }
 
         if scope.include_tos {
-            tos_raw = self.manifest_repo
-                .get_table_of_specifications_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+            tos_raw = self
+                .manifest_repo
+                .get_table_of_specifications_since(
+                    manifest.classes.iter().map(|e| e.id).collect(),
+                    last_sync_at,
+                )
                 .await?;
-            tos_competencies_raw = self.manifest_repo
-                .get_tos_competencies_since(manifest.classes.iter().map(|e| e.id).collect(), last_sync_at)
+            tos_competencies_raw = self
+                .manifest_repo
+                .get_tos_competencies_since(
+                    manifest.classes.iter().map(|e| e.id).collect(),
+                    last_sync_at,
+                )
                 .await?;
         }
 
         if scope.include_activity_logs {
             let activity_log_ids: Vec<Uuid> = manifest.activity_logs.iter().map(|e| e.id).collect();
-            tracing::debug!("Fetching {} activity log deltas since {}", activity_log_ids.len(), last_sync_at);
+            tracing::debug!(
+                "Fetching {} activity log deltas since {}",
+                activity_log_ids.len(),
+                last_sync_at
+            );
             activity_logs_raw = if activity_log_ids.is_empty() {
                 Vec::new()
             } else {
@@ -252,7 +316,9 @@ impl super::SyncDeltaService {
                 .filter(::entity::class_participants::Column::RemovedAt.is_null())
                 .all(&self.db)
                 .await
-                .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?;
+                .map_err(|e| {
+                    crate::utils::AppError::InternalServerError(format!("Database error: {}", e))
+                })?;
 
             let student_ids: Vec<Uuid> = participants
                 .iter()
@@ -261,7 +327,8 @@ impl super::SyncDeltaService {
                 .into_iter()
                 .collect();
 
-            learner_details_raw = self.manifest_repo
+            learner_details_raw = self
+                .manifest_repo
                 .get_learner_details_since(student_ids.clone(), last_sync_at)
                 .await?;
 
@@ -272,47 +339,72 @@ impl super::SyncDeltaService {
                     .filter(::entity::users::Column::DeletedAt.is_null())
                     .all(&self.db)
                     .await
-                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .map_err(|e| {
+                        crate::utils::AppError::InternalServerError(format!(
+                            "Database error: {}",
+                            e
+                        ))
+                    })?
                     .into_iter()
                     .map(|u| u.id)
                     .collect()
             } else {
                 ::entity::users::Entity::find()
-                    .filter(::entity::users::Column::Id.is_in(participants.iter().map(|p| p.user_id).collect::<Vec<_>>()))
+                    .filter(
+                        ::entity::users::Column::Id
+                            .is_in(participants.iter().map(|p| p.user_id).collect::<Vec<_>>()),
+                    )
                     .filter(::entity::users::Column::Role.eq("teacher"))
                     .filter(::entity::users::Column::DeletedAt.is_null())
                     .all(&self.db)
                     .await
-                    .map_err(|e| crate::utils::AppError::InternalServerError(format!("Database error: {}", e)))?
+                    .map_err(|e| {
+                        crate::utils::AppError::InternalServerError(format!(
+                            "Database error: {}",
+                            e
+                        ))
+                    })?
                     .into_iter()
                     .map(|u| u.id)
                     .collect()
             };
 
-            teacher_details_raw = self.manifest_repo
+            teacher_details_raw = self
+                .manifest_repo
                 .get_teacher_details_since(teacher_ids, last_sync_at)
                 .await?;
 
-            attendance_records_raw = self.manifest_repo
+            attendance_records_raw = self
+                .manifest_repo
                 .get_attendance_since(class_ids.clone(), last_sync_at)
                 .await?;
-            core_values_records_raw = self.manifest_repo
+            core_values_records_raw = self
+                .manifest_repo
                 .get_core_values_since(class_ids.clone(), last_sync_at)
                 .await?;
-            student_school_history_raw = self.manifest_repo
+            student_school_history_raw = self
+                .manifest_repo
                 .get_school_history_since(student_ids.clone(), last_sync_at)
                 .await?;
-            previous_school_subjects_raw = self.manifest_repo
+            previous_school_subjects_raw = self
+                .manifest_repo
                 .get_previous_subjects_since(student_ids.clone(), last_sync_at)
                 .await?;
             // Fetch term grades for those subjects
-            let subject_ids: Vec<Uuid> = previous_school_subjects_raw.iter()
-                .filter_map(|s| s.get("id").and_then(|v| v.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+            let subject_ids: Vec<Uuid> = previous_school_subjects_raw
+                .iter()
+                .filter_map(|s| {
+                    s.get("id")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                })
                 .collect();
-            previous_school_term_grades_raw = self.manifest_repo
+            previous_school_term_grades_raw = self
+                .manifest_repo
                 .get_previous_school_term_grades_since(subject_ids, last_sync_at)
                 .await?;
-            previous_school_attendance_raw = self.manifest_repo
+            previous_school_attendance_raw = self
+                .manifest_repo
                 .get_previous_attendance_since(student_ids, last_sync_at)
                 .await?;
         }

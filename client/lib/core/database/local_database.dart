@@ -9,7 +9,7 @@ import 'package:likha/core/logging/core_logger.dart';
 
 /// Local SQLite Database for offline-first functionality
 ///
-/// SCHEMA VERSION: 20 (v19 → v20: Add UNIQUE constraint on core_values_records)
+/// SCHEMA VERSION: 21 (v20 → v21: Drop age column from learner_details)
 /// TOTAL TABLES: 37
 ///
 /// This database was consolidated from 12 historical versions into a single
@@ -86,7 +86,7 @@ class LocalDatabase {
         return databaseFactory.openDatabase(
           dbFilePath,
           options: OpenDatabaseOptions(
-            version: 20,
+            version: 21,
             onCreate: _createTables,
             onUpgrade: _upgradeDatabase,
             onDowngrade: _downgradeDatabase,
@@ -107,7 +107,7 @@ class LocalDatabase {
       return openDatabase(
         dbFilePath,
         password: _dbPassword,
-        version: 18,
+        version: 19,
         onCreate: _createTables,
         onUpgrade: _upgradeDatabase,
         onDowngrade: _downgradeDatabase,
@@ -704,7 +704,6 @@ class LocalDatabase {
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL UNIQUE,
           lrn TEXT,
-          age INTEGER,
           sex TEXT,
           track_strand TEXT,
           curriculum TEXT,
@@ -934,6 +933,49 @@ class LocalDatabase {
   }
 
   Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    // Targeted migration: drop age column from learner_details
+    // Web path: 20 → 21; Mobile path: 18 → 19
+    if ((oldVersion == 20 && newVersion == 21) || (oldVersion == 18 && newVersion == 19)) {
+      await db.transaction((txn) async {
+        // SQLite doesn't support DROP COLUMN before 3.35, so recreate the table
+        await txn.execute('ALTER TABLE learner_details RENAME TO learner_details_old');
+        await txn.execute('''
+          CREATE TABLE learner_details (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL UNIQUE,
+            lrn TEXT,
+            sex TEXT,
+            track_strand TEXT,
+            curriculum TEXT,
+            birthdate TEXT,
+            birthplace TEXT,
+            home_address TEXT,
+            father_name TEXT,
+            father_contact TEXT,
+            mother_name TEXT,
+            mother_contact TEXT,
+            guardian_name TEXT,
+            guardian_contact TEXT,
+            date_admitted TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            deleted_at TEXT,
+            cached_at TEXT,
+            sync_status TEXT NOT NULL DEFAULT 'synced',
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+          )
+        ''');
+        await txn.execute('''
+          INSERT INTO learner_details (id, user_id, lrn, sex, track_strand, curriculum, birthdate, birthplace, home_address, father_name, father_contact, mother_name, mother_contact, guardian_name, guardian_contact, date_admitted, created_at, updated_at, deleted_at, cached_at, sync_status)
+          SELECT id, user_id, lrn, sex, track_strand, curriculum, birthdate, birthplace, home_address, father_name, father_contact, mother_name, mother_contact, guardian_name, guardian_contact, date_admitted, created_at, updated_at, deleted_at, cached_at, sync_status
+          FROM learner_details_old
+        ''');
+        await txn.execute('DROP TABLE learner_details_old');
+        await txn.execute('CREATE INDEX IF NOT EXISTS idx_learner_details_user_id ON learner_details(user_id)');
+      });
+      return;
+    }
+
     // Targeted migration: add school_head_name and school_head_position to school_details
     // Web path: 9 → 10; Mobile path: 8 → 9
     if ((oldVersion == 9 && newVersion == 10) || (oldVersion == 8 && newVersion == 9)) {

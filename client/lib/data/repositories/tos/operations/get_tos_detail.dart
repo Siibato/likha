@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
@@ -10,8 +9,7 @@ import 'package:likha/domain/tos/entities/tos_entity.dart';
 
 ResultFuture<(TableOfSpecifications, List<TosCompetency>)> getTosDetail(
   TosLocalDataSource localDataSource,
-  TosRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  TosRemoteDataSource remoteDataSource, {
   required String tosId,
 }) async {
   try {
@@ -31,12 +29,10 @@ ResultFuture<(TableOfSpecifications, List<TosCompetency>)> getTosDetail(
                 await localDataSource.cacheTosList([freshTos]);
                 // Safe cache: never overwrites locally-modified rows (sync_status != 'synced')
                 await localDataSource.cacheCompetencies(tosId, freshCompetencies);
-                dataEventBus.notifyTosDetailChanged(tosId);
               }
             } on CacheException {
               await localDataSource.cacheTosList([freshTos]);
               await localDataSource.cacheCompetencies(tosId, freshCompetencies);
-              dataEventBus.notifyTosDetailChanged(tosId);
             }
           },
         );

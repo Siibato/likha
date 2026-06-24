@@ -3,7 +3,6 @@ import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
@@ -30,8 +29,7 @@ bool _accountsHaveChanged(List<User> current, List<User> fresh) {
 ResultFuture<List<User>> getAllAccounts(
   AuthLocalDataSource localDataSource,
   AuthRemoteDataSource remoteDataSource,
-  SyncQueue syncQueue,
-  DataEventBus dataEventBus, {
+  SyncQueue syncQueue, {
   bool skipBackgroundRefresh = false,
 }) async {
   RepoLogger.instance.log('getAllAccounts START');
@@ -49,7 +47,6 @@ ResultFuture<List<User>> getAllAccounts(
             final current = await localDataSource.getCachedAccounts();
             if (_accountsHaveChanged(current, freshAccounts)) {
               await localDataSource.cacheAccounts(freshAccounts);
-              dataEventBus.notifyAccountsChanged();
             }
           },
         );
@@ -60,7 +57,8 @@ ResultFuture<List<User>> getAllAccounts(
       final deduped = pendingAccounts
           .where((p) => !cachedUsernames.contains(p.username))
           .toList();
-      final result = [...cachedAccounts, ...deduped];
+      final result = [...cachedAccounts, ...deduped]
+        ..sort((a, b) => a.lastName.toLowerCase().compareTo(b.lastName.toLowerCase()));
       RepoLogger.instance.log('getAllAccounts: Returning ${result.length} accounts from cache + pending');
       return Right(result);
     } on CacheException {
@@ -78,7 +76,8 @@ ResultFuture<List<User>> getAllAccounts(
       final deduped = pendingAccounts
           .where((p) => !serverUsernames.contains(p.username))
           .toList();
-      final result = [...freshAccounts, ...deduped];
+      final result = [...freshAccounts, ...deduped]
+        ..sort((a, b) => a.lastName.toLowerCase().compareTo(b.lastName.toLowerCase()));
       RepoLogger.instance.log('getAllAccounts: Returning ${result.length} total accounts (remote + pending)');
       return Right(result);
     }

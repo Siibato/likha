@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_submission_detail(
@@ -8,28 +8,49 @@ impl crate::modules::assessment::service::AssessmentService {
         submission_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<SubmissionDetailResponse> {
-        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
+        let submission = self
+            .assessment_repo
+            .find_submission_by_id(submission_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
-        let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
+        let assessment = self
+            .assessment_repo
+            .find_by_id(submission.assessment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let _class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self
+            .class_repo
+            .find_by_id(assessment.class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, assessment.class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let student = self.user_repo.find_by_id(submission.user_id).await?
+        let student = self
+            .user_repo
+            .find_by_id(submission.user_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
-        let answers = self.assessment_repo
-            .find_answers_by_submission_id(submission_id).await?;
+        let answers = self
+            .assessment_repo
+            .find_answers_by_submission_id(submission_id)
+            .await?;
 
         let mut answer_responses = Vec::new();
         for a in answers {
-            let question = self.assessment_repo.find_question_by_id(a.question_id).await?;
+            let question = self
+                .assessment_repo
+                .find_question_by_id(a.question_id)
+                .await?;
             let question = match question {
                 Some(q) => q,
                 None => continue,
@@ -38,7 +59,10 @@ impl crate::modules::assessment::service::AssessmentService {
             let selected_choices = if question.question_type == "multiple_choice" {
                 let selection_ids = self.assessment_repo.find_answer_choices(a.id).await?;
                 let mut choice_responses = Vec::new();
-                let choices = self.assessment_repo.find_choices_by_question_id(question.id).await?;
+                let choices = self
+                    .assessment_repo
+                    .find_choices_by_question_id(question.id)
+                    .await?;
                 for choice_id in selection_ids {
                     if let Some(choice) = choices.iter().find(|c| c.id == choice_id) {
                         choice_responses.push(SelectedChoiceResponse {
@@ -54,25 +78,34 @@ impl crate::modules::assessment::service::AssessmentService {
             };
 
             let enumeration_answers = if question.question_type == "enumeration" {
-                let enum_items = self.assessment_repo.find_enumeration_answer_items(a.id).await?;
+                let enum_items = self
+                    .assessment_repo
+                    .find_enumeration_answer_items(a.id)
+                    .await?;
                 Some(
-                    enum_items.into_iter().map(|item| EnumerationAnswerResponse {
-                        answer_text: item.answer_text.unwrap_or_default(),
-                        is_correct: item.is_correct,
-                    }).collect()
+                    enum_items
+                        .into_iter()
+                        .map(|item| EnumerationAnswerResponse {
+                            answer_text: item.answer_text.unwrap_or_default(),
+                            is_correct: item.is_correct,
+                        })
+                        .collect(),
                 )
             } else {
                 None
             };
 
-            let answer_text = if question.question_type == "identification" || question.question_type == "essay" {
+            let answer_text = if question.question_type == "identification"
+                || question.question_type == "essay"
+            {
                 let texts = self.assessment_repo.find_enumeration_answers(a.id).await?;
                 texts.into_iter().next()
             } else {
                 None
             };
 
-            let is_pending_essay_grade = question.question_type == "essay" && a.overridden_at.is_none();
+            let is_pending_essay_grade =
+                question.question_type == "essay" && a.overridden_at.is_none();
 
             answer_responses.push(SubmissionAnswerResponse {
                 id: a.id,
@@ -90,7 +123,10 @@ impl crate::modules::assessment::service::AssessmentService {
             });
         }
 
-        let earned_score: f64 = answer_responses.iter().map(|a| a.points_earned).sum::<f64>();
+        let earned_score: f64 = answer_responses
+            .iter()
+            .map(|a| a.points_earned)
+            .sum::<f64>();
 
         Ok(SubmissionDetailResponse {
             id: submission.id,

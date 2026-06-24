@@ -1,9 +1,9 @@
 pub mod activity_log_repository_test;
-#[cfg(feature = "seed")]
-pub mod e2e_seed_test;
 pub mod assessment_repository_test;
 pub mod assignment_repository_test;
 pub mod class_repository_test;
+#[cfg(feature = "seed")]
+pub mod e2e_seed_test;
 pub mod entitlement_repository_test;
 pub mod grade_computation_repository_test;
 pub mod learning_material_repository_test;

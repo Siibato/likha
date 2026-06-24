@@ -2,6 +2,19 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/grading/sf9_model.dart';
 
+int? _computeAge(String? birthdateStr) {
+  if (birthdateStr == null || birthdateStr.isEmpty) return null;
+  final birthdate = DateTime.tryParse(birthdateStr);
+  if (birthdate == null) return null;
+  final now = DateTime.now();
+  int age = now.year - birthdate.year;
+  if (now.month < birthdate.month ||
+      (now.month == birthdate.month && now.day < birthdate.day)) {
+    age--;
+  }
+  return age;
+}
+
 String _getDescriptor(int grade) {
   if (grade >= 90) return 'Outstanding';
   if (grade >= 85) return 'Very Satisfactory';
@@ -210,7 +223,7 @@ Future<Sf9ResponseModel?> assembleSf9Local(
     schoolYear: schoolYear,
     section: section,
     lrn: learner?[LearnerDetailsCols.lrn] as String?,
-    age: learner?[LearnerDetailsCols.age] as int?,
+    age: _computeAge(learner?[LearnerDetailsCols.birthdate] as String?),
     sex: learner?[LearnerDetailsCols.sex] as String?,
     trackStrand: learner?[LearnerDetailsCols.trackStrand] as String?,
     curriculum: learner?[LearnerDetailsCols.curriculum] as String?,

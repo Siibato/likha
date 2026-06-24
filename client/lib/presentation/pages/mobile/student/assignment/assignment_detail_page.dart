@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/controllers/student/assignment/assignment_detail_controller.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
+import 'package:likha/presentation/providers/assignment/file_upload_provider.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_detail_body.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
@@ -58,7 +59,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       initialSubmissionId: widget.submissionId,
       initialSubmissionStatus: widget.submissionStatus,
       isNewAttempt: widget.isNewAttempt,
-      notifier: ref.read(assignmentProvider.notifier),
+      notifier: ref.read(submissionProvider.notifier),
+      fileUploadNotifier: ref.read(fileUploadProvider.notifier),
     );
     // Delay provider modification until after widget tree is built
     WidgetsBinding.instance.addPostFrameCallback((_) {

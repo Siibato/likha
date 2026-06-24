@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::tos_competencies;
 use crate::utils::{AppError, AppResult};
+use ::entity::tos_competencies;
 
 pub async fn soft_delete_competency(db: &DatabaseConnection, id: Uuid) -> AppResult<()> {
     let comp = tos_competencies::Entity::find_by_id(id)
@@ -17,10 +17,9 @@ pub async fn soft_delete_competency(db: &DatabaseConnection, id: Uuid) -> AppRes
     active.deleted_at = Set(Some(now));
     active.updated_at = Set(now);
 
-    active
-        .update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to delete competency: {}", e)))?;
+    active.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to delete competency: {}", e))
+    })?;
 
     Ok(())
 }

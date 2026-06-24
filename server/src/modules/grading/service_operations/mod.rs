@@ -16,9 +16,9 @@ pub mod save_scores;
 pub mod set_override;
 
 // grades
-pub mod get_term_grades;
 pub mod get_student_all_terms;
 pub mod get_student_term_grade;
+pub mod get_term_grades;
 
 // compute
 pub mod compute_class_term;

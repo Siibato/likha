@@ -1,8 +1,8 @@
 use chrono::Duration;
 use sea_orm::*;
 
-use ::entity::login_attempts;
 use crate::utils::{AppError, AppResult};
+use ::entity::login_attempts;
 
 pub async fn check_lockout(
     db: &DatabaseConnection,

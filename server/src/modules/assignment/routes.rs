@@ -27,18 +27,9 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
             "/student-assignments",
             get(handler::get_student_assignments),
         )
-        .route(
-            "/assignments/{id}",
-            get(handler::get_assignment_detail),
-        )
-        .route(
-            "/assignments/{id}",
-            put(handler::update_assignment),
-        )
-        .route(
-            "/assignments/{id}",
-            delete(handler::delete_assignment),
-        )
+        .route("/assignments/{id}", get(handler::get_assignment_detail))
+        .route("/assignments/{id}", put(handler::update_assignment))
+        .route("/assignments/{id}", delete(handler::delete_assignment))
         .route(
             "/assignments/{id}/publish",
             post(handler::publish_assignment),
@@ -69,14 +60,10 @@ pub fn routes(assignment_service: Arc<AssignmentService>) -> Router {
             post(handler::return_submission),
         )
         // Student endpoints
-        .route(
-            "/assignments/{id}/submit",
-            post(handler::create_submission),
-        )
+        .route("/assignments/{id}/submit", post(handler::create_submission))
         .route(
             "/assignment-submissions/{id}/upload",
-            post(handler::upload_file)
-                .layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
+            post(handler::upload_file).layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
         .route(
             "/submission-files/{id}",

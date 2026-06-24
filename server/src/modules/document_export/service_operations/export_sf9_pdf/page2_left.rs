@@ -1,15 +1,11 @@
 use printpdf::*;
 
-use crate::modules::document_export::helpers::pdf_engine::{PdfEngine, grey300};
+use crate::modules::document_export::helpers::pdf_engine::{grey300, PdfEngine};
 use crate::modules::grading::schema::Sf9Response;
 
 use super::layout::*;
 
-pub fn draw_page2_left(
-    engine: &PdfEngine,
-    layer: &PdfLayerReference,
-    sf9: &Sf9Response,
-) {
+pub fn draw_page2_left(engine: &PdfEngine, layer: &PdfLayerReference, sf9: &Sf9Response) {
     let top = CONTENT_TOP;
     let left = LEFT_COL_LEFT;
     let col_split = LEFT_COL_RIGHT;
@@ -22,7 +18,14 @@ pub fn draw_page2_left(
         Mm(top),
         true,
     );
-    let table_bottom = draw_learning_progress_table(engine, layer, sf9, left, top - GAP_MEDIUM, col_split - left - 2.0);
+    let table_bottom = draw_learning_progress_table(
+        engine,
+        layer,
+        sf9,
+        left,
+        top - GAP_MEDIUM,
+        col_split - left - 2.0,
+    );
     draw_grading_scale_legend(engine, layer, left, table_bottom - GAP_LARGE);
 }
 
@@ -37,7 +40,10 @@ fn draw_learning_progress_table(
     // Proportional widths: [Learning Areas, T1, T2, T3, Final Rating, Remarks]
     let ratios = [40.0_f32, 10.0, 10.0, 10.0, 15.0, 15.0];
     let ratio_sum: f32 = ratios.iter().sum();
-    let column_widths: Vec<f32> = ratios.iter().map(|ratio| ratio / ratio_sum * avail_w).collect();
+    let column_widths: Vec<f32> = ratios
+        .iter()
+        .map(|ratio| ratio / ratio_sum * avail_w)
+        .collect();
 
     let term_header_height = TABLE_TERM_HEADER_HEIGHT;
     let header_row_height = TABLE_HEADER_HEIGHT;
@@ -94,7 +100,14 @@ fn draw_learning_progress_table(
     current_y -= term_header_height;
 
     // Row 1: column headers
-    let column_labels = ["Learning Areas", "T1", "T2", "T3", "Final\nRating", "Remarks"];
+    let column_labels = [
+        "Learning Areas",
+        "T1",
+        "T2",
+        "T3",
+        "Final\nRating",
+        "Remarks",
+    ];
     let mut current_x = x;
     let header_line_spacing = 5.0;
     for (i, label) in column_labels.iter().enumerate() {
@@ -137,7 +150,10 @@ fn draw_learning_progress_table(
             .iter()
             .map(|g| g.map(|v| v.to_string()).unwrap_or_default())
             .collect();
-        let final_g = subject.final_grade.map(|v| v.to_string()).unwrap_or_default();
+        let final_g = subject
+            .final_grade
+            .map(|v| v.to_string())
+            .unwrap_or_default();
         let remark = subject
             .final_grade
             .map(|g| if g >= 75 { "Passed" } else { "Failed" })
@@ -152,13 +168,28 @@ fn draw_learning_progress_table(
         ];
         current_x = x;
         for (i, cell) in cells.iter().enumerate() {
-            engine.draw_rect(layer, Mm(current_x), Mm(current_y - row_height), Mm(column_widths[i]), Mm(row_height), None, true);
+            engine.draw_rect(
+                layer,
+                Mm(current_x),
+                Mm(current_y - row_height),
+                Mm(column_widths[i]),
+                Mm(row_height),
+                None,
+                true,
+            );
             let text_x = if i == 0 {
                 current_x + 2.0
             } else {
                 current_x + column_widths[i] / 2.0 - cell.len() as f32 * 1.8
             };
-            engine.draw_text(layer, cell, FONT_SIZE_NORMAL, Mm(text_x.max(current_x + 0.5)), Mm(current_y - row_height + 3.0), i == 5);
+            engine.draw_text(
+                layer,
+                cell,
+                FONT_SIZE_NORMAL,
+                Mm(text_x.max(current_x + 0.5)),
+                Mm(current_y - row_height + 3.0),
+                i == 5,
+            );
             current_x += column_widths[i];
         }
         current_y -= row_height;
@@ -200,7 +231,14 @@ fn draw_learning_progress_table(
             } else {
                 current_x + column_widths[i] / 2.0 - cell.len() as f32 * 1.8
             };
-            engine.draw_text(layer, cell, FONT_SIZE_NORMAL, Mm(text_x.max(current_x + 0.5)), Mm(current_y - row_height + 3.0), true);
+            engine.draw_text(
+                layer,
+                cell,
+                FONT_SIZE_NORMAL,
+                Mm(text_x.max(current_x + 0.5)),
+                Mm(current_y - row_height + 3.0),
+                true,
+            );
             current_x += column_widths[i];
         }
         current_y -= row_height;
@@ -209,12 +247,7 @@ fn draw_learning_progress_table(
     current_y
 }
 
-fn draw_grading_scale_legend(
-    engine: &PdfEngine,
-    layer: &PdfLayerReference,
-    x: f32,
-    y: f32,
-) -> f32 {
+fn draw_grading_scale_legend(engine: &PdfEngine, layer: &PdfLayerReference, x: f32, y: f32) -> f32 {
     let data = [
         ("Outstanding", "90-100", "Passed"),
         ("Very Satisfactory", "85-89", "Passed"),
@@ -229,16 +262,58 @@ fn draw_grading_scale_legend(
     let row_height = GAP_MEDIUM;
     let mut current_y = y;
 
-    engine.draw_text(layer, "Descriptors", FONT_SIZE_MEDIUM, Mm(descriptor_x), Mm(current_y), true);
-    engine.draw_text(layer, "Grading Scale", FONT_SIZE_MEDIUM, Mm(scale_x), Mm(current_y), true);
-    engine.draw_text(layer, "Remarks", FONT_SIZE_MEDIUM, Mm(remarks_x), Mm(current_y), true);
+    engine.draw_text(
+        layer,
+        "Descriptors",
+        FONT_SIZE_MEDIUM,
+        Mm(descriptor_x),
+        Mm(current_y),
+        true,
+    );
+    engine.draw_text(
+        layer,
+        "Grading Scale",
+        FONT_SIZE_MEDIUM,
+        Mm(scale_x),
+        Mm(current_y),
+        true,
+    );
+    engine.draw_text(
+        layer,
+        "Remarks",
+        FONT_SIZE_MEDIUM,
+        Mm(remarks_x),
+        Mm(current_y),
+        true,
+    );
     current_y -= GAP_SMALL;
 
     for (desc, scale, rem) in &data {
         current_y -= row_height;
-        engine.draw_text(layer, desc, FONT_SIZE_MEDIUM, Mm(descriptor_x), Mm(current_y), false);
-        engine.draw_text(layer, scale, FONT_SIZE_MEDIUM, Mm(scale_x), Mm(current_y), false);
-        engine.draw_text(layer, rem, FONT_SIZE_MEDIUM, Mm(remarks_x), Mm(current_y), false);
+        engine.draw_text(
+            layer,
+            desc,
+            FONT_SIZE_MEDIUM,
+            Mm(descriptor_x),
+            Mm(current_y),
+            false,
+        );
+        engine.draw_text(
+            layer,
+            scale,
+            FONT_SIZE_MEDIUM,
+            Mm(scale_x),
+            Mm(current_y),
+            false,
+        );
+        engine.draw_text(
+            layer,
+            rem,
+            FONT_SIZE_MEDIUM,
+            Mm(remarks_x),
+            Mm(current_y),
+            false,
+        );
     }
     current_y
 }

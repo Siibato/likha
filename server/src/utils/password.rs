@@ -1,5 +1,5 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 use crate::utils::{AppError, AppResult};
 

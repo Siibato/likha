@@ -25,7 +25,9 @@ pub async fn insert_assessment_submissions(
         let mut sam: assessment_submissions::ActiveModel = sub.into();
         sam.started_at = Set(spec.started_at);
         sam.submitted_at = Set(spec.submitted_at);
-        sam.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        sam.update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
         for answer in &spec.answers {
             let answer_record = repo
@@ -33,9 +35,7 @@ pub async fn insert_assessment_submissions(
                 .await?;
 
             if !answer.choice_ids.is_empty() {
-                let question_choices = repo
-                    .find_choices_by_question_id(answer.question_id)
-                    .await?;
+                let question_choices = repo.find_choices_by_question_id(answer.question_id).await?;
                 let correct_ids: std::collections::HashSet<uuid::Uuid> = question_choices
                     .iter()
                     .filter(|c| c.is_correct)
@@ -51,15 +51,12 @@ pub async fn insert_assessment_submissions(
             }
 
             if let Some(text) = &answer.text {
-                repo.save_answer_text(answer_record.id, text.clone()).await?;
+                repo.save_answer_text(answer_record.id, text.clone())
+                    .await?;
             }
 
-            repo.update_answer_grade(
-                answer_record.id,
-                answer.is_correct,
-                answer.points,
-            )
-            .await?;
+            repo.update_answer_grade(answer_record.id, answer.is_correct, answer.points)
+                .await?;
         }
 
         if spec.submitted_at.is_some() {
@@ -87,8 +84,7 @@ pub async fn insert_assignment_submissions(
                 .await?;
         }
 
-        repo.update_submission_status(spec.id, &spec.status)
-            .await?;
+        repo.update_submission_status(spec.id, &spec.status).await?;
 
         if let (Some(points), Some(feedback), Some(graded_by)) =
             (spec.points, &spec.feedback, spec.graded_by)
@@ -108,7 +104,9 @@ pub async fn insert_assignment_submissions(
         if let Some(graded_at) = spec.graded_at {
             sam.graded_at = Set(Some(graded_at));
         }
-        sam.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        sam.update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())

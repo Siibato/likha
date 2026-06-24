@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
 pub async fn soft_delete(db: &DatabaseConnection, user_id: Uuid) -> AppResult<()> {
     let now = Utc::now().naive_utc();

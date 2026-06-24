@@ -1,15 +1,15 @@
 //! Advisory seeding fixtures: 1 teacher + 30 students, 4 classes,
 //! full learner details, attendance, core values, school history.
 
-pub mod users;
+pub mod attendance;
 pub mod classes;
+pub mod core_values;
 pub mod enrollments;
 pub mod learner_details;
-pub mod attendance;
-pub mod core_values;
-pub mod school_history;
-pub mod previous_subjects;
 pub mod previous_attendance;
+pub mod previous_subjects;
+pub mod school_history;
+pub mod users;
 
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;

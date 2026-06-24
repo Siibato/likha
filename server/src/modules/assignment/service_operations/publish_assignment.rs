@@ -1,11 +1,11 @@
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult};
-use crate::modules::assignment::schema::*;
 use crate::modules::admin::ActivityLogRepository;
-use crate::modules::class::repository::ClassRepository;
-use crate::modules::grading::repository::GradeComputationRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::assignment::schema::*;
+use crate::modules::class::repository::ClassRepository;
 use crate::modules::grading::helpers::auto_populate;
+use crate::modules::grading::repository::GradeComputationRepository;
+use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn publish_assignment(
     assignment_repo: &AssignmentRepository,
@@ -15,35 +15,53 @@ pub async fn publish_assignment(
     assignment_id: Uuid,
     teacher_id: Uuid,
 ) -> AppResult<AssignmentResponse> {
-    let assignment = assignment_repo.find_by_id(assignment_id).await?
+    let assignment = assignment_repo
+        .find_by_id(assignment_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-    let _class = class_repo.find_by_id(assignment.class_id).await?
+    let _class = class_repo
+        .find_by_id(assignment.class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-    if !class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
+    if !class_repo
+        .is_teacher_of_class(teacher_id, assignment.class_id)
+        .await?
+    {
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
     if assignment.is_published {
-        return Err(AppError::BadRequest("Assignment is already published".to_string()));
+        return Err(AppError::BadRequest(
+            "Assignment is already published".to_string(),
+        ));
     }
 
     let published = assignment_repo.publish_assignment(assignment_id).await?;
 
-    if let (Some(term_number), Some(ref component)) = (published.term_number, &published.component) {
+    if let (Some(term_number), Some(ref component)) = (published.term_number, &published.component)
+    {
         let _ = auto_populate::create_linked_grade_item(
-            grade_computation_repo, "assignment", published.id, published.class_id,
-            &published.title, component, term_number,
+            grade_computation_repo,
+            "assignment",
+            published.id,
+            published.class_id,
+            &published.title,
+            component,
+            term_number,
             published.total_points as f64,
-        ).await;
+        )
+        .await;
     }
 
-    let _ = activity_log_repo.create_log(
-        teacher_id,
-        "assignment_published",
-        Some(format!("Assignment '{}' published", published.title)),
-    ).await;
+    let _ = activity_log_repo
+        .create_log(
+            teacher_id,
+            "assignment_published",
+            Some(format!("Assignment '{}' published", published.title)),
+        )
+        .await;
 
     Ok(AssignmentResponse {
         id: published.id,

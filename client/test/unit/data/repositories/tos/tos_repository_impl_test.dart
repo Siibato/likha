@@ -32,13 +32,11 @@ TosRepositoryImpl _buildRepo({
   required MockTosLocalDataSource local,
   required MockTosRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  MockDataEventBus? eventBus,
 }) {
   return TosRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
     syncQueue: syncQueue,
-    dataEventBus: eventBus ?? MockDataEventBus(),
   );
 }
 

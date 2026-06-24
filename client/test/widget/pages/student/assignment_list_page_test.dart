@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/assignment_card_skeleton.dart';
 import 'package:likha/presentation/pages/mobile/student/assignment/assignment_list_page.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/empty_assignment_state.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 
 import '../../helpers/widget_test_helpers.dart';
 
@@ -13,8 +13,8 @@ void main() {
   testWidgets('shows Assignments header', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        assignmentProvider.overrideWith(
-          (_) => FakeAssignmentNotifier(AssignmentState()),
+        assignmentListProvider.overrideWith(
+          (_) => FakeAssignmentListNotifier(AssignmentListState()),
         ),
       ],
       child: const MaterialApp(home: StudentAssignmentListPage(classId: 'class-1')),
@@ -27,8 +27,8 @@ void main() {
   testWidgets('loading state shows skeleton cards', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        assignmentProvider.overrideWith(
-          (_) => FakeAssignmentNotifier(AssignmentState(isLoading: true)),
+        assignmentListProvider.overrideWith(
+          (_) => FakeAssignmentListNotifier(AssignmentListState(isLoading: true)),
         ),
       ],
       child: const MaterialApp(home: StudentAssignmentListPage(classId: 'class-1')),
@@ -41,9 +41,9 @@ void main() {
   testWidgets('empty state shows EmptyAssignmentState when list is empty', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        assignmentProvider.overrideWith(
-          (_) => FakeAssignmentNotifier(
-            AssignmentState(isLoading: false, assignments: []),
+        assignmentListProvider.overrideWith(
+          (_) => FakeAssignmentListNotifier(
+            AssignmentListState(isLoading: false, assignments: []),
           ),
         ),
       ],

@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::answer_keys;
 use crate::utils::{AppError, AppResult};
+use ::entity::answer_keys;
 
 pub async fn delete_all_answer_keys_for_question(
     db: &DatabaseConnection,
@@ -18,7 +18,9 @@ pub async fn delete_all_answer_keys_for_question(
         answer_keys::Entity::delete_by_id(key.id)
             .exec(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to delete answer key: {}", e)))?;
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to delete answer key: {}", e))
+            })?;
     }
     Ok(())
 }

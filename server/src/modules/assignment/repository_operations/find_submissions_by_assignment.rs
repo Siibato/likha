@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{assignment_submissions, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{assignment_submissions, users};
 
 pub async fn find_submissions_by_assignment(
     db: &DatabaseConnection,

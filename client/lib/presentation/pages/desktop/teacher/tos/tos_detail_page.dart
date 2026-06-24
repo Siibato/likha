@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/controllers/teacher/tos/tos_detail_controller.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
+import 'package:likha/presentation/providers/document_export_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/tos/tos_competencies_section.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/tos/tos_detail_actions.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/tos/tos_specification_section.dart';
@@ -25,6 +28,7 @@ class TosDetailPage extends ConsumerStatefulWidget {
 
 class _TosDetailPageState extends ConsumerState<TosDetailPage> {
   late final TosDetailController _controller;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -62,11 +66,32 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
             tooltip: 'Back',
           ),
           actions: [
-            if (tos != null)
+            if (tos != null) ...[
+              TextButton.icon(
+                onPressed: _isDownloading ? null : () => _downloadTos(tos),
+                icon: _isDownloading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.download_rounded, size: 18),
+                label: Text(_isDownloading ? 'Generating...' : 'Download TOS'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.accentCharcoal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               TosDetailActions(
                 tos: tos,
                 competencies: competencies,
               ),
+            ],
           ],
           body: state.isLoading && tos == null
               ? const Center(
@@ -101,5 +126,48 @@ class _TosDetailPageState extends ConsumerState<TosDetailPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _downloadTos(dynamic tos) async {
+    final reachability = sl<ServerReachabilityService>();
+    if (!reachability.isServerReachable) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only available when connected to Likha server'),
+          backgroundColor: AppColors.semanticError,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isDownloading = true);
+
+    await ref.read(documentExportProvider.notifier).exportTos(
+      tosId: widget.tosId,
+      tosTitle: tos.title,
+    );
+
+    if (!mounted) return;
+
+    final exportState = ref.read(documentExportProvider);
+
+    if (exportState.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(exportState.error!),
+          backgroundColor: AppColors.semanticError,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('TOS Excel downloaded successfully'),
+          backgroundColor: AppColors.semanticSuccess,
+        ),
+      );
+    }
+
+    setState(() => _isDownloading = false);
   }
 }

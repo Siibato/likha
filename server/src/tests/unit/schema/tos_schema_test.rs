@@ -94,7 +94,10 @@ fn test_create_competency_request_required_fields() {
         "time_units_taught": 5
     }"#;
     let req: CreateCompetencyRequest = serde_json::from_str(json).unwrap();
-    assert_eq!(req.competency_text, "The learner demonstrates understanding...");
+    assert_eq!(
+        req.competency_text,
+        "The learner demonstrates understanding..."
+    );
     assert_eq!(req.time_units_taught, 5);
     assert!(req.competency_code.is_none());
 }

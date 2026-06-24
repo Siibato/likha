@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessments;
 
 pub async fn update_assessment(
     db: &DatabaseConnection,
@@ -19,10 +19,11 @@ pub async fn update_assessment(
     tos_id: Option<Option<String>>,
 ) -> AppResult<assessments::Model> {
     let tos_id = match tos_id {
-        Some(Some(s)) if !s.is_empty() => Some(Some(
-            Uuid::parse_str(&s)
-                .map_err(|e| AppError::BadRequest(format!("Invalid tos_id UUID: {}", e)))?,
-        )),
+        Some(Some(s)) if !s.is_empty() => {
+            Some(Some(Uuid::parse_str(&s).map_err(|e| {
+                AppError::BadRequest(format!("Invalid tos_id UUID: {}", e))
+            })?))
+        }
         Some(Some(_)) => Some(None),
         Some(None) => Some(None),
         None => None,

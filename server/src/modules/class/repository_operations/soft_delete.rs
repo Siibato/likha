@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::classes;
 use crate::utils::{AppError, AppResult};
+use ::entity::classes;
 
 pub async fn soft_delete(db: &DatabaseConnection, id: Uuid) -> AppResult<()> {
     let class = classes::ActiveModel {

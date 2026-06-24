@@ -22,15 +22,24 @@ pub fn write_section_header_row(
         (&table.pt, pt_start, "PERFORMANCE TASKS"),
         (&table.qa, qa_start, "TERM ASSESSMENT"),
     ] {
-        if start < 0 { continue; }
-        let span  = (section.items.len() + 3) as i32;
+        if start < 0 {
+            continue;
+        }
+        let span = (section.items.len() + 3) as i32;
         let label = format!("{}({:.0}%)", prefix, section.weight);
-        sheet.merge_range(row, start as u16, row, (start + span - 1) as u16, &label, &fmt)?;
+        sheet.merge_range(
+            row,
+            start as u16,
+            row,
+            (start + span - 1) as u16,
+            &label,
+            &fmt,
+        )?;
     }
 
-    sheet.write_with_format(row, initial_col as u16, "INITIAL\nGRADE",   &fmt)?;
-    sheet.write_with_format(row, tg_col      as u16, "TERM\nGRADE",      &fmt)?;
-    sheet.write_with_format(row, remarks_col as u16, "REMARKS",           &fmt)?;
+    sheet.write_with_format(row, initial_col as u16, "INITIAL\nGRADE", &fmt)?;
+    sheet.write_with_format(row, tg_col as u16, "TERM\nGRADE", &fmt)?;
+    sheet.write_with_format(row, remarks_col as u16, "REMARKS", &fmt)?;
 
     Ok(())
 }
@@ -50,20 +59,26 @@ pub fn write_column_header_row(
 
     sheet.write_with_format(row, name_col as u16, "", &fmt)?;
 
-    for (section, start) in [(&table.ww, ww_start), (&table.pt, pt_start), (&table.qa, qa_start)] {
-        if start < 0 { continue; }
+    for (section, start) in [
+        (&table.ww, ww_start),
+        (&table.pt, pt_start),
+        (&table.qa, qa_start),
+    ] {
+        if start < 0 {
+            continue;
+        }
         for (i, _) in section.items.iter().enumerate() {
             sheet.write_with_format(row, (start + i as i32) as u16, (i + 1).to_string(), &fmt)?;
         }
         let n = section.items.len() as i32;
-        sheet.write_with_format(row, (start + n)     as u16, "Total", &fmt)?;
-        sheet.write_with_format(row, (start + n + 1) as u16, "PS",    &fmt)?;
-        sheet.write_with_format(row, (start + n + 2) as u16, "WS",    &fmt)?;
+        sheet.write_with_format(row, (start + n) as u16, "Total", &fmt)?;
+        sheet.write_with_format(row, (start + n + 1) as u16, "PS", &fmt)?;
+        sheet.write_with_format(row, (start + n + 2) as u16, "WS", &fmt)?;
     }
 
     sheet.write_with_format(row, initial_col as u16, "Grade", &fmt)?;
-    sheet.write_with_format(row, tg_col      as u16, "Grade", &fmt)?;
-    sheet.write_with_format(row, remarks_col as u16, "",      &fmt)?;
+    sheet.write_with_format(row, tg_col as u16, "Grade", &fmt)?;
+    sheet.write_with_format(row, remarks_col as u16, "", &fmt)?;
 
     Ok(())
 }
@@ -83,20 +98,40 @@ pub fn write_hps_row(
 
     sheet.write_with_format(row, name_col as u16, "HIGHEST POSSIBLE SCORE", &fmt)?;
 
-    for (section, start) in [(&table.ww, ww_start), (&table.pt, pt_start), (&table.qa, qa_start)] {
-        if start < 0 { continue; }
+    for (section, start) in [
+        (&table.ww, ww_start),
+        (&table.pt, pt_start),
+        (&table.qa, qa_start),
+    ] {
+        if start < 0 {
+            continue;
+        }
         for (i, item) in section.items.iter().enumerate() {
-            sheet.write_with_format(row, (start + i as i32) as u16,
-                format!("{:.0}", item.total_points), &fmt)?;
+            sheet.write_with_format(
+                row,
+                (start + i as i32) as u16,
+                format!("{:.0}", item.total_points),
+                &fmt,
+            )?;
         }
         let n = section.items.len() as i32;
-        sheet.write_with_format(row, (start + n)     as u16, format!("{:.0}", section.hps_total), &fmt)?;
+        sheet.write_with_format(
+            row,
+            (start + n) as u16,
+            format!("{:.0}", section.hps_total),
+            &fmt,
+        )?;
         sheet.write_with_format(row, (start + n + 1) as u16, "100.00", &fmt)?;
-        sheet.write_with_format(row, (start + n + 2) as u16, format!("{:.0}%", section.weight), &fmt)?;
+        sheet.write_with_format(
+            row,
+            (start + n + 2) as u16,
+            format!("{:.0}%", section.weight),
+            &fmt,
+        )?;
     }
 
     sheet.write_with_format(row, initial_col as u16, "", &grey_cell_fmt())?;
-    sheet.write_with_format(row, tg_col      as u16, "", &grey_cell_fmt())?;
+    sheet.write_with_format(row, tg_col as u16, "", &grey_cell_fmt())?;
     sheet.write_with_format(row, remarks_col as u16, "", &grey_cell_fmt())?;
 
     Ok(())
@@ -117,15 +152,21 @@ pub fn write_gender_row(
 
     sheet.write_with_format(row, name_col as u16, "MALE", &fmt)?;
 
-    for (section, start) in [(&table.ww, ww_start), (&table.pt, pt_start), (&table.qa, qa_start)] {
-        if start < 0 { continue; }
+    for (section, start) in [
+        (&table.ww, ww_start),
+        (&table.pt, pt_start),
+        (&table.qa, qa_start),
+    ] {
+        if start < 0 {
+            continue;
+        }
         for c in 0..(section.items.len() as i32 + 3) {
             sheet.write_with_format(row, (start + c) as u16, "", &fmt)?;
         }
     }
 
     sheet.write_with_format(row, initial_col as u16, "", &fmt)?;
-    sheet.write_with_format(row, tg_col      as u16, "", &fmt)?;
+    sheet.write_with_format(row, tg_col as u16, "", &fmt)?;
     sheet.write_with_format(row, remarks_col as u16, "", &fmt)?;
 
     Ok(())
@@ -156,39 +197,62 @@ pub fn write_student_rows(
             (&sr.pt, &table.pt, pt_start),
             (&sr.qa, &table.qa, qa_start),
         ] {
-            if start < 0 { continue; }
+            if start < 0 {
+                continue;
+            }
             for (i, score) in result.scores.iter().enumerate() {
                 let text = score.map(|s| format!("{:.1}", s)).unwrap_or_default();
                 sheet.write_with_format(row, (start + i as i32) as u16, &text, &data_fmt)?;
             }
             let n = section.items.len() as i32;
-            sheet.write_with_format(row, (start + n)     as u16,
-                result.total.map(|t| format!("{:.1}", t)).unwrap_or_default(), &data_fmt)?;
-            sheet.write_with_format(row, (start + n + 1) as u16,
-                result.ps.map(|p| format!("{:.2}", p)).unwrap_or_default(), &data_fmt)?;
-            sheet.write_with_format(row, (start + n + 2) as u16,
-                result.ws.map(|w| format!("{:.2}", w)).unwrap_or_default(), &data_fmt)?;
+            sheet.write_with_format(
+                row,
+                (start + n) as u16,
+                result
+                    .total
+                    .map(|t| format!("{:.1}", t))
+                    .unwrap_or_default(),
+                &data_fmt,
+            )?;
+            sheet.write_with_format(
+                row,
+                (start + n + 1) as u16,
+                result.ps.map(|p| format!("{:.2}", p)).unwrap_or_default(),
+                &data_fmt,
+            )?;
+            sheet.write_with_format(
+                row,
+                (start + n + 2) as u16,
+                result.ws.map(|w| format!("{:.2}", w)).unwrap_or_default(),
+                &data_fmt,
+            )?;
         }
 
         // Initial grade
         sheet.write_with_format(
-            row, initial_col as u16,
-            sr.initial_grade.map(|v| format!("{:.2}", v)).unwrap_or_default(),
+            row,
+            initial_col as u16,
+            sr.initial_grade
+                .map(|v| format!("{:.2}", v))
+                .unwrap_or_default(),
             &data_fmt,
         )?;
 
         // Term grade
         sheet.write_with_format(
-            row, tg_col as u16,
-            sr.transmuted_grade.map(|v| v.to_string()).unwrap_or_default(),
+            row,
+            tg_col as u16,
+            sr.transmuted_grade
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
             &data_fmt,
         )?;
 
         // REMARKS: Pass / Fail
         let (remarks_text, remarks_fmt) = match sr.transmuted_grade {
             Some(tg) if tg >= 75 => ("PASSED", remarks_pass_fmt()),
-            Some(_)              => ("FAILED", remarks_fail_fmt()),
-            None                 => ("",       bordered_data_fmt()),
+            Some(_) => ("FAILED", remarks_fail_fmt()),
+            None => ("", bordered_data_fmt()),
         };
         sheet.write_with_format(row, remarks_col as u16, remarks_text, &remarks_fmt)?;
 

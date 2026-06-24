@@ -35,7 +35,6 @@ AssessmentRepositoryImpl _buildRepo({
   required MockAssessmentLocalDataSource local,
   required MockAssessmentRemoteDataSource remote,
   required MockSyncQueue syncQueue,
-  required MockDataEventBus eventBus,
 }) {
   return AssessmentRepositoryImpl(
     remoteDataSource: remote,
@@ -43,7 +42,6 @@ AssessmentRepositoryImpl _buildRepo({
     validationService: MockValidationService(),
     connectivityService: MockConnectivityService(),
     syncQueue: syncQueue,
-    dataEventBus: eventBus,
   );
 }
 
@@ -53,15 +51,12 @@ void main() {
   late MockAssessmentLocalDataSource local;
   late MockAssessmentRemoteDataSource remote;
   late MockSyncQueue syncQueue;
-  late MockDataEventBus eventBus;
 
   setUp(() {
     local = MockAssessmentLocalDataSource();
     remote = MockAssessmentRemoteDataSource();
     syncQueue = MockSyncQueue();
-    eventBus = MockDataEventBus();
     dotenv.testLoad(fileInput: '');
-    when(() => eventBus.onAssessmentsChanged).thenAnswer((_) => const Stream.empty());
 
     registerFallbackValue(SyncQueueEntry(
       id: 'fallback',
@@ -82,7 +77,6 @@ void main() {
       test('fetches from remote and caches locally', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedAssessments(any(), publishedOnly: any(named: 'publishedOnly')))
@@ -102,7 +96,6 @@ void main() {
       test('reads from local cache when offline', () async {
         final repo = _buildRepo(
           local: local, remote: remote, syncQueue: syncQueue,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedAssessments(any(), publishedOnly: any(named: 'publishedOnly')))

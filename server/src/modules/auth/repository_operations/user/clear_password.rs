@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
 pub async fn clear_password(db: &DatabaseConnection, user_id: Uuid) -> AppResult<users::Model> {
     let user = users::ActiveModel {

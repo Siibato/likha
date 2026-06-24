@@ -1,17 +1,16 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::users;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::users;
 
 pub async fn get_users_paginated(
     db: &DatabaseConnection,
     user_ids: Vec<Uuid>,
     limit: i64,
 ) -> AppResult<PaginatedRecords> {
-    let query = users::Entity::find()
-        .filter(users::Column::Id.is_in(user_ids));
+    let query = users::Entity::find().filter(users::Column::Id.is_in(user_ids));
     helpers::paginate_query(db, query, limit, |r| {
         let is_active = r.account_status != "locked" && r.account_status != "deactivated";
         serde_json::json!({

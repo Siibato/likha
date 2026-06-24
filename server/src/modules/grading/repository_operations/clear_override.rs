@@ -2,13 +2,10 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_scores;
 use crate::utils::{AppError, AppResult};
+use ::entity::grade_scores;
 
-pub async fn clear_override(
-    db: &DatabaseConnection,
-    id: Uuid,
-) -> AppResult<grade_scores::Model> {
+pub async fn clear_override(db: &DatabaseConnection, id: Uuid) -> AppResult<grade_scores::Model> {
     let mut score: grade_scores::ActiveModel = grade_scores::Entity::find_by_id(id)
         .one(db)
         .await
@@ -19,7 +16,8 @@ pub async fn clear_override(
     score.override_score = Set(None);
     score.updated_at = Set(Utc::now().naive_utc());
 
-    score.update(db)
+    score
+        .update(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Failed to clear override: {}", e)))
 }

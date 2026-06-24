@@ -42,6 +42,15 @@ impl ProcessedOperationsRepository {
         operation: &str,
         result: &OperationResult,
     ) -> Result<(), String> {
-        ops::save_processed(&self.db, &self.cache, operation_id, user_id, entity_type, operation, result).await
+        ops::save_processed(
+            &self.db,
+            &self.cache,
+            operation_id,
+            user_id,
+            entity_type,
+            operation,
+            result,
+        )
+        .await
     }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/dio_client.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/services/server_clock_service.dart';
@@ -23,7 +22,6 @@ import 'package:likha/domain/assignments/usecases/return_submission.dart';
 import 'package:likha/domain/assignments/usecases/submit_assignment.dart';
 import 'package:likha/domain/assignments/usecases/unpublish_assignment.dart';
 import 'package:likha/domain/assignments/usecases/update_assignment.dart';
-import 'package:likha/domain/assignments/usecases/upload_file.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/get_current_user.dart';
@@ -39,15 +37,26 @@ import 'package:likha/domain/classes/usecases/get_participants.dart';
 import 'package:likha/domain/classes/usecases/remove_student.dart';
 import 'package:likha/domain/classes/usecases/search_students.dart';
 import 'package:likha/domain/classes/usecases/update_class.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_detail_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 import 'package:likha/presentation/providers/auth_notifier.dart';
-import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/providers/class/class_detail_provider.dart';
+import 'package:likha/presentation/providers/class/class_list_provider.dart';
+import 'package:likha/presentation/providers/class/enrollment_provider.dart';
+import 'package:likha/presentation/providers/class/student_search_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:mocktail/mocktail.dart';
 
 export 'package:flutter_test/flutter_test.dart';
 export 'package:mocktail/mocktail.dart';
 export 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Fake Ref for testing
+class _FakeRef implements Ref {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 // ── Mock GetIt-managed singletons ─────────────────────────────────────────────
 
@@ -79,7 +88,6 @@ class _MockGetSubmissionDetail extends Mock implements GetAssignmentSubmissionDe
 class _MockGradeSubmission extends Mock implements GradeSubmission {}
 class _MockReturnSubmission extends Mock implements ReturnSubmission {}
 class _MockCreateSubmission extends Mock implements CreateSubmission {}
-class _MockUploadFile extends Mock implements UploadFile {}
 class _MockDeleteFile extends Mock implements DeleteFile {}
 class _MockSubmitAssignment extends Mock implements SubmitAssignment {}
 class _MockDownloadFile extends Mock implements DownloadFile {}
@@ -121,30 +129,20 @@ class FakeAuthNotifier extends AuthNotifier {
   Future<void> checkAuthStatus() async {}
 }
 
-/// Stub [AssignmentNotifier] with a fixed [AssignmentState] and no-op loads.
-/// Requires [DataEventBus] to be registered in GetIt (done by [setUpMockDi]).
-class FakeAssignmentNotifier extends AssignmentNotifier {
-  final AssignmentState _fixedState;
+/// Stub [AssignmentListNotifier] with a fixed [AssignmentListState] and no-op loads.
+class FakeAssignmentListNotifier extends AssignmentListNotifier {
+  final AssignmentListState _fixedState;
 
-  FakeAssignmentNotifier([AssignmentState? initialState])
-      : _fixedState = initialState ?? AssignmentState(),
+  FakeAssignmentListNotifier([AssignmentListState? initialState])
+      : _fixedState = initialState ?? AssignmentListState(),
         super(
+          _FakeRef(),
           _MockCreateAssignment(),
           _MockGetAssignments(),
-          _MockGetAssignmentDetail(),
           _MockUpdateAssignment(),
           _MockDeleteAssignment(),
           _MockPublishAssignment(),
           _MockUnpublishAssignment(),
-          _MockGetSubmissions(),
-          _MockGetSubmissionDetail(),
-          _MockGradeSubmission(),
-          _MockReturnSubmission(),
-          _MockCreateSubmission(),
-          _MockUploadFile(),
-          _MockDeleteFile(),
-          _MockSubmitAssignment(),
-          _MockDownloadFile(),
           _MockReorderAssignments(),
         ) {
     state = _fixedState;
@@ -153,38 +151,137 @@ class FakeAssignmentNotifier extends AssignmentNotifier {
   @override
   Future<void> loadAssignments(String classId,
       {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {}
+}
+
+/// Stub [AssignmentDetailNotifier] with a fixed [AssignmentDetailState].
+class FakeAssignmentDetailNotifier extends AssignmentDetailNotifier {
+  final AssignmentDetailState _fixedState;
+
+  FakeAssignmentDetailNotifier([AssignmentDetailState? initialState])
+      : _fixedState = initialState ?? AssignmentDetailState(),
+        super(_FakeRef(), _MockGetAssignmentDetail()) {
+    state = _fixedState;
+  }
 
   @override
   Future<void> loadAssignmentDetail(String assignmentId) async {}
+}
+
+/// Stub [SubmissionNotifier] with a fixed [SubmissionState] and no-op loads.
+class FakeSubmissionNotifier extends SubmissionNotifier {
+  final SubmissionState _fixedState;
+
+  FakeSubmissionNotifier([SubmissionState? initialState])
+      : _fixedState = initialState ?? SubmissionState(),
+        super(
+          _FakeRef(),
+          _MockGetSubmissions(),
+          _MockGetSubmissionDetail(),
+          _MockGradeSubmission(),
+          _MockReturnSubmission(),
+          _MockCreateSubmission(),
+          _MockDeleteFile(),
+          _MockSubmitAssignment(),
+          _MockDownloadFile(),
+        ) {
+    state = _fixedState;
+  }
 
   @override
   Future<void> loadSubmissionDetail(String submissionId) async {}
+
+  @override
+  Future<void> loadSubmissions(String assignmentId) async {}
 }
 
-/// Stub [ClassNotifier] with a fixed [ClassState] and no-op loads.
+/// Stub [ClassListNotifier] with a fixed [ClassListState] and no-op loads.
 /// Requires [DataEventBus] to be registered in GetIt (done by [setUpMockDi]).
-class FakeClassNotifier extends ClassNotifier {
-  final ClassState _fixedState;
+class FakeClassListNotifier extends ClassListNotifier {
+  final ClassListState _fixedState;
 
-  FakeClassNotifier([ClassState? initialState])
-      : _fixedState = initialState ?? ClassState(),
+  FakeClassListNotifier([ClassListState? initialState])
+      : _fixedState = initialState ?? ClassListState(),
         super(
           _MockCreateClass(),
           _MockGetMyClasses(),
           _MockGetAllClasses(),
-          _MockGetClassDetail(),
           _MockUpdateClass(),
-          _MockAddStudent(),
-          _MockRemoveStudent(),
-          _MockSearchStudents(),
-          _MockGetParticipants(),
           _MockDeleteClass(),
         ) {
     state = _fixedState;
   }
 
   @override
+  Future<void> loadClasses({bool skipBackgroundRefresh = false}) async {}
+
+  @override
+  Future<void> loadAllClasses({bool skipBackgroundRefresh = false}) async {}
+}
+
+/// Stub [ClassDetailNotifier] with a fixed [ClassDetailState] and no-op loads.
+/// Requires [DataEventBus] to be registered in GetIt (done by [setUpMockDi]).
+class FakeClassDetailNotifier extends ClassDetailNotifier {
+  final ClassDetailState _fixedState;
+
+  FakeClassDetailNotifier([ClassDetailState? initialState])
+      : _fixedState = initialState ?? ClassDetailState(),
+        super(
+          _MockGetClassDetail(),
+          _MockGetParticipants(),
+        ) {
+    state = _fixedState;
+  }
+
+  @override
   Future<void> loadClassDetail(String classId) async {}
+
+  @override
+  Future<void> loadParticipants(String classId) async {}
+
+  @override
+  Future<void> loadParticipantsOffline(String classId) async {}
+}
+
+/// Stub [EnrollmentNotifier] with a fixed [EnrollmentState] and no-op methods.
+class FakeEnrollmentNotifier extends EnrollmentNotifier {
+  final EnrollmentState _fixedState;
+
+  FakeEnrollmentNotifier([EnrollmentState? initialState])
+      : _fixedState = initialState ?? EnrollmentState(),
+        super(
+          _MockAddStudent(),
+          _MockRemoveStudent(),
+          FakeClassDetailNotifier(),
+          FakeClassListNotifier(),
+        ) {
+    state = _fixedState;
+  }
+
+  @override
+  Future<void> addStudent({
+    required String classId,
+    required String studentId,
+  }) async {}
+
+  @override
+  Future<void> removeStudent({
+    required String classId,
+    required String studentId,
+  }) async {}
+}
+
+/// Stub [StudentSearchNotifier] with a fixed [StudentSearchState] and no-op loads.
+class FakeStudentSearchNotifier extends StudentSearchNotifier {
+  final StudentSearchState _fixedState;
+
+  FakeStudentSearchNotifier([StudentSearchState? initialState])
+      : _fixedState = initialState ?? StudentSearchState(),
+        super(_MockSearchStudents()) {
+    state = _fixedState;
+  }
+
+  @override
+  Future<void> searchStudents({String? query}) async {}
 }
 
 /// Stub [TosNotifier] with a fixed [TosState]. TosNotifier has a no-arg constructor.
@@ -230,7 +327,6 @@ void setUpMockDi({
   _register<SyncQueue>(getIt, queue);
 
   // Real instances — no mocking needed, they never emit/do anything in tests.
-  _register<DataEventBus>(getIt, DataEventBus());
   _register<ServerClockService>(getIt, ServerClockService());
 }
 

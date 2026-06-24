@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 /// Popup menu for assignment actions (publish / unpublish / delete).
@@ -24,7 +24,7 @@ class AssignmentActionsMenu extends ConsumerWidget {
           'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
       confirmLabel: 'Publish',
       onConfirm: () => ref
-          .read(assignmentProvider.notifier)
+          .read(assignmentListProvider.notifier)
           .publishAssignment(assignmentId),
     );
   }
@@ -37,7 +37,7 @@ class AssignmentActionsMenu extends ConsumerWidget {
           'Move "${assignment.title}" back to draft? Students will no longer be able to access it.',
       confirmLabel: 'Move to Draft',
       onConfirm: () => ref
-          .read(assignmentProvider.notifier)
+          .read(assignmentListProvider.notifier)
           .unpublishAssignment(assignmentId),
     );
   }
@@ -49,7 +49,7 @@ class AssignmentActionsMenu extends ConsumerWidget {
       body: 'Delete "${assignment.title}"? This cannot be undone.',
       confirmLabel: 'Delete',
       onConfirm: () => ref
-          .read(assignmentProvider.notifier)
+          .read(assignmentListProvider.notifier)
           .deleteAssignment(assignmentId),
     );
   }

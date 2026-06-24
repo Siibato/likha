@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
@@ -10,8 +9,7 @@ import 'package:likha/domain/auth/entities/activity_log.dart';
 
 ResultFuture<List<ActivityLog>> getActivityLogs(
   AuthLocalDataSource localDataSource,
-  AuthRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AuthRemoteDataSource remoteDataSource, {
   required String userId,
 }) async {
   try {
@@ -25,7 +23,6 @@ ResultFuture<List<ActivityLog>> getActivityLogs(
           if (current.length != fresh.length ||
               current.any((c) => !fresh.any((f) => f.id == c.id))) {
             await localDataSource.cacheActivityLogs(fresh, userId);
-            dataEventBus.notifyActivityLogsChanged(userId);
           }
         },
       );

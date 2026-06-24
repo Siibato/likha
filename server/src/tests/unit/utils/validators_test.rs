@@ -15,7 +15,10 @@ use crate::utils::validators::Validator;
 fn test_validate_username_too_short() {
     let result = Validator::validate_username("ab");
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("at least 3 characters"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("at least 3 characters"));
 }
 
 #[test]
@@ -28,7 +31,10 @@ fn test_validate_username_min_length() {
 fn test_validate_username_too_long() {
     let result = Validator::validate_username(&"a".repeat(51));
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("not exceed 50 characters"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("not exceed 50 characters"));
 }
 
 #[test]
@@ -49,7 +55,10 @@ fn test_validate_username_valid() {
 fn test_validate_username_invalid_chars() {
     let result = Validator::validate_username("teacher@01");
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("letters, numbers, underscores, and hyphens"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("letters, numbers, underscores, and hyphens"));
 }
 
 #[test]
@@ -64,7 +73,10 @@ fn test_validate_username_spaces() {
 fn test_validate_password_too_short() {
     let result = Validator::validate_password("short");
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("at least 8 characters"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("at least 8 characters"));
 }
 
 #[test]
@@ -77,7 +89,10 @@ fn test_validate_password_min_length() {
 fn test_validate_password_too_long() {
     let result = Validator::validate_password(&"a".repeat(101));
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("not exceed 100 characters"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("not exceed 100 characters"));
 }
 
 #[test]
@@ -113,7 +128,9 @@ fn test_validate_role_invalid() {
     let result = Validator::validate_role("superuser");
     assert!(result.is_err());
     let err_msg = result.unwrap_err().to_string();
-    assert!(err_msg.contains("teacher") || err_msg.contains("student") || err_msg.contains("admin"));
+    assert!(
+        err_msg.contains("teacher") || err_msg.contains("student") || err_msg.contains("admin")
+    );
 }
 
 #[test]
@@ -128,21 +145,30 @@ fn test_validate_role_case_sensitive() {
 fn test_validate_title_empty() {
     let result = Validator::validate_title("");
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("Title is required"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Title is required"));
 }
 
 #[test]
 fn test_validate_title_whitespace_only() {
     let result = Validator::validate_title("   ");
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("Title is required"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Title is required"));
 }
 
 #[test]
 fn test_validate_title_too_long() {
     let result = Validator::validate_title(&"a".repeat(201));
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("at most 200 characters"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("at most 200 characters"));
 }
 
 #[test]
@@ -189,14 +215,20 @@ fn test_validate_optional_title_none() {
 fn test_validate_instructions_empty() {
     let result = Validator::validate_instructions("");
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("Instructions are required"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Instructions are required"));
 }
 
 #[test]
 fn test_validate_instructions_too_long() {
     let result = Validator::validate_instructions(&"a".repeat(10001));
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("at most 10000 characters"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("at most 10000 characters"));
 }
 
 #[test]
@@ -222,7 +254,10 @@ fn test_validate_optional_instructions_none() {
 fn test_validate_points_too_low() {
     let result = Validator::validate_points(0);
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("between 1 and 1000"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("between 1 and 1000"));
 }
 
 #[test]
@@ -239,7 +274,10 @@ fn test_validate_points_max() {
 fn test_validate_points_too_high() {
     let result = Validator::validate_points(1001);
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("between 1 and 1000"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("between 1 and 1000"));
 }
 
 #[test]

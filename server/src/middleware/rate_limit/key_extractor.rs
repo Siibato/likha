@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::extract::ConnectInfo;
-use axum::http::{Extensions, HeaderMap, header::AUTHORIZATION};
+use axum::http::{header::AUTHORIZATION, Extensions, HeaderMap};
 
 use crate::utils::jwt::JwtService;
 

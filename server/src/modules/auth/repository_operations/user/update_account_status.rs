@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
 pub async fn update_account_status(
     db: &DatabaseConnection,
@@ -17,7 +17,7 @@ pub async fn update_account_status(
         ..Default::default()
     };
 
-    user.update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to update account status: {}", e)))
+    user.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to update account status: {}", e))
+    })
 }

@@ -42,8 +42,7 @@ pub async fn readiness_check() -> impl IntoResponse {
 }
 
 pub async fn get_database_id() -> impl IntoResponse {
-    let db_path = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "sqlite:likha.db".to_string());
+    let db_path = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:likha.db".to_string());
 
     let mut hasher = DefaultHasher::new();
     db_path.hash(&mut hasher);

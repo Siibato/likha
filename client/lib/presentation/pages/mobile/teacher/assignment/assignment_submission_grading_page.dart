@@ -10,7 +10,8 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/presentation/utils/snackbar_utils.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
+import 'package:likha/presentation/providers/assignment/file_upload_provider.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
@@ -49,7 +50,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
     _formPrefilled = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assignmentProvider.notifier)
+          .read(submissionProvider.notifier)
           .loadSubmissionDetail(widget.submissionId);
     });
   }
@@ -57,7 +58,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
   void _prefillFormIfGraded() {
     if (_formPrefilled) return;
 
-    final submission = ref.read(assignmentProvider).currentSubmission;
+    final submission = ref.read(submissionProvider).currentSubmission;
     if (submission == null || submission.id != widget.submissionId) return;
 
     _scoreController.text = submission.score?.toString() ?? '';
@@ -147,7 +148,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
     setState(() => _formError = null);
     final feedback = _feedbackController.text.trim();
     await ref
-        .read(assignmentProvider.notifier)
+        .read(submissionProvider.notifier)
         .gradeSubmission(
           GradeSubmissionParams(
             submissionId: widget.submissionId,
@@ -182,13 +183,18 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
     }
 
     // Provider's downloadFile() handles the download, caching, and reload (mirrors MaterialDetailPage._saveFile)
-    await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+    await ref.read(fileUploadProvider.notifier).downloadFile(file.id);
 
     if (!mounted) return;
 
     // Check if download succeeded
-    final providerState = ref.read(assignmentProvider);
-    if (providerState.error != null) {
+    final didDownload = ref
+            .read(submissionProvider)
+            .currentSubmission
+            ?.files
+            .any((f) => f.id == file.id && f.isCached) ??
+        false;
+    if (!didDownload) {
       context.showErrorSnackBar('Failed to download file', durationMs: 3000);
     } else {
       context.showSuccessSnackBar('✓ Downloaded: ${file.fileName}', durationMs: 3000);
@@ -197,7 +203,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(submissionProvider);
     final submission = state.currentSubmission?.id == widget.submissionId
         ? state.currentSubmission
         : null;
@@ -207,15 +213,15 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
       _prefillFormIfGraded();
     }
 
-    ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
+    ref.listen<SubmissionState>(submissionProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         context.showSuccessSnackBar(next.successMessage!, durationMs: 3000);
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(submissionProvider.notifier).clearMessages();
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(submissionProvider.notifier).clearMessages();
       }
     });
 
@@ -249,7 +255,7 @@ class _GradeSubmissionPageState extends ConsumerState<AssignmentSubmissionGradin
           : RefreshIndicator(
               color: AppColors.foregroundPrimary,
               onRefresh: () => ref
-                  .read(assignmentProvider.notifier)
+                  .read(submissionProvider.notifier)
                   .loadSubmissionDetail(widget.submissionId),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),

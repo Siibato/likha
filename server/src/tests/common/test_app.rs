@@ -1,20 +1,31 @@
+use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::Router;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use std::time::Duration;
-use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
 
-use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
-use crate::modules::entitlement::EntitlementService;
 use crate::middleware::{RateLimitLayer, RateLimitStore};
-use crate::modules::setup::service::SetupService;
-use crate::modules::sync::service::{SyncPushService, SyncConflictService, SyncFullService, SyncDeltaService};
+use crate::modules::entitlement::EntitlementService;
 use crate::modules::grading::service::GradeComputationService;
+use crate::modules::setup::service::SetupService;
+use crate::modules::sync::service::{
+    PushDelegate, SyncConflictService, SyncDeltaService, SyncFullService, SyncPushService,
+};
+use crate::modules::sync::service_operations::push::{
+    admin_user_push_delegate::AdminUserPushDelegate,
+    assessment_push_delegate::AssessmentPushDelegate,
+    assignment_push_delegate::AssignmentPushDelegate, class_push_delegate::ClassPushDelegate,
+    grading_push_delegate::GradingPushDelegate,
+    learning_material_push_delegate::LearningMaterialPushDelegate,
+    question_push_delegate::QuestionPushDelegate, submission_push_delegate::SubmissionPushDelegate,
+    tos_push_delegate::TosPushDelegate,
+};
+use crate::modules::sync::{ManifestRepository, ProcessedOperationsRepository};
 
-use crate::modules::assessment::service::AssessmentService;
 use crate::modules::admin::service::AdminService;
+use crate::modules::assessment::service::AssessmentService;
 use crate::modules::assignment::service::AssignmentService;
 use crate::modules::class::service::ClassService;
 use crate::modules::learning_material::service::LearningMaterialService;
@@ -38,7 +49,7 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
     let admin_service = Arc::new(AdminService::new(db.clone()));
     let class_service = Arc::new(ClassService::new(db.clone()));
     let assessment_service = Arc::new(AssessmentService::new(db.clone()));
-    let assignment_service = Arc::new(AssignmentService::new(db.clone()));
+    let assignment_service = Arc::new(AssignmentService::new(db.clone(), TEST_FILE_ENCRYPTION_KEY));
     let material_service = Arc::new(LearningMaterialService::new(
         db.clone(),
         TEST_FILE_STORAGE.to_string(),
@@ -46,23 +57,31 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
     ));
     let grade_computation_service = Arc::new(GradeComputationService::new(db.clone()));
     let tos_service = Arc::new(TosService::new(db.clone()));
-    let setup_service =
-        Arc::new(SetupService::new(db.clone(), "TEST-CODE".to_string()).await);
+    let setup_service = Arc::new(SetupService::new(db.clone(), "TEST-CODE".to_string()).await);
     let entitlement_service = Arc::new(EntitlementService::new(db.clone()));
     let manifest_repo = ManifestRepository::new(db.clone());
     let processed_ops_repo = Arc::new(ProcessedOperationsRepository::new(db.clone()));
 
+    let delegates: Vec<Arc<dyn PushDelegate>> = vec![
+        Arc::new(ClassPushDelegate::new(class_service.clone())),
+        Arc::new(AssessmentPushDelegate::new(assessment_service.clone())),
+        Arc::new(AssignmentPushDelegate::new(assignment_service.clone())),
+        Arc::new(AdminUserPushDelegate::new(admin_service.clone())),
+        Arc::new(LearningMaterialPushDelegate::new(material_service.clone())),
+        Arc::new(QuestionPushDelegate::new(assessment_service.clone())),
+        Arc::new(SubmissionPushDelegate::new(
+            assessment_service.clone(),
+            assignment_service.clone(),
+            material_service.clone(),
+        )),
+        Arc::new(GradingPushDelegate::new(grade_computation_service.clone())),
+        Arc::new(TosPushDelegate::new(tos_service.clone())),
+    ];
+
     let sync_push_service = Arc::new(SyncPushService::new(
         entitlement_service.clone(),
-        class_service.clone(),
-        assessment_service.clone(),
-        assignment_service.clone(),
-        material_service.clone(),
-        auth_service.clone(),
-        admin_service.clone(),
-        grade_computation_service.clone(),
-        tos_service.clone(),
         processed_ops_repo,
+        delegates,
     ));
     let sync_conflict_service = Arc::new(SyncConflictService::new());
     let sync_full_service = Arc::new(SyncFullService::new(
@@ -89,13 +108,24 @@ pub async fn build_test_app(db: DatabaseConnection) -> Router {
         .merge(crate::modules::auth::routes::routes(auth_service.clone()))
         .merge(crate::modules::admin::routes::routes(admin_service))
         .merge(crate::modules::class::routes::routes(class_service))
-        .merge(crate::modules::assessment::routes::routes(assessment_service.clone()))
-        .merge(crate::modules::assignment::routes::routes(assignment_service.clone()))
-        .merge(crate::modules::learning_material::routes::routes(material_service))
-        .merge(crate::modules::grading::routes::routes(grade_computation_service))
+        .merge(crate::modules::assessment::routes::routes(
+            assessment_service.clone(),
+        ))
+        .merge(crate::modules::assignment::routes::routes(
+            assignment_service.clone(),
+        ))
+        .merge(crate::modules::learning_material::routes::routes(
+            material_service,
+        ))
+        .merge(crate::modules::grading::routes::routes(
+            grade_computation_service,
+        ))
         .merge(crate::modules::tos::routes::routes(tos_service))
         .merge(crate::modules::setup::routes::routes(setup_service))
-        .merge(crate::modules::tasks::routes::routes(assignment_service, assessment_service))
+        .merge(crate::modules::tasks::routes::routes(
+            assignment_service,
+            assessment_service,
+        ))
         .merge(crate::modules::sync::routes::routes(
             sync_push_service,
             sync_conflict_service,

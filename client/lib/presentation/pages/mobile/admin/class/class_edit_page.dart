@@ -7,7 +7,7 @@ import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 
 class AdminEditClassPage extends ConsumerStatefulWidget {
@@ -37,7 +37,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
     _isAdvisory = widget.classEntity.isAdvisory;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadAccounts();
+      ref.read(accountManagementProvider.notifier).loadAccounts();
     });
   }
 
@@ -71,7 +71,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
       return;
     }
 
-    await ref.read(classProvider.notifier).updateClass(
+    await ref.read(classListProvider.notifier).updateClass(
           classId: cls.id,
           title: newTitle,
           description: newDescription,
@@ -80,7 +80,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
         );
 
     if (mounted) {
-      final state = ref.read(classProvider);
+      final state = ref.read(classListProvider);
       if (state.successMessage != null) {
         Navigator.pop(context);
       } else if (state.error != null) {
@@ -91,10 +91,10 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
-    final classState = ref.watch(classProvider);
+    final accountMgmtState = ref.watch(accountManagementProvider);
+    final classListState = ref.watch(classListProvider);
 
-    final teachers = adminState.accounts.where((u) => u.isTeacher).toList();
+    final teachers = accountMgmtState.accounts.where((u) => u.isTeacher).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
@@ -129,7 +129,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
                   controller: _titleController,
                   label: 'Class Title',
                   icon: Icons.class_outlined,
-                  enabled: !classState.isLoading,
+                  enabled: !classListState.isLoading,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Class title is required';
@@ -143,7 +143,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
                   controller: _descriptionController,
                   label: 'Description (Optional)',
                   icon: Icons.description_outlined,
-                  enabled: !classState.isLoading,
+                  enabled: !classListState.isLoading,
                   validator: null,
                   onChanged: (_) => setState(() => _formError = null),
                 ),
@@ -176,7 +176,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
                       _formError = null;
                     });
                   },
-                  enabled: !classState.isLoading,
+                  enabled: !classListState.isLoading,
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -187,7 +187,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
                   ),
                   child: SwitchListTile(
                     value: _isAdvisory,
-                    onChanged: classState.isLoading
+                    onChanged: classListState.isLoading
                         ? null
                         : (value) => setState(() => _isAdvisory = value),
                     title: const Text(
@@ -216,7 +216,7 @@ class _AdminEditClassPageState extends ConsumerState<AdminEditClassPage> {
                 const SizedBox(height: 32),
                 StyledButton(
                   text: 'Save Changes',
-                  isLoading: classState.isLoading,
+                  isLoading: classListState.isLoading,
                   onPressed: _handleSave,
                 ),
               ],

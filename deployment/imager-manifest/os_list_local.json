@@ -1,0 +1,72 @@
+{
+  "imager": {
+    "latest_version": "2.0.10",
+    "url": "https://www.raspberrypi.com/software/",
+    "devices": [
+      {
+        "name": "Raspberry Pi 5",
+        "tags": ["pi5-64bit"],
+        "icon": "https://downloads.raspberrypi.com/imager/icons/RPi_5.png",
+        "description": "Raspberry Pi 5",
+        "matching_type": "inclusive",
+        "capabilities": []
+      },
+      {
+        "name": "Raspberry Pi 4",
+        "tags": ["pi4-64bit"],
+        "default": false,
+        "icon": "https://downloads.raspberrypi.com/imager/icons/RPi_4.png",
+        "description": "Raspberry Pi 4 Model B, 400, and Compute Module 4 / 4S",
+        "matching_type": "inclusive",
+        "capabilities": []
+      }
+    ]
+  },
+  "os_list": [
+    {
+      "name": "Likha Classroom Server",
+      "description": "Self-contained classroom server with mesh replication for Raspberry Pi 4/5",
+      "icon": "https://likha.app/imager/icon.png",
+      "url": "file:///Users/sibato/Documents/captsone/likha/builds/2026-06-23-likha-server.img.xz",
+      "extract_size": 3221225472,
+      "image_download_size": 0,
+      "release_date": "2026-06-23",
+      "init_format": "systemd",
+      "devices": [
+        "pi5-64bit",
+        "pi4-64bit"
+      ],
+      "customization": {
+        "schema": {
+          "mesh_group_id": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 32,
+            "description": "School Code / Mesh Group ID (shared by all nodes in the classroom)"
+          },
+          "wifi_ssid": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Optional WiFi SSID (if not using Ethernet router mode)"
+          },
+          "wifi_password": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Optional WiFi password"
+          },
+          "wifi_country": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "description": "ISO 3166-1 alpha-2 country code for WiFi (e.g., PH, US)"
+          },
+          "school_code": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "School identifier (e.g., ESATQL)"
+          }
+        }
+      }
+    }
+  ]
+}

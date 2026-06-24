@@ -7,7 +7,7 @@ import 'package:likha/presentation/widgets/shared/search/app_search_bar.dart';
 import 'package:likha/presentation/widgets/shared/feedback/content_state_builder.dart';
 import 'package:likha/presentation/widgets/shared/import/bulk_import_dialog.dart';
 import 'package:likha/presentation/widgets/shared/import/history_import_dialog.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 
 class AccountManagementPage extends ConsumerStatefulWidget {
   const AccountManagementPage({super.key});
@@ -27,7 +27,7 @@ class _AccountManagementPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadAccounts();
+      ref.read(accountManagementProvider.notifier).loadAccounts();
     });
   }
 
@@ -39,9 +39,9 @@ class _AccountManagementPageState
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
+    final accountMgmtState = ref.watch(accountManagementProvider);
 
-    final filteredAccounts = adminState.accounts.where((user) {
+    final filteredAccounts = accountMgmtState.accounts.where((user) {
       if (user.isAdmin) return false;
       if (_selectedRole != null && user.role != _selectedRole) return false;
       if (_searchQuery.isEmpty) return true;
@@ -79,7 +79,7 @@ class _AccountManagementPageState
                 showDialog(
                   context: context,
                   builder: (_) => BulkImportDialog(
-                    onSuccess: () => ref.read(adminProvider.notifier).loadAccounts(),
+                    onSuccess: () => ref.read(accountManagementProvider.notifier).loadAccounts(),
                   ),
                 );
               } else {
@@ -172,11 +172,11 @@ class _AccountManagementPageState
           ),
           Expanded(
             child: ContentStateBuilder(
-              isLoading: adminState.isLoading && adminState.accounts.isEmpty,
-              error: adminState.error,
+              isLoading: accountMgmtState.isLoading && accountMgmtState.accounts.isEmpty,
+              error: accountMgmtState.error,
               isEmpty: filteredAccounts.isEmpty,
-              onRetry: () => ref.read(adminProvider.notifier).loadAccounts(),
-              onRefresh: () => ref.read(adminProvider.notifier).loadAccounts(),
+              onRetry: () => ref.read(accountManagementProvider.notifier).loadAccounts(),
+              onRefresh: () => ref.read(accountManagementProvider.notifier).loadAccounts(),
               emptyState: const Center(
                 child: Text(
                   'No accounts found',
@@ -203,7 +203,7 @@ class _AccountManagementPageState
                         builder: (_) => AccountDetailPage(user: user),
                       ),
                     ).then((_) => ref
-                        .read(adminProvider.notifier)
+                        .read(accountManagementProvider.notifier)
                         .loadAccounts()),
                   );
                 },

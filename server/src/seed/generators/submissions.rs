@@ -7,8 +7,8 @@
 use uuid::Uuid;
 
 use crate::seed::specs::*;
-use crate::seed::tools::SeedContext;
 use crate::seed::tools::seed_id;
+use crate::seed::tools::SeedContext;
 
 /// Generate assessment submissions: every enrolled student submits
 pub fn generate_assessment_submissions(
@@ -28,10 +28,14 @@ pub fn generate_assessment_submissions(
         .collect();
 
     // Build class -> students map from enrollments
-    let mut class_students: std::collections::HashMap<Uuid, Vec<Uuid>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<Uuid>> =
+        std::collections::HashMap::new();
     for enrollment in enrollments {
         if student_indices.contains_key(&enrollment.user_id) {
-            class_students.entry(enrollment.class_id).or_default().push(enrollment.user_id);
+            class_students
+                .entry(enrollment.class_id)
+                .or_default()
+                .push(enrollment.user_id);
         }
     }
 
@@ -44,7 +48,10 @@ pub fn generate_assessment_submissions(
         }
 
         // Get students enrolled in this class
-        let enrolled_students = class_students.get(&assessment.class_id).cloned().unwrap_or_default();
+        let enrolled_students = class_students
+            .get(&assessment.class_id)
+            .cloned()
+            .unwrap_or_default();
 
         for student_id in &enrolled_students {
             let Some(&global_student_idx) = student_indices.get(student_id) else {
@@ -52,19 +59,20 @@ pub fn generate_assessment_submissions(
             };
 
             // All students submit
-            let started_at = started_base + chrono::Duration::minutes((global_student_idx * 5) as i64);
-            let submitted_at = Some(started_at + chrono::Duration::minutes(15 + (global_student_idx % 30) as i64));
+            let started_at =
+                started_base + chrono::Duration::minutes((global_student_idx * 5) as i64);
+            let submitted_at =
+                Some(started_at + chrono::Duration::minutes(15 + (global_student_idx % 30) as i64));
 
             // Generate answers
-            let answers = generate_assessment_answers(
-                assessment,
-                global_student_idx,
-                assess_idx,
-            );
+            let answers = generate_assessment_answers(assessment, global_student_idx, assess_idx);
 
             let total_points: f64 = answers.iter().map(|a| a.points).sum();
 
-            let sub_id = seed_id("assessment_submissions", &format!("assess_{}_student_{}", assess_idx, global_student_idx));
+            let sub_id = seed_id(
+                "assessment_submissions",
+                &format!("assess_{}_student_{}", assess_idx, global_student_idx),
+            );
 
             submissions.push(AssessmentSubmissionSpec {
                 id: sub_id,
@@ -98,7 +106,7 @@ fn generate_assessment_answers(
             0 => (Some(true), question.points as f64), // Fully correct
             1 => (Some(true), question.points as f64 * 0.8), // Mostly correct (80%)
             2 => (Some(false), question.points as f64 * 0.5), // Mostly wrong (50%)
-            _ => (Some(false), 0.0), // All wrong
+            _ => (Some(false), 0.0),                   // All wrong
         };
 
         let choice_ids = if !question.choices.is_empty() {
@@ -108,12 +116,15 @@ fn generate_assessment_answers(
 
             if correctness == 0 {
                 // Fully correct - pick the real correct choice
-                correct_choice.map(|c| vec![c.id])
+                correct_choice
+                    .map(|c| vec![c.id])
                     .unwrap_or_else(|| vec![question.choices[0].id])
             } else {
                 // Wrong/partial - pick a wrong choice deterministically
                 let wrong_idx = (student_idx + assess_idx + q_idx) % wrong_choices.len().max(1);
-                wrong_choices.get(wrong_idx).map(|c| vec![c.id])
+                wrong_choices
+                    .get(wrong_idx)
+                    .map(|c| vec![c.id])
                     .unwrap_or_else(|| vec![question.choices[0].id])
             }
         } else {
@@ -158,10 +169,14 @@ pub fn generate_assignment_submissions(
         .collect();
 
     // Build class -> students map from enrollments
-    let mut class_students: std::collections::HashMap<Uuid, Vec<Uuid>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<Uuid>> =
+        std::collections::HashMap::new();
     for enrollment in enrollments {
         if student_indices.contains_key(&enrollment.user_id) {
-            class_students.entry(enrollment.class_id).or_default().push(enrollment.user_id);
+            class_students
+                .entry(enrollment.class_id)
+                .or_default()
+                .push(enrollment.user_id);
         }
     }
 
@@ -174,7 +189,10 @@ pub fn generate_assignment_submissions(
         }
 
         // Get students enrolled in this class
-        let enrolled_students = class_students.get(&assignment.class_id).cloned().unwrap_or_default();
+        let enrolled_students = class_students
+            .get(&assignment.class_id)
+            .cloned()
+            .unwrap_or_default();
 
         // Get a teacher for grading
         let teacher_id = teachers.get(assign_idx % teachers.len()).map(|t| t.id);
@@ -185,14 +203,24 @@ pub fn generate_assignment_submissions(
             };
 
             // All submissions are graded
-            let submitted_at = submitted_at_base + chrono::Duration::hours((global_student_idx % 24) as i64);
+            let submitted_at =
+                submitted_at_base + chrono::Duration::hours((global_student_idx % 24) as i64);
 
             let score = (60 + (global_student_idx % 41)) as i32; // 60-100% score
             let points = (assignment.total_points * score) / 100;
-            let feedbacks = ["Good work.", "Needs improvement.", "Excellent!", "Well done, keep it up.", "Satisfactory."];
+            let feedbacks = [
+                "Good work.",
+                "Needs improvement.",
+                "Excellent!",
+                "Well done, keep it up.",
+                "Satisfactory.",
+            ];
             let feedback = feedbacks[global_student_idx % feedbacks.len()];
 
-            let sub_id = seed_id("assignment_submissions", &format!("assign_{}_student_{}", assign_idx, global_student_idx));
+            let sub_id = seed_id(
+                "assignment_submissions",
+                &format!("assign_{}_student_{}", assign_idx, global_student_idx),
+            );
 
             submissions.push(AssignmentSubmissionSpec {
                 id: sub_id,

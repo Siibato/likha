@@ -10,7 +10,7 @@ import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_cr
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/empty_assignment_list_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/teacher_assignment_card.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
@@ -39,7 +39,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
       vsync: this,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
+      ref.read(assignmentListProvider.notifier).loadAssignments(widget.classId);
     });
   }
 
@@ -57,7 +57,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
   }
 
   void _exitReorderMode() {
-    final notifier = ref.read(assignmentProvider.notifier);
+    final notifier = ref.read(assignmentListProvider.notifier);
     notifier.reorderAllAssignments(
       classId: widget.classId,
       assignmentIds: _reorderBuffer.map((a) => a.id).toList(),
@@ -109,7 +109,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
           builder: (_) => AssignmentDetailPage(assignmentId: assignment.id),
         ),
       ).then((_) {
-        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId);
+        ref.read(assignmentListProvider.notifier).loadAssignments(widget.classId);
       }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -203,13 +203,13 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
 
   @override
   Widget build(BuildContext context) {
-    final assignmentState = ref.watch(assignmentProvider);
+    final assignmentState = ref.watch(assignmentListProvider);
 
     // Listen for sync completion to auto-refresh if data arrives after page opens
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assignmentsReady ?? false) && next.assignmentsReady) {
         // Assignments just became ready in the DB — reload
-        ref.read(assignmentProvider.notifier).loadAssignments(widget.classId, skipBackgroundRefresh: true);
+        ref.read(assignmentListProvider.notifier).loadAssignments(widget.classId, skipBackgroundRefresh: true);
       }
     });
 
@@ -319,7 +319,7 @@ class _TeacherAssignmentListPageState extends ConsumerState<TeacherAssignmentLis
                             )
                           : RefreshableList(
                               onRefresh: () => ref
-                                  .read(assignmentProvider.notifier)
+                                  .read(assignmentListProvider.notifier)
                                   .loadAssignments(widget.classId),
                               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                               itemCount: assignmentState.assignments.length,

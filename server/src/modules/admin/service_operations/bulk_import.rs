@@ -51,11 +51,11 @@ pub async fn preview_students(
                     errors.push("last_name is required".to_string());
                 }
 
-                // Type-check age if present
-                if let Some(age) = row.age {
-                    if age < 0 || age > 150 {
-                        errors.push("age must be between 0 and 150".to_string());
-                    }
+                if row.age.is_some() {
+                    errors.push(
+                        "age column is no longer supported. Remove it and rely on birthdate."
+                            .to_string(),
+                    );
                 }
 
                 // Type-check birthdate if present
@@ -129,7 +129,19 @@ pub async fn import_students(
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
         if existing.is_some() {
-            errors.push(format!("Row {}: username '{}' already exists", i + 1, username));
+            errors.push(format!(
+                "Row {}: username '{}' already exists",
+                i + 1,
+                username
+            ));
+            continue;
+        }
+
+        if row.age.is_some() {
+            errors.push(format!(
+                "Row {}: age column is no longer supported. Remove it before importing.",
+                i + 1
+            ));
             continue;
         }
 
@@ -156,16 +168,24 @@ pub async fn import_students(
         };
 
         // Upsert learner details if any are present
-        let has_learner_details = row.lrn.is_some() || row.age.is_some() || row.sex.is_some()
-            || row.track_strand.is_some() || row.curriculum.is_some() || row.birthdate.is_some()
-            || row.birthplace.is_some() || row.home_address.is_some() || row.father_name.is_some()
-            || row.father_contact.is_some() || row.mother_name.is_some() || row.mother_contact.is_some()
-            || row.guardian_name.is_some() || row.guardian_contact.is_some() || row.date_admitted.is_some();
+        let has_learner_details = row.lrn.is_some()
+            || row.sex.is_some()
+            || row.track_strand.is_some()
+            || row.curriculum.is_some()
+            || row.birthdate.is_some()
+            || row.birthplace.is_some()
+            || row.home_address.is_some()
+            || row.father_name.is_some()
+            || row.father_contact.is_some()
+            || row.mother_name.is_some()
+            || row.mother_contact.is_some()
+            || row.guardian_name.is_some()
+            || row.guardian_contact.is_some()
+            || row.date_admitted.is_some();
 
         if has_learner_details {
             let payload = LearnerDetailsPayload {
                 lrn: row.lrn.filter(|s| !s.trim().is_empty()),
-                age: row.age,
                 sex: row.sex.filter(|s| !s.trim().is_empty()),
                 track_strand: row.track_strand.filter(|s| !s.trim().is_empty()),
                 curriculum: row.curriculum.filter(|s| !s.trim().is_empty()),
@@ -181,8 +201,14 @@ pub async fn import_students(
                 date_admitted: row.date_admitted.filter(|s| !s.trim().is_empty()),
             };
 
-            if let Err(e) = upsert_account_details(db, user.id, "student", Some(payload), None).await {
-                errors.push(format!("Row {}: failed to save learner details: {}", i + 1, e));
+            if let Err(e) =
+                upsert_account_details(db, user.id, "student", Some(payload), None).await
+            {
+                errors.push(format!(
+                    "Row {}: failed to save learner details: {}",
+                    i + 1,
+                    e
+                ));
                 continue;
             }
         }

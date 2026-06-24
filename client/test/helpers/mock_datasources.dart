@@ -18,7 +18,6 @@ import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/data/validation/services/validation_service.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/services/storage_service.dart';
 
@@ -56,8 +55,6 @@ class MockConnectivityService extends Mock implements ConnectivityService {}
 class MockValidationService extends Mock implements ValidationService {}
 
 class MockStorageService extends Mock implements StorageService {}
-
-class MockDataEventBus extends Mock implements DataEventBus {}
 
 class MockSyncLogger extends Mock implements SyncLogger {}
 

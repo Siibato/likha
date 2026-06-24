@@ -1,0 +1,69 @@
+name: Build Android
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v0.0.0-dev'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: client
+        run: flutter pub get
+
+      - name: Create signing key.properties
+        working-directory: client/android
+        run: |
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> key.properties
+          echo "storeFile=app/likha-release.jks" >> key.properties
+
+      - name: Build APK
+        working-directory: client
+        run: flutter build apk --release
+
+      - name: Build App Bundle
+        working-directory: client
+        run: flutter build appbundle --release
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release
+          cp client/build/app/outputs/flutter-apk/app-release.apk \
+             "release/likha-android-${{ github.ref_name || inputs.version }}.apk"
+          cp client/build/app/outputs/bundle/release/app-release.aab \
+             "release/likha-android-${{ github.ref_name || inputs.version }}.aab"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: release/*
+          tag_name: ${{ github.ref_name || inputs.version }}
+          generate_release_notes: true

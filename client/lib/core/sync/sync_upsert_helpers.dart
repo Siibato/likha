@@ -40,13 +40,25 @@ class SyncUpsertHelpers {
           _log.warn('Class ${record['id']} has missing teacher_id', record);
         }
 
+        String teacherFullName = '';
+        final rawFullName = record['teacher_full_name'];
+        if (rawFullName is String && rawFullName.isNotEmpty) {
+          teacherFullName = rawFullName;
+        } else {
+          final firstName = record['teacher_first_name'] as String? ?? '';
+          final lastName = record['teacher_last_name'] as String? ?? '';
+          if (firstName.isNotEmpty || lastName.isNotEmpty) {
+            teacherFullName = '$lastName, $firstName'.trim();
+          }
+        }
+
         final classData = {
           CommonCols.id: record['id'],
           ClassesCols.title: record['title'],
           ClassesCols.description: record['description'],
           ClassesCols.teacherId: teacherId,
           ClassesCols.teacherUsername: record['teacher_username'] ?? '',
-          ClassesCols.teacherFullName: record['teacher_full_name'] ?? '',
+          ClassesCols.teacherFullName: teacherFullName,
           ClassesCols.isArchived: (record['is_archived'] == true) ? 1 : 0,
           ClassesCols.isAdvisory: (record['is_advisory'] == true) ? 1 : 0,
           ClassesCols.studentCount: record['student_count'] ?? 0,
@@ -129,7 +141,7 @@ class SyncUpsertHelpers {
             DbTables.classes,
             {
               ClassesCols.teacherUsername: teacherInfo['username'],
-              ClassesCols.teacherFullName: '${teacherInfo['first_name']} ${teacherInfo['last_name']}'.trim(),
+              ClassesCols.teacherFullName: '${teacherInfo['last_name']}, ${teacherInfo['first_name']}'.trim(),
             },
             where: '${CommonCols.id} = ?',
             whereArgs: [cls[CommonCols.id]],
@@ -205,25 +217,44 @@ class SyncUpsertHelpers {
   ) async {
     for (final record in records) {
       if (record is! Map<String, dynamic>) continue;
-      // Only insert columns that exist in the users table
-      await db.insert(
+      // Use UPDATE-or-INSERT instead of REPLACE to avoid triggering
+      // ON DELETE CASCADE on class_participants.
+      final existing = await db.query(
         DbTables.users,
-        {
-          CommonCols.id: record['id'],
-          UsersCols.username: record['username'],
-          UsersCols.firstName: record['first_name'] ?? '',
-          UsersCols.lastName: record['last_name'] ?? '',
-          UsersCols.role: record['role'],
-          UsersCols.accountStatus: record['account_status'],
-          UsersCols.activatedAt: record['activated_at'],
-          CommonCols.createdAt: record['created_at'],
-          CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
-          CommonCols.deletedAt: record['deleted_at'],
-          CommonCols.cachedAt: DateTime.now().toIso8601String(),
-          CommonCols.syncStatus: SyncStatus.synced.dbValue,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        columns: [CommonCols.id],
+        where: '${CommonCols.id} = ?',
+        whereArgs: [record['id']],
+        limit: 1,
       );
+      final data = {
+        UsersCols.username: record['username'],
+        UsersCols.firstName: record['first_name'] ?? '',
+        UsersCols.lastName: record['last_name'] ?? '',
+        UsersCols.role: record['role'],
+        UsersCols.accountStatus: record['account_status'],
+        UsersCols.activatedAt: record['activated_at'],
+        CommonCols.updatedAt: record['updated_at'] ?? record['created_at'],
+        CommonCols.deletedAt: record['deleted_at'],
+        CommonCols.cachedAt: DateTime.now().toIso8601String(),
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
+      };
+      if (existing.isNotEmpty) {
+        await db.update(
+          DbTables.users,
+          data,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [record['id']],
+        );
+      } else {
+        await db.insert(
+          DbTables.users,
+          {
+            CommonCols.id: record['id'],
+            ...data,
+            CommonCols.createdAt: record['created_at'],
+          },
+        );
+      }
     }
   }
 
@@ -1288,7 +1319,6 @@ class SyncUpsertHelpers {
             CommonCols.id: record['id'],
             LearnerDetailsCols.userId: record['user_id'],
             LearnerDetailsCols.lrn: record['lrn'],
-            LearnerDetailsCols.age: record['age'] != null ? (record['age'] as num).toInt() : null,
             LearnerDetailsCols.sex: record['sex'],
             LearnerDetailsCols.trackStrand: record['track_strand'],
             LearnerDetailsCols.curriculum: record['curriculum'],
@@ -1634,24 +1664,44 @@ class SyncUpsertHelpers {
 
   /// Upsert current logged-in user
   Future<void> upsertCurrentUser(DatabaseExecutor db, Map<String, dynamic> userData) async {
-    await db.insert(
+    // Use UPDATE-or-INSERT instead of REPLACE to avoid triggering
+    // ON DELETE CASCADE on class_participants.
+    final existing = await db.query(
       DbTables.users,
-      {
-        CommonCols.id: userData['id'],
-        UsersCols.username: userData['username'],
-        UsersCols.firstName: userData['first_name'] ?? '',
-        UsersCols.lastName: userData['last_name'] ?? '',
-        UsersCols.role: userData['role'],
-        UsersCols.accountStatus: userData['account_status'],
-        UsersCols.activatedAt: userData['activated_at'],
-        CommonCols.createdAt: userData['created_at'],
-        CommonCols.updatedAt: userData['updated_at'] ?? userData['created_at'],
-        CommonCols.deletedAt: userData['deleted_at'],
-        CommonCols.cachedAt: DateTime.now().toIso8601String(),
-        CommonCols.syncStatus: SyncStatus.synced.dbValue,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      columns: [CommonCols.id],
+      where: '${CommonCols.id} = ?',
+      whereArgs: [userData['id']],
+      limit: 1,
     );
+    final data = {
+      UsersCols.username: userData['username'],
+      UsersCols.firstName: userData['first_name'] ?? '',
+      UsersCols.lastName: userData['last_name'] ?? '',
+      UsersCols.role: userData['role'],
+      UsersCols.accountStatus: userData['account_status'],
+      UsersCols.activatedAt: userData['activated_at'],
+      CommonCols.updatedAt: userData['updated_at'] ?? userData['created_at'],
+      CommonCols.deletedAt: userData['deleted_at'],
+      CommonCols.cachedAt: DateTime.now().toIso8601String(),
+      CommonCols.syncStatus: SyncStatus.synced.dbValue,
+    };
+    if (existing.isNotEmpty) {
+      await db.update(
+        DbTables.users,
+        data,
+        where: '${CommonCols.id} = ?',
+        whereArgs: [userData['id']],
+      );
+    } else {
+      await db.insert(
+        DbTables.users,
+        {
+          CommonCols.id: userData['id'],
+          ...data,
+          CommonCols.createdAt: userData['created_at'],
+        },
+      );
+    }
   }
 
   /// Upsert student results cache (assessment performance data)

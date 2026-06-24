@@ -15,6 +15,7 @@ class AccountTile extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'activated':
+      case 'active':
         return AppColors.semanticSuccessAlt;
       case 'pending_activation':
         return AppColors.accentAmber;
@@ -28,6 +29,7 @@ class AccountTile extends StatelessWidget {
   String _statusLabel(String status) {
     switch (status) {
       case 'activated':
+      case 'active':
         return 'Active';
       case 'pending_activation':
         return 'Pending';

@@ -70,25 +70,42 @@ impl CacheKey {
             CacheKey::AssignmentListTeacher(id) => format!("assignment:list:teacher:{}", id),
             CacheKey::AssignmentDetailStudent(id) => format!("assignment:detail:{}:student", id),
             CacheKey::AssignmentDetailTeacher(id) => format!("assignment:detail:{}:teacher", id),
-            CacheKey::AssignmentListByClass(class_id, user_id, role) => format!("assignment:list:class:{}:{}:{}", class_id, user_id, role),
+            CacheKey::AssignmentListByClass(class_id, user_id, role) => {
+                format!("assignment:list:class:{}:{}:{}", class_id, user_id, role)
+            }
 
             // Assessment
-            CacheKey::AssessmentList(user_id, class_id) => format!("assessment:list:{}:{}", user_id, class_id),
+            CacheKey::AssessmentList(user_id, class_id) => {
+                format!("assessment:list:{}:{}", user_id, class_id)
+            }
             CacheKey::AssessmentDetail(id, role) => format!("assessment:detail:{}:{}", id, role),
             CacheKey::AssessmentSubmissions(id) => format!("assessment:submissions:{}", id),
-            CacheKey::AssessmentStudentSubmission(assessment_id, student_id) => format!("assessment:student_submission:{}:{}", assessment_id, student_id),
+            CacheKey::AssessmentStudentSubmission(assessment_id, student_id) => format!(
+                "assessment:student_submission:{}:{}",
+                assessment_id, student_id
+            ),
             CacheKey::AssessmentSubmissionDetail(id) => format!("assessment:submission:{}", id),
             CacheKey::StudentResults(id) => format!("assessment:results:{}", id),
-            CacheKey::StudentAssessmentSubmissions(class_id, student_id) => format!("assessment:student_submissions:{}:{}", class_id, student_id),
+            CacheKey::StudentAssessmentSubmissions(class_id, student_id) => {
+                format!("assessment:student_submissions:{}:{}", class_id, student_id)
+            }
 
             // Grading
             CacheKey::GradeItems(class_id, term) => format!("grade:items:{}:{}", class_id, term),
             CacheKey::TermGrades(class_id, term) => format!("grade:term:{}:{}", class_id, term),
-            CacheKey::StudentTermGrade(class_id, student_id, term) => format!("grade:student:{}:{}:{}", class_id, student_id, term),
-            CacheKey::StudentAllGrades(class_id, student_id) => format!("grade:student_all:{}:{}", class_id, student_id),
-            CacheKey::GradeSummary(class_id, term) => format!("grade:summary:{}:{}", class_id, term),
+            CacheKey::StudentTermGrade(class_id, student_id, term) => {
+                format!("grade:student:{}:{}:{}", class_id, student_id, term)
+            }
+            CacheKey::StudentAllGrades(class_id, student_id) => {
+                format!("grade:student_all:{}:{}", class_id, student_id)
+            }
+            CacheKey::GradeSummary(class_id, term) => {
+                format!("grade:summary:{}:{}", class_id, term)
+            }
             CacheKey::ItemScores(item_id) => format!("grade:item_scores:{}", item_id),
-            CacheKey::FinalGrade(class_id, student_id) => format!("grade:final:{}:{}", class_id, student_id),
+            CacheKey::FinalGrade(class_id, student_id) => {
+                format!("grade:final:{}:{}", class_id, student_id)
+            }
             CacheKey::GeneralAverages(class_id) => format!("grade:general_averages:{}", class_id),
             CacheKey::SF9(class_id, student_id) => format!("grade:sf9:{}:{}", class_id, student_id),
 

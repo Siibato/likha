@@ -1,7 +1,7 @@
-use chrono::Utc;
 use crate::modules::assessment::repository::AssessmentRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
+use chrono::Utc;
 
 async fn create_test_class(db: &sea_orm::DatabaseConnection) -> uuid::Uuid {
     ClassRepository::new(db.clone())
@@ -40,7 +40,10 @@ async fn test_create_and_find_assessment() {
     assert_eq!(assessment.title, "Quiz 1");
     assert_eq!(assessment.class_id, class_id);
 
-    let found = repo.find_by_id(assessment.id).await.expect("find_by_id failed");
+    let found = repo
+        .find_by_id(assessment.id)
+        .await
+        .expect("find_by_id failed");
     assert!(found.is_some());
 }
 
@@ -51,9 +54,23 @@ async fn test_find_by_class_id() {
     let repo = AssessmentRepository::new(db);
     let now = Utc::now().naive_utc();
 
-    repo.create_assessment(class_id, "A1".to_string(), None, 60, now, now, false, 0, None, true, None, None, None)
-        .await
-        .expect("create failed");
+    repo.create_assessment(
+        class_id,
+        "A1".to_string(),
+        None,
+        60,
+        now,
+        now,
+        false,
+        0,
+        None,
+        true,
+        None,
+        None,
+        None,
+    )
+    .await
+    .expect("create failed");
 
     let list = repo.find_by_class_id(class_id).await.expect("find failed");
     assert_eq!(list.len(), 1);
@@ -63,6 +80,9 @@ async fn test_find_by_class_id() {
 async fn test_find_by_id_returns_none_for_unknown() {
     let db = test_db().await;
     let repo = AssessmentRepository::new(db);
-    let found = repo.find_by_id(uuid::Uuid::new_v4()).await.expect("find failed");
+    let found = repo
+        .find_by_id(uuid::Uuid::new_v4())
+        .await
+        .expect("find failed");
     assert!(found.is_none());
 }

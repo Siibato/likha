@@ -5,7 +5,8 @@ import 'package:likha/presentation/pages/mobile/teacher/assessment/assessment_ed
 import 'package:likha/presentation/pages/mobile/teacher/assessment/assessment_statistics_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assessment/assessment_submissions_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/tos/tos_view_page.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_action_buttons.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_info_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_status_card.dart';
@@ -105,7 +106,7 @@ class AssessmentDetailInfoSection extends ConsumerWidget {
           'Publish "${assessment.title}"? Once published, questions can no longer be edited.',
       confirmLabel: 'Publish',
       onConfirm: () => ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(assessmentListProvider.notifier)
           .publishAssessment(assessmentId),
     );
   }
@@ -118,7 +119,7 @@ class AssessmentDetailInfoSection extends ConsumerWidget {
           'Release results for "${assessment.title}"? Students will be able to see their scores.',
       confirmLabel: 'Release',
       onConfirm: () => ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(assessmentDetailProvider.notifier)
           .releaseResults(assessmentId),
     );
   }

@@ -33,7 +33,10 @@ impl RedisCache {
         let _ = client.connect();
 
         if let Err(e) = client.wait_for_connect().await {
-            warn!("Redis not available — cache will fallback to DB reads: {}", e);
+            warn!(
+                "Redis not available — cache will fallback to DB reads: {}",
+                e
+            );
         }
 
         Arc::new(Self {
@@ -77,12 +80,7 @@ impl RedisCache {
         }
     }
 
-    pub async fn set<T: Serialize>(
-        &self,
-        key: &str,
-        value: &T,
-        ttl_secs: u64,
-    ) {
+    pub async fn set<T: Serialize>(&self, key: &str, value: &T, ttl_secs: u64) {
         if !self.enabled {
             return;
         }
@@ -134,7 +132,10 @@ impl RedisCache {
         match timeout(REDIS_TIMEOUT, self.client.del::<(), Vec<String>>(keys)).await {
             Ok(Ok(_)) => debug!("CACHE DEL {} keys", count),
             Ok(Err(e)) => debug!("CACHE DEL ERROR: {}", e),
-            Err(_) => debug!("CACHE DEL TIMEOUT: Redis operation timed out for {} keys", count),
+            Err(_) => debug!(
+                "CACHE DEL TIMEOUT: Redis operation timed out for {} keys",
+                count
+            ),
         }
     }
 }

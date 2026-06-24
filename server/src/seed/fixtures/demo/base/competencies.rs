@@ -1,7 +1,7 @@
 //! Demo competencies for Science 10 (4 per term).
 
+use super::super::{compid, tid};
 use crate::seed::specs::CompetencySpec;
-use super::super::{tid, compid};
 
 pub fn demo_competencies() -> Vec<CompetencySpec> {
     vec![

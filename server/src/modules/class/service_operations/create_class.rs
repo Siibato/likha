@@ -1,9 +1,9 @@
-use uuid::Uuid;
+use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::{ClassResponse, CreateClassRequest};
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::validators::Validator;
-use crate::modules::class::schema::{ClassResponse, CreateClassRequest};
-use crate::modules::class::repository::ClassRepository;
-use crate::modules::auth::UserRepository;
+use uuid::Uuid;
 
 pub async fn create_class(
     class_repo: &ClassRepository,
@@ -28,16 +28,24 @@ pub async fn create_class(
         .iter()
         .any(|c| c.title.to_lowercase() == normalized_title)
     {
-        return Err(AppError::BadRequest(
-            format!("A class named '{}' already exists for this teacher", title)
-        ));
+        return Err(AppError::BadRequest(format!(
+            "A class named '{}' already exists for this teacher",
+            title
+        )));
     }
 
     let class = class_repo
-        .create_class(title, request.description, client_id, request.is_advisory.unwrap_or(false))
+        .create_class(
+            title,
+            request.description,
+            client_id,
+            request.is_advisory.unwrap_or(false),
+        )
         .await?;
 
-    class_repo.add_participant(class.id, actual_teacher_id).await?;
+    class_repo
+        .add_participant(class.id, actual_teacher_id)
+        .await?;
 
     Ok(ClassResponse {
         id: class.id,

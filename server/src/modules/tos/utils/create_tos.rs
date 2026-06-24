@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn create_tos(
@@ -10,7 +10,11 @@ impl crate::modules::tos::service::TosService {
         request: CreateTosRequest,
         client_id: Option<Uuid>,
     ) -> AppResult<TosResponse> {
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -22,7 +26,10 @@ impl crate::modules::tos::service::TosService {
 
         let max_terms = crate::modules::grading::helpers::term_count::term_count("term") as i32;
         if !(1..=max_terms).contains(&request.term_number) {
-            return Err(AppError::BadRequest(format!("term_number must be between 1 and {}", max_terms)));
+            return Err(AppError::BadRequest(format!(
+                "term_number must be between 1 and {}",
+                max_terms
+            )));
         }
 
         let time_unit = request.time_unit.as_deref().unwrap_or("days");
@@ -47,7 +54,8 @@ impl crate::modules::tos::service::TosService {
             inv.invalidate_tos_list(class_id).await;
         }
 
-        let tos = self.tos_repo
+        let tos = self
+            .tos_repo
             .create_tos(
                 id,
                 class_id,

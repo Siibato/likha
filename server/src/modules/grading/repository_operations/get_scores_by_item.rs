@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_scores;
 use crate::utils::{AppError, AppResult};
+use ::entity::grade_scores;
 
 pub async fn get_scores_by_item(
     db: &DatabaseConnection,

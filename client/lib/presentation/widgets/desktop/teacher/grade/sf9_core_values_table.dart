@@ -65,7 +65,7 @@ class Sf9CoreValuesTable extends StatelessWidget {
               ...List.generate(numTerms, (i) => [
                 _cell('T${i + 1}', qWidth, cellHeight, bold: true),
                 if (i < numTerms - 1) _vDivider(cellHeight),
-              ]).expand((x) => x).toList(),
+              ]).expand((x) => x),
             ],
           ),
           const Divider(height: 1, color: AppColors.borderLight),
@@ -95,12 +95,12 @@ class Sf9CoreValuesTable extends StatelessWidget {
                             _cell(marking ?? '', qWidth, cellHeight, bold: marking != null),
                             if (i < numTerms - 1) _vDivider(cellHeight),
                           ];
-                        }).expand((x) => x).toList(),
+                        }).expand((x) => x),
                       ],
                     ),
                     const Divider(height: 1, color: AppColors.borderLight),
                   ];
-                }).toList(),
+                }),
               ],
             );
           }),

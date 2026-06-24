@@ -1,14 +1,11 @@
-use axum::{
-    routing::post,
-    Router,
-};
+use axum::{routing::post, Router};
 use std::sync::Arc;
 
 use crate::modules::sync::handler;
-use crate::modules::sync::service_operations::push::SyncPushService;
+use crate::modules::sync::service_operations::conflict_service::SyncConflictService;
 use crate::modules::sync::service_operations::delta::SyncDeltaService;
 use crate::modules::sync::service_operations::full::SyncFullService;
-use crate::modules::sync::service_operations::conflict_service::SyncConflictService;
+use crate::modules::sync::service_operations::push::SyncPushService;
 
 /// Wire all sync routes and services (full/delta optimization)
 pub fn routes(
@@ -29,12 +26,10 @@ pub fn routes(
         )
         .route(
             "/sync/push",
-            post(handler::push)
-                .with_state(sync_push_service),
+            post(handler::push).with_state(sync_push_service),
         )
         .route(
             "/sync/conflicts/resolve",
-            post(handler::resolve_conflict)
-                .with_state(sync_conflict_service),
+            post(handler::resolve_conflict).with_state(sync_conflict_service),
         )
 }

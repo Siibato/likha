@@ -322,23 +322,11 @@ pub fn draw_horizontal_line(
     width: f32,
     thickness: f32,
 ) {
-    engine.draw_rect(
-        layer,
-        Mm(x),
-        Mm(y),
-        Mm(width),
-        Mm(thickness),
-        None,
-        true,
-    );
+    engine.draw_rect(layer, Mm(x), Mm(y), Mm(width), Mm(thickness), None, true);
 }
 
 /// Draw the center split line from top to bottom of the content area.
-pub fn draw_center_split_line(
-    engine: &PdfEngine,
-    layer: &PdfLayerReference,
-    thickness: f32,
-) {
+pub fn draw_center_split_line(engine: &PdfEngine, layer: &PdfLayerReference, thickness: f32) {
     draw_vertical_line(engine, layer, MID, CONTENT_BOTTOM, CONTENT_TOP, thickness);
 }
 
@@ -406,7 +394,16 @@ pub fn draw_centered_text_in_right_content(
     y: f32,
     bold: bool,
 ) {
-    draw_centered_text(engine, layer, text, font_size, RIGHT_CONTENT_LEFT, RIGHT_CONTENT_WIDTH, y, bold);
+    draw_centered_text(
+        engine,
+        layer,
+        text,
+        font_size,
+        RIGHT_CONTENT_LEFT,
+        RIGHT_CONTENT_WIDTH,
+        y,
+        bold,
+    );
 }
 
 /// Draw centered text across the full right column (edge-to-edge of the page split).
@@ -418,7 +415,16 @@ pub fn draw_centered_text_in_right_col(
     y: f32,
     bold: bool,
 ) {
-    draw_centered_text(engine, layer, text, font_size, RIGHT_COL_LEFT, RIGHT_COL_WIDTH, y, bold);
+    draw_centered_text(
+        engine,
+        layer,
+        text,
+        font_size,
+        RIGHT_COL_LEFT,
+        RIGHT_COL_WIDTH,
+        y,
+        bold,
+    );
 }
 
 /// Draw wrapped text within a max width. Returns the Y position after the last line.

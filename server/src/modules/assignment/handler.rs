@@ -10,11 +10,11 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::assignment::schema::*;
-use crate::modules::auth::schema::MessageResponse;
-use crate::utils::response::success_response;
 use crate::modules::assignment::service::AssignmentService;
-use crate::utils::auth_guards::{require_teacher, require_student};
+use crate::modules::auth::schema::MessageResponse;
+use crate::utils::auth_guards::{require_student, require_teacher};
 use crate::utils::error::AppError;
+use crate::utils::response::success_response;
 
 // ===== TEACHER: ASSIGNMENT CRUD =====
 
@@ -47,7 +47,7 @@ pub async fn create_assignment(
                 auth_user.user_id
             );
             success_response(response, StatusCode::CREATED).into_response()
-        },
+        }
         Err(e) => {
             tracing::error!(
                 "Assignment creation failed - class_id: {}, teacher_id: {}, error: {:?}",
@@ -56,7 +56,7 @@ pub async fn create_assignment(
                 e
             );
             e.into_response()
-        },
+        }
     }
 }
 
@@ -82,10 +82,7 @@ pub async fn get_student_assignments(
         return r;
     }
 
-    match service
-        .get_student_assignments(auth_user.user_id)
-        .await
-    {
+    match service.get_student_assignments(auth_user.user_id).await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -134,9 +131,13 @@ pub async fn delete_assignment(
     }
 
     match service.soft_delete(id, auth_user.user_id).await {
-        Ok(()) => success_response(MessageResponse {
-            message: "Assignment deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(()) => success_response(
+            MessageResponse {
+                message: "Assignment deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -278,8 +279,7 @@ pub async fn upload_file(
         let data = match field.bytes().await {
             Ok(bytes) => bytes.to_vec(),
             Err(e) => {
-                return AppError::BadRequest(format!("Failed to read file: {}", e))
-                    .into_response();
+                return AppError::BadRequest(format!("Failed to read file: {}", e)).into_response();
             }
         };
 
@@ -307,9 +307,13 @@ pub async fn delete_submission_file(
     }
 
     match service.delete_file(id, auth_user.user_id).await {
-        Ok(()) => success_response(MessageResponse {
-            message: "File deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(()) => success_response(
+            MessageResponse {
+                message: "File deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -334,10 +338,7 @@ pub async fn download_file(
     auth_user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    match service
-        .download_file(id, auth_user.user_id)
-        .await
-    {
+    match service.download_file(id, auth_user.user_id).await {
         Ok((file_name, content_type, data)) => Response::builder()
             .status(StatusCode::OK)
             .header(header::CONTENT_TYPE, content_type)
@@ -374,11 +375,17 @@ pub async fn reorder_assignments(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.reorder_assignments(class_id, request.assignment_ids, auth_user.user_id).await {
+    match service
+        .reorder_assignments(class_id, request.assignment_ids, auth_user.user_id)
+        .await
+    {
         Ok(()) => success_response(
-            MessageResponse { message: "Assignments reordered".to_string() },
+            MessageResponse {
+                message: "Assignments reordered".to_string(),
+            },
             StatusCode::OK,
-        ).into_response(),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -388,12 +395,23 @@ pub async fn get_student_assignment_submission(
     auth_user: AuthUser,
     Path((assignment_id, student_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    match service.get_student_assignment_submission(assignment_id, student_id, auth_user.user_id, &auth_user.role).await {
+    match service
+        .get_student_assignment_submission(
+            assignment_id,
+            student_id,
+            auth_user.user_id,
+            &auth_user.role,
+        )
+        .await
+    {
         Ok(Some(response)) => success_response(response, StatusCode::OK).into_response(),
         Ok(None) => success_response(
-            crate::modules::auth::schema::MessageResponse { message: "No submission found".to_string() },
+            crate::modules::auth::schema::MessageResponse {
+                message: "No submission found".to_string(),
+            },
             StatusCode::NO_CONTENT,
-        ).into_response(),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -406,7 +424,10 @@ pub async fn get_student_assignment_submissions(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.get_student_assignment_submissions(assignment_id, student_id, auth_user.user_id).await {
+    match service
+        .get_student_assignment_submissions(assignment_id, student_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

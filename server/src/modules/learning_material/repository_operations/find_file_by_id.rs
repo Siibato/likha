@@ -1,10 +1,13 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::material_files;
 use crate::utils::{AppError, AppResult};
+use ::entity::material_files;
 
-pub async fn find_file_by_id(db: &DatabaseConnection, id: Uuid) -> AppResult<Option<material_files::Model>> {
+pub async fn find_file_by_id(
+    db: &DatabaseConnection,
+    id: Uuid,
+) -> AppResult<Option<material_files::Model>> {
     material_files::Entity::find_by_id(id)
         .one(db)
         .await

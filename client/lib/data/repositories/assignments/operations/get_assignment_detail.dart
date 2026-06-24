@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
@@ -11,8 +10,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<Assignment> getAssignmentDetail(
   AssignmentLocalDataSource localDataSource,
-  AssignmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssignmentRemoteDataSource remoteDataSource, {
   required String assignmentId,
 }) async {
   try {
@@ -26,7 +24,6 @@ ResultFuture<Assignment> getAssignmentDetail(
           final current = await localDataSource.getCachedAssignmentDetail(assignmentId);
           if (helpers.assignmentsHaveChanged([current], [fresh])) {
             await localDataSource.cacheAssignmentDetail(fresh);
-            dataEventBus.notifyAssignmentsChanged(fresh.classId);
           }
         },
       );

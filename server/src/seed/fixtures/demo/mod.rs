@@ -3,38 +3,60 @@
 //! 1 teacher + 30 students, 2 classes (Science 10 + Advisory 10),
 //! 4 terms of complete assessments, assignments, and learning modules.
 
+pub mod base;
 pub mod t1;
 pub mod t2;
 pub mod t3;
 pub mod t4;
-pub mod base;
 
-use uuid::Uuid;
 use crate::seed::specs::*;
-use crate::seed::tools::SeedContext;
 use crate::seed::tools::seed_id;
+use crate::seed::tools::SeedContext;
+use uuid::Uuid;
 
 // ─── Demo ID helpers ───────────────────────────────────────────────────────
 
-pub fn cid(key: &str) -> Uuid { seed_id("classes", key) }
-pub fn uid(name: &str) -> Uuid { seed_id("users", name) }
-pub fn tid(key: &str) -> Uuid { seed_id("tos", key) }
-pub fn compid(key: &str) -> Uuid { seed_id("competencies", key) }
-pub fn aid(key: &str) -> Uuid { seed_id("assessments", key) }
-pub fn qid(prefix: &str, n: u32) -> Uuid { seed_id("questions", &format!("{prefix}_q{n}")) }
-pub fn chid(t_key: &str, n: u32) -> Uuid { seed_id("choices", &format!("{t_key}_c{n}")) }
-pub fn asid(key: &str) -> Uuid { seed_id("assignments", key) }
-pub fn mid(key: &str) -> Uuid { seed_id("materials", key) }
+pub fn cid(key: &str) -> Uuid {
+    seed_id("classes", key)
+}
+pub fn uid(name: &str) -> Uuid {
+    seed_id("users", name)
+}
+pub fn tid(key: &str) -> Uuid {
+    seed_id("tos", key)
+}
+pub fn compid(key: &str) -> Uuid {
+    seed_id("competencies", key)
+}
+pub fn aid(key: &str) -> Uuid {
+    seed_id("assessments", key)
+}
+pub fn qid(prefix: &str, n: u32) -> Uuid {
+    seed_id("questions", &format!("{prefix}_q{n}"))
+}
+pub fn chid(t_key: &str, n: u32) -> Uuid {
+    seed_id("choices", &format!("{t_key}_c{n}"))
+}
+pub fn asid(key: &str) -> Uuid {
+    seed_id("assignments", key)
+}
+pub fn mid(key: &str) -> Uuid {
+    seed_id("materials", key)
+}
 
 // ─── Choice / Question helpers ─────────────────────────────────────────────
 
 pub fn mc_choices(t_key: &str, texts: &[&str], correct_idx: usize) -> Vec<ChoiceSpec> {
-    texts.iter().enumerate().map(|(i, t)| ChoiceSpec {
-        id: chid(t_key, i as u32),
-        text: (*t).into(),
-        is_correct: i == correct_idx,
-        order: i as i32,
-    }).collect()
+    texts
+        .iter()
+        .enumerate()
+        .map(|(i, t)| ChoiceSpec {
+            id: chid(t_key, i as u32),
+            text: (*t).into(),
+            is_correct: i == correct_idx,
+            order: i as i32,
+        })
+        .collect()
 }
 
 pub fn build_questions(
@@ -61,7 +83,11 @@ pub fn build_questions(
             cognitive_level: Some((*cog).into()),
             choices: mc_choices(&t_key, choices, *correct),
             answer_key: AnswerKeySpec {
-                acceptable_answers: if *correct < choices.len() { vec![choices[*correct].into()] } else { vec![] }
+                acceptable_answers: if *correct < choices.len() {
+                    vec![choices[*correct].into()]
+                } else {
+                    vec![]
+                },
             },
         });
         idx += 1;
@@ -79,7 +105,9 @@ pub fn build_questions(
             difficulty: Some((*diff).into()),
             cognitive_level: Some((*cog).into()),
             choices: vec![],
-            answer_key: AnswerKeySpec { acceptable_answers: vec![(*answer).into()] },
+            answer_key: AnswerKeySpec {
+                acceptable_answers: vec![(*answer).into()],
+            },
         });
         idx += 1;
     }
@@ -96,7 +124,9 @@ pub fn build_questions(
             difficulty: Some((*diff).into()),
             cognitive_level: Some((*cog).into()),
             choices: vec![],
-            answer_key: AnswerKeySpec { acceptable_answers: vec![] },
+            answer_key: AnswerKeySpec {
+                acceptable_answers: vec![],
+            },
         });
         idx += 1;
     }

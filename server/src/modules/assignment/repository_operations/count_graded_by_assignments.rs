@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignment_submissions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignment_submissions;
 use std::collections::HashMap;
 
 pub async fn count_graded_by_assignments(
@@ -25,5 +25,8 @@ pub async fn count_graded_by_assignments(
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-    Ok(rows.into_iter().map(|(id, count)| (id, count as usize)).collect())
+    Ok(rows
+        .into_iter()
+        .map(|(id, count)| (id, count as usize))
+        .collect())
 }

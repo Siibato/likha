@@ -109,6 +109,7 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
       classId: widget.classId,
       selectedTerm: _selectedTerm,
       ref: ref,
+      onCreated: _reloadGrades,
     );
   }
 
@@ -147,8 +148,8 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
   Widget build(BuildContext context) {
     final configState = ref.watch(gradingConfigProvider);
     final gradesState = ref.watch(classGradesProvider);
-    final classState = ref.watch(classProvider);
-    final students = classState.currentClassDetail?.students ?? [];
+    final classDetailState = ref.watch(classDetailProvider);
+    final students = classDetailState.currentClassDetail?.students ?? [];
     final grades = gradesState.grades;
     final isLoading = gradesState.isLoading && grades == null;
 

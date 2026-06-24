@@ -7,8 +7,8 @@ use uuid::Uuid;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::tasks::routes::TasksState;
 use crate::modules::tasks::schema::{TaskItemResponse, TaskListResponse};
-use crate::utils::response::success_response;
 use crate::utils::auth_guards::require_student;
+use crate::utils::response::success_response;
 
 pub async fn get_student_tasks(
     State(state): State<Arc<TasksState>>,
@@ -62,41 +62,29 @@ pub async fn get_student_tasks(
         })
         .collect();
 
-    tasks.extend(
-        assessments
-            .into_iter()
-            .map(|a| TaskItemResponse {
-                task_type: "assessment".to_string(),
-                id: a.id,
-                class_id,
-                title: a.title,
-                total_points: a.total_points,
-                is_published: true, // find_published_by_class_id guarantees this
-                due_at: None,
-                allows_text_submission: None,
-                allows_file_submission: None,
-                submission_status: None,
-                submission_id: None,
-                score: None,
-                open_at: Some(a.open_at),
-                close_at: Some(a.close_at),
-                is_submitted: a.is_submitted,
-                time_limit_minutes: Some(a.time_limit_minutes),
-            }),
-    );
+    tasks.extend(assessments.into_iter().map(|a| TaskItemResponse {
+        task_type: "assessment".to_string(),
+        id: a.id,
+        class_id,
+        title: a.title,
+        total_points: a.total_points,
+        is_published: true, // find_published_by_class_id guarantees this
+        due_at: None,
+        allows_text_submission: None,
+        allows_file_submission: None,
+        submission_status: None,
+        submission_id: None,
+        score: None,
+        open_at: Some(a.open_at),
+        close_at: Some(a.close_at),
+        is_submitted: a.is_submitted,
+        time_limit_minutes: Some(a.time_limit_minutes),
+    }));
 
     // Sort: by due_at/close_at (both are ISO strings — lexicographic sort works)
     tasks.sort_by(|a, b| {
-        let a_date = a
-            .due_at
-            .as_deref()
-            .or(a.close_at.as_deref())
-            .unwrap_or("");
-        let b_date = b
-            .due_at
-            .as_deref()
-            .or(b.close_at.as_deref())
-            .unwrap_or("");
+        let a_date = a.due_at.as_deref().or(a.close_at.as_deref()).unwrap_or("");
+        let b_date = b.due_at.as_deref().or(b.close_at.as_deref()).unwrap_or("");
         a_date.cmp(b_date)
     });
 

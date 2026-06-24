@@ -79,7 +79,6 @@ class Sf9GradeTable extends StatelessWidget {
             }),
             // General Average row
             if (generalAverage != null) ...[
-              const Divider(height: 1, color: AppColors.borderLight),
               Container(
                 decoration: const BoxDecoration(
                   color: AppColors.borderLight,

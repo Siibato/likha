@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::attendance_records;
 use crate::utils::{AppError, AppResult};
+use ::entity::attendance_records;
 
 pub async fn get_attendance(
     db: &DatabaseConnection,

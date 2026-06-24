@@ -38,7 +38,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
   // ── Data loading ─────────────────────────────────────────────────────────
 
   Future<void> _loadData() async {
-    ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+    ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     await ref.read(gradingConfigProvider.notifier).loadConfig(widget.classId);
 
     final configState = ref.read(gradingConfigProvider);
@@ -95,6 +95,7 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
       classId: widget.classId,
       selectedTerm: _selectedTerm,
       ref: ref,
+      onCreated: _reloadGrades,
     );
   }
 
@@ -111,12 +112,12 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classDetailState = ref.watch(classDetailProvider);
     final configState = ref.watch(gradingConfigProvider);
     final gradesState = ref.watch(classGradesProvider);
     final grades = gradesState.grades;
 
-    final students = classState.currentClassDetail?.students ?? [];
+    final students = classDetailState.currentClassDetail?.students ?? [];
 
     // Only show skeleton when there is no cached data yet.
     final isLoading = gradesState.isLoading && grades == null;

@@ -55,6 +55,26 @@ impl Validator {
         }
     }
 
+    pub fn normalize_optional_sex(sex: Option<String>) -> AppResult<Option<String>> {
+        match sex {
+            Some(value) => {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    return Ok(None);
+                }
+
+                match trimmed.to_ascii_lowercase().as_str() {
+                    "male" => Ok(Some("Male".to_string())),
+                    "female" => Ok(Some("Female".to_string())),
+                    _ => Err(AppError::BadRequest(
+                        "Sex must be either 'Male' or 'Female'".to_string(),
+                    )),
+                }
+            }
+            None => Ok(None),
+        }
+    }
+
     // === Content Field Validation ===
 
     /// Validate required title field (trim, check empty, check max length 200).
@@ -83,7 +103,9 @@ impl Validator {
     pub fn validate_instructions(instructions: &str) -> AppResult<String> {
         let i = instructions.trim().to_string();
         if i.is_empty() {
-            return Err(AppError::BadRequest("Instructions are required".to_string()));
+            return Err(AppError::BadRequest(
+                "Instructions are required".to_string(),
+            ));
         }
         if i.len() > 10000 {
             return Err(AppError::BadRequest(
@@ -94,7 +116,9 @@ impl Validator {
     }
 
     /// Validate optional instructions field for updates.
-    pub fn validate_optional_instructions(instructions: Option<String>) -> AppResult<Option<String>> {
+    pub fn validate_optional_instructions(
+        instructions: Option<String>,
+    ) -> AppResult<Option<String>> {
         match instructions {
             Some(i) => Ok(Some(Validator::validate_instructions(&i)?)),
             None => Ok(None),
@@ -119,7 +143,6 @@ impl Validator {
         Ok(())
     }
 
-    
     /// Validate the DB encryption key at startup.
     /// Panics if invalid — this is intentional (misconfiguration must not start the server).
     /// Allows hex, base64, alphanumeric, +, /, =, -, _ characters; rejects SQL-unsafe chars.

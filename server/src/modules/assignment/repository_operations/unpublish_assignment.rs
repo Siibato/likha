@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn unpublish_assignment(
     db: &DatabaseConnection,
@@ -19,8 +19,7 @@ pub async fn unpublish_assignment(
     assignment.is_published = Set(false);
     assignment.updated_at = Set(Utc::now().naive_utc());
 
-    assignment
-        .update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to unpublish assignment: {}", e)))
+    assignment.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to unpublish assignment: {}", e))
+    })
 }

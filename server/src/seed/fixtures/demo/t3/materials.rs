@@ -1,8 +1,8 @@
 //! T3 learning modules for demo seeding: Chemistry.
 
+use super::super::{cid, mid};
 use crate::seed::specs::MaterialSpec;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, mid};
 
 pub fn demo_materials_t3(ctx: &SeedContext) -> Vec<MaterialSpec> {
     vec![

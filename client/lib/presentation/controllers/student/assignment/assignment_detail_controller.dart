@@ -7,7 +7,8 @@ import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/create_submission.dart';
 import 'package:likha/domain/assignments/usecases/upload_file.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/file_upload_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 
 /// Controller for the student assignment detail/submission flow.
 ///
@@ -23,7 +24,8 @@ class AssignmentDetailController extends ChangeNotifier {
   final String? initialSubmissionId;
   final String? initialSubmissionStatus;
   final bool isNewAttempt;
-  final AssignmentNotifier notifier;
+  final SubmissionNotifier notifier;
+  final FileUploadNotifier fileUploadNotifier;
 
   late FleatherController submissionController;
   String? _submissionId;
@@ -40,6 +42,7 @@ class AssignmentDetailController extends ChangeNotifier {
     this.initialSubmissionStatus,
     this.isNewAttempt = false,
     required this.notifier,
+    required this.fileUploadNotifier,
   }) {
     submissionController = FleatherController();
   }
@@ -145,7 +148,7 @@ class AssignmentDetailController extends ChangeNotifier {
       }
     }
 
-    await notifier.uploadFile(
+    final uploadError = await fileUploadNotifier.uploadFile(
       UploadFileParams(
         submissionId: _submissionId!,
         filePath: file.path!,
@@ -153,11 +156,9 @@ class AssignmentDetailController extends ChangeNotifier {
       ),
     );
 
-    if (notifier.currentState.error != null) {
-      formError = AppErrorMapper.toUserMessage(notifier.currentState.error);
-    } else {
-      formError = null;
-    }
+    formError = uploadError != null
+        ? AppErrorMapper.toUserMessage(uploadError)
+        : null;
     notifyListeners();
   }
 
@@ -195,12 +196,8 @@ class AssignmentDetailController extends ChangeNotifier {
   }
 
   Future<void> saveFile(SubmissionFile file) async {
-    await notifier.downloadFile(file.id);
-    if (notifier.currentState.error != null) {
-      formError = 'Failed to download file';
-    } else {
-      formError = null;
-    }
+    final bytes = await fileUploadNotifier.downloadFile(file.id);
+    formError = bytes == null ? 'Failed to download file' : null;
     notifyListeners();
   }
 

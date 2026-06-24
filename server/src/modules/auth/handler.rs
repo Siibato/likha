@@ -7,12 +7,13 @@ use axum::{
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use crate::modules::auth::schema::{
-    ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse, RefreshTokenRequest,
-};
-use crate::utils::response::success_response;
-use crate::modules::auth::service::AuthService;
 use crate::middleware::auth_middleware::AuthUser;
+use crate::modules::auth::schema::{
+    ActivateAccountRequest, CheckUsernameRequest, LoginRequest, MessageResponse,
+    RefreshTokenRequest,
+};
+use crate::modules::auth::service::AuthService;
+use crate::utils::response::success_response;
 
 pub async fn check_username(
     State(auth_service): State<Arc<AuthService>>,
@@ -60,7 +61,10 @@ pub async fn get_current_user(
     State(auth_service): State<Arc<AuthService>>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
-    match auth_service.get_current_user_cached(auth_user.user_id).await {
+    match auth_service
+        .get_current_user_cached(auth_user.user_id)
+        .await
+    {
         Ok(user) => success_response(user, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -71,9 +75,13 @@ pub async fn logout(
     Json(request): Json<RefreshTokenRequest>,
 ) -> impl IntoResponse {
     match auth_service.logout(&request.refresh_token).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Logged out successfully".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Logged out successfully".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }

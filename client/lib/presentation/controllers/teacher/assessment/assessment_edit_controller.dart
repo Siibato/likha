@@ -3,14 +3,14 @@ import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 
 /// Controller for the assessment edit flow.
 ///
 /// Owns all mutable form state, validation, and save orchestration.
 /// Both mobile and desktop pages consume this via [ListenableBuilder].
 class AssessmentEditController extends ChangeNotifier {
-  final TeacherAssessmentNotifier notifier;
+  final AssessmentDetailNotifier notifier;
 
   final TextEditingController titleController;
   final TextEditingController descriptionController;

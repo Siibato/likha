@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/provider_logger.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/learning_materials/entities/learning_material.dart';
 import 'package:likha/domain/learning_materials/entities/material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
@@ -74,9 +73,6 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
   final material.DeleteFile _deleteFile;
   final material.DownloadFile _downloadFile;
 
-  String? _currentClassId;
-  late StreamSubscription<String?> _refreshSub;
-
   LearningMaterialNotifier(
     this._createMaterial,
     this._getMaterials,
@@ -88,25 +84,9 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     this._uploadFile,
     this._deleteFile,
     this._downloadFile,
-  ) : super(LearningMaterialState()) {
-    _refreshSub = sl<DataEventBus>().onMaterialsChanged.listen((classId) {
-      ProviderLogger.instance.log('Event received: classId=$classId, _currentClassId=$_currentClassId');
-      if (_currentClassId != null && _currentClassId == classId) {
-        ProviderLogger.instance.log('ClassId MATCH! Calling loadMaterials()');
-        loadMaterials(_currentClassId!);
-        // Also reload the current material detail if it belongs to this class
-        if (state.currentMaterial != null && state.currentMaterial!.classId == classId) {
-          ProviderLogger.instance.log('Also reloading material detail');
-          loadMaterialDetail(state.currentMaterial!.id);
-        }
-      } else {
-        ProviderLogger.instance.log('ClassId MISMATCH or _currentClassId is null');
-      }
-    });
-  }
+  ) : super(LearningMaterialState());
 
   Future<void> loadMaterials(String classId) async {
-    _currentClassId = classId;
     state = state.copyWith(isLoading: state.materials.isEmpty, clearError: true);
     final result = await _getMaterials(classId);
     result.fold(
@@ -130,7 +110,6 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: AppErrorMapper.fromFailure(failure)),
       (detail) {
-        _currentClassId = detail.classId;
         state = state.copyWith(isLoading: false, currentMaterial: detail);
       },
     );
@@ -154,11 +133,27 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
         isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (mutationResult) => state = state.copyWith(
-        isLoading: false,
-        materials: [...state.materials, mutationResult.entity],
-        successMessage: 'Material created successfully',
-      ),
+      (mutationResult) {
+        final entity = mutationResult.entity;
+        state = state.copyWith(
+          isLoading: false,
+          materials: [...state.materials, entity],
+          successMessage: 'Material created successfully',
+          currentMaterial: MaterialDetail(
+            id: entity.id,
+            classId: entity.classId,
+            title: entity.title,
+            description: entity.description,
+            contentText: entity.contentText,
+            orderIndex: entity.orderIndex,
+            files: const [],
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
+            cachedAt: entity.cachedAt,
+            syncStatus: entity.syncStatus,
+          ),
+        );
+      },
     );
   }
 
@@ -352,12 +347,6 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
 
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
-  }
-
-  @override
-  void dispose() {
-    _refreshSub.cancel();
-    super.dispose();
   }
 }
 

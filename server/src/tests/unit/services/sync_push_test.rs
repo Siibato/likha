@@ -5,7 +5,9 @@
 //! Note: Mock-based tests for service-level push_operations require
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
-use crate::modules::sync::service_operations::push::sync_push_service::{SyncQueueEntry, OperationResult, PushResponse};
+use crate::modules::sync::service_operations::push::sync_push_service::{
+    OperationResult, PushResponse, SyncQueueEntry,
+};
 
 #[test]
 fn test_sync_queue_entry_deserializes_from_json() {
@@ -107,18 +109,16 @@ fn test_operation_result_failure_has_error_field() {
 #[test]
 fn test_push_response_results_vec_round_trips() {
     let response = PushResponse {
-        results: vec![
-            OperationResult {
-                id: "op-1".to_string(),
-                entity_type: "assignment".to_string(),
-                operation: "create".to_string(),
-                success: true,
-                server_id: None,
-                error: None,
-                updated_at: None,
-                metadata: None,
-            },
-        ],
+        results: vec![OperationResult {
+            id: "op-1".to_string(),
+            entity_type: "assignment".to_string(),
+            operation: "create".to_string(),
+            success: true,
+            server_id: None,
+            error: None,
+            updated_at: None,
+            metadata: None,
+        }],
     };
 
     let json = serde_json::to_value(&response).unwrap();

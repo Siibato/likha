@@ -1,8 +1,8 @@
 //! Term 1 assignments for realistic seeding.
 
+use super::super::{asid, cid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, asid};
 
 pub fn realistic_assignments_t1(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     let created = ctx.days_ago(18);

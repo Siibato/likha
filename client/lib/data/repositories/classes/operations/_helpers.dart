@@ -27,9 +27,9 @@ Future<void> syncInBackgroundForClass(
 }
 
 bool classDetailHasChanged(ClassDetail local, ClassDetail remote) {
-  if (local.updatedAt.isBefore(remote.updatedAt)) return true;
-  if (local.students.length != remote.students.length) return true;
-  return false;
+  // Only trust remote data when it is strictly newer than local.
+  // If local is newer or the same age, local mutations take precedence.
+  return remote.updatedAt.isAfter(local.updatedAt);
 }
 
 bool classesHaveChanged(List<ClassEntity> local, List<ClassEntity> remote) {

@@ -19,7 +19,9 @@ pub async fn soft_delete_submissions_by_assessment(
 
     db.execute(Statement::from_string(DbBackend::Sqlite, query))
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to delete submissions: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to delete submissions: {}", e))
+        })?;
 
     Ok(())
 }

@@ -1,9 +1,9 @@
 //! Demo users: 1 teacher + 30 Filipino students.
 
+use super::super::uid;
+use crate::seed::fixtures::shared::{PASSWORD_STUDENT, PASSWORD_TEACHER};
 use crate::seed::specs::UserSpec;
 use crate::seed::tools::SeedContext;
-use super::super::{uid};
-use crate::seed::fixtures::shared::{PASSWORD_TEACHER, PASSWORD_STUDENT};
 
 pub const STUDENT_DATA: [(&str, &str, &str); 30] = [
     ("juan.delacruz", "Juan", "Dela Cruz"),

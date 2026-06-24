@@ -69,7 +69,13 @@ class DesktopShellScaffold extends StatelessWidget {
               Expanded(
                 child: IndexedStack(
                   index: currentIndex,
-                  children: pages,
+                  children: [
+                    for (int i = 0; i < pages.length; i++)
+                      ExcludeFocus(
+                        excluding: currentIndex != i,
+                        child: pages[i],
+                      ),
+                  ],
                 ),
               ),
             ],

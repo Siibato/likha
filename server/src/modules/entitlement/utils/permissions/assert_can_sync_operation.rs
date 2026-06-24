@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::entitlement::service::EntitlementService {
     pub async fn assert_can_sync_operation(
@@ -140,12 +140,10 @@ impl crate::modules::entitlement::service::EntitlementService {
                 }
                 Ok(())
             }
-            _ => {
-                Err(AppError::BadRequest(format!(
-                    "Unknown operation: {} on {}",
-                    operation_type, entity_type
-                )))
-            }
+            _ => Err(AppError::BadRequest(format!(
+                "Unknown operation: {} on {}",
+                operation_type, entity_type
+            ))),
         }
     }
 }

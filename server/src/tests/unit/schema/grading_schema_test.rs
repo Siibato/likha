@@ -96,10 +96,7 @@ fn test_create_grade_item_request_with_period() {
 #[test]
 fn test_bulk_update_scores_request_deserializes() {
     let id = Uuid::new_v4();
-    let json = format!(
-        r#"{{"scores":[{{"student_id":"{}","score":85.0}}]}}"#,
-        id
-    );
+    let json = format!(r#"{{"scores":[{{"student_id":"{}","score":85.0}}]}}"#, id);
     let req: BulkUpdateScoresRequest = serde_json::from_str(&json).unwrap();
     assert_eq!(req.scores.len(), 1);
     assert_eq!(req.scores[0].student_id, id);

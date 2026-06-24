@@ -2,11 +2,7 @@ use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 
-use crate::tests::common::{
-    seeds::seed_teacher,
-    test_app::build_test_app,
-    test_db::test_db,
-};
+use crate::tests::common::{seeds::seed_teacher, test_app::build_test_app, test_db::test_db};
 use crate::tests::http::{authed_req, json_req};
 
 #[tokio::test]

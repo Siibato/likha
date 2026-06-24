@@ -6,7 +6,9 @@ use reqwest::Client;
 use tokio::task::JoinHandle;
 
 use crate::modules::replication::peer_manager::PeerInfo;
-use crate::modules::replication::service::{ReplicationApplyRequest, ReplicationDeltaResponse, ReplicationService};
+use crate::modules::replication::service::{
+    ReplicationApplyRequest, ReplicationDeltaResponse, ReplicationService,
+};
 use crate::utils::{AppError, AppResult};
 
 pub fn spawn_replication_worker(

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::submission_answer_items;
 use crate::utils::{AppError, AppResult};
+use ::entity::submission_answer_items;
 
 pub async fn save_answer_items(
     db: &DatabaseConnection,
@@ -14,7 +14,9 @@ pub async fn save_answer_items(
         .filter(submission_answer_items::Column::SubmissionAnswerId.eq(submission_answer_id))
         .exec(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to clear answer items: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to clear answer items: {}", e))
+        })?;
 
     for (answer_key_id, choice_id, answer_text, is_correct) in items {
         let now = Utc::now().naive_utc();
@@ -27,9 +29,9 @@ pub async fn save_answer_items(
             is_correct: Set(is_correct),
             updated_at: Set(now),
         };
-        item.insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to save answer item: {}", e)))?;
+        item.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to save answer item: {}", e))
+        })?;
     }
 
     Ok(())

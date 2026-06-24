@@ -1,9 +1,9 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::{learning_materials, material_files};
 use crate::modules::learning_material::repository_operations as ops;
 use crate::utils::AppResult;
+use ::entity::{learning_materials, material_files};
 
 pub struct LearningMaterialRepository {
     db: DatabaseConnection,
@@ -23,14 +23,26 @@ impl LearningMaterialRepository {
         order_index: i32,
         client_id: Option<Uuid>,
     ) -> AppResult<learning_materials::Model> {
-        ops::create_material(&self.db, class_id, title, description, content_text, order_index, client_id).await
+        ops::create_material(
+            &self.db,
+            class_id,
+            title,
+            description,
+            content_text,
+            order_index,
+            client_id,
+        )
+        .await
     }
 
     pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<learning_materials::Model>> {
         ops::find_by_id(&self.db, id).await
     }
 
-    pub async fn find_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<learning_materials::Model>> {
+    pub async fn find_by_class_id(
+        &self,
+        class_id: Uuid,
+    ) -> AppResult<Vec<learning_materials::Model>> {
         ops::find_by_class_id(&self.db, class_id).await
     }
 
@@ -44,7 +56,11 @@ impl LearningMaterialRepository {
         ops::update_material(&self.db, id, title, description, content_text).await
     }
 
-    pub async fn update_order_index(&self, id: Uuid, order_index: i32) -> AppResult<learning_materials::Model> {
+    pub async fn update_order_index(
+        &self,
+        id: Uuid,
+        order_index: i32,
+    ) -> AppResult<learning_materials::Model> {
         ops::update_order_index(&self.db, id, order_index).await
     }
 
@@ -61,7 +77,16 @@ impl LearningMaterialRepository {
         file_path: String,
         file_hash: String,
     ) -> AppResult<material_files::Model> {
-        ops::save_file(&self.db, material_id, file_name, file_type, file_size, file_path, file_hash).await
+        ops::save_file(
+            &self.db,
+            material_id,
+            file_name,
+            file_type,
+            file_size,
+            file_path,
+            file_hash,
+        )
+        .await
     }
 
     pub async fn find_active_file_path_by_hash(&self, hash: &str) -> AppResult<Option<String>> {
@@ -80,7 +105,10 @@ impl LearningMaterialRepository {
         ops::find_file_by_id(&self.db, id).await
     }
 
-    pub async fn find_files_by_material(&self, material_id: Uuid) -> AppResult<Vec<material_files::Model>> {
+    pub async fn find_files_by_material(
+        &self,
+        material_id: Uuid,
+    ) -> AppResult<Vec<material_files::Model>> {
         ops::find_files_by_material(&self.db, material_id).await
     }
 
@@ -88,7 +116,10 @@ impl LearningMaterialRepository {
         ops::count_files_by_material(&self.db, material_id).await
     }
 
-    pub async fn count_files_by_materials(&self, material_ids: &[Uuid]) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+    pub async fn count_files_by_materials(
+        &self,
+        material_ids: &[Uuid],
+    ) -> AppResult<std::collections::HashMap<Uuid, usize>> {
         ops::count_files_by_materials(&self.db, material_ids).await
     }
 
@@ -100,7 +131,11 @@ impl LearningMaterialRepository {
         ops::soft_delete(&self.db, id).await
     }
 
-    pub async fn reorder_materials(&self, _class_id: Uuid, material_ids: Vec<Uuid>) -> AppResult<()> {
+    pub async fn reorder_materials(
+        &self,
+        _class_id: Uuid,
+        material_ids: Vec<Uuid>,
+    ) -> AppResult<()> {
         ops::reorder_materials(&self.db, _class_id, material_ids).await
     }
 }

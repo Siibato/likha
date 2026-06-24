@@ -158,7 +158,6 @@ class _BulkSchoolDaysCard extends StatefulWidget {
   final WidgetRef ref;
 
   const _BulkSchoolDaysCard({
-    super.key,
     required this.classId,
     required this.studentIds,
     required this.schoolYear,
@@ -231,15 +230,15 @@ class _BulkSchoolDaysCardState extends State<_BulkSchoolDaysCard> {
         children: [
           const Icon(Icons.group_rounded, size: 20, color: AppColors.foregroundPrimary),
           const SizedBox(width: 12),
-          Text(
+          const Text(
             'Set school days for all students',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.foregroundDark),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.foregroundDark),
           ),
           const SizedBox(width: 20),
           SizedBox(
             width: 140,
             child: DropdownButtonFormField<String>(
-              value: _selectedMonth,
+              initialValue: _selectedMonth,
               decoration: InputDecoration(
                 labelText: 'Month',
                 labelStyle: const TextStyle(fontSize: 12, color: AppColors.foregroundSecondary),
@@ -450,13 +449,13 @@ class _AttendanceGridState extends State<_AttendanceGrid> {
               Text(widget.studentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark)),
               const Spacer(),
               if (_showSaved)
-                Row(
+                const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.semanticSuccess),
-                    const SizedBox(width: 6),
-                    const Text('Saved', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.semanticSuccess)),
-                    const SizedBox(width: 12),
+                    Icon(Icons.check_circle_rounded, size: 18, color: AppColors.semanticSuccess),
+                    SizedBox(width: 6),
+                    Text('Saved', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.semanticSuccess)),
+                    SizedBox(width: 12),
                   ],
                 ),
               FilledButton.icon(

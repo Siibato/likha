@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::login_attempts;
 use crate::utils::{AppError, AppResult};
+use ::entity::login_attempts;
 
 pub async fn record_attempt(
     db: &DatabaseConnection,

@@ -51,17 +51,17 @@ fn test_get_preset_shs_academic() {
 #[test]
 fn test_get_preset_shs_tvl() {
     let preset = get_preset("shs_tvl").unwrap();
-    assert_eq!(preset.ww, 25.0);
-    assert_eq!(preset.pt, 45.0);
-    assert_eq!(preset.qa, 30.0);
+    assert_eq!(preset.ww, 35.0);
+    assert_eq!(preset.pt, 40.0);
+    assert_eq!(preset.qa, 25.0);
 }
 
 #[test]
 fn test_get_preset_shs_immersion() {
     let preset = get_preset("shs_immersion").unwrap();
-    assert_eq!(preset.ww, 35.0);
-    assert_eq!(preset.pt, 40.0);
-    assert_eq!(preset.qa, 25.0);
+    assert_eq!(preset.ww, 20.0);
+    assert_eq!(preset.pt, 60.0);
+    assert_eq!(preset.qa, 20.0);
 }
 
 #[test]
@@ -72,9 +72,65 @@ fn test_get_preset_invalid() {
 }
 
 #[test]
+fn test_get_preset_jhs_academic_do015() {
+    let preset = get_preset("jhs_academic_do015").unwrap();
+    assert_eq!(preset.ww, 20.0);
+    assert_eq!(preset.pt, 50.0);
+    assert_eq!(preset.qa, 30.0);
+}
+
+#[test]
+fn test_get_preset_shs_core_do015() {
+    let preset = get_preset("shs_core_do015").unwrap();
+    assert_eq!(preset.ww, 20.0);
+    assert_eq!(preset.pt, 50.0);
+    assert_eq!(preset.qa, 30.0);
+}
+
+#[test]
+fn test_get_preset_shs_field_exposure() {
+    let preset = get_preset("shs_field_exposure").unwrap();
+    assert_eq!(preset.ww, 15.0);
+    assert_eq!(preset.pt, 70.0);
+    assert_eq!(preset.qa, 15.0);
+}
+
+#[test]
+fn test_get_preset_shs_arts_sports_health() {
+    let preset = get_preset("shs_arts_sports_health").unwrap();
+    assert_eq!(preset.ww, 20.0);
+    assert_eq!(preset.pt, 60.0);
+    assert_eq!(preset.qa, 20.0);
+}
+
+#[test]
+fn test_get_preset_shs_research_design() {
+    let preset = get_preset("shs_research_design").unwrap();
+    assert_eq!(preset.ww, 40.0);
+    assert_eq!(preset.pt, 60.0);
+    assert_eq!(preset.qa, 0.0);
+}
+
+#[test]
+fn test_get_preset_shs_techpro() {
+    let preset = get_preset("shs_techpro").unwrap();
+    assert_eq!(preset.ww, 15.0);
+    assert_eq!(preset.pt, 65.0);
+    assert_eq!(preset.qa, 20.0);
+}
+
+#[test]
+fn test_get_preset_shs_work_immersion_do015() {
+    let preset = get_preset("shs_work_immersion_do015").unwrap();
+    assert_eq!(preset.ww, 20.0);
+    assert_eq!(preset.pt, 80.0);
+    assert_eq!(preset.qa, 0.0);
+}
+
+#[test]
 fn test_get_all_presets_count() {
     let presets = get_all_presets();
-    assert_eq!(presets.len(), 8);
+    assert_eq!(presets.len(), 15);
 }
 
 #[test]
@@ -83,7 +139,7 @@ fn test_get_all_presets_contains_language() {
     let found = presets.iter().find(|(key, _, _)| *key == "language");
     assert!(found.is_some());
     let (_, label, preset) = found.unwrap();
-    assert_eq!(*label, "Languages (Mother Tongue, Filipino, English)");
+    assert_eq!(*label, "Languages (Mother Tongue, Filipino, English) — DO 8 s 2015");
     assert_eq!(preset.ww, 30.0);
 }
 

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::submission_files;
 use crate::utils::{AppError, AppResult};
+use ::entity::submission_files;
 
 pub async fn soft_delete_file(db: &DatabaseConnection, id: Uuid) -> AppResult<()> {
     let file = submission_files::ActiveModel {

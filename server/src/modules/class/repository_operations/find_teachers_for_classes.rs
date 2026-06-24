@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
 pub async fn find_teachers_for_classes(
     db: &DatabaseConnection,

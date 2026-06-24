@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
@@ -49,6 +50,7 @@ class EditCompetencyDialog extends StatelessWidget {
             label: '$unitLabel taught',
             icon: Icons.schedule_outlined,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             hintText: '1',
           ),
         ],

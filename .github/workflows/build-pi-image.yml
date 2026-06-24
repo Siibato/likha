@@ -32,7 +32,7 @@ jobs:
         with:
           repository: RPi-Distro/pi-gen
           path: pi-gen
-          ref: 2024-11-25  # Bookworm 64-bit Lite baseline; update as needed
+          ref: 2026-06-18-raspios-bookworm-arm64
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -46,6 +46,9 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/arm64 \
+            --load \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
             -t likha-server:latest \
             -f server/Dockerfile \
             server/
@@ -62,6 +65,11 @@ jobs:
           # Ensure the image tar is where 01-run.sh expects it
           cp deployment/pi-image/stage-likha/likha-server-arm64.tar pi-gen/stage-likha/likha-server-arm64.tar || true
 
+      - name: Install qemu-user-static for pi-gen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
       - name: Build Pi image with pi-gen
         run: |
           cd pi-gen
@@ -70,39 +78,67 @@ jobs:
       - name: Compress output image
         run: |
           mkdir -p release
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
           for img in pi-gen/deploy/*.img; do
             if [ -f "$img" ]; then
               xz -T0 -v "$img"
-              mv "$img.xz" "release/likha-server-${{ github.ref_name || inputs.version }}.img.xz"
+              mv "$img.xz" "release/likha-server-${SAFE_VERSION}.img.xz"
             fi
           done
 
       - name: Compute image metadata
         id: meta
         run: |
-          IMG_XZ="release/likha-server-${{ github.ref_name || inputs.version }}.img.xz"
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
+          IMG_XZ="release/likha-server-${SAFE_VERSION}.img.xz"
           if [ -f "$IMG_XZ" ]; then
             SIZE_XZ=$(stat -c%s "$IMG_XZ")
-            # pi-gen images are ~3 GB uncompressed; exact size is hard to get without extraction
-            # Use a conservative estimate or parse the raw .img if available
             echo "image_download_size=${SIZE_XZ}" >> "$GITHUB_OUTPUT"
-            echo "extract_size=3221225472" >> "$GITHUB_OUTPUT"  # ~3 GB
+            echo "extract_size=3221225472" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Create distributable bundle
+        run: |
+          VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
+          IMG_XZ="release/likha-server-${SAFE_VERSION}.img.xz"
+          BUNDLE_NAME="likha-classroom-server-${SAFE_VERSION}"
+          BUNDLE_DIR="release/${BUNDLE_NAME}"
+
+          mkdir -p "$BUNDLE_DIR"
+
+          # Copy launcher scripts, README, and config template
+          cp deployment/imager-bundle/launch-mac.command "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/launch-windows.bat "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/README.txt "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/os_list_template.json "$BUNDLE_DIR/"
+          cp deployment/imager-bundle/school-config.txt "$BUNDLE_DIR/"
+
+          # Copy image with the simple name launchers expect
+          cp "$IMG_XZ" "$BUNDLE_DIR/likha-server.img.xz"
+
+          # Zip it up
+          (cd release && zip -r "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}")
 
       - name: Upload release artifact
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          files: release/*.img.xz
+          files: |
+            release/*.img.xz
+            release/*.zip
           tag_name: ${{ github.ref_name || inputs.version }}
           generate_release_notes: true
 
       - name: Update os_list.json manifest
         run: |
           VERSION="${{ github.ref_name || inputs.version }}"
+          SAFE_VERSION="${VERSION//\//-}"
           SIZE_XZ="${{ steps.meta.outputs.image_download_size }}"
           EXTRACT="${{ steps.meta.outputs.extract_size }}"
-          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/likha-server-${VERSION}.img.xz"
+          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/likha-server-${SAFE_VERSION}.img.xz"
 
           mkdir -p deployment/imager-manifest
           cat > deployment/imager-manifest/os_list.json <<EOF
@@ -118,10 +154,9 @@ jobs:
                 "release_date": "$(date +%Y-%m-%d)",
                 "init_format": "systemd",
                 "devices": [
-                  "pi4",
-                  "pi5"
+                  "pi5-64bit",
+                  "pi4-64bit"
                 ],
-                "format": "custom",
                 "customization": {
                   "schema": {
                     "mesh_group_id": {

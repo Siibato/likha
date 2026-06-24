@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::tos::schema::*;
 use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn add_competency(
@@ -9,6 +9,7 @@ impl crate::modules::tos::service::TosService {
         teacher_id: Uuid,
         request: CreateCompetencyRequest,
     ) -> AppResult<CompetencyResponse> {
-        self.add_competency_with_id(tos_id, teacher_id, request, Uuid::new_v4()).await
+        self.add_competency_with_id(tos_id, teacher_id, request, Uuid::new_v4())
+            .await
     }
 }

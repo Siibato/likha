@@ -1,9 +1,9 @@
 //! Advisory attendance: 12 months per student linked to advisory class.
 
+use super::classes::cid;
+use super::users::{uid, STUDENT_DATA};
 use crate::seed::specs::AttendanceSpec;
 use crate::seed::tools::seed_id;
-use super::users::{uid, STUDENT_DATA};
-use super::classes::cid;
 
 const MONTHS: [(&str, i32); 12] = [
     ("June", 22),

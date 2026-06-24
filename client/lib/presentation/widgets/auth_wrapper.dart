@@ -15,7 +15,8 @@ import 'package:likha/presentation/pages/shared/auth/login_page.dart';
 import 'package:likha/presentation/pages/shared/auth/login_password_page.dart';
 import 'package:likha/presentation/pages/shared/setup/school_setup_page.dart';
 import 'package:likha/presentation/pages/shared/sync_loading_page.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/domain/setup/usecases/get_school_details.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 
@@ -114,7 +115,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
           di.sl<SyncManager>().start();
 
           if (authState.user?.role == 'admin') {
-            unawaited(ref.read(adminProvider.notifier).cacheAccountsOffline());
+            unawaited(ref.read(accountManagementProvider.notifier).cacheAccountsOffline());
             unawaited(_checkAdminSchoolDetails());
           } else {
             setState(() {
@@ -156,6 +157,31 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   }
 
   Future<void> _checkAdminSchoolDetails() async {
+    try {
+      // Check local cache first to avoid flashing the setup screen
+      final result = await di.sl<GetSchoolDetails>()(skipBackgroundRefresh: true);
+      result.fold(
+        (failure) async {
+          // No cache — fall back to server
+          await _fetchAdminSchoolDetailsFromServer();
+        },
+        (schoolDetails) {
+          if (schoolDetails.schoolName.isNotEmpty) {
+            if (mounted) {
+              setState(() => _adminSchoolDetailsExist = true);
+            }
+          } else {
+            // Cached but empty — verify with server
+            _fetchAdminSchoolDetailsFromServer();
+          }
+        },
+      );
+    } catch (_) {
+      await _fetchAdminSchoolDetailsFromServer();
+    }
+  }
+
+  Future<void> _fetchAdminSchoolDetailsFromServer() async {
     try {
       final response = await di.sl<DioClient>().dio.get(
         '${ApiConstants.baseUrl}/api/v1/setup/info',

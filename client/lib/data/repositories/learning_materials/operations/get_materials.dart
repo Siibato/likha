@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -14,8 +13,7 @@ final Map<String, DateTime> _lastFetch = {};
 
 ResultFuture<List<LearningMaterial>> getMaterials(
   LearningMaterialLocalDataSource localDataSource,
-  LearningMaterialRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  LearningMaterialRemoteDataSource remoteDataSource, {
   required String classId,
   bool skipBackgroundRefresh = false,
 }) async {
@@ -54,7 +52,6 @@ ResultFuture<List<LearningMaterial>> getMaterials(
                       }
                     }
                   }
-                  dataEventBus.notifyMaterialsChanged(classId);
                 }
               } on CacheException {
                 await localDataSource.cacheMaterials(fresh);
@@ -71,7 +68,6 @@ ResultFuture<List<LearningMaterial>> getMaterials(
                     }
                   }
                 }
-                dataEventBus.notifyMaterialsChanged(classId);
               }
             },
           );

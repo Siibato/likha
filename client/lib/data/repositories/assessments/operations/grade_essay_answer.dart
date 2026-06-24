@@ -1,7 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -11,8 +9,7 @@ import 'package:uuid/uuid.dart';
 
 ResultFuture<MutationResult<SubmissionAnswer>> gradeEssayAnswer(
   AssessmentLocalDataSource localDataSource,
-  SyncQueue syncQueue,
-  DataEventBus dataEventBus, {
+  SyncQueue syncQueue, {
   required String answerId,
   required double points,
 }) async {
@@ -46,29 +43,6 @@ ResultFuture<MutationResult<SubmissionAnswer>> gradeEssayAnswer(
         txn: txn,
       );
     });
-
-    // Query assessmentId for statistics notification
-    final answerRows = await db.query(
-      DbTables.submissionAnswers,
-      columns: [SubmissionAnswersCols.submissionId],
-      where: '${CommonCols.id} = ?',
-      whereArgs: [answerId],
-      limit: 1,
-    );
-    if (answerRows.isNotEmpty) {
-      final submissionId = answerRows.first[SubmissionAnswersCols.submissionId] as String;
-      final subRows = await db.query(
-        DbTables.assessmentSubmissions,
-        columns: [AssessmentSubmissionsCols.assessmentId],
-        where: '${CommonCols.id} = ?',
-        whereArgs: [submissionId],
-        limit: 1,
-      );
-      if (subRows.isNotEmpty) {
-        final assessmentId = subRows.first[AssessmentSubmissionsCols.assessmentId] as String;
-        dataEventBus.notifyStatisticsChanged(assessmentId);
-      }
-    }
 
     final optimisticModel = SubmissionAnswer(
       id: answerId,

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/student_records/entities/learner_details.dart';
 import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
 
 class LearnerDetailsCard extends StatefulWidget {
   final LearnerDetails? details;
@@ -26,8 +28,7 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
   Timer? _savedTimer;
 
   late final TextEditingController _lrnCtrl;
-  late final TextEditingController _ageCtrl;
-  late final TextEditingController _sexCtrl;
+  String? _selectedSex;
   late final TextEditingController _trackStrandCtrl;
   late final TextEditingController _curriculumCtrl;
   late final TextEditingController _birthdateCtrl;
@@ -45,8 +46,7 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
   void initState() {
     super.initState();
     _lrnCtrl = TextEditingController(text: widget.details?.lrn ?? '');
-    _ageCtrl = TextEditingController(text: widget.details?.age?.toString() ?? '');
-    _sexCtrl = TextEditingController(text: widget.details?.sex ?? '');
+    _selectedSex = widget.details?.sex;
     _trackStrandCtrl = TextEditingController(text: widget.details?.trackStrand ?? '');
     _curriculumCtrl = TextEditingController(text: widget.details?.curriculum ?? '');
     _birthdateCtrl = TextEditingController(text: widget.details?.birthdate ?? '');
@@ -66,8 +66,7 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
     super.didUpdateWidget(oldWidget);
     if (widget.details?.id != oldWidget.details?.id) {
       _lrnCtrl.text = widget.details?.lrn ?? '';
-      _ageCtrl.text = widget.details?.age?.toString() ?? '';
-      _sexCtrl.text = widget.details?.sex ?? '';
+      _selectedSex = widget.details?.sex;
       _trackStrandCtrl.text = widget.details?.trackStrand ?? '';
       _curriculumCtrl.text = widget.details?.curriculum ?? '';
       _birthdateCtrl.text = widget.details?.birthdate ?? '';
@@ -86,8 +85,6 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
   @override
   void dispose() {
     _lrnCtrl.dispose();
-    _ageCtrl.dispose();
-    _sexCtrl.dispose();
     _trackStrandCtrl.dispose();
     _curriculumCtrl.dispose();
     _birthdateCtrl.dispose();
@@ -104,11 +101,46 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
     super.dispose();
   }
 
+  String _computeAgeDisplay(String birthdateStr) {
+    if (birthdateStr.isEmpty) return '';
+    final birthdate = DateTime.tryParse(birthdateStr);
+    if (birthdate == null) return '';
+    final now = DateTime.now();
+    int age = now.year - birthdate.year;
+    if (now.month < birthdate.month ||
+        (now.month == birthdate.month && now.day < birthdate.day)) {
+      age--;
+    }
+    return age.toString();
+  }
+
+  Future<void> _pickDate(TextEditingController controller, {DateTime? initialDate, DateTime? firstDate, DateTime? lastDate}) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: firstDate ?? DateTime(1900),
+      lastDate: lastDate ?? DateTime.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.accentCharcoal,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            onSurface: AppColors.accentCharcoal,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      controller.text = '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    }
+  }
+
   void _handleSave() {
     widget.onSave({
       'lrn': _lrnCtrl.text.isEmpty ? null : _lrnCtrl.text,
-      'age': int.tryParse(_ageCtrl.text),
-      'sex': _sexCtrl.text.isEmpty ? null : _sexCtrl.text,
+      'sex': _selectedSex,
       'track_strand': _trackStrandCtrl.text.isEmpty ? null : _trackStrandCtrl.text,
       'curriculum': _curriculumCtrl.text.isEmpty ? null : _curriculumCtrl.text,
       'birthdate': _birthdateCtrl.text.isEmpty ? null : _birthdateCtrl.text,
@@ -153,11 +185,11 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
               ),
               const Spacer(),
               if (_showSaved)
-                Row(
+                const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.check_circle_rounded, size: 16, color: AppColors.semanticSuccess),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       'Saved',
                       style: TextStyle(
@@ -166,7 +198,7 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
                         color: AppColors.semanticSuccess,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                   ],
                 )
               else if (widget.isLoading)
@@ -196,21 +228,23 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
             label: 'LRN',
             icon: Icons.badge_outlined,
             enabled: !widget.isLoading,
-          ),
-          const SizedBox(height: 16),
-          StyledTextField(
-            controller: _ageCtrl,
-            label: 'Age',
-            icon: Icons.calendar_today_outlined,
-            enabled: !widget.isLoading,
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(12),
+            ],
           ),
           const SizedBox(height: 16),
-          StyledTextField(
-            controller: _sexCtrl,
+          StyledDropdown<String>(
+            value: _selectedSex,
             label: 'Sex',
             icon: Icons.wc_outlined,
             enabled: !widget.isLoading,
+            items: const [
+              DropdownMenuItem(value: 'Male', child: Text('Male')),
+              DropdownMenuItem(value: 'Female', child: Text('Female')),
+            ],
+            onChanged: (value) => setState(() => _selectedSex = value),
           ),
           const SizedBox(height: 16),
           StyledTextField(
@@ -229,9 +263,20 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
           const SizedBox(height: 16),
           StyledTextField(
             controller: _birthdateCtrl,
-            label: 'Birthdate (YYYY-MM-DD)',
+            label: 'Birthdate',
             icon: Icons.cake_outlined,
             enabled: !widget.isLoading,
+            readOnly: true,
+            onTap: () => _pickDate(_birthdateCtrl),
+          ),
+          const SizedBox(height: 16),
+          StyledTextField(
+            controller: TextEditingController(
+              text: _computeAgeDisplay(_birthdateCtrl.text),
+            ),
+            label: 'Age (computed)',
+            icon: Icons.calendar_today_outlined,
+            enabled: false,
           ),
           const SizedBox(height: 16),
           StyledTextField(
@@ -260,6 +305,8 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
             label: "Father's Contact",
             icon: Icons.phone_outlined,
             enabled: !widget.isLoading,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
           ),
           const SizedBox(height: 16),
           StyledTextField(
@@ -274,6 +321,8 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
             label: "Mother's Contact",
             icon: Icons.phone_outlined,
             enabled: !widget.isLoading,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
           ),
           const SizedBox(height: 16),
           StyledTextField(
@@ -288,13 +337,17 @@ class _LearnerDetailsCardState extends State<LearnerDetailsCard> {
             label: "Guardian's Contact",
             icon: Icons.phone_outlined,
             enabled: !widget.isLoading,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s()-]'))],
           ),
           const SizedBox(height: 16),
           StyledTextField(
             controller: _dateAdmittedCtrl,
-            label: 'Date Admitted (YYYY-MM-DD)',
+            label: 'Date Admitted',
             icon: Icons.event_outlined,
             enabled: !widget.isLoading,
+            readOnly: true,
+            onTap: () => _pickDate(_dateAdmittedCtrl),
           ),
         ],
       ),

@@ -34,7 +34,9 @@ pub async fn insert_users(db: &DatabaseConnection, specs: &[UserSpec]) -> Result
         am.account_status = Set(spec.account_status.clone());
         am.activated_at = Set(spec.activated_at);
         am.deleted_at = Set(spec.deleted_at);
-        am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        am.update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())

@@ -1,7 +1,7 @@
-use std::path::PathBuf;
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::file_service;
+use std::path::PathBuf;
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn download_file(
@@ -34,9 +34,12 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             .file_path
             .ok_or_else(|| AppError::NotFound("File data not available".to_string()))?;
 
-        let file_bytes = file_service::read_file(&PathBuf::from(&file_path), Some(&self.file_encryption_key))
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to read file from disk: {}", e)))?;
+        let file_bytes =
+            file_service::read_file(&PathBuf::from(&file_path), Some(&self.file_encryption_key))
+                .await
+                .map_err(|e| {
+                    AppError::InternalServerError(format!("Failed to read file from disk: {}", e))
+                })?;
 
         Ok((file.file_name, file.file_type, file_bytes))
     }

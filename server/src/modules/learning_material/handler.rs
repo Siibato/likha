@@ -10,11 +10,11 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::auth::schema::MessageResponse;
-use crate::utils::response::success_response;
 use crate::modules::learning_material::schema::*;
 use crate::modules::learning_material::service::LearningMaterialService;
 use crate::utils::auth_guards::require_teacher;
 use crate::utils::error::AppError;
+use crate::utils::response::success_response;
 
 // ===== MATERIAL CRUD =====
 
@@ -94,9 +94,13 @@ pub async fn delete_material(
     }
 
     match service.delete_material(id, auth_user.user_id).await {
-        Ok(()) => success_response(MessageResponse {
-            message: "Material deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(()) => success_response(
+            MessageResponse {
+                message: "Material deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -130,10 +134,17 @@ pub async fn reorder_materials(
         return r;
     }
 
-    match service.reorder_materials(class_id, request, auth_user.user_id).await {
-        Ok(()) => success_response(MessageResponse {
-            message: "Materials reordered".to_string(),
-        }, StatusCode::OK).into_response(),
+    match service
+        .reorder_materials(class_id, request, auth_user.user_id)
+        .await
+    {
+        Ok(()) => success_response(
+            MessageResponse {
+                message: "Materials reordered".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -173,8 +184,7 @@ pub async fn upload_file(
         let data = match field.bytes().await {
             Ok(bytes) => bytes.to_vec(),
             Err(e) => {
-                return AppError::BadRequest(format!("Failed to read file: {}", e))
-                    .into_response();
+                return AppError::BadRequest(format!("Failed to read file: {}", e)).into_response();
             }
         };
 
@@ -202,9 +212,13 @@ pub async fn delete_file(
     }
 
     match service.delete_file(file_id, auth_user.user_id).await {
-        Ok(()) => success_response(MessageResponse {
-            message: "File deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(()) => success_response(
+            MessageResponse {
+                message: "File deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }

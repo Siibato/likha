@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::activity_logs;
 use crate::utils::{AppError, AppResult};
+use ::entity::activity_logs;
 
 pub async fn create_log(
     db: &DatabaseConnection,

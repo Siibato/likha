@@ -1,12 +1,14 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
-use crate::modules::grading::schema::{Sf9Response, Sf9SubjectRow, Sf9TermAverages, Sf9AttendanceRecord};
-use crate::modules::student_records::schema::CoreValuesResponse;
-use crate::utils::{AppError, AppResult};
 use crate::modules::grading::helpers::deped_weights;
+use crate::modules::grading::schema::{
+    Sf9AttendanceRecord, Sf9Response, Sf9SubjectRow, Sf9TermAverages,
+};
+use crate::modules::student_records::schema::CoreValuesResponse;
+use crate::utils::{calculate_current_age, AppError, AppResult};
+use uuid::Uuid;
 
 use ::entity::{attendance_records, core_values_records};
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn compute_sf9(
@@ -15,7 +17,11 @@ impl crate::modules::grading::service::GradeComputationService {
         student_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<Sf9Response> {
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -26,11 +32,16 @@ impl crate::modules::grading::service::GradeComputationService {
             }
         }
 
-        let class = self.class_repo.find_by_id(class_id).await?
+        let class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if !class.is_advisory {
-            return Err(AppError::BadRequest("Class is not an advisory class".to_string()));
+            return Err(AppError::BadRequest(
+                "Class is not an advisory class".to_string(),
+            ));
         }
 
         let teacher = self.class_repo.find_teacher_of_class(class_id).await?;
@@ -41,11 +52,13 @@ impl crate::modules::grading::service::GradeComputationService {
             .iter()
             .find(|(id, _, _)| *id == student_id)
             .map(|(_, first, last)| format!("{}, {}", last, first))
-            .ok_or_else(|| AppError::NotFound("Student not enrolled in this advisory class".to_string()))?;
-        let enrolled_classes = self.repo.get_student_enrolled_classes(
-            student_id,
-            class.school_year.as_deref(),
-        ).await?;
+            .ok_or_else(|| {
+                AppError::NotFound("Student not enrolled in this advisory class".to_string())
+            })?;
+        let enrolled_classes = self
+            .repo
+            .get_student_enrolled_classes(student_id, class.school_year.as_deref())
+            .await?;
 
         let learner_details = self.repo.get_learner_details(student_id).await?;
 
@@ -57,7 +70,10 @@ impl crate::modules::grading::service::GradeComputationService {
             .all(&self.db)
             .await
             .unwrap_or_default();
-        let core_values: Vec<CoreValuesResponse> = cv_records.into_iter().map(CoreValuesResponse::from).collect();
+        let core_values: Vec<CoreValuesResponse> = cv_records
+            .into_iter()
+            .map(CoreValuesResponse::from)
+            .collect();
 
         let att_records = attendance_records::Entity::find()
             .filter(attendance_records::Column::StudentId.eq(student_id))
@@ -66,11 +82,14 @@ impl crate::modules::grading::service::GradeComputationService {
             .all(&self.db)
             .await
             .unwrap_or_default();
-        let attendance: Vec<Sf9AttendanceRecord> = att_records.into_iter().map(|r| Sf9AttendanceRecord {
-            month: r.month,
-            school_days: r.school_days,
-            days_present: r.days_present,
-        }).collect();
+        let attendance: Vec<Sf9AttendanceRecord> = att_records
+            .into_iter()
+            .map(|r| Sf9AttendanceRecord {
+                month: r.month,
+                school_days: r.school_days,
+                days_present: r.days_present,
+            })
+            .collect();
 
         let mut subjects = Vec::new();
         let num_terms = crate::modules::grading::helpers::term_count::term_count(&class.term_type);
@@ -78,9 +97,10 @@ impl crate::modules::grading::service::GradeComputationService {
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
-            let term_grades_raw = self.repo.get_term_grades_for_student_class(
-                student_id, ec.class_id,
-            ).await?;
+            let term_grades_raw = self
+                .repo
+                .get_term_grades_for_student_class(student_id, ec.class_id)
+                .await?;
 
             let mut term_vals: Vec<Option<i32>> = vec![None; num_terms];
             for pg in &term_grades_raw {
@@ -134,6 +154,8 @@ impl crate::modules::grading::service::GradeComputationService {
             descriptor: ga_descriptor,
         });
 
+        let age = calculate_current_age(learner_details.as_ref().and_then(|d| d.birthdate));
+
         let result = Sf9Response {
             student_id: student_id.to_string(),
             student_name,
@@ -141,9 +163,11 @@ impl crate::modules::grading::service::GradeComputationService {
             school_year: class.school_year.clone(),
             section: Some(class.title.clone()),
             lrn: learner_details.as_ref().and_then(|d| d.lrn.clone()),
-            age: learner_details.as_ref().and_then(|d| d.age),
+            age,
             sex: learner_details.as_ref().and_then(|d| d.sex.clone()),
-            track_strand: learner_details.as_ref().and_then(|d| d.track_strand.clone()),
+            track_strand: learner_details
+                .as_ref()
+                .and_then(|d| d.track_strand.clone()),
             curriculum: learner_details.as_ref().and_then(|d| d.curriculum.clone()),
             teacher_name,
             term_type: Some(class.term_type.clone()),
@@ -160,5 +184,4 @@ impl crate::modules::grading::service::GradeComputationService {
         }
         Ok(result)
     }
-
 }

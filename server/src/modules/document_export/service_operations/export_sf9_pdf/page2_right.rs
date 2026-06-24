@@ -1,15 +1,11 @@
 use printpdf::*;
 
-use crate::modules::document_export::helpers::pdf_engine::{PdfEngine, grey300};
+use crate::modules::document_export::helpers::pdf_engine::{grey300, PdfEngine};
 use crate::modules::grading::schema::Sf9Response;
 
 use super::layout::*;
 
-pub fn draw_page2_right(
-    engine: &PdfEngine,
-    layer: &PdfLayerReference,
-    sf9: &Sf9Response,
-) {
+pub fn draw_page2_right(engine: &PdfEngine, layer: &PdfLayerReference, sf9: &Sf9Response) {
     let top = CONTENT_TOP;
     let rx = RIGHT_COL_LEFT;
     let r_w = RIGHT_COL_WIDTH;
@@ -27,7 +23,14 @@ pub fn draw_page2_right(
     // Marking legend
     let mut my = cv_bottom - GAP_XL;
     engine.draw_text(layer, "Marking", FONT_SIZE_LARGE, Mm(rx), Mm(my), true);
-    engine.draw_text(layer, "Non-numerical Rating", FONT_SIZE_LARGE, Mm(rx + 40.0), Mm(my), true);
+    engine.draw_text(
+        layer,
+        "Non-numerical Rating",
+        FONT_SIZE_LARGE,
+        Mm(rx + 40.0),
+        Mm(my),
+        true,
+    );
     let marks = [
         ("AO", "Always Observed"),
         ("SO", "Sometimes Observed"),
@@ -82,7 +85,10 @@ fn draw_core_values_table(
 
     let ratios = [18.0_f32, 60.0, 7.0, 7.0, 8.0];
     let ratio_sum: f32 = ratios.iter().sum();
-    let column_widths: Vec<f32> = ratios.iter().map(|ratio| ratio / ratio_sum * avail_w).collect();
+    let column_widths: Vec<f32> = ratios
+        .iter()
+        .map(|ratio| ratio / ratio_sum * avail_w)
+        .collect();
 
     let term_header_height = TABLE_TERM_HEADER_HEIGHT;
     let header_row_height = TABLE_HEADER_HEIGHT;
@@ -91,10 +97,41 @@ fn draw_core_values_table(
     // "Term" super-header spanning T1-T3
     let term_start_x = x + column_widths[0] + column_widths[1];
     let term_section_width = column_widths[2] + column_widths[3] + column_widths[4];
-    engine.draw_rect(layer, Mm(x), Mm(current_y - term_header_height), Mm(column_widths[0]), Mm(term_header_height), Some(grey300()), true);
-    engine.draw_rect(layer, Mm(x + column_widths[0]), Mm(current_y - term_header_height), Mm(column_widths[1]), Mm(term_header_height), Some(grey300()), true);
-    engine.draw_rect(layer, Mm(term_start_x), Mm(current_y - term_header_height), Mm(term_section_width), Mm(term_header_height), Some(grey300()), true);
-    engine.draw_text(layer, "Term", FONT_SIZE_NORMAL, Mm(term_start_x + term_section_width / 2.0 - 9.0), Mm(current_y - term_header_height + 2.5), true);
+    engine.draw_rect(
+        layer,
+        Mm(x),
+        Mm(current_y - term_header_height),
+        Mm(column_widths[0]),
+        Mm(term_header_height),
+        Some(grey300()),
+        true,
+    );
+    engine.draw_rect(
+        layer,
+        Mm(x + column_widths[0]),
+        Mm(current_y - term_header_height),
+        Mm(column_widths[1]),
+        Mm(term_header_height),
+        Some(grey300()),
+        true,
+    );
+    engine.draw_rect(
+        layer,
+        Mm(term_start_x),
+        Mm(current_y - term_header_height),
+        Mm(term_section_width),
+        Mm(term_header_height),
+        Some(grey300()),
+        true,
+    );
+    engine.draw_text(
+        layer,
+        "Term",
+        FONT_SIZE_NORMAL,
+        Mm(term_start_x + term_section_width / 2.0 - 9.0),
+        Mm(current_y - term_header_height + 2.5),
+        true,
+    );
     current_y -= term_header_height;
 
     // Column header row
@@ -115,13 +152,21 @@ fn draw_core_values_table(
         } else {
             current_x + column_widths[i] / 2.0 - label.len() as f32 * 1.8
         };
-        engine.draw_text(layer, label, FONT_SIZE_NORMAL, Mm(text_x.max(current_x + 0.5)), Mm(current_y - header_row_height + 3.0), true);
+        engine.draw_text(
+            layer,
+            label,
+            FONT_SIZE_NORMAL,
+            Mm(text_x.max(current_x + 0.5)),
+            Mm(current_y - header_row_height + 3.0),
+            true,
+        );
         current_x += column_widths[i];
     }
     current_y -= header_row_height;
 
     // Build a lookup map: (core_value_id, term_number) -> marking
-    let mut marking_map: std::collections::HashMap<(i32, i32), &str> = std::collections::HashMap::new();
+    let mut marking_map: std::collections::HashMap<(i32, i32), &str> =
+        std::collections::HashMap::new();
     for cv in &sf9.core_values {
         marking_map.insert((cv.core_value_id, cv.term_number), cv.marking.as_str());
     }
@@ -145,7 +190,14 @@ fn draw_core_values_table(
         let label_lines: Vec<&str> = core_label.split('\n').collect();
         let mut label_y = current_y - CORE_VALUE_LABEL_TOP_PADDING;
         for line in label_lines {
-            engine.draw_text(layer, line, FONT_SIZE_NORMAL, Mm(x + 1.5), Mm(label_y), false);
+            engine.draw_text(
+                layer,
+                line,
+                FONT_SIZE_NORMAL,
+                Mm(x + 1.5),
+                Mm(label_y),
+                false,
+            );
             label_y -= 4.5;
         }
 
@@ -176,9 +228,7 @@ fn draw_core_values_table(
             // Term columns — draw markings from sf9.core_values
             let mut term_x = x + column_widths[0] + column_widths[1];
             for term_num in 1..=3 {
-                let marking = marking_map
-                    .get(&(statement_id, term_num))
-                    .unwrap_or(&"");
+                let marking = marking_map.get(&(statement_id, term_num)).unwrap_or(&"");
                 engine.draw_rect(
                     layer,
                     Mm(term_x),

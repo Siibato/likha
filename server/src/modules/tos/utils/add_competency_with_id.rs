@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn add_competency_with_id(
@@ -10,12 +10,17 @@ impl crate::modules::tos::service::TosService {
         request: CreateCompetencyRequest,
         competency_id: Uuid,
     ) -> AppResult<CompetencyResponse> {
-        let tos = self.tos_repo
+        let tos = self
+            .tos_repo
             .find_tos_by_id(tos_id)
             .await?
             .ok_or_else(|| AppError::NotFound("TOS not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, tos.class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, tos.class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -27,7 +32,8 @@ impl crate::modules::tos::service::TosService {
             inv.invalidate_tos_list(tos.class_id).await;
         }
 
-        let comp = self.tos_repo
+        let comp = self
+            .tos_repo
             .create_competency(
                 competency_id,
                 tos_id,

@@ -1,7 +1,6 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/sync/sync_result.dart';
@@ -20,14 +19,12 @@ class GradingSyncHandler {
   final GradingLocalDataSource _local;
   final LocalDatabase _localDatabase;
   final SyncLogger _log;
-  final DataEventBus _dataEventBus;
 
   GradingSyncHandler(
     this._remote,
     this._local,
     this._localDatabase,
     this._log,
-    this._dataEventBus,
   );
 
   Future<SyncResult> handle(SyncQueueEntry entry) async {
@@ -86,19 +83,37 @@ class GradingSyncHandler {
     if (model.id != localId) {
       _log.log('Reconciling grade_item ID $localId → ${model.id}');
       final db = await _localDatabase.database;
-      await db.update(
+
+      // Check if the server ID already exists (e.g. from a background refresh).
+      // If so, delete the old local row to avoid a primary-key conflict.
+      final existing = await db.query(
         DbTables.gradeItems,
-        {CommonCols.id: model.id},
         where: '${CommonCols.id} = ?',
-        whereArgs: [localId],
+        whereArgs: [model.id],
+        limit: 1,
       );
-      // Update any grade_scores referencing the old grade_item_id
-      await db.update(
-        DbTables.gradeScores,
-        {GradeScoresCols.gradeItemId: model.id},
-        where: '${GradeScoresCols.gradeItemId} = ?',
-        whereArgs: [localId],
-      );
+      if (existing.isNotEmpty) {
+        _log.log('Server ID ${model.id} already exists locally; removing stale $localId');
+        await db.delete(
+          DbTables.gradeItems,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [localId],
+        );
+      } else {
+        await db.update(
+          DbTables.gradeItems,
+          {CommonCols.id: model.id},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [localId],
+        );
+        // Update any grade_scores referencing the old grade_item_id
+        await db.update(
+          DbTables.gradeScores,
+          {GradeScoresCols.gradeItemId: model.id},
+          where: '${GradeScoresCols.gradeItemId} = ?',
+          whereArgs: [localId],
+        );
+      }
     }
 
     await _local.saveItem(model);
@@ -202,7 +217,6 @@ class GradingSyncHandler {
           }
         }
 
-        _dataEventBus.notifyGradesChanged(classId);
         return SyncResult.success(serverId: model.id);
 
       case SyncOperation.update:

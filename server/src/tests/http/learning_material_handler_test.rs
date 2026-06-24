@@ -158,7 +158,11 @@ async fn get_material_detail_unauthenticated_returns_401() {
     let db = test_db().await;
     let app = build_test_app(db).await;
 
-    let req = json_req("GET", &format!("/api/v1/materials/{}", Uuid::new_v4()), None);
+    let req = json_req(
+        "GET",
+        &format!("/api/v1/materials/{}", Uuid::new_v4()),
+        None,
+    );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
 }
@@ -254,7 +258,11 @@ async fn delete_material_unauthenticated_returns_401() {
     let db = test_db().await;
     let app = build_test_app(db).await;
 
-    let req = json_req("DELETE", &format!("/api/v1/materials/{}", Uuid::new_v4()), None);
+    let req = json_req(
+        "DELETE",
+        &format!("/api/v1/materials/{}", Uuid::new_v4()),
+        None,
+    );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
 }

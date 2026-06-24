@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::table_of_specifications;
 use crate::utils::{AppError, AppResult};
+use ::entity::table_of_specifications;
 
 pub async fn find_tos_by_class(
     db: &DatabaseConnection,

@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
+use crate::modules::learning_material::schema::{FileMetadataResponse, MaterialDetailResponse};
 use crate::utils::error::{AppError, AppResult};
-use crate::modules::learning_material::schema::{MaterialDetailResponse, FileMetadataResponse};
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn get_material_detail(

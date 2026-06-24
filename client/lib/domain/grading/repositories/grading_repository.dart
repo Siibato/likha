@@ -18,6 +18,9 @@ abstract class GradingRepository {
     required String subjectGroup,
     required String schoolYear,
     int? semester,
+    double? wwWeight,
+    double? ptWeight,
+    double? qaWeight,
   });
 
   ResultFuture<MutationResult<void>> updateGradingConfig({

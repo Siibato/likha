@@ -1,7 +1,9 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
-use crate::modules::grading::schema::{GeneralAverageResponse, StudentGeneralAverage, SubjectGrade};
+use crate::modules::grading::schema::{
+    GeneralAverageResponse, StudentGeneralAverage, SubjectGrade,
+};
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn compute_general_averages(
@@ -9,7 +11,11 @@ impl crate::modules::grading::service::GradeComputationService {
         class_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<GeneralAverageResponse> {
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -20,7 +26,10 @@ impl crate::modules::grading::service::GradeComputationService {
             }
         }
 
-        let class = self.class_repo.find_by_id(class_id).await?
+        let class = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         let mut enrolled_students = self.repo.get_enrolled_student_ids(class_id).await?;
@@ -65,15 +74,19 @@ impl crate::modules::grading::service::GradeComputationService {
         student_name: String,
         school_year: Option<&str>,
     ) -> AppResult<StudentGeneralAverage> {
-        let enrolled_classes = self.repo.get_student_enrolled_classes(student_id, school_year).await?;
+        let enrolled_classes = self
+            .repo
+            .get_student_enrolled_classes(student_id, school_year)
+            .await?;
 
         let mut subjects = Vec::new();
         let mut final_grades: Vec<i32> = Vec::new();
 
         for ec in &enrolled_classes {
-            let term_grades = self.repo.get_term_grades_for_student_class(
-                student_id, ec.class_id,
-            ).await?;
+            let term_grades = self
+                .repo
+                .get_term_grades_for_student_class(student_id, ec.class_id)
+                .await?;
 
             let transmuted: Vec<i32> = term_grades
                 .iter()

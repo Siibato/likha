@@ -1,6 +1,6 @@
-use uuid::Uuid;
+use crate::modules::learning_material::schema::{MaterialResponse, ReorderMaterialRequest};
 use crate::utils::error::{AppError, AppResult};
-use crate::modules::learning_material::schema::{ReorderMaterialRequest, MaterialResponse};
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn reorder_material(

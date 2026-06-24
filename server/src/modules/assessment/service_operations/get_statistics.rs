@@ -1,7 +1,7 @@
+use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
 use std::collections::HashMap;
 use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::assessment::schema::*;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_statistics(
@@ -9,18 +9,30 @@ impl crate::modules::assessment::service::AssessmentService {
         assessment_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<AssessmentStatisticsResponse> {
-        let assessment = self.assessment_repo.find_by_id(assessment_id).await?
+        let assessment = self
+            .assessment_repo
+            .find_by_id(assessment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let _class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self
+            .class_repo
+            .find_by_id(assessment.class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, assessment.class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, assessment.class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let submissions = self.assessment_repo
-            .find_submitted_submissions_by_assessment_id(assessment_id).await?;
+        let submissions = self
+            .assessment_repo
+            .find_submitted_submissions_by_assessment_id(assessment_id)
+            .await?;
         let submission_count = submissions.len();
 
         let scores: Vec<f64> = submissions.iter().map(|s| s.total_points).collect();
@@ -40,7 +52,8 @@ impl crate::modules::assessment::service::AssessmentService {
             Self::calculate_class_statistics(&scores, assessment.total_points)
         };
 
-        let all_details = self.assessment_repo
+        let all_details = self
+            .assessment_repo
             .get_all_answer_details_for_assessment(assessment_id)
             .await?;
 
@@ -52,8 +65,10 @@ impl crate::modules::assessment::service::AssessmentService {
             "get_statistics: fetched answer details"
         );
 
-        let questions = self.assessment_repo
-            .find_questions_by_assessment_id(assessment_id).await?;
+        let questions = self
+            .assessment_repo
+            .find_questions_by_assessment_id(assessment_id)
+            .await?;
 
         let mut student_question_correct: HashMap<(Uuid, Uuid), bool> =
             HashMap::with_capacity(all_details.len());
@@ -82,7 +97,8 @@ impl crate::modules::assessment::service::AssessmentService {
         let mut correct_counts: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
         let mut incorrect_counts: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
         let mut question_points_sum: HashMap<Uuid, f64> = HashMap::with_capacity(questions.len());
-        let mut question_answered_count: HashMap<Uuid, usize> = HashMap::with_capacity(questions.len());
+        let mut question_answered_count: HashMap<Uuid, usize> =
+            HashMap::with_capacity(questions.len());
         for ((_, question_id), is_correct) in &student_question_correct {
             if *is_correct {
                 *correct_counts.entry(*question_id).or_insert(0) += 1;
@@ -102,16 +118,22 @@ impl crate::modules::assessment::service::AssessmentService {
             let total_answered = correct_count + incorrect_count;
             let correct_percentage = if total_answered > 0 {
                 (correct_count as f64 / total_answered as f64) * 100.0
-            } else { 0.0 };
+            } else {
+                0.0
+            };
 
             let total_points = question_points_sum.get(&q.id).copied().unwrap_or(0.0);
             let answered_count = question_answered_count.get(&q.id).copied().unwrap_or(0);
             let average_points = if answered_count > 0 {
                 total_points / answered_count as f64
-            } else { 0.0 };
+            } else {
+                0.0
+            };
             let average_percentage = if q.points > 0 && answered_count > 0 {
                 (average_points / q.points as f64) * 100.0
-            } else { 0.0 };
+            } else {
+                0.0
+            };
 
             question_stats.push(QuestionStatistics {
                 question_id: q.id,
@@ -134,7 +156,8 @@ impl crate::modules::assessment::service::AssessmentService {
                 &student_question_choices,
                 &student_question_points,
                 submission_count,
-            ).await?
+            )
+            .await?
         } else {
             (vec![], None)
         };

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -14,8 +13,7 @@ import 'package:likha/domain/grading/entities/general_average.dart';
 
 ResultFuture<GeneralAverageResponse> getGeneralAverages(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
 }) async {
   try {
@@ -39,11 +37,9 @@ ResultFuture<GeneralAverageResponse> getGeneralAverages(
                 final current = await localDataSource.getCachedGeneralAverages(classId);
                 if (_generalAveragesHaveChanged(current, fresh.toJson())) {
                   await localDataSource.cacheGeneralAverages(classId, fresh.toJson());
-                  dataEventBus.notifyGeneralAveragesChanged(classId);
                 }
               } catch (_) {
                 await localDataSource.cacheGeneralAverages(classId, fresh.toJson());
-                dataEventBus.notifyGeneralAveragesChanged(classId);
               }
             },
           );
@@ -82,11 +78,9 @@ ResultFuture<GeneralAverageResponse> getGeneralAverages(
             final current = await localDataSource.getCachedGeneralAverages(classId);
             if (_generalAveragesHaveChanged(current, fresh.toJson())) {
               await localDataSource.cacheGeneralAverages(classId, fresh.toJson());
-              dataEventBus.notifyGeneralAveragesChanged(classId);
             }
           } catch (_) {
             await localDataSource.cacheGeneralAverages(classId, fresh.toJson());
-            dataEventBus.notifyGeneralAveragesChanged(classId);
           }
         },
       );

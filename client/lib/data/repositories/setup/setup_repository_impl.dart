@@ -1,4 +1,3 @@
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -14,24 +13,20 @@ class SetupRepositoryImpl implements SetupRepository {
   final SetupRemoteDataSource _remoteDataSource;
   final SetupLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final DataEventBus _dataEventBus;
 
   SetupRepositoryImpl({
     required SetupRemoteDataSource remoteDataSource,
     required SetupLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus;
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<SchoolDetails> getSchoolDetails({bool skipBackgroundRefresh = false}) =>
       ops_get.getSchoolDetails(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
 

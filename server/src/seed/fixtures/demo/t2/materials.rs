@@ -1,8 +1,8 @@
 //! T2 learning modules for demo seeding: Genetics & Heredity.
 
+use super::super::{cid, mid};
 use crate::seed::specs::MaterialSpec;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, mid};
 
 pub fn demo_materials_t2(ctx: &SeedContext) -> Vec<MaterialSpec> {
     vec![

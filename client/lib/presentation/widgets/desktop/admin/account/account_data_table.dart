@@ -31,6 +31,7 @@ class AccountDataTable extends StatelessWidget {
     
     switch (status) {
       case 'activated':
+      case 'active':
         statusColor = AppColors.semanticSuccessAlt;
         statusLabel = 'Active';
         break;
@@ -48,7 +49,7 @@ class AccountDataTable extends StatelessWidget {
     }
 
     return StatusBadge.custom(
-      isActive: status == 'activated',
+      isActive: status == 'activated' || status == 'active',
       activeText: statusLabel,
       inactiveText: statusLabel,
       activeColor: statusColor,

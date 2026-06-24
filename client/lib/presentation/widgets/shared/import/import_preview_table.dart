@@ -109,11 +109,11 @@ class _ErrorPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isValid) {
-      return Row(
+      return const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.check_circle_outline, size: 14, color: AppColors.semanticSuccess),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Text(
             'Valid',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.semanticSuccess),

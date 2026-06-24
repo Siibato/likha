@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize)]
 pub struct TaskItemResponse {
-    pub task_type: String,               // "assignment" or "assessment"
+    pub task_type: String, // "assignment" or "assessment"
     pub id: Uuid,
     pub class_id: Uuid,
     pub title: String,

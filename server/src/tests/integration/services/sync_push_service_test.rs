@@ -1,9 +1,9 @@
+use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
+use crate::tests::common::test_db::test_db;
 use chrono::Utc;
 use uuid::Uuid;
-use crate::modules::assignment::repository::AssignmentRepository;
-use crate::modules::class::repository::ClassRepository;
-use crate::modules::auth::UserRepository;
-use crate::tests::common::test_db::test_db;
 
 /// Integration test that mimics a "create assignment" sync push operation
 /// by directly exercising the repositories, verifying the data lands in the DB.
@@ -13,7 +13,13 @@ async fn test_sync_create_assignment_lands_in_db() {
 
     // Create prerequisite data
     let user = UserRepository::new(db.clone())
-        .create_account("sync_teacher".to_string(), "Sync".to_string(), "Teacher".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "sync_teacher".to_string(),
+            "Sync".to_string(),
+            "Teacher".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
         .expect("user");
 
@@ -68,7 +74,12 @@ async fn test_sync_create_class_lands_in_db() {
 
     let client_id = Uuid::new_v4();
     let class = ClassRepository::new(db.clone())
-        .create_class("Synced Class".to_string(), Some("Created via sync".to_string()), Some(client_id), false)
+        .create_class(
+            "Synced Class".to_string(),
+            Some("Created via sync".to_string()),
+            Some(client_id),
+            false,
+        )
         .await
         .expect("create class");
 

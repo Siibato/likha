@@ -7,12 +7,10 @@ import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 
 ResultFuture<List<Assessment>> getAssessments(
   AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssessmentRemoteDataSource remoteDataSource, {
   required String classId,
   bool publishedOnly = false,
   bool skipBackgroundRefresh = false,
@@ -33,12 +31,10 @@ ResultFuture<List<Assessment>> getAssessments(
               current = await localDataSource.getCachedAssessments(classId, publishedOnly: publishedOnly);
             } on CacheException {
               await localDataSource.cacheAssessments(fresh);
-              dataEventBus.notifyAssessmentsChanged(classId);
               return;
             }
             if (_assessmentsHaveChanged(current, fresh)) {
               await localDataSource.cacheAssessments(fresh);
-              dataEventBus.notifyAssessmentsChanged(classId);
             }
           },
         );

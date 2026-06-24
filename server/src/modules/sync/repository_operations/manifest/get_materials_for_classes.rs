@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learning_materials;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::learning_materials;
 
 pub async fn get_materials_for_classes(
     db: &DatabaseConnection,

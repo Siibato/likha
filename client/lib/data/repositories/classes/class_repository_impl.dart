@@ -1,4 +1,3 @@
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -14,17 +13,14 @@ class ClassRepositoryImpl implements ClassRepository {
   final ClassRemoteDataSource _remoteDataSource;
   final ClassLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final DataEventBus _dataEventBus;
 
   ClassRepositoryImpl({
     required ClassRemoteDataSource remoteDataSource,
     required ClassLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus;
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<MutationResult<ClassEntity>> createClass({
@@ -77,7 +73,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.getAllClasses(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
@@ -86,7 +81,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.getMyClasses(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
 
@@ -95,7 +89,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.getClassDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         classId: classId,
       );
 
@@ -128,7 +121,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.searchStudents(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         query: query,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
@@ -138,7 +130,6 @@ class ClassRepositoryImpl implements ClassRepository {
       ops.getParticipants(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         classId: classId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );

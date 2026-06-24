@@ -2,17 +2,14 @@ use sea_orm::*;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ::entity::{
-    class_participants, users,
-    grade_record, grade_items, grade_scores, term_grades,
-    table_of_specifications, tos_competencies,
-    learner_details, attendance_records, core_values_records,
-    student_school_history, previous_school_subjects, previous_school_attendance,
-    previous_school_term_grades,
-    teacher_details,
-};
-use crate::utils::{AppError, AppResult};
 use super::{ManifestEntry, PaginatedRecords};
+use crate::utils::{calculate_current_age, AppError, AppResult};
+use ::entity::{
+    attendance_records, class_participants, core_values_records, grade_items, grade_record,
+    grade_scores, learner_details, previous_school_attendance, previous_school_subjects,
+    previous_school_term_grades, student_school_history, table_of_specifications, teacher_details,
+    term_grades, tos_competencies, users,
+};
 
 /// Build a map of class_id -> (teacher_id, teacher_username, teacher_first_name, teacher_last_name)
 pub async fn build_teacher_map(
@@ -29,14 +26,16 @@ pub async fn build_teacher_map(
     let mut map = std::collections::HashMap::new();
 
     for participant in participants {
-        if let Ok(Some(user)) = users::Entity::find_by_id(participant.user_id)
-            .one(db)
-            .await
-        {
+        if let Ok(Some(user)) = users::Entity::find_by_id(participant.user_id).one(db).await {
             if user.role == "teacher" {
                 map.insert(
                     participant.class_id,
-                    (user.id, user.username.clone(), user.first_name.clone(), user.last_name.clone()),
+                    (
+                        user.id,
+                        user.username.clone(),
+                        user.first_name.clone(),
+                        user.last_name.clone(),
+                    ),
                 );
             }
         }
@@ -65,10 +64,7 @@ where
         .all(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
-    let records: Vec<Value> = records
-        .into_iter()
-        .map(mapper)
-        .collect();
+    let records: Vec<Value> = records.into_iter().map(mapper).collect();
     Ok(PaginatedRecords { records })
 }
 
@@ -180,11 +176,12 @@ pub fn term_grade_to_json(r: term_grades::Model) -> Value {
 }
 
 pub fn learner_details_to_json(r: learner_details::Model) -> Value {
+    let age = calculate_current_age(r.birthdate);
     serde_json::json!({
         "id": r.id.to_string(),
         "user_id": r.user_id.to_string(),
         "lrn": r.lrn,
-        "age": r.age,
+        "age": age,
         "sex": r.sex,
         "track_strand": r.track_strand,
         "curriculum": r.curriculum,
@@ -314,6 +311,14 @@ pub fn previous_school_attendance_to_json(r: previous_school_attendance::Model) 
 }
 
 /// Helper to collect manifest entries from a model vec using field accessors
-pub fn make_manifest_entry(id: Uuid, updated_at: chrono::NaiveDateTime, deleted: bool) -> ManifestEntry {
-    ManifestEntry { id, updated_at, deleted }
+pub fn make_manifest_entry(
+    id: Uuid,
+    updated_at: chrono::NaiveDateTime,
+    deleted: bool,
+) -> ManifestEntry {
+    ManifestEntry {
+        id,
+        updated_at,
+        deleted,
+    }
 }

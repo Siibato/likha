@@ -47,7 +47,9 @@ async fn create_account_as_teacher_returns_403() {
         "POST",
         "/api/v1/auth/accounts",
         &teacher.token,
-        Some(json!({ "username": "someone", "first_name": "X", "last_name": "Y", "role": "teacher" })),
+        Some(
+            json!({ "username": "someone", "first_name": "X", "last_name": "Y", "role": "teacher" }),
+        ),
     );
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);

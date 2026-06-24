@@ -3,8 +3,8 @@ use sea_orm::*;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ::entity::assignments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn get_assignments_since(
     db: &DatabaseConnection,

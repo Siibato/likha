@@ -9,7 +9,8 @@ import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_instructions_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_status_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_submissions_card.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_detail_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 
@@ -31,7 +32,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assignmentProvider.notifier)
+          .read(assignmentDetailProvider.notifier)
           .loadAssignmentDetail(widget.assignmentId);
     });
   }
@@ -42,7 +43,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       title: 'Publish Assignment',
       body: 'Publish "${assignment.title}"? Students will be able to see and submit to this assignment.',
       confirmLabel: 'Publish',
-      onConfirm: () => ref.read(assignmentProvider.notifier).publishAssignment(widget.assignmentId),
+      onConfirm: () => ref.read(assignmentListProvider.notifier).publishAssignment(widget.assignmentId),
     );
   }
 
@@ -52,7 +53,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       title: 'Move to Draft',
       body: 'Move "${assignment.title}" back to draft? Students will no longer be able to access it.',
       confirmLabel: 'Move to Draft',
-      onConfirm: () => ref.read(assignmentProvider.notifier).unpublishAssignment(widget.assignmentId),
+      onConfirm: () => ref.read(assignmentListProvider.notifier).unpublishAssignment(widget.assignmentId),
     );
   }
 
@@ -62,27 +63,27 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       title: 'Delete Assignment',
       body: 'Delete "${assignment.title}"? This cannot be undone.',
       confirmLabel: 'Delete',
-      onConfirm: () => ref.read(assignmentProvider.notifier).deleteAssignment(widget.assignmentId),
+      onConfirm: () => ref.read(assignmentListProvider.notifier).deleteAssignment(widget.assignmentId),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(assignmentDetailProvider);
     final assignment = state.currentAssignment;
 
-    ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
+    ref.listen<AssignmentListState>(assignmentListProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
         setState(() => _formError = null);
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(assignmentListProvider.notifier).clearMessages();
         if (next.successMessage == 'Assignment deleted') {
           Navigator.pop(context, true);
         }
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(assignmentListProvider.notifier).clearMessages();
       }
     });
 
@@ -187,7 +188,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             )
           : RefreshIndicator(
                   onRefresh: () => ref
-                      .read(assignmentProvider.notifier)
+                      .read(assignmentDetailProvider.notifier)
                       .loadAssignmentDetail(widget.assignmentId),
                   color: AppColors.accentCharcoal,
                   child: SingleChildScrollView(

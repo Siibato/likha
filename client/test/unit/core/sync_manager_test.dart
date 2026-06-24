@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_manager.dart';
@@ -49,7 +48,6 @@ class MockTosRemoteDataSource extends Mock implements TosRemoteDataSource {}
 class MockTosLocalDataSource extends Mock implements TosLocalDataSource {}
 class MockSyncLogger extends Mock implements SyncLogger {}
 class MockStorageService extends Mock implements StorageService {}
-class MockDataEventBus extends Mock implements DataEventBus {}
 
 void main() {
   late SyncManager syncManager;
@@ -75,7 +73,6 @@ void main() {
   late MockTosLocalDataSource mockTosLocal;
   late MockSyncLogger mockSyncLogger;
   late MockStorageService mockStorageService;
-  late MockDataEventBus mockDataEventBus;
   late ServerClockService serverClockService;
 
   setUp(() {
@@ -101,7 +98,6 @@ void main() {
     mockTosLocal = MockTosLocalDataSource();
     mockSyncLogger = MockSyncLogger();
     mockStorageService = MockStorageService();
-    mockDataEventBus = MockDataEventBus();
     serverClockService = ServerClockService();
 
     when(() => mockReachabilityService.onServerReachabilityChanged)
@@ -132,7 +128,6 @@ void main() {
       mockSyncLogger,
       mockStorageService,
       serverClockService,
-      mockDataEventBus,
     );
   });
 

@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::submission_answer_items;
 use crate::utils::{AppError, AppResult};
+use ::entity::submission_answer_items;
 
 pub async fn update_answer_item_correctness(
     db: &DatabaseConnection,
@@ -19,9 +19,9 @@ pub async fn update_answer_item_correctness(
 
     item.is_correct = Set(is_correct);
 
-    item.update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to update answer item: {}", e)))?;
+    item.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to update answer item: {}", e))
+    })?;
 
     Ok(())
 }

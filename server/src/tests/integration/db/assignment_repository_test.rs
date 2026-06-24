@@ -1,7 +1,7 @@
-use chrono::Utc;
 use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
+use chrono::Utc;
 
 async fn create_test_class(db: &sea_orm::DatabaseConnection) -> uuid::Uuid {
     let repo = ClassRepository::new(db.clone());
@@ -58,8 +58,20 @@ async fn test_find_by_class_id_returns_assignments() {
 
     let due_at = Utc::now().naive_utc();
     repo.create_assignment(
-        class_id, "A1".to_string(), "".to_string(), 50,
-        true, false, None, None, due_at, 0, None, true, None, None,
+        class_id,
+        "A1".to_string(),
+        "".to_string(),
+        50,
+        true,
+        false,
+        None,
+        None,
+        due_at,
+        0,
+        None,
+        true,
+        None,
+        None,
     )
     .await
     .expect("create failed");
@@ -79,21 +91,51 @@ async fn test_find_published_excludes_unpublished() {
 
     let due_at = Utc::now().naive_utc();
     repo.create_assignment(
-        class_id, "Published".to_string(), "".to_string(), 50,
-        true, false, None, None, due_at, 0, None, true, None, None,
+        class_id,
+        "Published".to_string(),
+        "".to_string(),
+        50,
+        true,
+        false,
+        None,
+        None,
+        due_at,
+        0,
+        None,
+        true,
+        None,
+        None,
     )
     .await
     .expect("create published failed");
 
     repo.create_assignment(
-        class_id, "Draft".to_string(), "".to_string(), 50,
-        true, false, None, None, due_at, 1, None, false, None, None,
+        class_id,
+        "Draft".to_string(),
+        "".to_string(),
+        50,
+        true,
+        false,
+        None,
+        None,
+        due_at,
+        1,
+        None,
+        false,
+        None,
+        None,
     )
     .await
     .expect("create draft failed");
 
-    let all = repo.find_by_class_id(class_id).await.expect("find all failed");
-    let published = repo.find_published_by_class_id(class_id).await.expect("find published failed");
+    let all = repo
+        .find_by_class_id(class_id)
+        .await
+        .expect("find all failed");
+    let published = repo
+        .find_published_by_class_id(class_id)
+        .await
+        .expect("find published failed");
     assert_eq!(all.len(), 2);
     assert_eq!(published.len(), 1);
     assert_eq!(published[0].title, "Published");

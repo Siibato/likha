@@ -1,13 +1,16 @@
+import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:likha/core/config/api_config.dart';
+import 'package:likha/core/config/app_config.dart';
 import 'package:likha/core/services/school_setup_service.dart';
 import 'package:likha/core/services/school_setup_service_impl.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/dio_client.dart';
@@ -76,6 +79,7 @@ import 'package:likha/domain/auth/repositories/auth_repository.dart';
 import 'package:likha/domain/auth/usecases/activate_account.dart';
 import 'package:likha/domain/auth/usecases/check_username.dart';
 import 'package:likha/domain/auth/usecases/create_account.dart';
+import 'package:likha/domain/auth/usecases/username_exists.dart';
 import 'package:likha/domain/auth/usecases/get_account_details.dart';
 import 'package:likha/domain/auth/usecases/get_activity_logs.dart';
 import 'package:likha/domain/auth/usecases/get_all_accounts.dart';
@@ -169,6 +173,7 @@ import 'package:likha/domain/document_exports/repositories/document_export_repos
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
+import 'package:likha/domain/document_exports/usecases/export_tos.dart';
 import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
 import 'package:likha/data/repositories/document_exports/document_export_repository_impl.dart';
 import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
@@ -213,8 +218,16 @@ Future<void> init() async {
 
   // School setup service — registered early so ApiConstants.baseUrl can be set
   // before any network service is initialized.
+  // Use a plain Dio (no reachability gating) but still respect DEV_MODE cert handling.
+  final setupDio = Dio();
+  if (AppConfig.isDev) {
+    setupDio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () => HttpClient()
+        ..badCertificateCallback = (cert, host, port) => true,
+    );
+  }
   sl.registerLazySingleton<SchoolSetupService>(
-    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), Dio()),
+    () => SchoolSetupServiceImpl(sl<SharedPreferences>(), setupDio),
   );
 
   // Bootstrap runtime base URL from stored school config (if available).
@@ -237,9 +250,6 @@ Future<void> init() async {
   // Core - Sync infrastructure
   sl.registerLazySingleton<SyncQueue>(() => SyncQueueImpl(sl<LocalDatabase>()));
 
-  // Core - Event Bus (must be before repositories)
-  sl.registerSingleton<DataEventBus>(DataEventBus());
-
   // Core - General
   sl.registerLazySingleton(() => StorageService(
         sl<FlutterSecureStorage>(),
@@ -254,6 +264,12 @@ Future<void> init() async {
     ..options.connectTimeout = ApiConstants.connectTimeout
     ..options.receiveTimeout = ApiConstants.receiveTimeout
     ..options.responseType = ResponseType.json;
+  if (AppConfig.isDev) {
+    healthDio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () => HttpClient()
+        ..badCertificateCallback = (cert, host, port) => true,
+    );
+  }
 
   sl.registerSingleton<ServerReachabilityService>(
     ServerReachabilityServiceImpl(healthDio),
@@ -374,7 +390,6 @@ Future<void> init() async {
       assessmentLocalDataSource: sl<AssessmentLocalDataSource>(),
       learningMaterialLocalDataSource: sl<LearningMaterialLocalDataSource>(),
       gradingLocalDataSource: sl<GradingLocalDataSource>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<ClassRepository>(
@@ -382,7 +397,6 @@ Future<void> init() async {
       remoteDataSource: sl<ClassRemoteDataSource>(),
       localDataSource: sl<ClassLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<AssessmentRepository>(
@@ -392,7 +406,6 @@ Future<void> init() async {
       validationService: sl<ValidationService>(),
       connectivityService: sl<ConnectivityService>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<AssignmentRepository>(
@@ -401,7 +414,6 @@ Future<void> init() async {
       localDataSource: sl<AssignmentLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
       storageService: sl<StorageService>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<LearningMaterialRepository>(
@@ -409,7 +421,6 @@ Future<void> init() async {
       remoteDataSource: sl<LearningMaterialRemoteDataSource>(),
       localDataSource: sl<LearningMaterialLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
 
@@ -445,7 +456,6 @@ Future<void> init() async {
       sl<SyncLogger>(), // SyncLogger
       sl<StorageService>(), // StorageService
       sl<ServerClockService>(), // ServerClockService
-      sl<DataEventBus>(), // DataEventBus
     ),
   );
 
@@ -454,6 +464,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => Logout(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
   sl.registerLazySingleton(() => CheckUsername(sl()));
+  sl.registerLazySingleton(() => UsernameExists(sl()));
   sl.registerLazySingleton(() => ActivateAccount(sl()));
   sl.registerLazySingleton(() => CreateAccount(sl()));
   sl.registerLazySingleton(() => GetAllAccounts(sl()));
@@ -540,7 +551,6 @@ Future<void> init() async {
       remoteDataSource: sl<GradingRemoteDataSource>(),
       localDataSource: sl<GradingLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
       studentRecordsRepository: sl<StudentRecordsRepository>(),
     ),
   );
@@ -596,7 +606,6 @@ Future<void> init() async {
       remoteDataSource: sl<SetupRemoteDataSource>(),
       localDataSource: sl<SetupLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<TosRepository>(
@@ -604,7 +613,6 @@ Future<void> init() async {
       remoteDataSource: sl<TosRemoteDataSource>(),
       localDataSource: sl<TosLocalDataSource>(),
       syncQueue: sl<SyncQueue>(),
-      dataEventBus: sl<DataEventBus>(),
     ),
   );
   sl.registerLazySingleton<DocumentExportRepository>(
@@ -616,7 +624,6 @@ Future<void> init() async {
       sl<StudentRecordsLocalDataSource>(),
       sl<GradingLocalDataSource>(),
       sl<SyncQueue>(),
-      sl<DataEventBus>(),
     ),
   );
 
@@ -642,6 +649,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ExportSf9(sl()));
   sl.registerLazySingleton(() => ExportSf10Pdf(sl()));
   sl.registerLazySingleton(() => ExportSf10Excel(sl()));
+  sl.registerLazySingleton(() => ExportTos(sl()));
 
   // Student Records use cases
   sl.registerLazySingleton(() => GetLearnerDetails(sl()));

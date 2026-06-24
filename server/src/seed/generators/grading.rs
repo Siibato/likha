@@ -32,14 +32,18 @@ pub fn generate_term_grades(
     let mut term_grades = Vec::new();
 
     // Build class_id -> enrolled student_ids lookup (only actual enrollments)
-    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> =
+        std::collections::HashMap::new();
     for (idx, student) in students.iter().enumerate() {
         if student.role != "student" {
             continue;
         }
         for enrollment in enrollments {
             if enrollment.user_id == student.id {
-                class_students.entry(enrollment.class_id).or_default().push(idx);
+                class_students
+                    .entry(enrollment.class_id)
+                    .or_default()
+                    .push(idx);
             }
         }
     }

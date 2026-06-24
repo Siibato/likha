@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignment_submissions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignment_submissions;
 
 pub async fn create_submission(
     db: &DatabaseConnection,

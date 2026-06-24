@@ -16,6 +16,25 @@ Future<String> addStudentLocally(
     final now = DateTime.now();
 
     Future<void> performInsert(Transaction t) async {
+      // Ensure the student exists in users table so JOIN queries always work
+      await t.insert(
+        DbTables.users,
+        {
+          CommonCols.id: student.id,
+          UsersCols.username: student.username,
+          UsersCols.firstName: student.firstName,
+          UsersCols.lastName: student.lastName,
+          UsersCols.role: student.role,
+          UsersCols.accountStatus: student.accountStatus,
+          UsersCols.activatedAt: student.activatedAt?.toIso8601String(),
+          CommonCols.createdAt: student.createdAt.toIso8601String(),
+          CommonCols.updatedAt: now.toIso8601String(),
+          CommonCols.cachedAt: now.toIso8601String(),
+          CommonCols.syncStatus: 'pending',
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+
       await t.insert(
         DbTables.classParticipants,
         {
@@ -31,8 +50,8 @@ Future<String> addStudentLocally(
       );
 
       await t.rawUpdate(
-        'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
-        [classId, now.toIso8601String(), classId],
+        'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ?, ${CommonCols.syncStatus} = ? WHERE id = ?',
+        [classId, now.toIso8601String(), 'pending', classId],
       );
     }
 

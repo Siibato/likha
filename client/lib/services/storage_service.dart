@@ -89,10 +89,9 @@ class StorageService {
     try {
       await _secureStorage.write(key: key, value: value);
     } catch (_) {
-      // Secure storage failed — prefs will hold the value below.
+      // Secure storage failed — fall back to prefs.
+      await _prefs.setString(key, value);
     }
-    // Always mirror to prefs so _read has a working fallback.
-    await _prefs.setString(key, value);
   }
 
   Future<String?> _read(String key) async {

@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::submission_answer_items;
 use crate::utils::{AppError, AppResult};
+use ::entity::submission_answer_items;
 
 pub async fn find_answer_items_by_submission_answer_id(
     db: &DatabaseConnection,

@@ -78,9 +78,18 @@ class _TeacherDesktopShellState extends ConsumerState<TeacherDesktopShell> {
             child: IndexedStack(
               index: _currentIndex,
               children: [
-                TeacherDashboardPage(onNavigate: _navigateToIndex),
-                const TeacherClassesPage(),
-                const TeacherGradesPage(),
+                ExcludeFocus(
+                  excluding: _currentIndex != 0,
+                  child: TeacherDashboardPage(onNavigate: _navigateToIndex),
+                ),
+                ExcludeFocus(
+                  excluding: _currentIndex != 1,
+                  child: const TeacherClassesPage(),
+                ),
+                ExcludeFocus(
+                  excluding: _currentIndex != 2,
+                  child: const TeacherGradesPage(),
+                ),
               ],
             ),
           ),

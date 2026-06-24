@@ -10,7 +10,7 @@ import 'package:likha/presentation/pages/mobile/teacher/assessment/assessment_cr
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/empty_assessment_list_state.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/teacher_assessment_card.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
 import 'package:likha/presentation/widgets/shared/layout/refreshable_list.dart';
 
@@ -39,7 +39,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
       vsync: this,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
+      ref.read(assessmentListProvider.notifier).loadAssessments(widget.classId);
     });
   }
 
@@ -57,7 +57,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
   }
 
   void _exitReorderMode() {
-    final notifier = ref.read(teacherAssessmentProvider.notifier);
+    final notifier = ref.read(assessmentListProvider.notifier);
     notifier.reorderAllAssessments(
       classId: widget.classId,
       assessmentIds: _reorderBuffer.map((a) => a.id).toList(),
@@ -109,7 +109,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
           builder: (_) => AssessmentDetailPage(assessmentId: assessment.id),
         ),
       ).then((_) {
-        ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
+        ref.read(assessmentListProvider.notifier).loadAssessments(widget.classId);
       }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -203,13 +203,13 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
 
   @override
   Widget build(BuildContext context) {
-    final assessmentState = ref.watch(teacherAssessmentProvider);
+    final assessmentState = ref.watch(assessmentListProvider);
 
     // Listen for sync completion to auto-refresh if data arrives after page opens
     ref.listen<SyncState>(syncProvider, (previous, next) {
       if (!(previous?.assessmentsReady ?? false) && next.assessmentsReady) {
         // Assessments just became ready in the DB — reload
-        ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId, skipBackgroundRefresh: true);
+        ref.read(assessmentListProvider.notifier).loadAssessments(widget.classId, skipBackgroundRefresh: true);
       }
     });
 
@@ -266,7 +266,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                         ),
                       ).then((result) {
                         if (result == true) {
-                          ref.read(teacherAssessmentProvider.notifier).loadAssessments(widget.classId);
+                          ref.read(assessmentListProvider.notifier).loadAssessments(widget.classId);
                         }
                       }),
                       style: ElevatedButton.styleFrom(
@@ -323,7 +323,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                             )
                           : RefreshableList(
                               onRefresh: () => ref
-                                  .read(teacherAssessmentProvider.notifier)
+                                  .read(assessmentListProvider.notifier)
                                   .loadAssessments(widget.classId),
                               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                               itemCount: assessmentState.assessments.length,
@@ -339,7 +339,7 @@ class _TeacherAssessmentListPageState extends ConsumerState<TeacherAssessmentLis
                                       ),
                                     ),
                                   ).then((_) => ref
-                                      .read(teacherAssessmentProvider.notifier)
+                                      .read(assessmentListProvider.notifier)
                                       .loadAssessments(widget.classId)),
                                 );
                               },

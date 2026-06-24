@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, classes};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, classes};
 
 pub async fn find_by_user_id(
     db: &DatabaseConnection,

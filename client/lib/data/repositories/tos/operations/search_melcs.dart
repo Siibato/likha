@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
@@ -17,8 +16,7 @@ bool _melcsHaveChanged(List<MelcEntryModel> current, List<MelcEntryModel> fresh)
 
 ResultFuture<List<MelcEntryModel>> searchMelcs(
   TosLocalDataSource localDataSource,
-  TosRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  TosRemoteDataSource remoteDataSource, {
   String? subject,
   String? gradeLevel,
   int? termNumber,

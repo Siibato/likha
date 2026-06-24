@@ -23,7 +23,7 @@ impl SetupService {
     pub async fn new(db: DatabaseConnection, default_school_code: String) -> Self {
         let setup_repo = SetupRepository::new(db.clone());
         let activity_log_repo = ActivityLogRepository::new(db.clone());
-        
+
         if let Err(e) = ops::seed_settings(&db, &default_school_code).await {
             tracing::error!("Failed to seed school_details: {}", e);
         }
@@ -102,7 +102,13 @@ impl SetupService {
 
     /// Updates the school code in the database.
     pub async fn update_code(&self, request: UpdateCodeRequest, admin_id: Uuid) -> AppResult<()> {
-        let result = ops::update_school_code(&self.setup_repo, &self.activity_log_repo, request.code, admin_id).await?;
+        let result = ops::update_school_code(
+            &self.setup_repo,
+            &self.activity_log_repo,
+            request.code,
+            admin_id,
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_school_code().await;
             inv.invalidate_school_details().await;

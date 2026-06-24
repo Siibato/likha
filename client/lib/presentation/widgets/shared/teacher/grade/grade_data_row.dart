@@ -89,7 +89,7 @@ class GradeDataRow extends StatelessWidget {
     final computedQg = initialGrade != null
         ? TransmutationUtil.transmute(initialGrade).round()
         : null;
-    final displayQg = storedTg ?? computedQg;
+    final displayQg = computedQg ?? storedTg;
     final remarks =
         displayQg != null ? (displayQg >= 75 ? 'Passed' : 'Failed') : null;
     final isEditingQg = editingQgStudentId == sid;
@@ -125,7 +125,7 @@ class GradeDataRow extends StatelessWidget {
                 width: dimensions.qgColW,
                 height: dimensions.rowH,
                 bold: true,
-                color: storedTg != null
+                color: (storedTg != null && storedTg != computedQg)
                     ? AppColors.accentCharcoal
                     : (displayQg != null ? AppColors.foregroundPrimary : null),
               ),

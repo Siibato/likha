@@ -3,10 +3,10 @@
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::seed::specs::*;
-use crate::seed::tools::SeedContext;
-use crate::seed::tools::seed_id;
 use crate::seed::fixtures::demo::TermAnswers;
+use crate::seed::specs::*;
+use crate::seed::tools::seed_id;
+use crate::seed::tools::SeedContext;
 
 /// Determine student tier based on index for consistent grade distribution.
 /// - Students 0–4: Tier 0 (Excellent)
@@ -26,10 +26,10 @@ fn student_tier(student_idx: usize) -> usize {
 fn is_correct(tier: usize, student_idx: usize, assess_idx: usize, q_idx: usize) -> bool {
     let pattern = (student_idx + assess_idx * 7 + q_idx) % 10;
     match tier {
-        0 => pattern < 9,  // 90%
-        1 => pattern < 8,  // 80%
-        2 => pattern < 6,  // 60%
-        _ => pattern < 4,  // 40%
+        0 => pattern < 9, // 90%
+        1 => pattern < 8, // 80%
+        2 => pattern < 6, // 60%
+        _ => pattern < 4, // 40%
     }
 }
 
@@ -106,7 +106,10 @@ pub fn generate_assessment_submissions(
     let mut class_students: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
     for enrollment in enrollments {
         if student_indices.contains_key(&enrollment.user_id) {
-            class_students.entry(enrollment.class_id).or_default().push(enrollment.user_id);
+            class_students
+                .entry(enrollment.class_id)
+                .or_default()
+                .push(enrollment.user_id);
         }
     }
 
@@ -118,11 +121,16 @@ pub fn generate_assessment_submissions(
             continue;
         }
 
-        let enrolled = class_students.get(&assessment.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&assessment.class_id)
+            .cloned()
+            .unwrap_or_default();
         let term_key = aq_map.get(&assessment.id).copied();
 
         // Identify essay questions for answer bank lookup
-        let essay_q_indices: Vec<usize> = assessment.questions.iter()
+        let essay_q_indices: Vec<usize> = assessment
+            .questions
+            .iter()
             .enumerate()
             .filter(|(_, q)| q.question_type == "essay")
             .map(|(i, _)| i)
@@ -134,8 +142,10 @@ pub fn generate_assessment_submissions(
             };
             let tier = student_tier(global_student_idx);
 
-            let started_at = started_base + chrono::Duration::minutes((global_student_idx * 5) as i64);
-            let submitted_at = Some(started_at + chrono::Duration::minutes(15 + (global_student_idx % 30) as i64));
+            let started_at =
+                started_base + chrono::Duration::minutes((global_student_idx * 5) as i64);
+            let submitted_at =
+                Some(started_at + chrono::Duration::minutes(15 + (global_student_idx % 30) as i64));
 
             let mut answers_vec = Vec::with_capacity(assessment.questions.len());
             let mut total_points: f64 = 0.0;
@@ -143,46 +153,61 @@ pub fn generate_assessment_submissions(
             for (q_idx, question) in assessment.questions.iter().enumerate() {
                 let correct = is_correct(tier, global_student_idx, assess_idx, q_idx);
 
-                let (choice_ids, text, is_correct_val, points) = match question.question_type.as_str() {
-                    "multiple_choice" => {
-                        let choice = if correct {
-                            question.choices.iter().find(|c| c.is_correct)
-                                .or_else(|| question.choices.first())
-                        } else {
-                            let wrong: Vec<_> = question.choices.iter().filter(|c| !c.is_correct).collect();
-                            let wrong_idx = (global_student_idx + assess_idx + q_idx) % wrong.len().max(1);
-                            wrong.get(wrong_idx).copied()
-                        };
-                        let cids = choice.map(|c| vec![c.id]).unwrap_or_default();
-                        let pts = if correct { question.points as f64 } else { 0.0 };
-                        (cids, None, Some(correct), pts)
-                    }
-                    "identification" => {
-                        let txt = if correct {
-                            question.answer_key.acceptable_answers.first().cloned().unwrap_or_default()
-                        } else {
-                            format!("Incorrect answer for question {}", q_idx + 1)
-                        };
-                        let pts = if correct { question.points as f64 } else { 0.0 };
-                        (vec![], Some(txt), Some(correct), pts)
-                    }
-                    "essay" => {
-                        // Map essay question index to answer bank field
-                        let essay_num = essay_q_indices.iter().position(|&i| i == q_idx).unwrap_or(0);
-                        let answer_text = if let Some(t_answers) = term_key.and_then(|tk| answers.get(tk)) {
-                            match essay_num {
-                                0 => t_answers.exam_essay_1[tier].clone(),
-                                1 => t_answers.exam_essay_2[tier].clone(),
-                                _ => "Essay answer".into(),
-                            }
-                        } else {
-                            "Essay answer".into()
-                        };
-                        let pts = essay_points(tier, question.points);
-                        (vec![], Some(answer_text), None, pts)
-                    }
-                    _ => (vec![], None, None, 0.0),
-                };
+                let (choice_ids, text, is_correct_val, points) =
+                    match question.question_type.as_str() {
+                        "multiple_choice" => {
+                            let choice = if correct {
+                                question
+                                    .choices
+                                    .iter()
+                                    .find(|c| c.is_correct)
+                                    .or_else(|| question.choices.first())
+                            } else {
+                                let wrong: Vec<_> =
+                                    question.choices.iter().filter(|c| !c.is_correct).collect();
+                                let wrong_idx =
+                                    (global_student_idx + assess_idx + q_idx) % wrong.len().max(1);
+                                wrong.get(wrong_idx).copied()
+                            };
+                            let cids = choice.map(|c| vec![c.id]).unwrap_or_default();
+                            let pts = if correct { question.points as f64 } else { 0.0 };
+                            (cids, None, Some(correct), pts)
+                        }
+                        "identification" => {
+                            let txt = if correct {
+                                question
+                                    .answer_key
+                                    .acceptable_answers
+                                    .first()
+                                    .cloned()
+                                    .unwrap_or_default()
+                            } else {
+                                format!("Incorrect answer for question {}", q_idx + 1)
+                            };
+                            let pts = if correct { question.points as f64 } else { 0.0 };
+                            (vec![], Some(txt), Some(correct), pts)
+                        }
+                        "essay" => {
+                            // Map essay question index to answer bank field
+                            let essay_num = essay_q_indices
+                                .iter()
+                                .position(|&i| i == q_idx)
+                                .unwrap_or(0);
+                            let answer_text =
+                                if let Some(t_answers) = term_key.and_then(|tk| answers.get(tk)) {
+                                    match essay_num {
+                                        0 => t_answers.exam_essay_1[tier].clone(),
+                                        1 => t_answers.exam_essay_2[tier].clone(),
+                                        _ => "Essay answer".into(),
+                                    }
+                                } else {
+                                    "Essay answer".into()
+                                };
+                            let pts = essay_points(tier, question.points);
+                            (vec![], Some(answer_text), None, pts)
+                        }
+                        _ => (vec![], None, None, 0.0),
+                    };
 
                 total_points += points;
                 answers_vec.push(SubmissionAnswerSpec {
@@ -194,7 +219,10 @@ pub fn generate_assessment_submissions(
                 });
             }
 
-            let sub_id = seed_id("assessment_submissions", &format!("assess_{}_student_{}", assess_idx, global_student_idx));
+            let sub_id = seed_id(
+                "assessment_submissions",
+                &format!("assess_{}_student_{}", assess_idx, global_student_idx),
+            );
 
             submissions.push(AssessmentSubmissionSpec {
                 id: sub_id,
@@ -232,7 +260,10 @@ pub fn generate_assignment_submissions(
     let mut class_students: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
     for enrollment in enrollments {
         if student_indices.contains_key(&enrollment.user_id) {
-            class_students.entry(enrollment.class_id).or_default().push(enrollment.user_id);
+            class_students
+                .entry(enrollment.class_id)
+                .or_default()
+                .push(enrollment.user_id);
         }
     }
 
@@ -245,7 +276,10 @@ pub fn generate_assignment_submissions(
             continue;
         }
 
-        let enrolled = class_students.get(&assignment.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&assignment.class_id)
+            .cloned()
+            .unwrap_or_default();
         let term_info = asq_map.get(&assignment.id).copied();
 
         for student_id in &enrolled {
@@ -254,21 +288,28 @@ pub fn generate_assignment_submissions(
             };
             let tier = student_tier(global_student_idx);
 
-            let submitted_at = submitted_at_base + chrono::Duration::hours((global_student_idx % 24) as i64);
+            let submitted_at =
+                submitted_at_base + chrono::Duration::hours((global_student_idx % 24) as i64);
             let points = assignment_points(tier, assignment.total_points);
             let feedback = assignment_feedback(tier);
 
             let text = if let Some((t_key, assign_num)) = term_info {
-                answers.get(t_key).map(|qa| match assign_num {
-                    0 => qa.assignment_1[tier].clone(),
-                    1 => qa.assignment_2[tier].clone(),
-                    _ => "Assignment submission.".into(),
-                }).unwrap_or_else(|| "Assignment submission.".into())
+                answers
+                    .get(t_key)
+                    .map(|qa| match assign_num {
+                        0 => qa.assignment_1[tier].clone(),
+                        1 => qa.assignment_2[tier].clone(),
+                        _ => "Assignment submission.".into(),
+                    })
+                    .unwrap_or_else(|| "Assignment submission.".into())
             } else {
                 "Assignment submission.".into()
             };
 
-            let sub_id = seed_id("assignment_submissions", &format!("assign_{}_student_{}", assign_idx, global_student_idx));
+            let sub_id = seed_id(
+                "assignment_submissions",
+                &format!("assign_{}_student_{}", assign_idx, global_student_idx),
+            );
 
             submissions.push(AssignmentSubmissionSpec {
                 id: sub_id,

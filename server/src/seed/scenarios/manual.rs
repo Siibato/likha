@@ -32,22 +32,39 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     let materials = fixtures::manual_materials(&ctx);
 
     // Split users by role for generator inputs
-    let teachers: Vec<_> = users.iter().filter(|u| u.role == "teacher").cloned().collect();
-    let students: Vec<_> = users.iter().filter(|u| u.role == "student").cloned().collect();
+    let teachers: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "teacher")
+        .cloned()
+        .collect();
+    let students: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "student")
+        .cloned()
+        .collect();
 
     // Generate submissions using deterministic generators
     let assessment_submissions = generators::submissions::generate_assessment_submissions(
-        &ctx, &assessments, &students, &enrollments,
+        &ctx,
+        &assessments,
+        &students,
+        &enrollments,
     );
     let assignment_submissions = generators::submissions::generate_assignment_submissions(
-        &ctx, &assignments, &students, &teachers, &enrollments,
+        &ctx,
+        &assignments,
+        &students,
+        &teachers,
+        &enrollments,
     );
 
     // Generate grade records (2 terms per class)
     let grade_records = generate_grade_records(&classes);
 
     // Insert data
-    disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    disable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
@@ -82,14 +99,24 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
 
     // Generate and insert grade scores (5% have overrides)
-    let grade_scores = generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
+    let grade_scores =
+        generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
 
     // Generate and insert term grades
-    let term_grades = generate_term_grades(&students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx);
+    let term_grades = generate_term_grades(
+        &students,
+        &grade_records,
+        &grade_scores,
+        &grade_items,
+        &enrollments,
+        &ctx,
+    );
     inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
-    enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    enable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     // Summary
     let summary = format!(
@@ -115,7 +142,9 @@ pub async fn seed_manual_world(db: &DatabaseConnection) -> Result<(), AppError> 
     Ok(())
 }
 
-fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crate::seed::specs::GradeRecordSpec> {
+fn generate_grade_records(
+    classes: &[crate::seed::specs::ClassSpec],
+) -> Vec<crate::seed::specs::GradeRecordSpec> {
     let mut records = Vec::new();
     for class in classes {
         // Skip deleted classes
@@ -151,7 +180,10 @@ fn generate_grade_items(
             continue;
         }
 
-        let id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.term_number));
+        let id = seed_id(
+            "grade_items",
+            &format!("assess_{}_{}", assessment.id, assessment.term_number),
+        );
         items.push(crate::seed::specs::GradeItemSpec {
             id,
             class_id: assessment.class_id,
@@ -170,7 +202,10 @@ fn generate_grade_items(
             continue;
         }
 
-        let id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.term_number));
+        let id = seed_id(
+            "grade_items",
+            &format!("assign_{}_{}", assignment.id, assignment.term_number),
+        );
         items.push(crate::seed::specs::GradeItemSpec {
             id,
             class_id: assignment.class_id,
@@ -201,11 +236,15 @@ fn generate_grade_scores(
     let now = ctx.now();
 
     // Build class -> students map
-    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> =
+        std::collections::HashMap::new();
     for (idx, student) in students.iter().enumerate() {
         for enrollment in enrollments {
             if enrollment.user_id == student.id {
-                class_students.entry(enrollment.class_id).or_default().push(idx);
+                class_students
+                    .entry(enrollment.class_id)
+                    .or_default()
+                    .push(idx);
             }
         }
     }
@@ -218,7 +257,10 @@ fn generate_grade_scores(
             continue;
         }
 
-        let enrolled = class_students.get(&assessment.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&assessment.class_id)
+            .cloned()
+            .unwrap_or_default();
 
         for &student_idx in &enrolled {
             let student = &students[student_idx];
@@ -226,7 +268,8 @@ fn generate_grade_scores(
 
             // 5% have override
             let has_override = (student_idx + item_counter) % 20 == 0;
-            let base_score = (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0 * assessment.total_points as f64;
+            let base_score = (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0
+                * assessment.total_points as f64;
             let override_score = if has_override {
                 Some(base_score * 1.1) // Slightly higher
             } else {
@@ -234,7 +277,10 @@ fn generate_grade_scores(
             };
 
             // Generate deterministic grade_item_id
-            let grade_item_id = seed_id("grade_items", &format!("assess_{}_{}", assessment.id, assessment.term_number));
+            let grade_item_id = seed_id(
+                "grade_items",
+                &format!("assess_{}_{}", assessment.id, assessment.term_number),
+            );
 
             scores.push(crate::seed::specs::GradeScoreSpec {
                 grade_item_id,
@@ -253,21 +299,28 @@ fn generate_grade_scores(
             continue;
         }
 
-        let enrolled = class_students.get(&assignment.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&assignment.class_id)
+            .cloned()
+            .unwrap_or_default();
 
         for &student_idx in &enrolled {
             let student = &students[student_idx];
             item_counter += 1;
 
             let has_override = (student_idx + item_counter) % 20 == 0;
-            let base_score = (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0 * assignment.total_points as f64;
+            let base_score = (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0
+                * assignment.total_points as f64;
             let override_score = if has_override {
                 Some(base_score * 1.1)
             } else {
                 None
             };
 
-            let grade_item_id = seed_id("grade_items", &format!("assign_{}_{}", assignment.id, assignment.term_number));
+            let grade_item_id = seed_id(
+                "grade_items",
+                &format!("assign_{}_{}", assignment.id, assignment.term_number),
+            );
 
             scores.push(crate::seed::specs::GradeScoreSpec {
                 grade_item_id,
@@ -297,29 +350,38 @@ fn generate_term_grades(
 
     let mut term_grades = Vec::new();
 
-    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> =
+        std::collections::HashMap::new();
     for (idx, student) in students.iter().enumerate() {
         if student.role != "student" {
             continue;
         }
         for enrollment in enrollments {
             if enrollment.user_id == student.id {
-                class_students.entry(enrollment.class_id).or_default().push(idx);
+                class_students
+                    .entry(enrollment.class_id)
+                    .or_default()
+                    .push(idx);
             }
         }
     }
 
-    let item_map: std::collections::HashMap<Uuid, (String, f64)> = grade_items.iter()
+    let item_map: std::collections::HashMap<Uuid, (String, f64)> = grade_items
+        .iter()
         .map(|i| (i.id, (i.component.clone(), i.total_points)))
         .collect();
 
     for record in grade_records {
-        let enrolled = class_students.get(&record.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&record.class_id)
+            .cloned()
+            .unwrap_or_default();
 
         for &student_idx in &enrolled {
             let student_id = students[student_idx].id;
 
-            let student_scores: Vec<_> = grade_scores.iter()
+            let student_scores: Vec<_> = grade_scores
+                .iter()
                 .filter(|s| s.student_id == student_id && s.term_number == record.term_number)
                 .collect();
 
@@ -334,17 +396,38 @@ fn generate_term_grades(
                 let effective = s.override_score.or(s.score).unwrap_or(0.0);
                 if let Some((component, total_points)) = item_map.get(&s.grade_item_id) {
                     match component.as_str() {
-                        "written_work" => { ww_sum += effective; ww_total += *total_points; }
-                        "performance_task" => { pt_sum += effective; pt_total += *total_points; }
-                        "term_assessment" => { qa_sum += effective; qa_total += *total_points; }
+                        "written_work" => {
+                            ww_sum += effective;
+                            ww_total += *total_points;
+                        }
+                        "performance_task" => {
+                            pt_sum += effective;
+                            pt_total += *total_points;
+                        }
+                        "term_assessment" => {
+                            qa_sum += effective;
+                            qa_total += *total_points;
+                        }
                         _ => {}
                     }
                 }
             }
 
-            let ww_pct = if ww_total > 0.0 { (ww_sum / ww_total) * 100.0 } else { 0.0 };
-            let pt_pct = if pt_total > 0.0 { (pt_sum / pt_total) * 100.0 } else { 0.0 };
-            let qa_pct = if qa_total > 0.0 { (qa_sum / qa_total) * 100.0 } else { 0.0 };
+            let ww_pct = if ww_total > 0.0 {
+                (ww_sum / ww_total) * 100.0
+            } else {
+                0.0
+            };
+            let pt_pct = if pt_total > 0.0 {
+                (pt_sum / pt_total) * 100.0
+            } else {
+                0.0
+            };
+            let qa_pct = if qa_total > 0.0 {
+                (qa_sum / qa_total) * 100.0
+            } else {
+                0.0
+            };
 
             let initial_grade = ww_pct * (record.ww_weight / 100.0)
                 + pt_pct * (record.pt_weight / 100.0)

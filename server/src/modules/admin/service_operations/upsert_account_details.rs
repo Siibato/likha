@@ -2,11 +2,12 @@ use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection};
 use uuid::Uuid;
 
-use ::entity::teacher_details;
-use crate::utils::{AppError, AppResult};
+use super::get_account_details::get_teacher_details;
 use crate::modules::admin::schema::{LearnerDetailsPayload, TeacherDetailsPayload};
 use crate::modules::student_records::repository_operations::upsert_learner_details::upsert_learner_details;
-use super::get_account_details::get_teacher_details;
+use crate::utils::validators::Validator;
+use crate::utils::{AppError, AppResult};
+use ::entity::teacher_details;
 
 pub async fn upsert_account_details(
     db: &DatabaseConnection,
@@ -18,12 +19,12 @@ pub async fn upsert_account_details(
     match role {
         "student" => {
             if let Some(p) = learner_payload {
+                let normalized_sex = Validator::normalize_optional_sex(p.sex)?;
                 upsert_learner_details(
                     db,
                     user_id,
                     p.lrn,
-                    p.age,
-                    p.sex,
+                    normalized_sex,
                     p.track_strand,
                     p.curriculum,
                     p.birthdate.and_then(|s| s.parse().ok()),
@@ -36,25 +37,28 @@ pub async fn upsert_account_details(
                     p.guardian_name,
                     p.guardian_contact,
                     p.date_admitted.and_then(|s| s.parse().ok()),
-                ).await?;
+                )
+                .await?;
             }
         }
         "teacher" => {
             if let Some(p) = teacher_payload {
+                let normalized_sex = Validator::normalize_optional_sex(p.sex)?;
                 upsert_teacher_details(
                     db,
                     user_id,
                     p.license_id,
                     p.rank,
                     p.position,
-                    p.sex,
+                    normalized_sex,
                     p.birthdate.and_then(|s| s.parse().ok()),
                     p.home_address,
                     p.date_hired.and_then(|s| s.parse().ok()),
                     p.education_level,
                     p.specialization,
                     p.contact_number,
-                ).await?;
+                )
+                .await?;
             }
         }
         _ => {}
@@ -91,9 +95,9 @@ pub async fn upsert_teacher_details(
         am.specialization = sea_orm::ActiveValue::Set(specialization);
         am.contact_number = sea_orm::ActiveValue::Set(contact_number);
         am.updated_at = sea_orm::ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update teacher details: {}", e)))
+        am.update(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to update teacher details: {}", e))
+        })
     } else {
         let am = teacher_details::ActiveModel {
             id: sea_orm::ActiveValue::Set(Uuid::new_v4()),
@@ -112,8 +116,8 @@ pub async fn upsert_teacher_details(
             updated_at: sea_orm::ActiveValue::Set(now),
             deleted_at: sea_orm::ActiveValue::Set(None),
         };
-        am.insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to insert teacher details: {}", e)))
+        am.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to insert teacher details: {}", e))
+        })
     }
 }

@@ -11,7 +11,8 @@ impl crate::modules::tos::service::TosService {
         limit: i64,
         offset: i64,
     ) -> AppResult<MelcSearchResponse> {
-        let rows = self.tos_repo
+        let rows = self
+            .tos_repo
             .search_melcs(subject, grade_level, quarter, query, limit, offset)
             .await?;
 

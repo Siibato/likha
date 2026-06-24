@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 class AssessmentDetailActionsMenu extends ConsumerWidget {
@@ -89,7 +90,7 @@ class AssessmentDetailActionsMenu extends ConsumerWidget {
               'This will make the assessment visible to students. Are you sure?',
           confirmLabel: 'Publish',
           onConfirm: () => ref
-              .read(teacherAssessmentProvider.notifier)
+              .read(assessmentListProvider.notifier)
               .publishAssessment(assessmentId),
         );
         break;
@@ -101,7 +102,7 @@ class AssessmentDetailActionsMenu extends ConsumerWidget {
               'This will hide the assessment from students. Existing submissions will be kept.',
           confirmLabel: 'Unpublish',
           onConfirm: () => ref
-              .read(teacherAssessmentProvider.notifier)
+              .read(assessmentListProvider.notifier)
               .unpublishAssessment(assessmentId),
         );
         break;
@@ -113,7 +114,7 @@ class AssessmentDetailActionsMenu extends ConsumerWidget {
               'Students will be able to see their scores and answers. This cannot be undone.',
           confirmLabel: 'Release',
           onConfirm: () => ref
-              .read(teacherAssessmentProvider.notifier)
+              .read(assessmentDetailProvider.notifier)
               .releaseResults(assessmentId),
         );
         break;
@@ -125,7 +126,7 @@ class AssessmentDetailActionsMenu extends ConsumerWidget {
               'This will permanently delete the assessment and all its questions. This cannot be undone.',
           confirmLabel: 'Delete',
           onConfirm: () => ref
-              .read(teacherAssessmentProvider.notifier)
+              .read(assessmentListProvider.notifier)
               .deleteAssessment(assessmentId),
         );
         break;

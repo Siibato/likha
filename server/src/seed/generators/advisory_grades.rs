@@ -4,10 +4,10 @@
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::seed::specs::*;
-use crate::seed::tools::{SeedContext, seed_id};
 use crate::modules::grading::helpers::deped_weights::{get_preset, transmute_grade, WeightPreset};
 use crate::seed::fixtures::advisory::classes::cid;
+use crate::seed::specs::*;
+use crate::seed::tools::{seed_id, SeedContext};
 
 const SUBJECT_CLASSES: &[(&str, &str)] = &[
     ("eng10", "language"),
@@ -90,7 +90,10 @@ pub fn generate_grade_scores(
     }
 
     for item in grade_items {
-        let enrolled = class_students.get(&item.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&item.class_id)
+            .cloned()
+            .unwrap_or_default();
         for &student_idx in &enrolled {
             let student = &students[student_idx];
             let base_pct = 70.0 + ((student_idx + item.order_index as usize) % 25) as f64;
@@ -145,16 +148,16 @@ pub fn generate_term_grades(
         .collect();
 
     for record in grade_records {
-        let enrolled = class_students.get(&record.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&record.class_id)
+            .cloned()
+            .unwrap_or_default();
         for &student_idx in &enrolled {
             let student_id = students[student_idx].id;
 
             let student_scores: Vec<_> = grade_scores
                 .iter()
-                .filter(|s| {
-                    s.student_id == student_id
-                        && s.term_number == record.term_number
-                })
+                .filter(|s| s.student_id == student_id && s.term_number == record.term_number)
                 .collect();
 
             let mut ww_sum = 0.0;

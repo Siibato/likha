@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::tos_competencies;
 use crate::utils::{AppError, AppResult};
+use ::entity::tos_competencies;
 
 pub async fn create_competency(
     db: &DatabaseConnection,

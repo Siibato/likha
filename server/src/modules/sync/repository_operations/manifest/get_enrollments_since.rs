@@ -3,8 +3,8 @@ use sea_orm::*;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
 pub async fn get_enrollments_since(
     db: &DatabaseConnection,
@@ -20,10 +20,7 @@ pub async fn get_enrollments_since(
 
     let mut records: Vec<Value> = Vec::new();
     for r in participants {
-        if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id)
-            .one(db)
-            .await
-        {
+        if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id).one(db).await {
             if user.role == "student" {
                 records.push(serde_json::json!({
                     "id": r.id.to_string(),

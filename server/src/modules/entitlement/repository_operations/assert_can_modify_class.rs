@@ -1,8 +1,8 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use crate::utils::{AppError, AppResult};
 use super::is_teacher_of_class::is_teacher_of_class;
+use crate::utils::{AppError, AppResult};
 
 pub async fn assert_can_modify_class(
     db: &DatabaseConnection,

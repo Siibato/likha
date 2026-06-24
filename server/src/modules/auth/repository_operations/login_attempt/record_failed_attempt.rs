@@ -1,9 +1,9 @@
 use chrono::Duration;
 use sea_orm::*;
 
-use ::entity::login_attempts;
-use crate::utils::{AppError, AppResult};
 use super::record_attempt::record_attempt;
+use crate::utils::{AppError, AppResult};
+use ::entity::login_attempts;
 
 /// Record a failed attempt with progressive lockout
 /// Returns (attempts_remaining, locked_until, lockout_level)

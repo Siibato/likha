@@ -57,7 +57,7 @@ ResultFuture<MutationResult<User>> createAccount(
       await txn.insert(
         DbTables.users,
         map,
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
       await syncQueue.enqueue(

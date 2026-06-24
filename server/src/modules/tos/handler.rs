@@ -9,10 +9,10 @@ use uuid::Uuid;
 
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::auth::schema::MessageResponse;
-use crate::utils::response::success_response;
 use crate::modules::tos::schema::*;
 use crate::modules::tos::service::TosService;
 use crate::utils::auth_guards::require_teacher;
+use crate::utils::response::success_response;
 
 // ===== TOS CRUD =====
 
@@ -24,7 +24,10 @@ pub async fn list_tos(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.list_tos_for_class(class_id, auth_user.user_id).await {
+    match service
+        .list_tos_for_class(class_id, auth_user.user_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -40,7 +43,10 @@ pub async fn create_tos(
         return r;
     }
     let client_id = request.id.as_deref().and_then(|s| Uuid::parse_str(s).ok());
-    match service.create_tos(class_id, auth_user.user_id, request, client_id).await {
+    match service
+        .create_tos(class_id, auth_user.user_id, request, client_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -84,9 +90,13 @@ pub async fn delete_tos(
         return r;
     }
     match service.delete_tos(id, auth_user.user_id).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Table of Specifications deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Table of Specifications deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -102,8 +112,15 @@ pub async fn add_competency(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    let competency_id = request.id.as_deref().and_then(|s| Uuid::parse_str(s).ok()).unwrap_or_else(Uuid::new_v4);
-    match service.add_competency_with_id(tos_id, auth_user.user_id, request, competency_id).await {
+    let competency_id = request
+        .id
+        .as_deref()
+        .and_then(|s| Uuid::parse_str(s).ok())
+        .unwrap_or_else(Uuid::new_v4);
+    match service
+        .add_competency_with_id(tos_id, auth_user.user_id, request, competency_id)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -118,7 +135,10 @@ pub async fn update_competency(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.update_competency(id, auth_user.user_id, request).await {
+    match service
+        .update_competency(id, auth_user.user_id, request)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -133,9 +153,13 @@ pub async fn delete_competency(
         return r;
     }
     match service.delete_competency(id, auth_user.user_id).await {
-        Ok(_) => success_response(MessageResponse {
-            message: "Competency deleted".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Competency deleted".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -149,7 +173,10 @@ pub async fn bulk_add_competencies(
     if let Err(r) = require_teacher(&auth_user) {
         return r;
     }
-    match service.bulk_add_competencies(tos_id, auth_user.user_id, request).await {
+    match service
+        .bulk_add_competencies(tos_id, auth_user.user_id, request)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }

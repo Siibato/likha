@@ -7,7 +7,7 @@ import 'package:likha/presentation/widgets/mobile/teacher/assessment/item_analys
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_analysis_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/score_distribution_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/statistics_overview_card.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/statistics_notifier.dart';
 
 class AssessmentStatisticsPage extends ConsumerStatefulWidget {
   final String assessmentId;
@@ -30,7 +30,7 @@ class _AssessmentStatisticsPageState
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(statisticsProvider.notifier)
           .loadStatistics(widget.assessmentId);
     });
   }
@@ -43,12 +43,12 @@ class _AssessmentStatisticsPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(statisticsProvider);
     final stats = state.statistics;
 
-    ref.listen<TeacherAssessmentState>(teacherAssessmentProvider, (prev, next) {
+    ref.listen<StatisticsState>(statisticsProvider, (prev, next) {
       if (next.error != null && prev?.error != next.error) {
-        ref.read(teacherAssessmentProvider.notifier).clearMessages();
+        ref.read(statisticsProvider.notifier).clearError();
       }
     });
 
@@ -139,7 +139,7 @@ class _AssessmentStatisticsPageState
   Widget _buildOverviewTab(AssessmentStatistics stats) {
     return RefreshIndicator(
       onRefresh: () => ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(statisticsProvider.notifier)
           .loadStatistics(widget.assessmentId),
       color: AppColors.accentCharcoal,
       child: SingleChildScrollView(

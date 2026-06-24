@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::previous_school_attendance;
 use crate::utils::{AppError, AppResult};
+use ::entity::previous_school_attendance;
 
 pub async fn upsert_previous_attendance(
     db: &DatabaseConnection,
@@ -43,9 +43,9 @@ pub async fn upsert_previous_attendance(
         ],
     );
 
-    db.execute(stmt)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to upsert previous attendance: {}", e)))?;
+    db.execute(stmt).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to upsert previous attendance: {}", e))
+    })?;
 
     previous_school_attendance::Entity::find()
         .filter(previous_school_attendance::Column::StudentId.eq(student_id))
@@ -55,5 +55,9 @@ pub async fn upsert_previous_attendance(
         .one(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
-        .ok_or_else(|| AppError::InternalServerError("Previous attendance record not found after upsert".to_string()))
+        .ok_or_else(|| {
+            AppError::InternalServerError(
+                "Previous attendance record not found after upsert".to_string(),
+            )
+        })
 }

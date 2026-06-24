@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/grade_submission_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/submission_data_table.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 
 class AssignmentSubmissionsPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -30,7 +30,7 @@ class _AssignmentSubmissionsPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assignmentProvider.notifier)
+          .read(submissionProvider.notifier)
           .loadSubmissions(widget.assignmentId);
     });
   }
@@ -43,7 +43,7 @@ class _AssignmentSubmissionsPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(submissionProvider);
     final submissions = state.submissions;
 
     return Scaffold(
@@ -122,7 +122,7 @@ class _AssignmentSubmissionsPageState
                     ),
                   ).then((_) {
                     ref
-                        .read(assignmentProvider.notifier)
+                        .read(submissionProvider.notifier)
                         .loadSubmissions(widget.assignmentId);
                   });
                 },

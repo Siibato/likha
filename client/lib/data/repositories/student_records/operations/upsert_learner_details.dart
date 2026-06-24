@@ -23,7 +23,6 @@ ResultFuture<LearnerDetails> upsertLearnerDetails(
       id: entityId,
       userId: studentId,
       lrn: data['lrn'] as String?,
-      age: data['age'] as int?,
       sex: data['sex'] as String?,
       trackStrand: data['track_strand'] as String?,
       curriculum: data['curriculum'] as String?,

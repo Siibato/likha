@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::grading::schema::{GradeItemResponse, UpdateGradeItemRequest};
 use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn update_grade_item(
@@ -11,7 +11,15 @@ impl crate::modules::grading::service::GradeComputationService {
         let existing = self.repo.find_item(id).await?;
         let item = self
             .repo
-            .update_item(id, request.title, request.component, request.total_points, request.order_index, request.source_type, request.source_id)
+            .update_item(
+                id,
+                request.title,
+                request.component,
+                request.total_points,
+                request.order_index,
+                request.source_type,
+                request.source_id,
+            )
             .await?;
         if let Some(ref inv) = self.invalidator {
             if let Some(ref existing) = existing {

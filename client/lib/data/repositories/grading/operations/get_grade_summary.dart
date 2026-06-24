@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -9,8 +8,7 @@ import 'package:likha/data/datasources/remote/grading/grading_remote_datasource.
 
 ResultFuture<List<Map<String, dynamic>>> getGradeSummary(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
   required int termNumber,
 }) async {
@@ -29,11 +27,9 @@ ResultFuture<List<Map<String, dynamic>>> getGradeSummary(
             final current = await localDataSource.getCachedGradeSummary(classId, termNumber);
             if (!_summariesEqual(current, fresh)) {
               await localDataSource.cacheGradeSummary(classId, termNumber, fresh);
-              dataEventBus.notifyGradeSummaryChanged(classId);
             }
           } catch (_) {
             await localDataSource.cacheGradeSummary(classId, termNumber, fresh);
-            dataEventBus.notifyGradeSummaryChanged(classId);
           }
         },
       );

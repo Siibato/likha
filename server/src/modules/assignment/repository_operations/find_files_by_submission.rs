@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::submission_files;
 use crate::utils::{AppError, AppResult};
+use ::entity::submission_files;
 
 pub async fn find_files_by_submission(
     db: &DatabaseConnection,

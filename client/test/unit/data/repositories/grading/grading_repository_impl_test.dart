@@ -4,7 +4,6 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -51,13 +50,11 @@ GradingRepositoryImpl _buildRepo({
   required GradingLocalDataSource local,
   required GradingRemoteDataSource remote,
   required SyncQueue syncQueue,
-  DataEventBus? eventBus,
 }) {
   return GradingRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
     syncQueue: syncQueue,
-    dataEventBus: eventBus ?? MockDataEventBus(),
   );
 }
 

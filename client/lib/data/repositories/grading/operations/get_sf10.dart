@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -14,8 +13,7 @@ import 'package:likha/domain/grading/entities/sf9.dart';
 
 ResultFuture<Sf9Response> getSf10(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
   required String studentId,
   bool skipBackgroundRefresh = false,
@@ -40,7 +38,6 @@ ResultFuture<Sf9Response> getSf10(
             onSuccess: (fresh) async {
               try {
                 await localDataSource.cacheSf10(classId, studentId, fresh.toJson());
-                dataEventBus.notifySf10Changed(classId);
               } catch (_) {}
             },
           );
@@ -75,11 +72,9 @@ ResultFuture<Sf9Response> getSf10(
               final current = await localDataSource.getCachedSf10(classId, studentId);
               if (_sf10HasChanged(current, fresh.toJson())) {
                 await localDataSource.cacheSf10(classId, studentId, fresh.toJson());
-                dataEventBus.notifySf10Changed(classId);
               }
             } catch (_) {
               await localDataSource.cacheSf10(classId, studentId, fresh.toJson());
-              dataEventBus.notifySf10Changed(classId);
             }
           },
         );

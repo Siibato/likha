@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_scores;
 use crate::utils::{AppError, AppResult};
+use ::entity::grade_scores;
 
 pub async fn set_override(
     db: &DatabaseConnection,
@@ -20,7 +20,8 @@ pub async fn set_override(
     score.override_score = Set(Some(override_score));
     score.updated_at = Set(Utc::now().naive_utc());
 
-    score.update(db)
+    score
+        .update(db)
         .await
         .map_err(|e| AppError::InternalServerError(format!("Failed to set override: {}", e)))
 }

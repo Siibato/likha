@@ -2,10 +2,14 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
-pub async fn reassign_teacher(db: &DatabaseConnection, class_id: Uuid, new_teacher_id: Uuid) -> AppResult<()> {
+pub async fn reassign_teacher(
+    db: &DatabaseConnection,
+    class_id: Uuid,
+    new_teacher_id: Uuid,
+) -> AppResult<()> {
     let txn = db
         .begin()
         .await
@@ -31,10 +35,9 @@ pub async fn reassign_teacher(db: &DatabaseConnection, class_id: Uuid, new_teach
                     updated_at: Set(Utc::now().naive_utc()),
                     ..Default::default()
                 };
-                update
-                    .update(&txn)
-                    .await
-                    .map_err(|e| AppError::InternalServerError(format!("Failed to remove old teacher: {}", e)))?;
+                update.update(&txn).await.map_err(|e| {
+                    AppError::InternalServerError(format!("Failed to remove old teacher: {}", e))
+                })?;
                 break;
             }
         }
@@ -55,10 +58,9 @@ pub async fn reassign_teacher(db: &DatabaseConnection, class_id: Uuid, new_teach
                 updated_at: Set(Utc::now().naive_utc()),
                 ..Default::default()
             };
-            update
-                .update(&txn)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to add new teacher: {}", e)))?;
+            update.update(&txn).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to add new teacher: {}", e))
+            })?;
         }
     } else {
         let participant = class_participants::ActiveModel {
@@ -69,10 +71,9 @@ pub async fn reassign_teacher(db: &DatabaseConnection, class_id: Uuid, new_teach
             updated_at: Set(Utc::now().naive_utc()),
             removed_at: Set(None),
         };
-        participant
-            .insert(&txn)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to add new teacher: {}", e)))?;
+        participant.insert(&txn).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to add new teacher: {}", e))
+        })?;
     }
 
     txn.commit()

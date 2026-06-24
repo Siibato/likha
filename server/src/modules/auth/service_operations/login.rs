@@ -1,12 +1,12 @@
-use chrono::{Duration, Utc};
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::auth::schema::{AuthResponse, LoginRequest};
-use crate::utils::password::PasswordService;
-use crate::modules::auth::UserRepository;
-use crate::modules::auth::LoginAttemptRepository;
 use crate::modules::admin::ActivityLogRepository;
-use crate::utils::jwt::JwtService;
 use crate::modules::auth::helpers::user_to_response;
+use crate::modules::auth::schema::{AuthResponse, LoginRequest};
+use crate::modules::auth::LoginAttemptRepository;
+use crate::modules::auth::UserRepository;
+use crate::utils::error::{AppError, AppResult};
+use crate::utils::jwt::JwtService;
+use crate::utils::password::PasswordService;
+use chrono::{Duration, Utc};
 
 pub async fn login(
     user_repo: &UserRepository,
@@ -75,9 +75,7 @@ pub async fn login(
         .create_refresh_token(user.id, refresh_token_hash, request.device_id, expires_at)
         .await?;
 
-    activity_log_repo
-        .create_log(user.id, "login", None)
-        .await?;
+    activity_log_repo.create_log(user.id, "login", None).await?;
 
     Ok(AuthResponse {
         access_token,

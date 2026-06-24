@@ -12,9 +12,22 @@ Future<void> cacheClassDetail(
   try {
     final db = await localDatabase.database;
     await db.transaction((txn) async {
-      // Look up teacher info from users table
+      // Preserve existing teacher info from the classes table as fallback
       String teacherUsername = '';
       String teacherFullName = '';
+      final existingClassRows = await txn.query(
+        DbTables.classes,
+        columns: [ClassesCols.teacherUsername, ClassesCols.teacherFullName],
+        where: '${CommonCols.id} = ?',
+        whereArgs: [classDetail.id],
+        limit: 1,
+      );
+      if (existingClassRows.isNotEmpty) {
+        teacherUsername = existingClassRows.first[ClassesCols.teacherUsername] as String? ?? '';
+        teacherFullName = existingClassRows.first[ClassesCols.teacherFullName] as String? ?? '';
+      }
+
+      // Look up teacher info from users table (overrides if found)
       if (classDetail.teacherId.isNotEmpty) {
         final teacherRows = await txn.query(
           'users',
@@ -31,6 +44,14 @@ Future<void> cacheClassDetail(
         }
       }
 
+      // Recalculate student_count from local participants rather than
+      // trusting the remote classDetail.students.length, which may be stale.
+      final countResult = await txn.rawQuery(
+        'SELECT COUNT(*) as count FROM ${DbTables.classParticipants} WHERE ${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
+        [classDetail.id],
+      );
+      final localCount = (countResult.first['count'] as int?) ?? 0;
+
       final classMap = ClassModel(
         id: classDetail.id,
         title: classDetail.title,
@@ -40,16 +61,40 @@ Future<void> cacheClassDetail(
         teacherFullName: teacherFullName,
         isArchived: classDetail.isArchived,
         isAdvisory: classDetail.isAdvisory,
-        studentCount: classDetail.students.length,
+        studentCount: localCount,
         createdAt: classDetail.createdAt,
         updatedAt: classDetail.updatedAt,
       ).toMap();
       classMap[CommonCols.cachedAt] = DateTime.now().toIso8601String();
       classMap[CommonCols.syncStatus] = 'synced';
-      await txn.insert(DbTables.classes, classMap, conflictAlgorithm: ConflictAlgorithm.replace);
+
+      // Only update the classes table if there are no pending local mutations
+      final pendingClassRow = await txn.query(
+        DbTables.classes,
+        columns: [CommonCols.syncStatus],
+        where: '${CommonCols.id} = ? AND ${CommonCols.syncStatus} = ?',
+        whereArgs: [classDetail.id, 'pending'],
+        limit: 1,
+      );
+      if (pendingClassRow.isEmpty) {
+        await txn.insert(DbTables.classes, classMap, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
 
       // Cache students as class_participants (v18 - no user detail columns)
+      // Skip rows that have pending local mutations to avoid clobbering them
+      final pendingParticipantRows = await txn.query(
+        DbTables.classParticipants,
+        columns: [ClassParticipantsCols.userId],
+        where: '${ClassParticipantsCols.classId} = ? AND ${CommonCols.syncStatus} = ?',
+        whereArgs: [classDetail.id, 'pending'],
+      );
+      final pendingUserIds = pendingParticipantRows
+          .map((r) => r[ClassParticipantsCols.userId] as String?)
+          .whereType<String>()
+          .toSet();
+
       for (final participant in classDetail.students) {
+        if (pendingUserIds.contains(participant.student.id)) continue;
         await txn.insert(
           DbTables.classParticipants,
           {

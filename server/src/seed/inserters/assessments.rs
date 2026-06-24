@@ -2,9 +2,9 @@ use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 
-use crate::utils::AppError;
 use crate::modules::assessment::repository::AssessmentRepository;
 use crate::seed::specs::{AssessmentSpec, QuestionSpec};
+use crate::utils::AppError;
 use ::entity::{answer_key_acceptable_answers, answer_keys, assessment_questions};
 
 pub async fn insert_assessment_with_questions(
@@ -39,7 +39,9 @@ pub async fn insert_assessment_with_questions(
     let mut am: ::entity::assessments::ActiveModel = assessment.into();
     am.created_at = Set(created_at);
     am.updated_at = Set(created_at);
-    am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    am.update(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     for q_spec in &spec.questions {
         insert_question_with_choices_and_key(db, spec.id, q_spec).await?;
@@ -62,7 +64,9 @@ pub async fn insert_assessment_with_questions(
             .ok_or_else(|| AppError::NotFound(format!("Assessment {} not found", spec.id)))?;
         let mut am: ::entity::assessments::ActiveModel = assessment.into();
         am.deleted_at = Set(Some(deleted_at));
-        am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        am.update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())
@@ -96,12 +100,20 @@ async fn insert_question_with_choices_and_key(
     qam.tos_competency_id = Set(spec.tos_competency_id);
     qam.difficulty = Set(spec.difficulty.clone());
     qam.cognitive_level = Set(spec.cognitive_level.clone());
-    qam.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    qam.update(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     if spec.question_type == "multiple_choice" {
         for choice in &spec.choices {
-            repo.add_choice(spec.id, choice.text.clone(), choice.is_correct, choice.order, Some(choice.id))
-                .await?;
+            repo.add_choice(
+                spec.id,
+                choice.text.clone(),
+                choice.is_correct,
+                choice.order,
+                Some(choice.id),
+            )
+            .await?;
         }
     }
 
@@ -111,7 +123,10 @@ async fn insert_question_with_choices_and_key(
             question_id: Set(spec.id),
             updated_at: Set(Utc::now().naive_utc()),
         };
-        let inserted_ak = ak.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        let inserted_ak = ak
+            .insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
         for answer_text in &spec.answer_key.acceptable_answers {
             let acc = answer_key_acceptable_answers::ActiveModel {
@@ -119,7 +134,9 @@ async fn insert_question_with_choices_and_key(
                 answer_key_id: Set(inserted_ak.id),
                 answer_text: Set(answer_text.clone()),
             };
-            acc.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+            acc.insert(db)
+                .await
+                .map_err(|e| AppError::InternalServerError(e.to_string()))?;
         }
     }
 

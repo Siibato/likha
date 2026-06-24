@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/grading/entities/class_grades.dart';
 import 'package:likha/domain/grading/usecases/get_class_grades.dart';
 import 'package:likha/injection_container.dart';
@@ -43,19 +42,7 @@ class ClassGradesState {
 class ClassGradesNotifier extends StateNotifier<ClassGradesState> {
   final GetClassGrades _getClassGrades;
 
-  late StreamSubscription<String> _gradesSub;
-
-  ClassGradesNotifier(this._getClassGrades) : super(const ClassGradesState()) {
-    _gradesSub = sl<DataEventBus>().onGradesChanged.listen((classId) {
-      if (state.classId == classId && state.grades != null) {
-        loadClassGrades(
-          classId: classId,
-          termNumber: state.termNumber,
-          skipBackgroundRefresh: true,
-        );
-      }
-    });
-  }
+  ClassGradesNotifier(this._getClassGrades) : super(const ClassGradesState());
 
   Future<void> loadClassGrades({
     required String classId,
@@ -90,12 +77,6 @@ class ClassGradesNotifier extends StateNotifier<ClassGradesState> {
         grades: grades,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _gradesSub.cancel();
-    super.dispose();
   }
 }
 

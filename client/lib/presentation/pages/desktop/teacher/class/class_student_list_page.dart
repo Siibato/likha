@@ -21,14 +21,14 @@ class _ClassStudentListPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final detail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final detail = classDetailState.currentClassDetail;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,

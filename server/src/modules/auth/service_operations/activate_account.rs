@@ -1,12 +1,12 @@
-use chrono::{Duration, Utc};
-use crate::utils::error::{AppError, AppResult};
+use crate::modules::admin::ActivityLogRepository;
+use crate::modules::auth::helpers::user_to_response;
 use crate::modules::auth::schema::{ActivateAccountRequest, AuthResponse};
+use crate::modules::auth::UserRepository;
+use crate::utils::error::{AppError, AppResult};
+use crate::utils::jwt::JwtService;
 use crate::utils::password::PasswordService;
 use crate::utils::validators::Validator;
-use crate::modules::auth::UserRepository;
-use crate::modules::admin::ActivityLogRepository;
-use crate::utils::jwt::JwtService;
-use crate::modules::auth::helpers::user_to_response;
+use chrono::{Duration, Utc};
 
 pub async fn activate_account(
     user_repo: &UserRepository,

@@ -6,7 +6,10 @@ use crate::tests::common::test_db::test_db;
 async fn test_get_classes_manifest_empty_when_no_classes() {
     let db = test_db().await;
     let repo = ManifestRepository::new(db);
-    let manifest = repo.get_classes_manifest(vec![]).await.expect("manifest failed");
+    let manifest = repo
+        .get_classes_manifest(vec![])
+        .await
+        .expect("manifest failed");
     assert!(manifest.is_empty());
 }
 
@@ -20,7 +23,10 @@ async fn test_get_classes_manifest_returns_entries() {
         .id;
     let repo = ManifestRepository::new(db);
 
-    let manifest = repo.get_classes_manifest(vec![class_id]).await.expect("manifest failed");
+    let manifest = repo
+        .get_classes_manifest(vec![class_id])
+        .await
+        .expect("manifest failed");
     assert_eq!(manifest.len(), 1);
     assert_eq!(manifest[0].id, class_id);
     assert!(!manifest[0].deleted);

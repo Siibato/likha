@@ -39,7 +39,9 @@ pub async fn insert_assignment(
     let mut am: assignments::ActiveModel = assignment.into();
     am.created_at = Set(created_at);
     am.updated_at = Set(created_at);
-    am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    am.update(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     if spec.deleted_at.is_none() {
         repo.publish_assignment(spec.id).await?;
@@ -53,7 +55,9 @@ pub async fn insert_assignment(
             .ok_or_else(|| AppError::NotFound(format!("Assignment {} not found", spec.id)))?;
         let mut am: assignments::ActiveModel = assignment.into();
         am.deleted_at = Set(Some(deleted_at));
-        am.update(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        am.update(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())

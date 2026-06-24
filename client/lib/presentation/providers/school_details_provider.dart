@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/domain/setup/entities/school_details.dart';
 import 'package:likha/domain/setup/usecases/get_school_details.dart';
 import 'package:likha/domain/setup/usecases/update_school_details.dart';
@@ -41,18 +40,12 @@ class SchoolDetailsNotifier extends StateNotifier<SchoolDetailsState> {
   final GetSchoolDetails _getSchoolDetails;
   final UpdateSchoolDetails _updateSchoolDetails;
   final UpdateSchoolCode _updateSchoolCode;
-  final DataEventBus _dataEventBus;
 
   SchoolDetailsNotifier(
     this._getSchoolDetails,
     this._updateSchoolDetails,
     this._updateSchoolCode,
-    this._dataEventBus,
-  ) : super(const SchoolDetailsState()) {
-    _dataEventBus.onSchoolDetailsChanged.listen((_) {
-      loadSchoolDetails(skipBackgroundRefresh: true);
-    });
-  }
+  ) : super(const SchoolDetailsState());
 
   Future<void> loadSchoolDetails({bool skipBackgroundRefresh = false}) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -145,6 +138,5 @@ final schoolDetailsProvider =
     sl<GetSchoolDetails>(),
     sl<UpdateSchoolDetails>(),
     sl<UpdateSchoolCode>(),
-    sl<DataEventBus>(),
   ),
 );

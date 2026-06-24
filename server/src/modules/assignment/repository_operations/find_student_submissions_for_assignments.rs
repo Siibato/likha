@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignment_submissions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignment_submissions;
 use std::collections::HashMap;
 
 pub async fn find_student_submissions_for_assignments(
@@ -21,5 +21,8 @@ pub async fn find_student_submissions_for_assignments(
         .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
-    Ok(submissions.into_iter().map(|s| (s.assignment_id, s)).collect())
+    Ok(submissions
+        .into_iter()
+        .map(|s| (s.assignment_id, s))
+        .collect())
 }

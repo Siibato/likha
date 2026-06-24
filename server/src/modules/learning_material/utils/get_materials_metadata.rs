@@ -1,6 +1,6 @@
-use md5;
-use crate::utils::error::AppResult;
 use crate::modules::learning_material::schema::LearningMaterialMetadataResponse;
+use crate::utils::error::AppResult;
+use md5;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn get_materials_metadata(&self) -> AppResult<LearningMaterialMetadataResponse> {

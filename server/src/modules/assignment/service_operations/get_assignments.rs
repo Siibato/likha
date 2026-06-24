@@ -1,9 +1,9 @@
-use futures::future::try_join_all;
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult};
+use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::assignment::schema::*;
 use crate::modules::class::repository::ClassRepository;
-use crate::modules::assignment::repository::AssignmentRepository;
+use crate::utils::{AppError, AppResult};
+use futures::future::try_join_all;
+use uuid::Uuid;
 
 pub async fn get_assignments(
     assignment_repo: &AssignmentRepository,
@@ -12,10 +12,13 @@ pub async fn get_assignments(
     user_id: Uuid,
     role: &str,
 ) -> AppResult<AssignmentListResponse> {
-    let _ = class_repo.find_by_id(class_id).await?
+    let _ = class_repo
+        .find_by_id(class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-    let is_teacher_of_class = role == "teacher" && class_repo.is_teacher_of_class(user_id, class_id).await?;
+    let is_teacher_of_class =
+        role == "teacher" && class_repo.is_teacher_of_class(user_id, class_id).await?;
     let assignments = if is_teacher_of_class {
         assignment_repo.find_by_class_id(class_id).await?
     } else {
@@ -30,7 +33,9 @@ pub async fn get_assignments(
         )?;
 
         let (submission_status, submission_id, score) = if is_student {
-            let submission = assignment_repo.find_student_submission(a.id, user_id).await?;
+            let submission = assignment_repo
+                .find_student_submission(a.id, user_id)
+                .await?;
             (
                 submission.as_ref().map(|s| s.status.clone()),
                 submission.as_ref().map(|s| s.id),
@@ -66,5 +71,7 @@ pub async fn get_assignments(
     });
 
     let responses = try_join_all(response_futures).await?;
-    Ok(AssignmentListResponse { assignments: responses })
+    Ok(AssignmentListResponse {
+        assignments: responses,
+    })
 }

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learning_materials;
 use crate::utils::{AppError, AppResult};
+use ::entity::learning_materials;
 
 pub async fn create_material(
     db: &DatabaseConnection,

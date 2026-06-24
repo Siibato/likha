@@ -7,7 +7,6 @@ import 'package:likha/core/sync/sync_result.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 /// Sync handler for all [SyncEntityType.adminUser] operations.
 ///
@@ -101,21 +100,41 @@ class AuthSyncHandler {
 
     if (!conflict) {
       final db = await _localDatabase.database;
-      await db.insert(
+      final existing = await db.query(
         DbTables.users,
-        {
-          CommonCols.id: model.id,
-          UsersCols.username: model.username,
-          UsersCols.firstName: model.firstName,
-          UsersCols.lastName: model.lastName,
-          UsersCols.role: model.role,
-          UsersCols.accountStatus: model.accountStatus,
-          CommonCols.updatedAt:
-              model.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
-          CommonCols.syncStatus: SyncStatus.synced.dbValue,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        columns: [CommonCols.id],
+        where: '${CommonCols.id} = ?',
+        whereArgs: [model.id],
+        limit: 1,
       );
+      final data = {
+        UsersCols.username: model.username,
+        UsersCols.firstName: model.firstName,
+        UsersCols.lastName: model.lastName,
+        UsersCols.role: model.role,
+        UsersCols.accountStatus: model.accountStatus,
+        CommonCols.updatedAt:
+            model.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        CommonCols.syncStatus: SyncStatus.synced.dbValue,
+      };
+      if (existing.isNotEmpty) {
+        await db.update(
+          DbTables.users,
+          data,
+          where: '${CommonCols.id} = ?',
+          whereArgs: [model.id],
+        );
+      } else {
+        await db.insert(
+          DbTables.users,
+          {
+            CommonCols.id: model.id,
+            ...data,
+            CommonCols.createdAt:
+                model.createdAt.toIso8601String(),
+          },
+        );
+      }
     } else {
       _log.warn(
         'Conflict detected for user ${model.id}; '
