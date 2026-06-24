@@ -269,6 +269,24 @@ async fn main() {
                 println!("Demo seed complete.");
                 return;
             }
+            #[cfg(feature = "seed")]
+            "seed-demo2" => {
+                println!("Seeding demo-2 world...");
+                let db = server::db::establish_connection(
+                    &config.database_url,
+                    &config.db_encryption_key,
+                )
+                .await
+                .expect("Failed to connect to database");
+                activate_admin(&db)
+                    .await
+                    .expect("Failed to activate admin account");
+                server::seed::scenarios::demo2::seed_demo2_world(&db)
+                    .await
+                    .expect("Demo-2 seed failed");
+                println!("Demo-2 seed complete.");
+                return;
+            }
             "deseed" => {
                 use sea_orm::ConnectionTrait;
                 println!("Clearing all seeded data and re-initializing...");

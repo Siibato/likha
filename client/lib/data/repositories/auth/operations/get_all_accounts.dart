@@ -57,7 +57,8 @@ ResultFuture<List<User>> getAllAccounts(
       final deduped = pendingAccounts
           .where((p) => !cachedUsernames.contains(p.username))
           .toList();
-      final result = [...cachedAccounts, ...deduped];
+      final result = [...cachedAccounts, ...deduped]
+        ..sort((a, b) => a.lastName.toLowerCase().compareTo(b.lastName.toLowerCase()));
       RepoLogger.instance.log('getAllAccounts: Returning ${result.length} accounts from cache + pending');
       return Right(result);
     } on CacheException {
@@ -75,7 +76,8 @@ ResultFuture<List<User>> getAllAccounts(
       final deduped = pendingAccounts
           .where((p) => !serverUsernames.contains(p.username))
           .toList();
-      final result = [...freshAccounts, ...deduped];
+      final result = [...freshAccounts, ...deduped]
+        ..sort((a, b) => a.lastName.toLowerCase().compareTo(b.lastName.toLowerCase()));
       RepoLogger.instance.log('getAllAccounts: Returning ${result.length} total accounts (remote + pending)');
       return Right(result);
     }

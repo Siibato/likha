@@ -127,7 +127,6 @@ class AssignmentListNotifier extends StateNotifier<AssignmentListState> {
             },
           );
         }
-        ref.invalidate(assignmentListProvider);
       },
     );
   }
@@ -154,7 +153,9 @@ class AssignmentListNotifier extends StateNotifier<AssignmentListState> {
             }
           });
         });
-        ref.invalidate(assignmentListProvider);
+        if (_currentClassId != null) {
+          loadAssignments(_currentClassId!);
+        }
       },
     );
   }
@@ -167,7 +168,9 @@ class AssignmentListNotifier extends StateNotifier<AssignmentListState> {
           state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (mutationResult) {
         state = state.copyWith(successMessage: 'Assignment published');
-        ref.invalidate(assignmentListProvider);
+        if (_currentClassId != null) {
+          loadAssignments(_currentClassId!);
+        }
       },
     );
   }
@@ -180,7 +183,9 @@ class AssignmentListNotifier extends StateNotifier<AssignmentListState> {
           state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (mutationResult) {
         state = state.copyWith(successMessage: 'Assignment moved to draft');
-        ref.invalidate(assignmentListProvider);
+        if (_currentClassId != null) {
+          loadAssignments(_currentClassId!);
+        }
       },
     );
   }
@@ -200,7 +205,9 @@ class AssignmentListNotifier extends StateNotifier<AssignmentListState> {
             }
           });
         });
-        ref.invalidate(assignmentListProvider);
+        if (_currentClassId != null) {
+          loadAssignments(_currentClassId!);
+        }
       },
     );
   }
@@ -220,7 +227,9 @@ class AssignmentListNotifier extends StateNotifier<AssignmentListState> {
           state = state.copyWith(error: AppErrorMapper.fromFailure(failure)),
       (mutationResult) {
         state = state.copyWith(successMessage: 'Assignments reordered');
-        ref.invalidate(assignmentListProvider);
+        if (_currentClassId != null) {
+          loadAssignments(_currentClassId!);
+        }
       },
     );
   }

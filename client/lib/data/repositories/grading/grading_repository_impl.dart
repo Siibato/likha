@@ -51,6 +51,9 @@ class GradingRepositoryImpl implements GradingRepository {
     required String subjectGroup,
     required String schoolYear,
     int? semester,
+    double? wwWeight,
+    double? ptWeight,
+    double? qaWeight,
   }) =>
       ops.setupGrading(
         _localDataSource,
@@ -60,6 +63,9 @@ class GradingRepositoryImpl implements GradingRepository {
         subjectGroup: subjectGroup,
         schoolYear: schoolYear,
         semester: semester,
+        wwWeight: wwWeight,
+        ptWeight: ptWeight,
+        qaWeight: qaWeight,
       );
 
   @override

@@ -19,7 +19,7 @@ BUILD_DIR         := builds
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-up-nginx docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
+.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-seed-demo2 db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-up-nginx docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -64,6 +64,9 @@ db-seed-realistic:
 
 db-seed-demo:
 	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-demo
+
+db-seed-demo2:
+	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-demo2
 
 db-delete:
 	@cd $(SERVER_DIR) && cargo run -- delete-db

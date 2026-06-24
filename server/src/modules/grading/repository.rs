@@ -53,8 +53,11 @@ impl GradeComputationRepository {
         &self,
         class_id: Uuid,
         subject_group: &str,
+        ww_weight: Option<f64>,
+        pt_weight: Option<f64>,
+        qa_weight: Option<f64>,
     ) -> AppResult<Vec<grade_record::Model>> {
-        ops::setup_defaults(&self.db, class_id, subject_group).await
+        ops::setup_defaults(&self.db, class_id, subject_group, ww_weight, pt_weight, qa_weight).await
     }
 
     // ─── Grade Items ──────────────────────────────────────────────────────────

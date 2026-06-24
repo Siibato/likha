@@ -18,7 +18,7 @@ class CheckUsernameResult extends Equatable {
     return '$lastName, $firstName'.trim();
   }
   bool get isPendingActivation => accountStatus == 'pending_activation';
-  bool get isActivated => accountStatus == 'activated';
+  bool get isActivated => accountStatus == 'activated' || accountStatus == 'active';
   bool get isLocked => accountStatus == 'locked';
 
   @override

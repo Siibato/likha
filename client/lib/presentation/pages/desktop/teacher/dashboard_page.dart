@@ -31,6 +31,7 @@ class _TeacherDashboardPageState
   Widget build(BuildContext context) {
     final classListState = ref.watch(classListProvider);
     final classes = classListState.classes;
+    final uniqueStudentCountAsync = ref.watch(teacherUniqueStudentCountProvider);
 
     return DesktopPageScaffold(
       title: 'Dashboard',
@@ -39,7 +40,10 @@ class _TeacherDashboardPageState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Stats row
-          TeacherStatsRow(classes: classes),
+          TeacherStatsRow(
+            classes: classes,
+            totalStudents: uniqueStudentCountAsync.valueOrNull,
+          ),
           const SizedBox(height: 32),
 
           // Classes section

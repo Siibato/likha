@@ -69,9 +69,6 @@ pub async fn run(
     let (p1, l1) = (engine.first_page, engine.first_layer);
     let layer1 = engine.get_layer(p1, l1);
 
-    // ── Dev: center split line on page 1 ──
-    layout::draw_center_split_line(&engine, &layer1, 0.3);
-
     page1_right::draw_page1_right(
         &engine,
         &layer1,
@@ -89,9 +86,6 @@ pub async fn run(
 
     let (p2, l2) = engine.add_page(Mm(layout::PAGE_W), Mm(layout::PAGE_H));
     let layer2 = engine.get_layer(p2, l2);
-
-    // ── Dev: center split line on page 2 ──
-    layout::draw_center_split_line(&engine, &layer2, 0.3);
 
     page2_left::draw_page2_left(&engine, &layer2, &sf9);
     page2_right::draw_page2_right(&engine, &layer2, &sf9);

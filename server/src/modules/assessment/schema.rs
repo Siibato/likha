@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateAssessmentRequest {
+    pub id: Option<Uuid>,
     pub title: String,
     pub description: Option<String>,
     pub time_limit_minutes: i32,

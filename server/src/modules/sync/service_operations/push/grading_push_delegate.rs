@@ -89,10 +89,31 @@ impl GradingPushDelegate {
                     .get("semester")
                     .and_then(|v| v.as_i64())
                     .map(|v| v as i32);
+                let ww_weight = op
+                    .payload
+                    .get("ww_weight")
+                    .and_then(|v| v.as_f64());
+                let pt_weight = op
+                    .payload
+                    .get("pt_weight")
+                    .and_then(|v| v.as_f64());
+                let qa_weight = op
+                    .payload
+                    .get("qa_weight")
+                    .and_then(|v| v.as_f64());
 
                 match self
                     .grade_computation_service
-                    .setup_grading(class_id, grade_level, subject_group, school_year, semester)
+                    .setup_grading(
+                        class_id,
+                        grade_level,
+                        subject_group,
+                        school_year,
+                        semester,
+                        ww_weight,
+                        pt_weight,
+                        qa_weight,
+                    )
                     .await
                 {
                     Ok(_) => success_result(op, None, Some(Utc::now().to_rfc3339())),

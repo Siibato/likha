@@ -14,7 +14,7 @@ async fn test_setup_class_grade_config() {
 
     let configs = service
         .repo
-        .setup_defaults(class_id, "language")
+        .setup_defaults(class_id, "language", None, None, None)
         .await
         .expect("setup_defaults failed");
 

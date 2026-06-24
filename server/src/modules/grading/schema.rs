@@ -13,6 +13,9 @@ pub struct SetupGradingConfigRequest {
     pub subject_group: String,
     pub school_year: String,
     pub semester: Option<i32>,
+    pub ww_weight: Option<f64>,
+    pub pt_weight: Option<f64>,
+    pub qa_weight: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]

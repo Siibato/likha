@@ -4,13 +4,14 @@ import 'package:likha/domain/classes/entities/class_entity.dart';
 
 class TeacherStatsRow extends StatelessWidget {
   final List<ClassEntity> classes;
+  final int? totalStudents;
 
-  const TeacherStatsRow({super.key, required this.classes});
+  const TeacherStatsRow({super.key, required this.classes, this.totalStudents});
 
   @override
   Widget build(BuildContext context) {
     final totalStudents =
-        classes.fold<int>(0, (sum, c) => sum + c.studentCount);
+        this.totalStudents ?? classes.fold<int>(0, (sum, c) => sum + c.studentCount);
     final advisoryCount = classes.where((c) => c.isAdvisory).length;
 
     return Wrap(

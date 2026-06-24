@@ -15,6 +15,9 @@ class SetupGrading {
       subjectGroup: params.subjectGroup,
       schoolYear: params.schoolYear,
       semester: params.semester,
+      wwWeight: params.wwWeight,
+      ptWeight: params.ptWeight,
+      qaWeight: params.qaWeight,
     );
   }
 }
@@ -25,6 +28,9 @@ class SetupGradingParams {
   final String subjectGroup;
   final String schoolYear;
   final int? semester;
+  final double? wwWeight;
+  final double? ptWeight;
+  final double? qaWeight;
 
   SetupGradingParams({
     required this.classId,
@@ -32,5 +38,8 @@ class SetupGradingParams {
     required this.subjectGroup,
     required this.schoolYear,
     this.semester,
+    this.wwWeight,
+    this.ptWeight,
+    this.qaWeight,
   });
 }

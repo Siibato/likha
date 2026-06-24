@@ -78,6 +78,7 @@ impl PushDelegate for AssessmentPushDelegate {
                     }
                 };
                 let request = CreateAssessmentRequest {
+                    id: client_id,
                     title,
                     description,
                     time_limit_minutes: time_limit,

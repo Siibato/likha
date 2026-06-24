@@ -26,15 +26,17 @@ pub async fn create_assessment(
         return r;
     }
 
+    let client_id = request.id;
+    let title = request.title.clone();
     tracing::info!(
         "Creating assessment - class_id: {}, teacher_id: {}, title: {}",
         class_id,
         auth_user.user_id,
-        request.title
+        title
     );
 
     match service
-        .create_assessment(class_id, request, auth_user.user_id, None)
+        .create_assessment(class_id, request, auth_user.user_id, client_id)
         .await
     {
         Ok(response) => {

@@ -65,7 +65,8 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
       errorMessage: (s) => s.error,
       onClear: () => ref.read(assignmentListProvider.notifier).clearMessages(),
       intercept: (prev, next) {
-        if (next.successMessage == 'Assignment created') {
+        if (next.successMessage == 'Assignment created' &&
+            prev.successMessage != 'Assignment created') {
           Navigator.pop(context, true);
           return true;
         }
@@ -158,10 +159,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                       isSaving: _controller.isSaving,
                       onPressed: () async {
                         if (!_formKey.currentState!.validate()) return;
-                        final success = await _controller.performSave();
-                        if (success && context.mounted) {
-                          Navigator.pop(context, true);
-                        }
+                        await _controller.performSave();
                       },
                     ),
                   ],

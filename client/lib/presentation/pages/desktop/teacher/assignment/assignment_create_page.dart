@@ -115,7 +115,8 @@ class _CreateAssignmentPageState
       errorMessage: (s) => s.error,
       onClear: () => ref.read(assignmentListProvider.notifier).clearMessages(),
       intercept: (prev, next) {
-        if (next.successMessage == 'Assignment created') {
+        if (next.successMessage == 'Assignment created' &&
+            prev.successMessage != 'Assignment created') {
           Navigator.pop(context, true);
           return true;
         }

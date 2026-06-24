@@ -19,6 +19,7 @@ class AccountStatusBadge extends StatelessWidget {
     
     switch (status) {
       case 'activated':
+      case 'active':
         statusColor = AppColors.accentCharcoal;
         statusLabel = 'Active';
         break;
@@ -44,7 +45,7 @@ class AccountStatusBadge extends StatelessWidget {
     }
 
     return StatusBadge.custom(
-      isActive: status == 'activated',
+      isActive: status == 'activated' || status == 'active',
       activeText: statusLabel,
       inactiveText: statusLabel,
       activeColor: statusColor,
@@ -83,6 +84,7 @@ class AccountStatusBadge extends StatelessWidget {
   static Color getStatusColor(String status) {
     switch (status) {
       case 'activated':
+      case 'active':
         return AppColors.accentCharcoal;
       case 'pending_activation':
         return AppColors.accentAmberBorder;
@@ -101,6 +103,7 @@ class AccountStatusBadge extends StatelessWidget {
   static String getStatusLabel(String status) {
     switch (status) {
       case 'activated':
+      case 'active':
         return 'Active';
       case 'pending_activation':
         return 'Pending';
@@ -117,7 +120,7 @@ class AccountStatusBadge extends StatelessWidget {
 
   /// Checks if a status is considered active
   static bool isActive(String status) {
-    return status == 'activated';
+    return status == 'activated' || status == 'active';
   }
 
   /// Checks if a status is considered inactive

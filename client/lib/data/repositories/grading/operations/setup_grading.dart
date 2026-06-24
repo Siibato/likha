@@ -18,9 +18,15 @@ ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
   required String subjectGroup,
   required String schoolYear,
   int? semester,
+  double? wwWeight,
+  double? ptWeight,
+  double? qaWeight,
 }) async {
   try {
-    final weights = helpers.weightPresets[subjectGroup];
+    final customWeights = (wwWeight != null && ptWeight != null && qaWeight != null)
+        ? (ww: wwWeight, pt: ptWeight, qa: qaWeight)
+        : null;
+    final weights = customWeights ?? helpers.weightPresets[subjectGroup];
     final now = DateTime.now();
     final queueEntryId = const Uuid().v4();
     final configs = <GradeConfigModel>[];
@@ -55,6 +61,9 @@ ResultFuture<MutationResult<List<GradeConfig>>> setupGrading(
             'subject_group': subjectGroup,
             'school_year': schoolYear,
             if (semester != null) 'semester': semester,
+            if (wwWeight != null) 'ww_weight': wwWeight,
+            if (ptWeight != null) 'pt_weight': ptWeight,
+            if (qaWeight != null) 'qa_weight': qaWeight,
           },
           status: SyncStatus.pending,
           retryCount: 0,

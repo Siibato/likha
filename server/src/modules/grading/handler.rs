@@ -47,6 +47,9 @@ pub async fn setup_grading_config(
             request.subject_group,
             request.school_year,
             request.semester,
+            request.ww_weight,
+            request.pt_weight,
+            request.qa_weight,
         )
         .await
     {

@@ -76,7 +76,7 @@ async fn test_setup_defaults_creates_four_periods() {
     let repo = GradeComputationRepository::new(db);
 
     let configs = repo
-        .setup_defaults(class_id, "language")
+        .setup_defaults(class_id, "language", None, None, None)
         .await
         .expect("setup_defaults failed");
     assert_eq!(configs.len(), 4);
