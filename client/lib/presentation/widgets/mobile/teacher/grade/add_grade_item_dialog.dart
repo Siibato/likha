@@ -12,6 +12,7 @@ void showAddGradeItemDialog({
   required String classId,
   required int selectedTerm,
   required WidgetRef ref,
+  VoidCallback? onCreated,
 }) {
   final titleCtrl = TextEditingController();
   final pointsCtrl = TextEditingController(text: '100');
@@ -150,8 +151,10 @@ void showAddGradeItemDialog({
                         'term_number': selectedTerm,
                         'total_points': points,
                         'source_type': 'manual',
+                      }).then((_) {
+                        onCreated?.call();
+                        if (ctx.mounted) Navigator.pop(ctx);
                       });
-                      Navigator.pop(ctx);
                     },
                   ),
                 ),

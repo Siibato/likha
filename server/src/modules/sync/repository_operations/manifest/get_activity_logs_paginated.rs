@@ -1,10 +1,10 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::activity_logs;
-use crate::utils::AppResult;
-use super::PaginatedRecords;
 use super::helpers;
+use super::PaginatedRecords;
+use crate::utils::AppResult;
+use ::entity::activity_logs;
 
 pub async fn get_activity_logs_paginated(
     db: &DatabaseConnection,
@@ -15,8 +15,7 @@ pub async fn get_activity_logs_paginated(
         return Ok(PaginatedRecords { records: vec![] });
     }
 
-    let query = activity_logs::Entity::find()
-        .filter(activity_logs::Column::Id.is_in(log_ids));
+    let query = activity_logs::Entity::find().filter(activity_logs::Column::Id.is_in(log_ids));
 
     helpers::paginate_query(db, query, limit, |r| {
         serde_json::json!({

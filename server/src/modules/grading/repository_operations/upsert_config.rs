@@ -2,9 +2,9 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_record;
-use crate::utils::{AppError, AppResult};
 use super::get_config::get_config;
+use crate::utils::{AppError, AppResult};
+use ::entity::grade_record;
 
 pub async fn upsert_config(
     db: &DatabaseConnection,

@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/utils/formatters.dart';
 import 'package:likha/domain/assignments/usecases/create_assignment.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 
 /// Controller for the assignment creation flow.
 ///
@@ -13,7 +13,7 @@ import 'package:likha/presentation/providers/assignment_provider.dart';
 /// Both mobile and desktop pages consume this via [ListenableBuilder].
 class AssignmentCreateController extends ChangeNotifier {
   final String classId;
-  final AssignmentNotifier notifier;
+  final AssignmentListNotifier notifier;
 
   final titleController = TextEditingController();
   late final FleatherController instructionsController;

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{grade_items, grade_scores, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{grade_items, grade_scores, users};
 
 pub async fn upsert_score(
     db: &DatabaseConnection,
@@ -17,29 +17,42 @@ pub async fn upsert_score(
 
     tracing::debug!(
         "upsert_score: grade_item_id={} student_id={} score={:?} is_auto_populated={}",
-        grade_item_id, student_id, score, is_auto_populated
+        grade_item_id,
+        student_id,
+        score,
+        is_auto_populated
     );
 
     let grade_item_exists = grade_items::Entity::find_by_id(grade_item_id)
         .one(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Database error checking grade item: {}", e)))?
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Database error checking grade item: {}", e))
+        })?
         .is_some();
 
     if !grade_item_exists {
         tracing::warn!("upsert_score: Grade item {} does not exist", grade_item_id);
-        return Err(AppError::BadRequest(format!("Grade item {} does not exist", grade_item_id)));
+        return Err(AppError::BadRequest(format!(
+            "Grade item {} does not exist",
+            grade_item_id
+        )));
     }
 
     let student_exists = users::Entity::find_by_id(student_id)
         .one(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Database error checking student: {}", e)))?
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Database error checking student: {}", e))
+        })?
         .is_some();
 
     if !student_exists {
         tracing::warn!("upsert_score: Student {} does not exist", student_id);
-        return Err(AppError::BadRequest(format!("Student {} does not exist", student_id)));
+        return Err(AppError::BadRequest(format!(
+            "Student {} does not exist",
+            student_id
+        )));
     }
 
     let sql = r#"
@@ -71,7 +84,11 @@ pub async fn upsert_score(
         .await
         .map_err(|e| AppError::InternalServerError(format!("Failed to upsert score: {}", e)))?;
 
-    tracing::debug!("upsert_score: SQL executed successfully for grade_item_id={} student_id={}", grade_item_id, student_id);
+    tracing::debug!(
+        "upsert_score: SQL executed successfully for grade_item_id={} student_id={}",
+        grade_item_id,
+        student_id
+    );
 
     grade_scores::Entity::find()
         .filter(grade_scores::Column::GradeItemId.eq(grade_item_id))

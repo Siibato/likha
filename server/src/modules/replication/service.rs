@@ -1,48 +1,17 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
 use entity::{
-    self,
-    answer_key_acceptable_answers,
-    answer_keys,
-    assessment_questions,
-    assignment_submissions,
-    assignments,
-    attendance_records,
-    class_participants,
-    classes,
-    core_values,
-    core_values_records,
-    grade_items,
-    grade_record,
-    grade_scores,
-    learner_details,
-    learning_materials,
-    previous_school_attendance,
-    previous_school_subjects,
-    previous_school_term_grades,
-    question_choices,
-    school_details,
-    student_school_history,
-    submission_answer_items,
-    submission_answers,
-    table_of_specifications,
-    teacher_details,
-    term_grades,
-    tos_competencies,
+    self, answer_key_acceptable_answers, answer_keys, assessment_questions, assignment_submissions,
+    assignments, attendance_records, class_participants, classes, core_values, core_values_records,
+    grade_items, grade_record, grade_scores, learner_details, learning_materials,
+    previous_school_attendance, previous_school_subjects, previous_school_term_grades,
+    question_choices, school_details, student_school_history, submission_answer_items,
+    submission_answers, table_of_specifications, teacher_details, term_grades, tos_competencies,
     users,
 };
 use sea_orm::prelude::*;
 use sea_orm::{
-    ColumnTrait,
-    Condition,
-    DatabaseBackend,
-    DatabaseConnection,
-    EntityTrait,
-    Order,
-    QueryFilter,
-    QueryOrder,
-    QuerySelect,
-    Set,
-    Statement,
+    ColumnTrait, Condition, DatabaseBackend, DatabaseConnection, EntityTrait, Order, QueryFilter,
+    QueryOrder, QuerySelect, Set, Statement,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -138,13 +107,22 @@ impl ReplicationService {
                 )
                 .await?,
             assessments: self
-                .fetch_since::<entity::assessments::Entity>(entity::assessments::Column::UpdatedAt, since_dt)
+                .fetch_since::<entity::assessments::Entity>(
+                    entity::assessments::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             assessment_questions: self
-                .fetch_since::<assessment_questions::Entity>(assessment_questions::Column::UpdatedAt, since_dt)
+                .fetch_since::<assessment_questions::Entity>(
+                    assessment_questions::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             question_choices: self
-                .fetch_since::<question_choices::Entity>(question_choices::Column::UpdatedAt, since_dt)
+                .fetch_since::<question_choices::Entity>(
+                    question_choices::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             answer_keys,
             answer_key_acceptable_answers,
@@ -155,7 +133,10 @@ impl ReplicationService {
                 )
                 .await?,
             submission_answers: self
-                .fetch_since::<submission_answers::Entity>(submission_answers::Column::UpdatedAt, since_dt)
+                .fetch_since::<submission_answers::Entity>(
+                    submission_answers::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             submission_answer_items: self
                 .fetch_since::<submission_answer_items::Entity>(
@@ -173,7 +154,10 @@ impl ReplicationService {
                 )
                 .await?,
             learning_materials: self
-                .fetch_since::<learning_materials::Entity>(learning_materials::Column::UpdatedAt, since_dt)
+                .fetch_since::<learning_materials::Entity>(
+                    learning_materials::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             grade_record: self
                 .fetch_since::<grade_record::Entity>(grade_record::Column::UpdatedAt, since_dt)
@@ -194,7 +178,10 @@ impl ReplicationService {
                 )
                 .await?,
             tos_competencies: self
-                .fetch_since::<tos_competencies::Entity>(tos_competencies::Column::UpdatedAt, since_dt)
+                .fetch_since::<tos_competencies::Entity>(
+                    tos_competencies::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             activity_logs: self
                 .fetch_since::<entity::activity_logs::Entity>(
@@ -206,16 +193,25 @@ impl ReplicationService {
                 .fetch_since::<school_details::Entity>(school_details::Column::UpdatedAt, since_dt)
                 .await?,
             learner_details: self
-                .fetch_since::<learner_details::Entity>(learner_details::Column::UpdatedAt, since_dt)
+                .fetch_since::<learner_details::Entity>(
+                    learner_details::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             attendance_records: self
-                .fetch_since::<attendance_records::Entity>(attendance_records::Column::UpdatedAt, since_dt)
+                .fetch_since::<attendance_records::Entity>(
+                    attendance_records::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             core_values: self
                 .fetch_since::<core_values::Entity>(core_values::Column::UpdatedAt, since_dt)
                 .await?,
             core_values_records: self
-                .fetch_since::<core_values_records::Entity>(core_values_records::Column::UpdatedAt, since_dt)
+                .fetch_since::<core_values_records::Entity>(
+                    core_values_records::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
             student_school_history: self
                 .fetch_since::<student_school_history::Entity>(
@@ -242,7 +238,10 @@ impl ReplicationService {
                 )
                 .await?,
             teacher_details: self
-                .fetch_since::<teacher_details::Entity>(teacher_details::Column::UpdatedAt, since_dt)
+                .fetch_since::<teacher_details::Entity>(
+                    teacher_details::Column::UpdatedAt,
+                    since_dt,
+                )
                 .await?,
         };
 
@@ -253,7 +252,10 @@ impl ReplicationService {
         })
     }
 
-    pub async fn apply_deltas(&self, request: ReplicationApplyRequest) -> AppResult<ReplicationApplyResponse> {
+    pub async fn apply_deltas(
+        &self,
+        request: ReplicationApplyRequest,
+    ) -> AppResult<ReplicationApplyResponse> {
         let mut applied = 0usize;
         let mut skipped = 0usize;
         let mut errors = Vec::new();
@@ -285,7 +287,11 @@ impl ReplicationService {
             "Replication batch applied",
         );
 
-        Ok(ReplicationApplyResponse { applied, skipped, errors })
+        Ok(ReplicationApplyResponse {
+            applied,
+            skipped,
+            errors,
+        })
     }
 
     pub async fn get_last_sync(&self, peer_node_id: &str) -> AppResult<Option<DateTime<Utc>>> {
@@ -298,7 +304,9 @@ impl ReplicationService {
     }
 
     pub async fn set_last_sync(&self, peer_node_id: &str, sync_at: DateTime<Utc>) -> AppResult<()> {
-        use entity::replication_state::{ActiveModel as ReplicationStateActive, Entity as ReplicationState};
+        use entity::replication_state::{
+            ActiveModel as ReplicationStateActive, Entity as ReplicationState,
+        };
 
         if let Some(existing) = ReplicationState::find()
             .filter(entity::replication_state::Column::PeerNodeId.eq(peer_node_id))
@@ -324,7 +332,11 @@ impl ReplicationService {
         Ok(())
     }
 
-    async fn fetch_since<E>(&self, column: <E as EntityTrait>::Column, since: NaiveDateTime) -> AppResult<Vec<Value>>
+    async fn fetch_since<E>(
+        &self,
+        column: <E as EntityTrait>::Column,
+        since: NaiveDateTime,
+    ) -> AppResult<Vec<Value>>
     where
         E: EntityTrait,
         E::Model: Serialize,
@@ -356,7 +368,8 @@ impl ReplicationService {
 
         let mut condition = Condition::any().add(answer_keys::Column::UpdatedAt.gt(since));
         if !updated_question_ids.is_empty() {
-            condition = condition.add(answer_keys::Column::QuestionId.is_in(updated_question_ids.clone()));
+            condition =
+                condition.add(answer_keys::Column::QuestionId.is_in(updated_question_ids.clone()));
         }
 
         let models = answer_keys::Entity::find()
@@ -383,7 +396,10 @@ impl ReplicationService {
         }
 
         let models = answer_key_acceptable_answers::Entity::find()
-            .filter(answer_key_acceptable_answers::Column::AnswerKeyId.is_in(answer_key_ids.iter().cloned()))
+            .filter(
+                answer_key_acceptable_answers::Column::AnswerKeyId
+                    .is_in(answer_key_ids.iter().cloned()),
+            )
             .all(&self.db)
             .await?;
 

@@ -8,6 +8,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;
@@ -170,7 +171,9 @@ class _CreateMaterialPageState
                     // Title
                     TextFormField(
                       controller: _titleController,
-                      decoration: _inputDecoration('Title'),
+                      decoration: StyledTextFieldDecoration.styled(
+                        labelText: 'Title',
+                      ),
                       maxLength: 200,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
@@ -187,7 +190,9 @@ class _CreateMaterialPageState
                     // Content
                     TextFormField(
                       controller: _contentController,
-                      decoration: _inputDecoration('Content (Optional)'),
+                      decoration: StyledTextFieldDecoration.styled(
+                        labelText: 'Content (Optional)',
+                      ),
                       maxLines: 8,
                       minLines: 4,
                     ),
@@ -325,28 +330,4 @@ class _CreateMaterialPageState
     );
   }
 
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(
-        fontSize: 14,
-        color: AppColors.foregroundSecondary,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.borderLight),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.borderLight),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide:
-            const BorderSide(color: AppColors.foregroundPrimary, width: 1.5),
-      ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
 }

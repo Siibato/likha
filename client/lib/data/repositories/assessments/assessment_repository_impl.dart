@@ -1,4 +1,3 @@
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/connectivity_service.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -21,7 +20,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
   // ignore: unused_field
   final ConnectivityService _connectivityService;
   final SyncQueue _syncQueue;
-  final DataEventBus _dataEventBus;
 
   AssessmentRepositoryImpl({
     required AssessmentRemoteDataSource remoteDataSource,
@@ -29,13 +27,11 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
     required ValidationService validationService,
     required ConnectivityService connectivityService,
     required SyncQueue syncQueue,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _validationService = validationService,
         _connectivityService = connectivityService,
-        _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus;
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<MutationResult<Assessment>> createAssessment({
@@ -78,7 +74,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getAssessments(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         classId: classId,
         publishedOnly: publishedOnly,
         skipBackgroundRefresh: skipBackgroundRefresh,
@@ -92,7 +87,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getAssessmentDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assessmentId: assessmentId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
@@ -225,7 +219,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getSubmissions(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assessmentId: assessmentId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
@@ -238,7 +231,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getSubmissionDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         submissionId: submissionId,
         skipBackgroundRefresh: skipBackgroundRefresh,
       );
@@ -252,7 +244,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.overrideAnswer(
         _localDataSource,
         _syncQueue,
-        _dataEventBus,
         answerId: answerId,
         isCorrect: isCorrect,
         points: points,
@@ -266,7 +257,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.gradeEssayAnswer(
         _localDataSource,
         _syncQueue,
-        _dataEventBus,
         answerId: answerId,
         points: points,
       );
@@ -305,7 +295,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getStudentSubmission(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         assessmentId: assessmentId,
         studentId: studentId,
       );
@@ -339,7 +328,6 @@ class AssessmentRepositoryImpl implements AssessmentRepository {
       ops.getStudentResults(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         submissionId: submissionId,
       );
 }

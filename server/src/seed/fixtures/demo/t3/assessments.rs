@@ -1,28 +1,89 @@
 //! T3 assessments for demo seeding: Chemistry.
 
+use super::super::{aid, build_questions, cid, compid, tid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, tid, compid, aid, build_questions};
 
 pub fn demo_assessments_t3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(20);
     let now = ctx.now();
-    let comps = &[compid("s10t3_comp_0"), compid("s10t3_comp_1"), compid("s10t3_comp_2"), compid("s10t3_comp_3")];
+    let comps = &[
+        compid("s10t3_comp_0"),
+        compid("s10t3_comp_1"),
+        compid("s10t3_comp_2"),
+        compid("s10t3_comp_3"),
+    ];
 
-    let quiz1_qs = build_questions("t3_quiz1",
+    let quiz1_qs = build_questions(
+        "t3_quiz1",
         &[
-            ("What type of bond involves the sharing of electron pairs?", &["Ionic", "Covalent", "Metallic", "Hydrogen"], 1, "easy", "remembering"),
-            ("Which element is most likely to form an ionic bond with sodium?", &["Carbon", "Oxygen", "Chlorine", "Neon"], 2, "medium", "understanding"),
-            ("What is the name of the bond formed between a metal and a non-metal?", &["Covalent", "Ionic", "Metallic", "Van der Waals"], 1, "easy", "remembering"),
-            ("How many electrons are shared in a triple covalent bond?", &["2", "4", "6", "8"], 2, "medium", "understanding"),
-            ("Which type of bond is the strongest?", &["Hydrogen", "Ionic", "Covalent", "Metallic"], 2, "difficult", "analyzing"),
+            (
+                "What type of bond involves the sharing of electron pairs?",
+                &["Ionic", "Covalent", "Metallic", "Hydrogen"],
+                1,
+                "easy",
+                "remembering",
+            ),
+            (
+                "Which element is most likely to form an ionic bond with sodium?",
+                &["Carbon", "Oxygen", "Chlorine", "Neon"],
+                2,
+                "medium",
+                "understanding",
+            ),
+            (
+                "What is the name of the bond formed between a metal and a non-metal?",
+                &["Covalent", "Ionic", "Metallic", "Van der Waals"],
+                1,
+                "easy",
+                "remembering",
+            ),
+            (
+                "How many electrons are shared in a triple covalent bond?",
+                &["2", "4", "6", "8"],
+                2,
+                "medium",
+                "understanding",
+            ),
+            (
+                "Which type of bond is the strongest?",
+                &["Hydrogen", "Ionic", "Covalent", "Metallic"],
+                2,
+                "difficult",
+                "analyzing",
+            ),
         ],
         &[
-            ("What is the force that holds atoms together in a molecule?", "Chemical bond", "easy", "remembering"),
-            ("What is an atom called when it gains or loses electrons?", "Ion", "easy", "remembering"),
-            ("What type of bond holds metal atoms together in a solid?", "Metallic bond", "easy", "remembering"),
-            ("What is the attraction between oppositely charged ions called?", "Ionic bond", "easy", "remembering"),
-            ("What do you call a covalent bond where electrons are shared unequally?", "Polar covalent bond", "medium", "understanding"),
+            (
+                "What is the force that holds atoms together in a molecule?",
+                "Chemical bond",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What is an atom called when it gains or loses electrons?",
+                "Ion",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What type of bond holds metal atoms together in a solid?",
+                "Metallic bond",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What is the attraction between oppositely charged ions called?",
+                "Ionic bond",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What do you call a covalent bond where electrons are shared unequally?",
+                "Polar covalent bond",
+                "medium",
+                "understanding",
+            ),
         ],
         &[],
         comps,
@@ -76,33 +137,62 @@ pub fn demo_assessments_t3(ctx: &SeedContext) -> Vec<AssessmentSpec> {
 
     vec![
         AssessmentSpec {
-            id: aid("t3_quiz1"), class_id: cid("sci10"),
+            id: aid("t3_quiz1"),
+            class_id: cid("sci10"),
             title: "T3 Quiz 1: Chemical Bonding".into(),
             description: Some("10-item quiz on ionic, covalent, and metallic bonding.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(7), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t3"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 3,
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(7),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t3"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 3,
             questions: quiz1_qs,
         },
         AssessmentSpec {
-            id: aid("t3_quiz2"), class_id: cid("sci10"),
+            id: aid("t3_quiz2"),
+            class_id: cid("sci10"),
             title: "T3 Quiz 2: Chemical Reactions and Equations".into(),
             description: Some("10-item quiz on types of reactions and balancing equations.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(5), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t3"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 3,
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(5),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t3"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 3,
             questions: quiz2_qs,
         },
         AssessmentSpec {
-            id: aid("t3_exam"), class_id: cid("sci10"),
+            id: aid("t3_exam"),
+            class_id: cid("sci10"),
             title: "T3 Term Exam: Chemistry".into(),
-            description: Some("25-item term assessment on chemical bonding, reactions, and equations.".into()),
-            time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "term_assessment".into(),
-            tos_id: tid("sci10_tos_t3"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 3,
+            description: Some(
+                "25-item term assessment on chemical bonding, reactions, and equations.".into(),
+            ),
+            time_limit_minutes: 60,
+            open_at: now - chrono::Duration::days(10),
+            close_at: now - chrono::Duration::days(2),
+            show_results_immediately: true,
+            total_points: 25,
+            component: "term_assessment".into(),
+            tos_id: tid("sci10_tos_t3"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 3,
             questions: exam_qs,
         },
     ]

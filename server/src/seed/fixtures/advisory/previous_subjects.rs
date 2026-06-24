@@ -1,9 +1,9 @@
 //! Advisory previous subjects: ~8 standard DepEd JHS subjects per school history entry.
 
+use super::school_history::advisory_school_history;
+use super::users::{uid, STUDENT_DATA};
 use crate::seed::specs::PreviousSubjectSpec;
 use crate::seed::tools::seed_id;
-use super::users::{uid, STUDENT_DATA};
-use super::school_history::advisory_school_history;
 
 const SUBJECTS: [(&str, &str); 8] = [
     ("English", "language"),
@@ -32,7 +32,8 @@ pub fn advisory_previous_subjects() -> Vec<PreviousSubjectSpec> {
 
     for (sidx, &(uname, _, _)) in STUDENT_DATA.iter().enumerate() {
         let student_id = uid(uname);
-        let student_history: Vec<_> = history.iter()
+        let student_history: Vec<_> = history
+            .iter()
             .filter(|h| h.student_id == student_id)
             .collect();
 

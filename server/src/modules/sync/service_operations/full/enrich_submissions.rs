@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::utils::{AppError, AppResult};
 use ::entity::{
-    submission_answers, submission_answer_items, assessment_questions, question_choices,
+    assessment_questions, question_choices, submission_answer_items, submission_answers,
 };
 
 /// Enriches assessment submissions with nested answer details.
@@ -20,7 +20,11 @@ pub async fn enrich_assessment_submissions(
 
     let submission_ids: Vec<Uuid> = submissions
         .iter()
-        .filter_map(|s| s.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+        .filter_map(|s| {
+            s.get("id")
+                .and_then(|id| id.as_str())
+                .and_then(|s| Uuid::parse_str(s).ok())
+        })
         .collect();
 
     // Batch Query 1: All submission_answers
@@ -28,7 +32,9 @@ pub async fn enrich_assessment_submissions(
         .filter(submission_answers::Column::SubmissionId.is_in(submission_ids))
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission answers: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch submission answers: {}", e))
+        })?;
 
     let mut answers_by_submission: HashMap<Uuid, Vec<submission_answers::Model>> = HashMap::new();
     for answer in all_sub_answers.iter() {
@@ -45,7 +51,12 @@ pub async fn enrich_assessment_submissions(
             .filter(submission_answer_items::Column::SubmissionAnswerId.is_in(answer_ids))
             .all(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch submission answer items: {}", e)))?
+            .map_err(|e| {
+                AppError::InternalServerError(format!(
+                    "Failed to fetch submission answer items: {}",
+                    e
+                ))
+            })?
     } else {
         Vec::new()
     };
@@ -58,7 +69,8 @@ pub async fn enrich_assessment_submissions(
         .into_iter()
         .collect();
 
-    let mut answer_items_by_answer: HashMap<Uuid, Vec<submission_answer_items::Model>> = HashMap::new();
+    let mut answer_items_by_answer: HashMap<Uuid, Vec<submission_answer_items::Model>> =
+        HashMap::new();
     for item in all_answer_items {
         answer_items_by_answer
             .entry(item.submission_answer_id)
@@ -79,7 +91,9 @@ pub async fn enrich_assessment_submissions(
             .filter(assessment_questions::Column::Id.is_in(unique_q_ids))
             .all(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch question metadata: {}", e)))?
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to fetch question metadata: {}", e))
+            })?
             .into_iter()
             .map(|q| (q.id, (q.question_text, q.question_type, q.points)))
             .collect()
@@ -93,7 +107,9 @@ pub async fn enrich_assessment_submissions(
             .filter(question_choices::Column::Id.is_in(unique_choice_ids))
             .all(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch choice metadata: {}", e)))?
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to fetch choice metadata: {}", e))
+            })?
             .into_iter()
             .map(|c| (c.id, (c.choice_text, c.is_correct)))
             .collect()
@@ -105,12 +121,16 @@ pub async fn enrich_assessment_submissions(
     let enriched: Vec<Value> = submissions
         .into_iter()
         .map(|mut sub| {
-            let sub_id = sub.get("id")
+            let sub_id = sub
+                .get("id")
                 .and_then(|id| id.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
             if let Some(sub_id) = sub_id {
-                let answers_for_sub = answers_by_submission.get(&sub_id).map(|v| v.as_slice()).unwrap_or(&[]);
+                let answers_for_sub = answers_by_submission
+                    .get(&sub_id)
+                    .map(|v| v.as_slice())
+                    .unwrap_or(&[]);
 
                 let answers_json: Vec<Value> = answers_for_sub
                     .iter()

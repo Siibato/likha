@@ -9,8 +9,8 @@ use std::sync::Arc;
 use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::setup::schema::{UpdateCodeRequest, UpdateSchoolDetailsRequest, VerifyQuery};
 use crate::modules::setup::service::SetupService;
-use crate::utils::response::success_response;
 use crate::utils::auth_guards::{require_admin, require_teacher_or_admin};
+use crate::utils::response::success_response;
 
 /// PUBLIC — students verify their school code.
 pub async fn verify_code(
@@ -24,9 +24,7 @@ pub async fn verify_code(
 }
 
 /// PUBLIC — returns school_name (for mobile to check if setup is complete).
-pub async fn get_school_info(
-    State(setup_service): State<Arc<SetupService>>,
-) -> impl IntoResponse {
+pub async fn get_school_info(State(setup_service): State<Arc<SetupService>>) -> impl IntoResponse {
     match setup_service.get_school_info().await {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),

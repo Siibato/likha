@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/errors/error_messages.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/provider_logger.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
@@ -71,10 +70,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   final GetStudentResults _getStudentResults;
   final GetStudentSubmission _getStudentSubmission;
 
-  String? _currentAssessmentId;
-  String? _currentStudentId;
-  late StreamSubscription<String> _studentSubmissionSub;
-
   StudentAssessmentNotifier(
     this._getAssessments,
     this._getAssessmentDetail,
@@ -83,13 +78,7 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
     this._submitAssessment,
     this._getStudentResults,
     this._getStudentSubmission,
-  ) : super(StudentAssessmentState()) {
-    _studentSubmissionSub = sl<DataEventBus>().onStudentSubmissionsChanged.listen((assessmentId) {
-      if (_currentAssessmentId != null && _currentAssessmentId == assessmentId && _currentStudentId != null) {
-        _refreshStudentSubmission(assessmentId, _currentStudentId!);
-      }
-    });
-  }
+  ) : super(StudentAssessmentState());
 
   Future<void> loadAssessments(String classId, {bool publishedOnly = false, bool skipBackgroundRefresh = false}) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -263,8 +252,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
   }
 
   Future<void> loadScorePreview(String assessmentId, String studentId) async {
-    _currentAssessmentId = assessmentId;
-    _currentStudentId = studentId;
     ProviderLogger.instance.log('loadScorePreview() START - assessmentId: $assessmentId, studentId: $studentId');
     state = state.copyWith(isLoading: true, error: null);
     ProviderLogger.instance.log('loadScorePreview() - calling _getStudentSubmission...');
@@ -296,27 +283,6 @@ class StudentAssessmentNotifier extends StateNotifier<StudentAssessmentState> {
       },
     );
     ProviderLogger.instance.log('loadScorePreview() END - currentStudentSubmission=${state.currentStudentSubmission?.id}');
-  }
-
-  Future<void> _refreshStudentSubmission(String assessmentId, String studentId) async {
-    final result = await _getStudentSubmission(
-      GetStudentSubmissionParams(
-        assessmentId: assessmentId,
-        studentId: studentId,
-      ),
-    );
-    result.fold(
-      (failure) {}, // silent: background refresh should not show errors
-      (submission) {
-        state = state.copyWith(currentStudentSubmission: submission);
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _studentSubmissionSub.cancel();
-    super.dispose();
   }
 
   void clearMessages() {

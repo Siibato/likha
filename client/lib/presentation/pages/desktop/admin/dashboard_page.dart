@@ -5,7 +5,7 @@ import 'package:likha/presentation/pages/desktop/admin/account/create_account_pa
 import 'package:likha/presentation/widgets/desktop/admin/dashboard/admin_stats_row.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/cards/navigation_card.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   final ValueChanged<int>? onNavigate;
@@ -23,13 +23,13 @@ class _AdminDashboardPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadAccounts();
+      ref.read(accountManagementProvider.notifier).loadAccounts();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
+    final accountMgmtState = ref.watch(accountManagementProvider);
 
     return DesktopPageScaffold(
       title: 'Dashboard',
@@ -38,7 +38,7 @@ class _AdminDashboardPageState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Stats row
-          AdminStatsRow(accounts: adminState.accounts),
+          AdminStatsRow(accounts: accountMgmtState.accounts),
           const SizedBox(height: 32),
 
           // Quick actions

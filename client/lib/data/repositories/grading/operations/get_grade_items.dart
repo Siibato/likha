@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/repo_logger.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -13,8 +12,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<List<GradeItem>> getGradeItems(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
   required int termNumber,
   String? component,
@@ -55,13 +53,11 @@ ResultFuture<List<GradeItem>> getGradeItems(
               current = currentModels.map(helpers.itemToEntity).toList();
             } on CacheException {
               await localDataSource.saveItems(freshModels);
-              dataEventBus.notifyGradeItemsChanged(classId);
               return;
             }
             final fresh = freshModels.map(helpers.itemToEntity).toList();
             if (helpers.gradeItemsHaveChanged(current, fresh)) {
               await localDataSource.saveItems(freshModels);
-              dataEventBus.notifyGradeItemsChanged(classId);
             }
           },
         );

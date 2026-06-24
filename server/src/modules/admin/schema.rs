@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use crate::modules::auth::schema::UserResponse;
 use crate::modules::student_records::schema::LearnerDetailsResponse;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 // ===== REQUEST SCHEMAS =====
 
@@ -18,7 +18,6 @@ pub struct CreateAccountRequest {
 #[derive(Debug, Deserialize)]
 pub struct LearnerDetailsPayload {
     pub lrn: Option<String>,
-    pub age: Option<i32>,
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,

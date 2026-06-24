@@ -1,0 +1,14 @@
+# Likha Classroom Server — School Configuration
+# Fill in the values below, then save this file.
+# The launcher will copy it to your SD card after flashing.
+
+# REQUIRED: All Pis with the same ID will auto-mesh together
+MESH_GROUP_ID=
+
+# Optional: A short school identifier (used in the admin UI)
+SCHOOL_CODE=
+
+# Optional: Only needed if your Pi will join existing school WiFi instead of using Ethernet router mode
+WIFI_SSID=
+WIFI_PASSWORD=
+WIFI_COUNTRY=PH

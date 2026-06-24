@@ -2,10 +2,7 @@ use axum::http::StatusCode;
 use tower::ServiceExt;
 
 use crate::tests::common::{
-    jwt_helper::wrong_secret_token,
-    seeds::seed_teacher,
-    test_app::build_test_app,
-    test_db::test_db,
+    jwt_helper::wrong_secret_token, seeds::seed_teacher, test_app::build_test_app, test_db::test_db,
 };
 use crate::tests::http::authed_req;
 

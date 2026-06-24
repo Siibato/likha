@@ -5,7 +5,6 @@ import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
@@ -62,7 +61,6 @@ void main() {
 
   setUpAll(() async {
     dotenv.testLoad(fileInput: '');
-    GetIt.instance.registerSingleton<DataEventBus>(DataEventBus());
   });
 
   tearDownAll(() async {

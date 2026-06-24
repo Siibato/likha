@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::SubmissionSummaryResponse;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_student_submission(
@@ -10,21 +10,32 @@ impl crate::modules::assessment::service::AssessmentService {
         user_id: Uuid,
         _role: &str,
     ) -> AppResult<Option<SubmissionSummaryResponse>> {
-        let assessment = self.assessment_repo.find_by_id(assessment_id).await?
+        let assessment = self
+            .assessment_repo
+            .find_by_id(assessment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let is_teacher = self.class_repo.is_teacher_of_class(user_id, assessment.class_id).await?;
+        let is_teacher = self
+            .class_repo
+            .is_teacher_of_class(user_id, assessment.class_id)
+            .await?;
         let is_own = user_id == student_id;
 
         if !is_teacher && !is_own {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let submission = self.assessment_repo
-            .find_by_student_and_assessment(student_id, assessment_id).await?;
+        let submission = self
+            .assessment_repo
+            .find_by_student_and_assessment(student_id, assessment_id)
+            .await?;
 
         let result = if let Some(sub) = submission {
-            let student = self.user_repo.find_by_id(sub.user_id).await?
+            let student = self
+                .user_repo
+                .find_by_id(sub.user_id)
+                .await?
                 .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
             let earned_score = sub.total_points;
             Some(SubmissionSummaryResponse {

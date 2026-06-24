@@ -1,13 +1,13 @@
-use uuid::Uuid;
+use crate::modules::assessment::helpers::graders::{enumeration, identification, multiple_choice};
 use crate::utils::AppResult;
-use crate::modules::assessment::helpers::graders::{multiple_choice, identification, enumeration};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
-    pub async fn grade_submission(
-        &self,
-        submission_id: Uuid,
-    ) -> AppResult<(f64, f64)> {
-        let answers = self.assessment_repo.find_answers_by_submission_id(submission_id).await?;
+    pub async fn grade_submission(&self, submission_id: Uuid) -> AppResult<(f64, f64)> {
+        let answers = self
+            .assessment_repo
+            .find_answers_by_submission_id(submission_id)
+            .await?;
         let mut auto_score = 0.0_f64;
 
         for answer in &answers {
@@ -16,7 +16,8 @@ impl crate::modules::assessment::service::AssessmentService {
                 continue;
             }
 
-            let question = self.assessment_repo
+            let question = self
+                .assessment_repo
                 .find_question_by_id(answer.question_id)
                 .await?;
 
@@ -39,7 +40,10 @@ impl crate::modules::assessment::service::AssessmentService {
                     (is_correct, points_awarded)
                 }
                 "identification" => {
-                    let items = self.assessment_repo.find_enumeration_answers(answer.id).await?;
+                    let items = self
+                        .assessment_repo
+                        .find_enumeration_answers(answer.id)
+                        .await?;
                     let answer_text = items.into_iter().next();
                     identification::grade_identification(
                         &answer_text,

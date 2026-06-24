@@ -22,19 +22,36 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
     let assignments = fixtures::realistic_assignments(&ctx);
     let materials = fixtures::realistic_materials(&ctx);
 
-    let teachers: Vec<_> = users.iter().filter(|u| u.role == "teacher").cloned().collect();
-    let students: Vec<_> = users.iter().filter(|u| u.role == "student").cloned().collect();
+    let teachers: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "teacher")
+        .cloned()
+        .collect();
+    let students: Vec<_> = users
+        .iter()
+        .filter(|u| u.role == "student")
+        .cloned()
+        .collect();
 
     let assessment_submissions = generators::submissions::generate_assessment_submissions(
-        &ctx, &assessments, &students, &enrollments,
+        &ctx,
+        &assessments,
+        &students,
+        &enrollments,
     );
     let assignment_submissions = generators::submissions::generate_assignment_submissions(
-        &ctx, &assignments, &students, &teachers, &enrollments,
+        &ctx,
+        &assignments,
+        &students,
+        &teachers,
+        &enrollments,
     );
 
     let grade_records = generate_grade_records(&classes);
 
-    disable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    disable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     inserters::school::insert_school_details(db, &school).await?;
     inserters::users::insert_users(db, &users).await?;
@@ -62,13 +79,23 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
     let grade_items = generate_grade_items(&assessments, &assignments, &ctx);
     inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
 
-    let grade_scores = generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
+    let grade_scores =
+        generate_grade_scores(&students, &assessments, &assignments, &enrollments, &ctx);
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
 
-    let term_grades = generate_term_grades(&students, &grade_records, &grade_scores, &grade_items, &enrollments, &ctx);
+    let term_grades = generate_term_grades(
+        &students,
+        &grade_records,
+        &grade_scores,
+        &grade_items,
+        &enrollments,
+        &ctx,
+    );
     inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
-    enable_foreign_keys(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    enable_foreign_keys(db)
+        .await
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     println!(
         "Realistic seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
@@ -81,17 +108,31 @@ pub async fn seed_realistic_world(db: &DatabaseConnection) -> Result<(), AppErro
     Ok(())
 }
 
-fn generate_grade_records(classes: &[crate::seed::specs::ClassSpec]) -> Vec<crate::seed::specs::GradeRecordSpec> {
+fn generate_grade_records(
+    classes: &[crate::seed::specs::ClassSpec],
+) -> Vec<crate::seed::specs::GradeRecordSpec> {
     use crate::modules::grading::helpers::deped_weights::get_preset;
     let mut records = Vec::new();
     for class in classes {
-        if class.deleted_at.is_some() { continue; }
-        let subject_group = if class.title.contains("English") { "language" }
-            else if class.title.contains("Science") { "math_sci" }
-            else if class.title.contains("Advisory") { "mapeh_tle" }
-            else { "math_sci" };
-        let preset = get_preset(subject_group)
-            .unwrap_or(crate::modules::grading::helpers::deped_weights::WeightPreset { ww: 40.0, pt: 40.0, qa: 20.0 });
+        if class.deleted_at.is_some() {
+            continue;
+        }
+        let subject_group = if class.title.contains("English") {
+            "language"
+        } else if class.title.contains("Science") {
+            "math_sci"
+        } else if class.title.contains("Advisory") {
+            "mapeh_tle"
+        } else {
+            "math_sci"
+        };
+        let preset = get_preset(subject_group).unwrap_or(
+            crate::modules::grading::helpers::deped_weights::WeightPreset {
+                ww: 40.0,
+                pt: 40.0,
+                qa: 20.0,
+            },
+        );
         for term in 1..=4 {
             records.push(crate::seed::specs::GradeRecordSpec {
                 class_id: class.id,
@@ -115,22 +156,38 @@ fn generate_grade_items(
     let now = ctx.now();
 
     for a in assessments {
-        if !a.is_published || a.deleted_at.is_some() || a.open_at > now { continue; }
+        if !a.is_published || a.deleted_at.is_some() || a.open_at > now {
+            continue;
+        }
         let id = seed_id("grade_items", &format!("assess_{}_{}", a.id, a.term_number));
         items.push(crate::seed::specs::GradeItemSpec {
-            id, class_id: a.class_id, title: a.title.clone(), component: a.component.clone(),
-            term_number: a.term_number, total_points: a.total_points as f64,
-            source_type: "assessment".into(), source_id: Some(a.id.to_string()), order_index: 0,
+            id,
+            class_id: a.class_id,
+            title: a.title.clone(),
+            component: a.component.clone(),
+            term_number: a.term_number,
+            total_points: a.total_points as f64,
+            source_type: "assessment".into(),
+            source_id: Some(a.id.to_string()),
+            order_index: 0,
         });
     }
 
     for a in assignments {
-        if !a.is_published || a.deleted_at.is_some() || a.due_at > now { continue; }
+        if !a.is_published || a.deleted_at.is_some() || a.due_at > now {
+            continue;
+        }
         let id = seed_id("grade_items", &format!("assign_{}_{}", a.id, a.term_number));
         items.push(crate::seed::specs::GradeItemSpec {
-            id, class_id: a.class_id, title: a.title.clone(), component: a.component.clone(),
-            term_number: a.term_number, total_points: a.total_points as f64,
-            source_type: "assignment".into(), source_id: Some(a.id.to_string()), order_index: 0,
+            id,
+            class_id: a.class_id,
+            title: a.title.clone(),
+            component: a.component.clone(),
+            term_number: a.term_number,
+            total_points: a.total_points as f64,
+            source_type: "assignment".into(),
+            source_id: Some(a.id.to_string()),
+            order_index: 0,
         });
     }
 
@@ -149,7 +206,8 @@ fn generate_grade_scores(
     let mut scores = Vec::new();
     let now = ctx.now();
 
-    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> =
+        std::collections::HashMap::new();
     for (idx, student) in students.iter().enumerate() {
         for e in enrollments {
             if e.user_id == student.id {
@@ -160,18 +218,29 @@ fn generate_grade_scores(
 
     let mut item_counter = 0;
     for a in assessments {
-        if !a.is_published || a.deleted_at.is_some() || a.open_at > now { continue; }
+        if !a.is_published || a.deleted_at.is_some() || a.open_at > now {
+            continue;
+        }
         let enrolled = class_students.get(&a.class_id).cloned().unwrap_or_default();
         for &student_idx in &enrolled {
             let student = &students[student_idx];
             item_counter += 1;
             let has_override = (student_idx + item_counter) % 20 == 0;
-            let base_score = (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0 * a.total_points as f64;
-            let override_score = if has_override { Some(base_score * 1.1) } else { None };
-            let grade_item_id = seed_id("grade_items", &format!("assess_{}_{}", a.id, a.term_number));
+            let base_score =
+                (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0 * a.total_points as f64;
+            let override_score = if has_override {
+                Some(base_score * 1.1)
+            } else {
+                None
+            };
+            let grade_item_id =
+                seed_id("grade_items", &format!("assess_{}_{}", a.id, a.term_number));
             scores.push(crate::seed::specs::GradeScoreSpec {
-                grade_item_id, student_id: student.id, score: Some(base_score),
-                is_auto_populated: true, override_score,
+                grade_item_id,
+                student_id: student.id,
+                score: Some(base_score),
+                is_auto_populated: true,
+                override_score,
                 component: a.component.clone(),
                 term_number: a.term_number,
             });
@@ -179,18 +248,29 @@ fn generate_grade_scores(
     }
 
     for a in assignments {
-        if !a.is_published || a.deleted_at.is_some() || a.due_at > now { continue; }
+        if !a.is_published || a.deleted_at.is_some() || a.due_at > now {
+            continue;
+        }
         let enrolled = class_students.get(&a.class_id).cloned().unwrap_or_default();
         for &student_idx in &enrolled {
             let student = &students[student_idx];
             item_counter += 1;
             let has_override = (student_idx + item_counter) % 20 == 0;
-            let base_score = (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0 * a.total_points as f64;
-            let override_score = if has_override { Some(base_score * 1.1) } else { None };
-            let grade_item_id = seed_id("grade_items", &format!("assign_{}_{}", a.id, a.term_number));
+            let base_score =
+                (60.0 + ((student_idx + item_counter) % 40) as f64) / 100.0 * a.total_points as f64;
+            let override_score = if has_override {
+                Some(base_score * 1.1)
+            } else {
+                None
+            };
+            let grade_item_id =
+                seed_id("grade_items", &format!("assign_{}_{}", a.id, a.term_number));
             scores.push(crate::seed::specs::GradeScoreSpec {
-                grade_item_id, student_id: student.id, score: Some(base_score),
-                is_auto_populated: true, override_score,
+                grade_item_id,
+                student_id: student.id,
+                score: Some(base_score),
+                is_auto_populated: true,
+                override_score,
                 component: a.component.clone(),
                 term_number: a.term_number,
             });
@@ -212,9 +292,12 @@ fn generate_term_grades(
     use uuid::Uuid;
     let mut term_grades = Vec::new();
 
-    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> = std::collections::HashMap::new();
+    let mut class_students: std::collections::HashMap<Uuid, Vec<usize>> =
+        std::collections::HashMap::new();
     for (idx, student) in students.iter().enumerate() {
-        if student.role != "student" { continue; }
+        if student.role != "student" {
+            continue;
+        }
         for e in enrollments {
             if e.user_id == student.id {
                 class_students.entry(e.class_id).or_default().push(idx);
@@ -222,16 +305,21 @@ fn generate_term_grades(
         }
     }
 
-    let item_map: std::collections::HashMap<Uuid, (String, f64)> = grade_items.iter()
+    let item_map: std::collections::HashMap<Uuid, (String, f64)> = grade_items
+        .iter()
         .map(|i| (i.id, (i.component.clone(), i.total_points)))
         .collect();
 
     for record in grade_records {
-        let enrolled = class_students.get(&record.class_id).cloned().unwrap_or_default();
+        let enrolled = class_students
+            .get(&record.class_id)
+            .cloned()
+            .unwrap_or_default();
         for &student_idx in &enrolled {
             let student_id = students[student_idx].id;
 
-            let student_scores: Vec<_> = grade_scores.iter()
+            let student_scores: Vec<_> = grade_scores
+                .iter()
                 .filter(|s| s.student_id == student_id && s.term_number == record.term_number)
                 .collect();
 
@@ -246,17 +334,38 @@ fn generate_term_grades(
                 let effective = s.override_score.or(s.score).unwrap_or(0.0);
                 if let Some((component, total_points)) = item_map.get(&s.grade_item_id) {
                     match component.as_str() {
-                        "written_work" => { ww_sum += effective; ww_total += *total_points; }
-                        "performance_task" => { pt_sum += effective; pt_total += *total_points; }
-                        "term_assessment" => { qa_sum += effective; qa_total += *total_points; }
+                        "written_work" => {
+                            ww_sum += effective;
+                            ww_total += *total_points;
+                        }
+                        "performance_task" => {
+                            pt_sum += effective;
+                            pt_total += *total_points;
+                        }
+                        "term_assessment" => {
+                            qa_sum += effective;
+                            qa_total += *total_points;
+                        }
                         _ => {}
                     }
                 }
             }
 
-            let ww_pct = if ww_total > 0.0 { (ww_sum / ww_total) * 100.0 } else { 0.0 };
-            let pt_pct = if pt_total > 0.0 { (pt_sum / pt_total) * 100.0 } else { 0.0 };
-            let qa_pct = if qa_total > 0.0 { (qa_sum / qa_total) * 100.0 } else { 0.0 };
+            let ww_pct = if ww_total > 0.0 {
+                (ww_sum / ww_total) * 100.0
+            } else {
+                0.0
+            };
+            let pt_pct = if pt_total > 0.0 {
+                (pt_sum / pt_total) * 100.0
+            } else {
+                0.0
+            };
+            let qa_pct = if qa_total > 0.0 {
+                (qa_sum / qa_total) * 100.0
+            } else {
+                0.0
+            };
 
             let initial_grade = ww_pct * (record.ww_weight / 100.0)
                 + pt_pct * (record.pt_weight / 100.0)
@@ -265,9 +374,11 @@ fn generate_term_grades(
             let transmuted = transmute_grade(initial_grade);
 
             term_grades.push(crate::seed::specs::TermGradeSpec {
-                class_id: record.class_id, student_id,
+                class_id: record.class_id,
+                student_id,
                 term_number: record.term_number,
-                initial_grade: Some(initial_grade), transmuted_grade: Some(transmuted),
+                initial_grade: Some(initial_grade),
+                transmuted_grade: Some(transmuted),
                 is_locked: false,
             });
         }

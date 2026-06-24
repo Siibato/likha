@@ -13,20 +13,32 @@ pub fn compute_assessment_statistics(
     let mut submissions_by_assessment: HashMap<String, Vec<&Value>> = HashMap::new();
     for sub in enriched_submissions {
         if let Some(ass_id) = sub.get("assessment_id").and_then(|v| v.as_str()) {
-            submissions_by_assessment.entry(ass_id.to_string()).or_insert_with(Vec::new).push(sub);
+            submissions_by_assessment
+                .entry(ass_id.to_string())
+                .or_insert_with(Vec::new)
+                .push(sub);
         }
     }
 
     for assessment in assessments {
         let assessment_id = assessment.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let title = assessment.get("title").and_then(|v| v.as_str()).unwrap_or("");
-        let total_points = assessment.get("total_points").and_then(|v| v.as_i64()).unwrap_or(0) as f64;
+        let title = assessment
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let total_points = assessment
+            .get("total_points")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0) as f64;
 
         let empty_vec = vec![];
-        let submissions = submissions_by_assessment.get(assessment_id).unwrap_or(&empty_vec);
+        let submissions = submissions_by_assessment
+            .get(assessment_id)
+            .unwrap_or(&empty_vec);
 
         // Filter submitted submissions
-        let submitted: Vec<&Value> = submissions.iter()
+        let submitted: Vec<&Value> = submissions
+            .iter()
             .filter(|s| s.get("is_submitted").and_then(|v| v.as_u64()).unwrap_or(0) == 1)
             .copied()
             .collect();
@@ -36,7 +48,8 @@ pub fn compute_assessment_statistics(
         }
 
         // Extract scores
-        let mut scores: Vec<f64> = submitted.iter()
+        let mut scores: Vec<f64> = submitted
+            .iter()
             .filter_map(|s| {
                 s.get("final_score")
                     .and_then(|v| v.as_f64())
@@ -86,32 +99,49 @@ pub fn compute_assessment_statistics(
 
 /// Formats submission results for student view.
 /// Student only — not called for teachers/admins.
-pub fn format_student_results(
-    enriched_submissions: &[Value],
-    assessments: &[Value],
-) -> Vec<Value> {
+pub fn format_student_results(enriched_submissions: &[Value], assessments: &[Value]) -> Vec<Value> {
     let mut results = Vec::new();
 
     // Build assessment map: assessment_id -> total_points
     let mut assessment_map: HashMap<String, i64> = HashMap::new();
     for assessment in assessments {
         if let Some(ass_id) = assessment.get("id").and_then(|v| v.as_str()) {
-            let total_points = assessment.get("total_points").and_then(|v| v.as_i64()).unwrap_or(0);
+            let total_points = assessment
+                .get("total_points")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             assessment_map.insert(ass_id.to_string(), total_points);
         }
     }
 
     for submission in enriched_submissions {
-        if submission.get("is_submitted").and_then(|v| v.as_u64()).unwrap_or(0) != 1 {
+        if submission
+            .get("is_submitted")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0)
+            != 1
+        {
             continue; // Skip unsubmitted
         }
 
         let submission_id = submission.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let assessment_id = submission.get("assessment_id").and_then(|v| v.as_str()).unwrap_or("");
+        let assessment_id = submission
+            .get("assessment_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let total_points = assessment_map.get(assessment_id).copied().unwrap_or(0);
-        let auto_score = submission.get("auto_score").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let _final_score = submission.get("final_score").and_then(|v| v.as_f64()).unwrap_or(auto_score);
-        let submitted_at = submission.get("submitted_at").and_then(|v| v.as_str()).unwrap_or("");
+        let auto_score = submission
+            .get("auto_score")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        let _final_score = submission
+            .get("final_score")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(auto_score);
+        let submitted_at = submission
+            .get("submitted_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
 
         // Transform answers: convert selected_choices from [object] to [string]
         let mut answers_json = Vec::new();
@@ -121,7 +151,8 @@ pub fn format_student_results(
 
                 // Extract choice_text from selected_choices objects
                 if let Some(choices) = ans_obj.get("selected_choices").and_then(|v| v.as_array()) {
-                    let choice_texts: Vec<Value> = choices.iter()
+                    let choice_texts: Vec<Value> = choices
+                        .iter()
                         .filter_map(|c| c.get("choice_text").cloned())
                         .collect();
                     ans_obj["selected_choices"] = json!(choice_texts);

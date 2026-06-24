@@ -7,7 +7,6 @@ import 'package:likha/core/sync/sync_result.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/remote/classes/class_remote_datasource.dart';
 import 'package:likha/data/models/classes/class_model.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 /// Sync handler for all [SyncEntityType.classEntity] operations.
 ///
@@ -234,22 +233,48 @@ class ClassSyncHandler {
     }
 
     // Upsert the student returned by the server into the users table.
+    // Use UPDATE-or-INSERT instead of REPLACE to avoid triggering
+    // ON DELETE CASCADE on class_participants.
     final student = participant.student;
-    await db.insert(
+    final existingUser = await db.query(
       DbTables.users,
-      {
-        CommonCols.id: student.id,
-        UsersCols.username: student.username,
-        UsersCols.firstName: student.firstName,
-        UsersCols.lastName: student.lastName,
-        UsersCols.role: student.role,
-        UsersCols.accountStatus: student.accountStatus,
-        CommonCols.createdAt: student.createdAt.toIso8601String(),
-        CommonCols.updatedAt: DateTime.now().toIso8601String(),
-        CommonCols.syncStatus: SyncStatus.synced.dbValue,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      columns: [CommonCols.id],
+      where: '${CommonCols.id} = ?',
+      whereArgs: [student.id],
+      limit: 1,
     );
+
+    if (existingUser.isNotEmpty) {
+      await db.update(
+        DbTables.users,
+        {
+          UsersCols.username: student.username,
+          UsersCols.firstName: student.firstName,
+          UsersCols.lastName: student.lastName,
+          UsersCols.role: student.role,
+          UsersCols.accountStatus: student.accountStatus,
+          CommonCols.updatedAt: DateTime.now().toIso8601String(),
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
+        },
+        where: '${CommonCols.id} = ?',
+        whereArgs: [student.id],
+      );
+    } else {
+      await db.insert(
+        DbTables.users,
+        {
+          CommonCols.id: student.id,
+          UsersCols.username: student.username,
+          UsersCols.firstName: student.firstName,
+          UsersCols.lastName: student.lastName,
+          UsersCols.role: student.role,
+          UsersCols.accountStatus: student.accountStatus,
+          CommonCols.createdAt: student.createdAt.toIso8601String(),
+          CommonCols.updatedAt: DateTime.now().toIso8601String(),
+          CommonCols.syncStatus: SyncStatus.synced.dbValue,
+        },
+      );
+    }
 
     return const SyncResult.success();
   }

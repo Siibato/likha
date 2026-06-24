@@ -6,7 +6,7 @@ import 'package:likha/presentation/widgets/mobile/admin/account/info_card.dart';
 import 'package:likha/presentation/widgets/mobile/admin/account/action_buttons.dart';
 import 'package:likha/presentation/widgets/mobile/admin/account/activity_log_list.dart';
 import 'package:likha/presentation/widgets/mobile/admin/account/edit_dialog.dart';
-import 'package:likha/presentation/providers/admin_provider.dart';
+import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/widgets/shared/cards/learner_details_card.dart';
 import 'package:likha/presentation/widgets/shared/cards/teacher_details_card.dart';
@@ -28,28 +28,40 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
-      ref.read(adminProvider.notifier).loadAccountDetails(widget.user.id);
+      ref.read(activityLogProvider.notifier).loadActivityLogs(widget.user.id);
+      ref.read(accountDetailProvider.notifier).loadAccountDetails(widget.user.id);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final adminState = ref.watch(adminProvider);
+    final accountMgmtState = ref.watch(accountManagementProvider);
+    final accountDetailState = ref.watch(accountDetailProvider);
+    final activityLogState = ref.watch(activityLogProvider);
     final authState = ref.watch(authProvider);
-    final User user = adminState.accounts
+    final User user = accountMgmtState.accounts
         .cast<User>()
         .firstWhere((a) => a.id == widget.user.id, orElse: () => widget.user);
     final currentUserId = authState.user?.id;
 
-    ref.listen<AdminState>(adminProvider, (prev, next) {
+    ref.listen<AccountManagementState>(accountManagementProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ref.read(adminProvider.notifier).clearMessages();
-        ref.read(adminProvider.notifier).loadActivityLogs(widget.user.id);
+        ref.read(accountManagementProvider.notifier).clearMessages();
+        ref.read(activityLogProvider.notifier).loadActivityLogs(widget.user.id);
       }
       if (next.error != null && prev?.error != next.error) {
-        ref.read(adminProvider.notifier).clearMessages();
+        ref.read(accountManagementProvider.notifier).clearMessages();
+      }
+    });
+
+    ref.listen<AccountDetailState>(accountDetailProvider, (prev, next) {
+      if (next.successMessage != null &&
+          prev?.successMessage != next.successMessage) {
+        ref.read(accountDetailProvider.notifier).clearMessages();
+      }
+      if (next.error != null && prev?.error != next.error) {
+        ref.read(accountDetailProvider.notifier).clearMessages();
       }
     });
 
@@ -82,7 +94,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
           children: [
             UserInfoCard(
               user: user,
-              isLoading: adminState.isLoading,
+              isLoading: accountMgmtState.isLoading,
               onEditFullName: () => _showEditDialog(
                 context,
                 title: 'Edit Full Name',
@@ -91,7 +103,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
                   final parts = value.trim().split(' ');
                   final firstName = parts.isNotEmpty ? parts.first : '';
                   final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-                  ref.read(adminProvider.notifier).updateAccount(
+                  ref.read(accountManagementProvider.notifier).updateAccount(
                         userId: user.id,
                         firstName: firstName,
                         lastName: lastName,
@@ -113,10 +125,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             const SizedBox(height: 12),
             ActionButtons(
               user: user,
-              isLoading: adminState.isLoading,
+              isLoading: accountMgmtState.isLoading,
               onLock: () => _showLockDialog(context, user),
               onUnlock: () => ref
-                  .read(adminProvider.notifier)
+                  .read(accountManagementProvider.notifier)
                   .lockAccount(user.id, false),
               onResetPassword: () => _confirmReset(context, user),
             ),
@@ -133,18 +145,18 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             const SizedBox(height: 12),
             if (user.role == 'student')
               LearnerDetailsCard(
-                details: adminState.learnerDetails,
-                isLoading: adminState.isLoading,
-                onSave: (data) => ref.read(adminProvider.notifier).updateAccountDetails(
+                details: accountDetailState.learnerDetails,
+                isLoading: accountDetailState.isLoading,
+                onSave: (data) => ref.read(accountDetailProvider.notifier).updateAccountDetails(
                   userId: user.id,
                   learnerDetails: data,
                 ),
               )
             else if (user.role == 'teacher')
               TeacherDetailsCard(
-                details: adminState.teacherDetails,
-                isLoading: adminState.isLoading,
-                onSave: (data) => ref.read(adminProvider.notifier).updateAccountDetails(
+                details: accountDetailState.teacherDetails,
+                isLoading: accountDetailState.isLoading,
+                onSave: (data) => ref.read(accountDetailProvider.notifier).updateAccountDetails(
                   userId: user.id,
                   teacherDetails: data,
                 ),
@@ -166,8 +178,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
             ),
             const SizedBox(height: 12),
             ActivityLogList(
-              logs: adminState.activityLogs,
-              isLoading: adminState.isLoading,
+              logs: activityLogState.activityLogs,
+              isLoading: activityLogState.isLoading,
             ),
           ],
         ),
@@ -197,7 +209,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
       title: 'Reset Password',
       body: "This will clear ${user.fullName}'s password and set the account back to pending activation. Continue?",
       confirmLabel: 'Reset',
-      onConfirm: () => ref.read(adminProvider.notifier).resetAccount(user.id),
+      onConfirm: () => ref.read(accountManagementProvider.notifier).resetAccount(user.id),
     );
   }
 
@@ -237,7 +249,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
               isPrimary: true,
               onPressed: selectedRole == user.role ? () {} : () {
                 Navigator.pop(ctx);
-                ref.read(adminProvider.notifier).updateAccount(userId: user.id, role: selectedRole);
+                ref.read(accountManagementProvider.notifier).updateAccount(userId: user.id, role: selectedRole);
               },
             ),
           ],
@@ -255,7 +267,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
       controller: controller,
       labelText: 'Reason (optional)',
       confirmLabel: 'Lock',
-      onConfirm: () => ref.read(adminProvider.notifier).lockAccount(
+      onConfirm: () => ref.read(accountManagementProvider.notifier).lockAccount(
         user.id, true, reason: controller.text.isEmpty ? null : controller.text,
       ),
     );

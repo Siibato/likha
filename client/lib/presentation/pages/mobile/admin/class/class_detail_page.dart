@@ -32,8 +32,8 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
     _searchController = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
-      ref.read(classProvider.notifier).searchStudents(query: null);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(studentSearchProvider.notifier).searchStudents(query: null);
     });
 
     // Add search listener with debounce
@@ -49,9 +49,9 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
       });
 
       if (query.isNotEmpty) {
-        ref.read(classProvider.notifier).searchStudents(query: query);
+        ref.read(studentSearchProvider.notifier).searchStudents(query: query);
       } else {
-        ref.read(classProvider.notifier).clearSearch();
+        ref.read(studentSearchProvider.notifier).clearSearch();
       }
     });
   }
@@ -81,7 +81,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
           isDestructive: true,
           onPressed: () {
             Navigator.pop(ctx);
-            ref.read(classProvider.notifier).deleteClass(widget.classId);
+            ref.read(classListProvider.notifier).deleteClass(widget.classId);
             Navigator.pop(context);
           },
         ),
@@ -97,23 +97,23 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final detail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final classListState = ref.watch(classListProvider);
+    final enrollmentState = ref.watch(enrollmentProvider);
+    final studentSearchState = ref.watch(studentSearchProvider);
+    final detail = classDetailState.currentClassDetail;
 
-    ref.listen<ClassState>(classProvider, (prev, next) {
-      // Success snackbar
+    ref.listen<EnrollmentState>(enrollmentProvider, (prev, next) {
       if (next.successMessage != null && prev?.successMessage != next.successMessage) {
-        ref.read(classProvider.notifier).clearMessages();
+        ref.read(enrollmentProvider.notifier).clearMessages();
       }
-
-      // Error snackbar
       if (next.error != null && prev?.error != next.error) {
-        ref.read(classProvider.notifier).clearMessages();
+        ref.read(enrollmentProvider.notifier).clearMessages();
       }
     });
 
-    // Get class and teacher name from classState
-    final classInfo = classState.classes
+    // Get class and teacher name from classListState
+    final classInfo = classListState.classes
         .cast<ClassEntity?>()
         .firstWhere(
           (c) => c?.id == widget.classId,
@@ -151,8 +151,8 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                   builder: (_) => AdminEditClassPage(classEntity: classInfo),
                 ),
               ).then((_) {
-                ref.read(classProvider.notifier).loadAllClasses();
-                ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+                ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true);
+                ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
               }),
             ),
             IconButton(
@@ -277,7 +277,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                                 onTap: () {
                                   _searchController.clear();
                                   _searchQuery = '';
-                                  ref.read(classProvider.notifier).clearSearch();
+                                  ref.read(studentSearchProvider.notifier).clearSearch();
                                 },
                                 child: const Icon(
                                   Icons.clear_rounded,
@@ -297,8 +297,8 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                     child: Text(
                       _searchQuery.isEmpty
-                          ? 'All Students (${classState.searchResults.length})'
-                          : 'Search Results (${classState.searchResults.length})',
+                          ? 'All Students (${studentSearchState.searchResults.length})'
+                          : 'Search Results (${studentSearchState.searchResults.length})',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -309,7 +309,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: () {
-                      if (classState.isLoading && classState.searchResults.isEmpty) {
+                      if (studentSearchState.isLoading && studentSearchState.searchResults.isEmpty) {
                         return Container(
                           padding: const EdgeInsets.symmetric(vertical: 32),
                           child: const Center(
@@ -321,7 +321,7 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                         );
                       }
 
-                      if (classState.searchResults.isEmpty) {
+                      if (studentSearchState.searchResults.isEmpty) {
                         return Container(
                           padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Center(
@@ -353,11 +353,11 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: classState.searchResults.length,
+                        itemCount: studentSearchState.searchResults.length,
                         itemBuilder: (context, index) {
-                          final student = classState.searchResults[index];
-                          final isParticipant = classState.participantIds.contains(student.id);
-                          final isLoading = classState.loadingStudentIds.contains(student.id);
+                          final student = studentSearchState.searchResults[index];
+                          final isParticipant = classDetailState.participantIds.contains(student.id);
+                          final isLoading = enrollmentState.loadingStudentIds.contains(student.id);
 
                           return StudentActionCard(
                             student: student,
@@ -366,14 +366,14 @@ class _AdminClassDetailPageState extends ConsumerState<AdminClassDetailPage> {
                             onAdd: isParticipant
                                 ? null
                                 : () {
-                                    ref.read(classProvider.notifier).addStudent(
+                                    ref.read(enrollmentProvider.notifier).addStudent(
                                           classId: widget.classId,
                                           studentId: student.id,
                                         );
                                   },
                             onRemove: isParticipant
                                 ? () {
-                                    ref.read(classProvider.notifier).removeStudent(
+                                    ref.read(enrollmentProvider.notifier).removeStudent(
                                           classId: widget.classId,
                                           studentId: student.id,
                                         );

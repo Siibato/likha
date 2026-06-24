@@ -1,8 +1,8 @@
 use chrono::Utc;
 use sea_orm::*;
 
-use ::entity::school_details;
 use crate::utils::{AppError, AppResult};
+use ::entity::school_details;
 
 pub async fn update_settings(
     db: &DatabaseConnection,

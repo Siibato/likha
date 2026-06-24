@@ -1,8 +1,8 @@
-use uuid::Uuid;
+use crate::modules::grading::helpers::compute_component::compute_component;
+use crate::modules::grading::helpers::deped_weights;
 use crate::modules::grading::schema::TermGradeResponse;
 use crate::utils::{AppError, AppResult};
-use crate::modules::grading::helpers::deped_weights;
-use crate::modules::grading::helpers::compute_component::compute_component;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn compute_student_term(
@@ -16,9 +16,7 @@ impl crate::modules::grading::service::GradeComputationService {
             .get_config(class_id, term_number)
             .await?
             .ok_or_else(|| {
-                AppError::BadRequest(
-                    "Grading config not set up for this class/term".to_string(),
-                )
+                AppError::BadRequest("Grading config not set up for this class/term".to_string())
             })?;
 
         let items = self.repo.get_items(class_id, term_number).await?;

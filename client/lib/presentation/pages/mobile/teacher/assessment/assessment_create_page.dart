@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/assessment_create_controller.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/layouts/mobile/mobile_page_scaffold.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/utils/snackbar_utils.dart';
@@ -31,7 +32,8 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     super.initState();
     _controller = AssessmentCreateController(
       classId: widget.classId,
-      notifier: ref.read(teacherAssessmentProvider.notifier),
+      listNotifier: ref.read(assessmentListProvider.notifier),
+      detailNotifier: ref.read(assessmentDetailProvider.notifier),
     );
     _controller.init();
     WidgetsBinding.instance.addPostFrameCallback((_) {

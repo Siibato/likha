@@ -1,8 +1,8 @@
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult};
+use crate::modules::assignment::repository::AssignmentRepository;
 use crate::modules::assignment::schema::*;
 use crate::modules::class::repository::ClassRepository;
-use crate::modules::assignment::repository::AssignmentRepository;
+use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn get_assignment_detail(
     assignment_repo: &AssignmentRepository,
@@ -11,22 +11,34 @@ pub async fn get_assignment_detail(
     user_id: Uuid,
     role: &str,
 ) -> AppResult<AssignmentResponse> {
-    let assignment = assignment_repo.find_by_id(assignment_id).await?
+    let assignment = assignment_repo
+        .find_by_id(assignment_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-    let _class = class_repo.find_by_id(assignment.class_id).await?
+    let _class = class_repo
+        .find_by_id(assignment.class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
     if role == "student" && !assignment.is_published {
         return Err(AppError::NotFound("Assignment not found".to_string()));
     }
 
-    if role == "teacher" && !class_repo.is_teacher_of_class(user_id, assignment.class_id).await? {
+    if role == "teacher"
+        && !class_repo
+            .is_teacher_of_class(user_id, assignment.class_id)
+            .await?
+    {
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let submission_count = assignment_repo.count_submissions_by_assignment(assignment_id).await?;
-    let graded_count = assignment_repo.count_graded_by_assignment(assignment_id).await?;
+    let submission_count = assignment_repo
+        .count_submissions_by_assignment(assignment_id)
+        .await?;
+    let graded_count = assignment_repo
+        .count_graded_by_assignment(assignment_id)
+        .await?;
 
     Ok(AssignmentResponse {
         id: assignment.id,

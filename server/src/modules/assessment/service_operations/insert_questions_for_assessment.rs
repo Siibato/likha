@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub(crate) async fn insert_questions_for_assessment(
@@ -20,15 +20,18 @@ impl crate::modules::assessment::service::AssessmentService {
                 )));
             }
 
-            let question = self.assessment_repo.add_question(
-                assessment_id,
-                q_request.question_type.clone(),
-                q_request.question_text.clone(),
-                q_request.points,
-                q_request.order_index,
-                q_request.is_multi_select.unwrap_or(false),
-                q_request.id,
-            ).await?;
+            let question = self
+                .assessment_repo
+                .add_question(
+                    assessment_id,
+                    q_request.question_type.clone(),
+                    q_request.question_text.clone(),
+                    q_request.points,
+                    q_request.order_index,
+                    q_request.is_multi_select.unwrap_or(false),
+                    q_request.id,
+                )
+                .await?;
 
             self.add_question_type_data(&question, &q_request).await?;
 
@@ -36,7 +39,9 @@ impl crate::modules::assessment::service::AssessmentService {
             responses.push(response);
         }
 
-        self.assessment_repo.update_total_points(assessment_id).await?;
+        self.assessment_repo
+            .update_total_points(assessment_id)
+            .await?;
 
         Ok(responses)
     }

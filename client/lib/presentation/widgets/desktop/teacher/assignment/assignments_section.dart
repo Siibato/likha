@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_create_page.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_data_table.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 
 /// Assignments section widget for TeacherClassDetailDesktop
 /// Displays a list of assignments with create and navigation functionality
@@ -19,7 +19,7 @@ class AssignmentsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(assignmentListProvider);
 
     return DesktopPageScaffold(
       title: 'Assignments',
@@ -33,7 +33,7 @@ class AssignmentsSection extends ConsumerWidget {
           ).then((result) {
             if (result == true) {
               ref
-                  .read(assignmentProvider.notifier)
+                  .read(assignmentListProvider.notifier)
                   .loadAssignments(classId);
             }
           }),
@@ -68,7 +68,7 @@ class AssignmentsSection extends ConsumerWidget {
                       AssignmentDetailPage(assignmentId: assignment.id),
                 ),
               ).then((_) => ref
-                  .read(assignmentProvider.notifier)
+                  .read(assignmentListProvider.notifier)
                   .loadAssignments(classId)),
             ),
     );

@@ -9,7 +9,8 @@ import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/domain/assignments/usecases/grade_submission.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
+import 'package:likha/presentation/providers/assignment/file_upload_provider.dart';
 
 class GradeSubmissionPage extends ConsumerStatefulWidget {
   final String submissionId;
@@ -41,7 +42,7 @@ class _GradeSubmissionPageState
     _formPrefilled = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(assignmentProvider.notifier)
+          .read(submissionProvider.notifier)
           .loadSubmissionDetail(widget.submissionId);
     });
   }
@@ -49,7 +50,7 @@ class _GradeSubmissionPageState
   void _prefillFormIfGraded() {
     if (_formPrefilled) return;
 
-    final submission = ref.read(assignmentProvider).currentSubmission;
+    final submission = ref.read(submissionProvider).currentSubmission;
     if (submission == null || submission.id != widget.submissionId) return;
 
     _scoreController.text = submission.score?.toString() ?? '';
@@ -95,7 +96,7 @@ class _GradeSubmissionPageState
 
     setState(() => _formError = null);
     final feedback = _feedbackController.text.trim();
-    await ref.read(assignmentProvider.notifier).gradeSubmission(
+    await ref.read(submissionProvider.notifier).gradeSubmission(
           GradeSubmissionParams(
             submissionId: widget.submissionId,
             score: score,
@@ -107,7 +108,7 @@ class _GradeSubmissionPageState
   Future<void> _handleFile(SubmissionFile file) async {
     if (kIsWeb) {
       final bytes = await ref
-          .read(assignmentProvider.notifier)
+          .read(fileUploadProvider.notifier)
           .downloadFile(file.id);
       if (bytes != null && mounted) {
         await openFileInBrowser(bytes, file.fileName);
@@ -115,10 +116,10 @@ class _GradeSubmissionPageState
     } else if (file.localPath != null && file.localPath!.isNotEmpty) {
       await openLocalFile(file.localPath!);
     } else {
-      await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+      await ref.read(fileUploadProvider.notifier).downloadFile(file.id);
       if (!mounted) return;
       final files =
-          ref.read(assignmentProvider).currentSubmission?.files ?? [];
+          ref.read(submissionProvider).currentSubmission?.files ?? [];
       for (final f in files) {
         if (f.id == file.id && f.localPath != null && f.localPath!.isNotEmpty) {
           await openLocalFile(f.localPath!);
@@ -130,7 +131,7 @@ class _GradeSubmissionPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(submissionProvider);
     final submission = state.currentSubmission?.id == widget.submissionId
         ? state.currentSubmission
         : null;
@@ -139,14 +140,14 @@ class _GradeSubmissionPageState
       _prefillFormIfGraded();
     }
 
-    ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
+    ref.listen<SubmissionState>(submissionProvider, (prev, next) {
       if (next.successMessage != null &&
           prev?.successMessage != next.successMessage) {
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(submissionProvider.notifier).clearMessages();
       }
       if (next.error != null && prev?.error != next.error) {
         setState(() => _formError = AppErrorMapper.toUserMessage(next.error));
-        ref.read(assignmentProvider.notifier).clearMessages();
+        ref.read(submissionProvider.notifier).clearMessages();
       }
     });
 

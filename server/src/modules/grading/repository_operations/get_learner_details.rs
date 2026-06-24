@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learner_details;
 use crate::utils::{AppError, AppResult};
+use ::entity::learner_details;
 
 pub async fn get_learner_details(
     db: &DatabaseConnection,

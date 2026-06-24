@@ -8,7 +8,6 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
@@ -665,7 +664,6 @@ void main() {
       final result = await gradeEssayAnswer(
         local,
         syncQueue,
-        DataEventBus(),
         answerId: 'ans-1',
         points: 4.0,
       );
@@ -700,7 +698,6 @@ void main() {
       final result = await overrideAnswer(
         local,
         syncQueue,
-        DataEventBus(),
         answerId: 'ans-1',
         isCorrect: true,
         points: 5.0,

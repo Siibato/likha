@@ -16,7 +16,9 @@ pub async fn insert_activity_logs(
             details: Set(spec.details.clone()),
             created_at: Set(spec.created_at),
         };
-        log.insert(db).await.map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        log.insert(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
     Ok(())
 }

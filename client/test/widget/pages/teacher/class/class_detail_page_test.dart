@@ -5,6 +5,10 @@ import 'package:likha/presentation/providers/class_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';
 
+// Re-export the new state classes for convenience in tests
+export 'package:likha/presentation/providers/class/class_list_provider.dart' show ClassListState;
+export 'package:likha/presentation/providers/class/class_detail_provider.dart' show ClassDetailState;
+
 ClassDetail _fakeDetail() => ClassDetail(
       id: 'c1',
       title: 'Grade 10 Science',
@@ -22,8 +26,11 @@ void main() {
   testWidgets('shows spinner while loading', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        classProvider.overrideWith(
-          (_) => FakeClassNotifier(ClassState(isLoading: true)),
+        classDetailProvider.overrideWith(
+          (_) => FakeClassDetailNotifier(ClassDetailState(isLoading: true)),
+        ),
+        classListProvider.overrideWith(
+          (_) => FakeClassListNotifier(ClassListState()),
         ),
       ],
       child: const MaterialApp(home: ClassDetailPage(classId: 'c1')),
@@ -36,10 +43,13 @@ void main() {
   testWidgets('shows class title when detail is loaded', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        classProvider.overrideWith(
-          (_) => FakeClassNotifier(
-            ClassState(isLoading: false, currentClassDetail: _fakeDetail()),
+        classDetailProvider.overrideWith(
+          (_) => FakeClassDetailNotifier(
+            ClassDetailState(isLoading: false, currentClassDetail: _fakeDetail()),
           ),
+        ),
+        classListProvider.overrideWith(
+          (_) => FakeClassListNotifier(ClassListState()),
         ),
       ],
       child: const MaterialApp(home: ClassDetailPage(classId: 'c1')),
@@ -52,10 +62,13 @@ void main() {
   testWidgets('shows navigation cards when detail is loaded', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        classProvider.overrideWith(
-          (_) => FakeClassNotifier(
-            ClassState(isLoading: false, currentClassDetail: _fakeDetail()),
+        classDetailProvider.overrideWith(
+          (_) => FakeClassDetailNotifier(
+            ClassDetailState(isLoading: false, currentClassDetail: _fakeDetail()),
           ),
+        ),
+        classListProvider.overrideWith(
+          (_) => FakeClassListNotifier(ClassListState()),
         ),
       ],
       child: const MaterialApp(home: ClassDetailPage(classId: 'c1')),

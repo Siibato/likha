@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{answer_key_acceptable_answers, answer_keys};
 use crate::utils::{AppError, AppResult};
+use ::entity::{answer_key_acceptable_answers, answer_keys};
 use std::collections::HashMap;
 
 pub async fn find_correct_answers_by_question_ids(
@@ -18,7 +18,9 @@ pub async fn find_correct_answers_by_question_ids(
         .filter(answer_keys::Column::QuestionId.is_in(question_ids.iter().copied()))
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e))
+        })?;
 
     if keys.is_empty() {
         return Ok(HashMap::new());
@@ -32,7 +34,9 @@ pub async fn find_correct_answers_by_question_ids(
         .filter(answer_key_acceptable_answers::Column::AnswerKeyId.is_in(key_ids))
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e))
+        })?;
 
     let mut result: HashMap<Uuid, Vec<answer_key_acceptable_answers::Model>> = HashMap::new();
     for answer in answers {

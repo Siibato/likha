@@ -18,13 +18,13 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
   @override
   void initState() {
     super.initState();
-    // Data is loaded by TeacherClassesPage (tab 0) via the shared classProvider.
+    // Data is loaded by TeacherClassesPage (tab 0) via the shared classListProvider.
     // No need to trigger another background fetch here.
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
     return SafeArea(
       child: Column(
@@ -33,10 +33,10 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
           const ClassSectionHeader(title: 'Grades'),
           Expanded(
             child: ContentStateBuilder(
-                isLoading: classState.isLoading && classState.classes.isEmpty,
-                isEmpty: classState.classes.isEmpty,
-                onRefresh: () => ref.read(classProvider.notifier).loadClasses(),
-                onRetry: () => ref.read(classProvider.notifier).loadClasses(),
+                isLoading: classListState.isLoading && classListState.classes.isEmpty,
+                isEmpty: classListState.classes.isEmpty,
+                onRefresh: () => ref.read(classListProvider.notifier).loadClasses(),
+                onRetry: () => ref.read(classListProvider.notifier).loadClasses(),
                 emptyState: const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -72,7 +72,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                         ),
                       ),
                     ),
-                    ...classState.classes.map(
+                    ...classListState.classes.map(
                       (cls) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: NavigationCard(
@@ -84,7 +84,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                             MaterialPageRoute(
                               builder: (_) => ClassRecordPage(classId: cls.id),
                             ),
-                          ).then((_) => ref.read(classProvider.notifier).loadClasses()),
+                          ).then((_) => ref.read(classListProvider.notifier).loadClasses()),
                         ),
                       ),
                     ),

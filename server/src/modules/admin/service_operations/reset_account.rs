@@ -1,10 +1,10 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::auth::schema::UserResponse;
 use crate::modules::admin::schema::ResetAccountRequest;
-use crate::modules::auth::UserRepository;
 use crate::modules::admin::ActivityLogRepository;
 use crate::modules::auth::helpers::user_to_response;
+use crate::modules::auth::schema::UserResponse;
+use crate::modules::auth::UserRepository;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn reset_account(
     user_repo: &UserRepository,
@@ -12,11 +12,15 @@ pub async fn reset_account(
     request: ResetAccountRequest,
     admin_id: Uuid,
 ) -> AppResult<UserResponse> {
-    let user = user_repo.find_by_id(request.user_id).await?
+    let user = user_repo
+        .find_by_id(request.user_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
     user_repo.clear_password(request.user_id).await?;
-    let updated = user_repo.update_account_status(request.user_id, "pending_activation").await?;
+    let updated = user_repo
+        .update_account_status(request.user_id, "pending_activation")
+        .await?;
 
     let _ = activity_log_repo
         .create_log(

@@ -11,7 +11,8 @@ import 'package:likha/domain/assignments/entities/assignment_submission.dart';
 import 'package:likha/domain/assignments/entities/submission_file.dart';
 import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/controllers/student/assignment/assignment_detail_controller.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
+import 'package:likha/presentation/providers/assignment/file_upload_provider.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_feedback_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_files_card.dart';
 import 'package:likha/presentation/widgets/mobile/student/assignment/assignment_instructions_card.dart';
@@ -56,7 +57,7 @@ class AssignmentDetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(assignmentProvider);
+    final state = ref.watch(submissionProvider);
     final rawSubmission = state.currentSubmission;
     final submission =
         (!isNewAttempt && rawSubmission?.assignmentId == assignmentId)
@@ -65,7 +66,7 @@ class AssignmentDetailBody extends ConsumerWidget {
 
     _hydrateIfNeeded(submission);
 
-    ref.listen<AssignmentState>(assignmentProvider, (prev, next) {
+    ref.listen<SubmissionState>(submissionProvider, (prev, next) {
       _handleProviderChange(context, ref, prev, next);
     });
 
@@ -253,13 +254,13 @@ class AssignmentDetailBody extends ConsumerWidget {
   void _handleProviderChange(
     BuildContext context,
     WidgetRef ref,
-    AssignmentState? prev,
-    AssignmentState next,
+    SubmissionState? prev,
+    SubmissionState next,
   ) {
     if (next.successMessage != null &&
         prev?.successMessage != next.successMessage) {
       controller.clearFormError();
-      ref.read(assignmentProvider.notifier).clearMessages();
+      ref.read(submissionProvider.notifier).clearMessages();
       if (next.successMessage == 'Assignment submitted') {
         final isOffline = next.currentSubmission?.syncStatus != SyncStatus.synced;
         if (isOffline && context.mounted) {
@@ -281,7 +282,7 @@ class AssignmentDetailBody extends ConsumerWidget {
         controller.setFormError(
             AppErrorMapper.toUserMessage(next.error));
       }
-      ref.read(assignmentProvider.notifier).clearMessages();
+      ref.read(submissionProvider.notifier).clearMessages();
     }
   }
 
@@ -289,7 +290,7 @@ class AssignmentDetailBody extends ConsumerWidget {
     if (kIsWeb) {
       controller.setFormError('Opening file...');
       final bytes =
-          await ref.read(assignmentProvider.notifier).downloadFile(file.id);
+          await ref.read(fileUploadProvider.notifier).downloadFile(file.id);
       if (!context.mounted) return;
       if (bytes != null) {
         await openFileInBrowser(bytes, file.fileName);

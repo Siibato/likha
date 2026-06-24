@@ -66,7 +66,11 @@ async fn activate_missing_fields_returns_error() {
     let db = test_db().await;
     let app = build_test_app(db).await;
 
-    let req = json_req("POST", "/api/v1/auth/activate", Some(json!({ "username": "u" })));
+    let req = json_req(
+        "POST",
+        "/api/v1/auth/activate",
+        Some(json!({ "username": "u" })),
+    );
     let resp = app.oneshot(req).await.unwrap();
     assert!(resp.status().is_client_error());
 }

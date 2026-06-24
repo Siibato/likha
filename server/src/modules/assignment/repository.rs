@@ -1,9 +1,9 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::{assignment_submissions, assignments, submission_files, users};
 use crate::modules::assignment::repository_operations as ops;
 use crate::utils::AppResult;
+use ::entity::{assignment_submissions, assignments, submission_files, users};
 
 pub struct AssignmentRepository {
     db: DatabaseConnection,
@@ -31,7 +31,24 @@ impl AssignmentRepository {
         term_number: Option<i32>,
         component: Option<String>,
     ) -> AppResult<assignments::Model> {
-        ops::create_assignment(&self.db, class_id, title, instructions, total_points, allows_text_submission, allows_file_submission, allowed_file_types, max_file_size_mb, due_at, order_index, client_id, is_published, term_number, component).await
+        ops::create_assignment(
+            &self.db,
+            class_id,
+            title,
+            instructions,
+            total_points,
+            allows_text_submission,
+            allows_file_submission,
+            allowed_file_types,
+            max_file_size_mb,
+            due_at,
+            order_index,
+            client_id,
+            is_published,
+            term_number,
+            component,
+        )
+        .await
     }
 
     pub async fn find_by_id(&self, id: Uuid) -> AppResult<Option<assignments::Model>> {
@@ -42,11 +59,17 @@ impl AssignmentRepository {
         ops::find_by_class_id(&self.db, class_id).await
     }
 
-    pub async fn find_published_by_class_id(&self, class_id: Uuid) -> AppResult<Vec<assignments::Model>> {
+    pub async fn find_published_by_class_id(
+        &self,
+        class_id: Uuid,
+    ) -> AppResult<Vec<assignments::Model>> {
         ops::find_published_by_class_id(&self.db, class_id).await
     }
 
-    pub async fn find_published_by_class_ids(&self, class_ids: &[Uuid]) -> AppResult<Vec<assignments::Model>> {
+    pub async fn find_published_by_class_ids(
+        &self,
+        class_ids: &[Uuid],
+    ) -> AppResult<Vec<assignments::Model>> {
         ops::find_published_by_class_ids(&self.db, class_ids).await
     }
 
@@ -64,7 +87,21 @@ impl AssignmentRepository {
         term_number: Option<Option<i32>>,
         component: Option<Option<String>>,
     ) -> AppResult<assignments::Model> {
-        ops::update_assignment(&self.db, id, title, instructions, total_points, allows_text_submission, allows_file_submission, allowed_file_types, max_file_size_mb, due_at, term_number, component).await
+        ops::update_assignment(
+            &self.db,
+            id,
+            title,
+            instructions,
+            total_points,
+            allows_text_submission,
+            allows_file_submission,
+            allowed_file_types,
+            max_file_size_mb,
+            due_at,
+            term_number,
+            component,
+        )
+        .await
     }
 
     pub async fn publish_assignment(&self, id: Uuid) -> AppResult<assignments::Model> {
@@ -84,7 +121,10 @@ impl AssignmentRepository {
         ops::create_submission(&self.db, assignment_id, student_id, submission_id).await
     }
 
-    pub async fn find_submission_by_id(&self, id: Uuid) -> AppResult<Option<assignment_submissions::Model>> {
+    pub async fn find_submission_by_id(
+        &self,
+        id: Uuid,
+    ) -> AppResult<Option<assignment_submissions::Model>> {
         ops::find_submission_by_id(&self.db, id).await
     }
 
@@ -137,7 +177,10 @@ impl AssignmentRepository {
         ops::count_submissions_by_assignment(&self.db, assignment_id).await
     }
 
-    pub async fn count_submissions_by_assignments(&self, assignment_ids: &[Uuid]) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+    pub async fn count_submissions_by_assignments(
+        &self,
+        assignment_ids: &[Uuid],
+    ) -> AppResult<std::collections::HashMap<Uuid, usize>> {
         ops::count_submissions_by_assignments(&self.db, assignment_ids).await
     }
 
@@ -145,7 +188,10 @@ impl AssignmentRepository {
         ops::count_graded_by_assignment(&self.db, assignment_id).await
     }
 
-    pub async fn count_graded_by_assignments(&self, assignment_ids: &[Uuid]) -> AppResult<std::collections::HashMap<Uuid, usize>> {
+    pub async fn count_graded_by_assignments(
+        &self,
+        assignment_ids: &[Uuid],
+    ) -> AppResult<std::collections::HashMap<Uuid, usize>> {
         ops::count_graded_by_assignments(&self.db, assignment_ids).await
     }
 
@@ -166,7 +212,16 @@ impl AssignmentRepository {
         file_path: String,
         file_hash: String,
     ) -> AppResult<submission_files::Model> {
-        ops::save_file(&self.db, submission_id, file_name, file_type, file_size, file_path, file_hash).await
+        ops::save_file(
+            &self.db,
+            submission_id,
+            file_name,
+            file_type,
+            file_size,
+            file_path,
+            file_hash,
+        )
+        .await
     }
 
     pub async fn find_active_file_path_by_hash(&self, hash: &str) -> AppResult<Option<String>> {
@@ -208,7 +263,11 @@ impl AssignmentRepository {
         ops::get_max_order_index(&self.db, class_id).await
     }
 
-    pub async fn reorder_assignments(&self, _class_id: Uuid, assignment_ids: Vec<Uuid>) -> AppResult<()> {
+    pub async fn reorder_assignments(
+        &self,
+        _class_id: Uuid,
+        assignment_ids: Vec<Uuid>,
+    ) -> AppResult<()> {
         ops::reorder_assignments(&self.db, _class_id, assignment_ids).await
     }
 }

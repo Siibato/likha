@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::modules::document_export::helpers::deped_header::DepedHeaderData;
 use crate::modules::document_export::helpers::excel_engine::{
-    ExcelEngine, subtitle_fmt, title_fmt,
+    subtitle_fmt, title_fmt, ExcelEngine,
 };
 use crate::modules::document_export::helpers::grade_table::GradeTableData;
 use crate::modules::document_export::service::DocumentExportService;
@@ -53,7 +53,9 @@ pub async fn run(
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let grade_data = grade_service.get_all_grade_data(class_id, term_number).await?;
+    let grade_data = grade_service
+        .get_all_grade_data(class_id, term_number)
+        .await?;
     let settings = setup_service.get_school_details().await?;
     let class_model = grade_service
         .class_repo
@@ -64,7 +66,9 @@ pub async fn run(
         .class_repo
         .find_teacher_of_class(class_id)
         .await?;
-    let teacher_name = teacher.map(|t| format!("{}, {}", t.last_name, t.first_name)).unwrap_or_default();
+    let teacher_name = teacher
+        .map(|t| format!("{}, {}", t.last_name, t.first_name))
+        .unwrap_or_default();
 
     let header = DepedHeaderData::from_settings(
         &settings,
@@ -86,10 +90,10 @@ pub async fn run(
     let mut row: u32 = 0;
 
     // ── Logos ────────────────────────────────────────────────────────────────
-    let seal_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("assets/images/deped_seal.png");
-    let logo_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("assets/images/deped_logo.png");
+    let seal_path =
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/images/deped_seal.png");
+    let logo_path =
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/images/deped_logo.png");
 
     if let Ok(img) = Image::new(&seal_path) {
         let img = img.set_scale_to_size(80, 80, true);
@@ -113,7 +117,10 @@ pub async fn run(
     // ── Row 1: subtitle ──────────────────────────────────────────────────────
     sheet
         .merge_range(
-            row, 0, row, total_cols - 1,
+            row,
+            0,
+            row,
+            total_cols - 1,
             "(Pursuant to DepEd Order 8 series of 2015)",
             &subtitle_fmt(),
         )

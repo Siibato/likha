@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -12,8 +11,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<List<GradeScore>> getScoresByItem(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String gradeItemId,
 }) async {
   try {
@@ -28,8 +26,6 @@ ResultFuture<List<GradeScore>> getScoresByItem(
             final current = await localDataSource.getScoresByItem(gradeItemId);
             if (current.length != fresh.length) {
               await localDataSource.saveScores(fresh);
-              final item = await localDataSource.getItemBySourceId(gradeItemId);
-              if (item != null) dataEventBus.notifyGradesChanged(item.classId);
               return;
             }
             final currentById = {for (final c in current) c.id: c};
@@ -40,15 +36,11 @@ ResultFuture<List<GradeScore>> getScoresByItem(
                   c.overrideScore != f.overrideScore ||
                   c.isAutoPopulated != f.isAutoPopulated) {
                 await localDataSource.saveScores(fresh);
-                final item = await localDataSource.getItemBySourceId(gradeItemId);
-                if (item != null) dataEventBus.notifyGradesChanged(item.classId);
                 return;
               }
             }
           } catch (_) {
             await localDataSource.saveScores(fresh);
-            final item = await localDataSource.getItemBySourceId(gradeItemId);
-            if (item != null) dataEventBus.notifyGradesChanged(item.classId);
           }
         },
       );

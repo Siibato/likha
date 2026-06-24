@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-use futures::future::{join_all, try_join_all};
-use sea_orm::EntityTrait;
-use uuid::Uuid;
 use crate::modules::grading::helpers::deped_weights;
 use crate::modules::grading::schema::{
     AllGradeDataResponse, GradeItemResponse, GradeScoreResponse, GradeSummaryResponse,
     GradeSummaryRow, GradingConfigResponse,
 };
 use crate::utils::{AppError, AppResult};
+use futures::future::{join_all, try_join_all};
+use sea_orm::EntityTrait;
+use std::collections::HashMap;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_all_grade_data(
@@ -18,7 +18,8 @@ impl crate::modules::grading::service::GradeComputationService {
         let (items_raw, config_opt, participants, term_grades_data) = tokio::try_join!(
             self.repo.get_items(class_id, term_number),
             self.repo.get_config(class_id, term_number),
-            self.class_repo.find_participants_by_class_id(class_id, None),
+            self.class_repo
+                .find_participants_by_class_id(class_id, None),
             self.repo.get_all_for_class(class_id, term_number),
         )?;
 
@@ -26,9 +27,7 @@ impl crate::modules::grading::service::GradeComputationService {
             items_raw.into_iter().map(GradeItemResponse::from).collect();
 
         let config = config_opt.ok_or_else(|| {
-            AppError::BadRequest(
-                "Grading config not set up for this class/term".to_string(),
-            )
+            AppError::BadRequest("Grading config not set up for this class/term".to_string())
         })?;
 
         let name_futures = participants.iter().map(|p| async move {
@@ -44,8 +43,7 @@ impl crate::modules::grading::service::GradeComputationService {
             )
         });
         let name_pairs = join_all(name_futures).await;
-        let student_name_map: HashMap<Uuid, String> =
-            name_pairs.into_iter().collect();
+        let student_name_map: HashMap<Uuid, String> = name_pairs.into_iter().collect();
 
         let mut students: Vec<GradeSummaryRow> = term_grades_data
             .into_iter()

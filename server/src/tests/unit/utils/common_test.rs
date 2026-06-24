@@ -14,7 +14,8 @@ fn test_api_response_success() {
 
 #[test]
 fn test_api_response_success_different_status() {
-    let response: ApiResponse<String> = ApiResponse::success("created".to_string(), StatusCode::CREATED);
+    let response: ApiResponse<String> =
+        ApiResponse::success("created".to_string(), StatusCode::CREATED);
     assert!(response.success);
     assert_eq!(response.status_code, 201);
 }

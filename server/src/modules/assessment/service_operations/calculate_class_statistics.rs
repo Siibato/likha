@@ -17,12 +17,14 @@ impl crate::modules::assessment::service::AssessmentService {
         let lowest = *sorted_scores.first().unwrap();
 
         let std_dev = {
-            let variance = scores.iter()
+            let variance = scores
+                .iter()
                 .map(|&s| {
                     let diff = s - mean;
                     diff * diff
                 })
-                .sum::<f64>() / n as f64;
+                .sum::<f64>()
+                / n as f64;
             variance.sqrt()
         };
 
@@ -42,7 +44,8 @@ impl crate::modules::assessment::service::AssessmentService {
             for &s in scores {
                 *score_map.entry(s.floor() as i32).or_insert(0) += 1;
             }
-            let mut buckets: Vec<ScoreBucket> = score_map.into_iter()
+            let mut buckets: Vec<ScoreBucket> = score_map
+                .into_iter()
                 .map(|(score, count)| ScoreBucket { score, count })
                 .collect();
             buckets.sort_by_key(|b| b.score);

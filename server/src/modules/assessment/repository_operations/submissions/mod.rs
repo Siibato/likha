@@ -32,8 +32,12 @@ pub use find_by_student_and_assessment::find_by_student_and_assessment;
 pub use find_enumeration_answer_items::find_enumeration_answer_items;
 pub use find_enumeration_answers::find_enumeration_answers;
 pub use find_submission_by_id::find_submission_by_id;
-pub use find_submissions_by_assessment_id::{find_submissions_by_assessment_id, find_submitted_submissions_by_assessment_id};
-pub use get_all_answer_details_for_assessment::{get_all_answer_details_for_assessment, AnswerDetail};
+pub use find_submissions_by_assessment_id::{
+    find_submissions_by_assessment_id, find_submitted_submissions_by_assessment_id,
+};
+pub use get_all_answer_details_for_assessment::{
+    get_all_answer_details_for_assessment, AnswerDetail,
+};
 pub use mark_submitted::mark_submitted;
 pub use override_answer::override_answer;
 pub use save_answer_choices::save_answer_choices;

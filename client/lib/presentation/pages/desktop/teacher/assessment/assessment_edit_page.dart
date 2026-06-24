@@ -4,7 +4,7 @@ import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/assessment_edit_controller.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_edit_form.dart';
 
 class EditAssessmentPage extends ConsumerStatefulWidget {
@@ -26,7 +26,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
     super.initState();
     _controller = AssessmentEditController(
       initial: widget.assessment,
-      notifier: ref.read(teacherAssessmentProvider.notifier),
+      notifier: ref.read(assessmentDetailProvider.notifier),
     );
   }
 
@@ -38,7 +38,7 @@ class _EditAssessmentPageState extends ConsumerState<EditAssessmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(assessmentDetailProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,

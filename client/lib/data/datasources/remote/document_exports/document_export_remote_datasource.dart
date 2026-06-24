@@ -27,6 +27,10 @@ abstract class DocumentExportRemoteDataSource {
     required String classId,
     required String studentId,
   });
+
+  Future<List<int>> exportTosExcel({
+    required String tosId,
+  });
 }
 
 class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSource {
@@ -89,6 +93,17 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportSf10Excel(classId, studentId),
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return (response.data as List<dynamic>).cast<int>();
+  }
+
+  @override
+  Future<List<int>> exportTosExcel({
+    required String tosId,
+  }) async {
+    final response = await _dioClient.dio.get(
+      ApiEndpoints.exportTosExcel(tosId),
       options: Options(responseType: ResponseType.bytes),
     );
     return (response.data as List<dynamic>).cast<int>();

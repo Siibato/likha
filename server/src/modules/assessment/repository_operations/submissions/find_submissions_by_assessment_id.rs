@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessment_submissions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessment_submissions;
 
 pub async fn find_submissions_by_assessment_id(
     db: &DatabaseConnection,

@@ -1,17 +1,19 @@
+use crate::cache::{CacheInvalidator, RedisCache};
+use crate::modules::admin::repository::AdminRepository;
+use crate::modules::admin::schema::{
+    AccountDetailResponse, AccountListResponse, CreateAccountRequest, LockAccountRequest,
+    ResetAccountRequest, UpdateAccountDetailsRequest, UpdateAccountRequest,
+};
+use crate::modules::admin::service_operations::{
+    bulk_import, create_account, delete_account, get_account, get_account_details,
+    get_activity_logs, get_all_accounts, lock_account, reset_account, search_students,
+    update_account, upsert_account_details,
+};
+use crate::modules::auth::schema::UserResponse;
+use crate::utils::AppResult;
+use ::entity::activity_logs;
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::cache::{CacheInvalidator, RedisCache};
-use crate::utils::AppResult;
-use crate::modules::auth::schema::UserResponse;
-use crate::modules::admin::schema::{AccountListResponse, CreateAccountRequest, UpdateAccountRequest, ResetAccountRequest, LockAccountRequest, AccountDetailResponse, UpdateAccountDetailsRequest};
-use crate::modules::admin::repository::AdminRepository;
-use crate::modules::admin::service_operations::{
-    create_account, update_account, reset_account, get_account, get_all_accounts,
-    lock_account, delete_account, get_activity_logs, search_students,
-    get_account_details, upsert_account_details,
-    bulk_import,
-};
-use ::entity::activity_logs;
 
 pub struct AdminService {
     pub repository: AdminRepository,
@@ -57,12 +59,7 @@ impl AdminService {
         request: UpdateAccountRequest,
         admin_id: Uuid,
     ) -> AppResult<UserResponse> {
-        let result = update_account(
-            &self.repository.user_repo,
-            user_id,
-            request,
-            admin_id,
-        ).await?;
+        let result = update_account(&self.repository.user_repo, user_id, request, admin_id).await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_user_profile(user_id).await;
         }
@@ -80,7 +77,8 @@ impl AdminService {
             &self.repository.activity_log_repo,
             request,
             admin_id,
-        ).await?;
+        )
+        .await?;
         if let Some(ref inv) = self.invalidator {
             inv.invalidate_user_profile(user_id).await;
         }
@@ -128,11 +126,7 @@ impl AdminService {
     }
 
     pub async fn get_account_details(&self, user_id: Uuid) -> AppResult<AccountDetailResponse> {
-        get_account_details(
-            &self.repository.db,
-            &self.repository.user_repo,
-            user_id,
-        ).await
+        get_account_details(&self.repository.db, &self.repository.user_repo, user_id).await
     }
 
     pub async fn upsert_account_details(
@@ -140,7 +134,11 @@ impl AdminService {
         user_id: Uuid,
         request: UpdateAccountDetailsRequest,
     ) -> AppResult<AccountDetailResponse> {
-        let user = self.repository.user_repo.find_by_id(user_id).await?
+        let user = self
+            .repository
+            .user_repo
+            .find_by_id(user_id)
+            .await?
             .ok_or_else(|| crate::utils::error::AppError::NotFound("User not found".to_string()))?;
 
         upsert_account_details(
@@ -149,16 +147,24 @@ impl AdminService {
             &user.role,
             request.learner_details,
             request.teacher_details,
-        ).await?;
+        )
+        .await?;
 
         self.get_account_details(user_id).await
     }
 
-    pub async fn preview_student_import(&self, csv_bytes: &[u8]) -> AppResult<crate::modules::admin::import_schema::PreviewResponse> {
-        bulk_import::preview_students(&self.repository.db, &self.repository.user_repo, csv_bytes).await
+    pub async fn preview_student_import(
+        &self,
+        csv_bytes: &[u8],
+    ) -> AppResult<crate::modules::admin::import_schema::PreviewResponse> {
+        bulk_import::preview_students(&self.repository.db, &self.repository.user_repo, csv_bytes)
+            .await
     }
 
-    pub async fn import_students(&self, rows: Vec<serde_json::Value>) -> AppResult<crate::modules::admin::import_schema::ImportResultResponse> {
+    pub async fn import_students(
+        &self,
+        rows: Vec<serde_json::Value>,
+    ) -> AppResult<crate::modules::admin::import_schema::ImportResultResponse> {
         bulk_import::import_students(&self.repository.db, &self.repository.user_repo, &rows).await
     }
 }

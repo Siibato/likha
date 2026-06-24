@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn get_tos(&self, tos_id: Uuid) -> AppResult<TosResponse> {
@@ -11,7 +11,8 @@ impl crate::modules::tos::service::TosService {
                 return Ok(cached);
             }
         }
-        let tos = self.tos_repo
+        let tos = self
+            .tos_repo
             .find_tos_by_id(tos_id)
             .await?
             .ok_or_else(|| AppError::NotFound("TOS not found".to_string()))?;
@@ -62,5 +63,25 @@ impl crate::modules::tos::service::TosService {
             cache.set(&key, &result, cache.ttl.detail_seconds).await;
         }
         Ok(result)
+    }
+
+    pub async fn get_tos_for_teacher(
+        &self,
+        tos_id: Uuid,
+        teacher_id: Uuid,
+    ) -> AppResult<TosResponse> {
+        let tos = self.get_tos(tos_id).await?;
+        let class_id = Uuid::parse_str(&tos.class_id)
+            .map_err(|_| AppError::InternalServerError("Invalid TOS class id".to_string()))?;
+
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
+            return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        Ok(tos)
     }
 }

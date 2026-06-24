@@ -22,11 +22,7 @@ fn create_assessment_body() -> serde_json::Value {
 }
 
 /// Creates an assessment via API and returns its ID.
-async fn create_assessment(
-    db: &sea_orm::DatabaseConnection,
-    class_id: Uuid,
-    token: &str,
-) -> Uuid {
+async fn create_assessment(db: &sea_orm::DatabaseConnection, class_id: Uuid, token: &str) -> Uuid {
     let app = crate::tests::common::test_app::build_test_app(db.clone()).await;
     let req = authed_req(
         "POST",

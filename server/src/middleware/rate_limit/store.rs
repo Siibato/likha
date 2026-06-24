@@ -37,7 +37,10 @@ impl PolicyLimiter {
             .as_secs();
         let current_window = (now_secs / self.window_secs) * self.window_secs;
 
-        let mut entries = self.entries.write().expect("rate limit store lock poisoned");
+        let mut entries = self
+            .entries
+            .write()
+            .expect("rate limit store lock poisoned");
 
         let entry = entries.entry(key.to_string()).or_insert(WindowEntry {
             count: 0,
@@ -81,7 +84,10 @@ impl RateLimitStore {
         let mut limiters = HashMap::with_capacity(policies.len());
         for policy in policies {
             if let Some((max_requests, window_secs)) = policy.limit() {
-                limiters.insert(policy.store_key(), PolicyLimiter::new(max_requests, window_secs));
+                limiters.insert(
+                    policy.store_key(),
+                    PolicyLimiter::new(max_requests, window_secs),
+                );
             }
         }
 
@@ -155,8 +161,12 @@ mod tests {
         let store = RateLimitStore::new();
         let (max, _) = RateLimitPolicy::PublicStrict.limit().unwrap();
         for _ in 0..max {
-            assert!(store.check(RateLimitPolicy::PublicStrict, "test_key").is_ok());
+            assert!(store
+                .check(RateLimitPolicy::PublicStrict, "test_key")
+                .is_ok());
         }
-        assert!(store.check(RateLimitPolicy::PublicStrict, "test_key").is_err());
+        assert!(store
+            .check(RateLimitPolicy::PublicStrict, "test_key")
+            .is_err());
     }
 }

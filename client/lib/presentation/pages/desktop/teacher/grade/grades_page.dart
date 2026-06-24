@@ -18,18 +18,18 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
   @override
   void initState() {
     super.initState();
-    // Data is loaded by TeacherDashboardPage (tab 0) via the shared classProvider.
+    // Data is loaded by TeacherDashboardPage (tab 0) via the shared classListProvider.
     // No need to trigger another background fetch here.
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
     return DesktopPageScaffold(
       title: 'Grades',
       subtitle: 'Select a class to manage grades',
-      body: classState.isLoading && classState.classes.isEmpty
+      body: classListState.isLoading && classListState.classes.isEmpty
           ? const Center(
               child: Padding(
                 padding: EdgeInsets.all(48),
@@ -39,7 +39,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                 ),
               ),
             )
-          : classState.classes.isEmpty
+          : classListState.classes.isEmpty
               ? const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -61,7 +61,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
               : Wrap(
                   spacing: 16,
                   runSpacing: 16,
-                  children: classState.classes.map((cls) {
+                  children: classListState.classes.map((cls) {
                     return SizedBox(
                       width: 380,
                       child: NavigationCard(
@@ -75,7 +75,7 @@ class _TeacherGradesPageState extends ConsumerState<TeacherGradesPage> {
                                 TeacherClassDetailPage(classId: cls.id),
                           ),
                         ).then((_) =>
-                            ref.read(classProvider.notifier).loadClasses()),
+                            ref.read(classListProvider.notifier).loadClasses()),
                       ),
                     );
                   }).toList(),

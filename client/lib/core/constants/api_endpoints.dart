@@ -677,6 +677,10 @@ class ApiEndpoints {
     return '/api/v1/classes/$classId/export/sf10/$studentId/excel';
   }
 
+  static String exportTosExcel(String tosId) {
+    return '/api/v1/tos/$tosId/export/excel';
+  }
+
   // ===== MELCS =====
   static ApiEndpoint<List<MelcEntryModel>> melcsSearch() =>
       ApiEndpoint(

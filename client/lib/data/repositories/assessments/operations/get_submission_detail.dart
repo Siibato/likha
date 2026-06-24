@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assessments/entities/submission.dart';
@@ -10,8 +9,7 @@ import 'package:likha/data/datasources/remote/assessments/assessment_remote_data
 
 ResultFuture<SubmissionDetail?> getSubmissionDetail(
   AssessmentLocalDataSource localDataSource,
-  AssessmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssessmentRemoteDataSource remoteDataSource, {
   required String submissionId,
   bool skipBackgroundRefresh = false,
 }) async {
@@ -31,11 +29,9 @@ ResultFuture<SubmissionDetail?> getSubmissionDetail(
                   current.totalPoints != fresh.totalPoints ||
                   current.finalScore != fresh.finalScore) {
                 await localDataSource.cacheSubmissionDetail(fresh);
-                dataEventBus.notifySubmissionDetailChanged(submissionId);
               }
             } catch (_) {
               await localDataSource.cacheSubmissionDetail(fresh);
-              dataEventBus.notifySubmissionDetailChanged(submissionId);
             }
           },
         );
@@ -51,10 +47,8 @@ ResultFuture<SubmissionDetail?> getSubmissionDetail(
         remote: () => remoteDataSource.getSubmissionDetail(submissionId: submissionId),
         onSuccess: (fresh) async {
           await localDataSource.cacheSubmissionDetail(fresh);
-          dataEventBus.notifySubmissionDetailChanged(submissionId);
         },
         onError: (_) {
-          dataEventBus.notifySubmissionDetailChanged(submissionId);
         },
       );
     }

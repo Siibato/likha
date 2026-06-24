@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::grading::schema::GradeItemResponse;
 use crate::utils::AppResult;
+use uuid::Uuid;
 
 impl crate::modules::grading::service::GradeComputationService {
     pub async fn get_grade_items(
@@ -16,7 +16,8 @@ impl crate::modules::grading::service::GradeComputationService {
             }
         }
         let items = self.repo.get_items(class_id, term_number).await?;
-        let result: Vec<GradeItemResponse> = items.into_iter().map(GradeItemResponse::from).collect();
+        let result: Vec<GradeItemResponse> =
+            items.into_iter().map(GradeItemResponse::from).collect();
         if let Some(ref cache) = self.cache {
             let key = CacheKey::GradeItems(class_id, term_number).as_str();
             cache.set(&key, &result, cache.ttl.list_seconds).await;

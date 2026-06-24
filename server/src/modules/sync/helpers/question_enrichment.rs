@@ -4,9 +4,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::utils::{AppError, AppResult};
-use ::entity::{
-    answer_key_acceptable_answers, answer_keys, question_choices,
-};
+use ::entity::{answer_key_acceptable_answers, answer_keys, question_choices};
 
 /// Enriches questions with role-aware nested data (choices, correct answers, enumeration items).
 ///
@@ -23,7 +21,11 @@ pub async fn enrich_questions(
 
     let question_ids: Vec<Uuid> = questions
         .iter()
-        .filter_map(|q| q.get("id").and_then(|id| id.as_str()).and_then(|s| Uuid::parse_str(s).ok()))
+        .filter_map(|q| {
+            q.get("id")
+                .and_then(|id| id.as_str())
+                .and_then(|s| Uuid::parse_str(s).ok())
+        })
         .collect();
 
     // Batch Query 1: All choices
@@ -32,11 +34,16 @@ pub async fn enrich_questions(
         .order_by_asc(question_choices::Column::OrderIndex)
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch question choices: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch question choices: {}", e))
+        })?;
 
     let mut choices_map: HashMap<Uuid, Vec<question_choices::Model>> = HashMap::new();
     for choice in all_choices {
-        choices_map.entry(choice.question_id).or_insert_with(Vec::new).push(choice);
+        choices_map
+            .entry(choice.question_id)
+            .or_insert_with(Vec::new)
+            .push(choice);
     }
 
     // Batch Query 2: Answer keys for all questions (contains both identification and enumeration answers)
@@ -44,11 +51,16 @@ pub async fn enrich_questions(
         .filter(answer_keys::Column::QuestionId.is_in(question_ids.clone()))
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e))
+        })?;
 
     let mut answer_keys_map: HashMap<Uuid, Vec<answer_keys::Model>> = HashMap::new();
     for key in all_answer_keys {
-        answer_keys_map.entry(key.question_id).or_insert_with(Vec::new).push(key);
+        answer_keys_map
+            .entry(key.question_id)
+            .or_insert_with(Vec::new)
+            .push(key);
     }
 
     // Batch Query 3: Acceptable answers for all keys (teacher/admin only)
@@ -57,19 +69,28 @@ pub async fn enrich_questions(
         .flat_map(|keys| keys.iter().map(|key| key.id))
         .collect();
 
-    let all_acceptable_answers: Vec<answer_key_acceptable_answers::Model> = if !answer_key_ids.is_empty() && user_role != "student" {
+    let all_acceptable_answers: Vec<answer_key_acceptable_answers::Model> = if !answer_key_ids
+        .is_empty()
+        && user_role != "student"
+    {
         answer_key_acceptable_answers::Entity::find()
             .filter(answer_key_acceptable_answers::Column::AnswerKeyId.is_in(answer_key_ids))
             .all(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e)))?
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e))
+            })?
     } else {
         Vec::new()
     };
 
-    let mut acceptable_answers_map: HashMap<Uuid, Vec<answer_key_acceptable_answers::Model>> = HashMap::new();
+    let mut acceptable_answers_map: HashMap<Uuid, Vec<answer_key_acceptable_answers::Model>> =
+        HashMap::new();
     for answer in all_acceptable_answers {
-        acceptable_answers_map.entry(answer.answer_key_id).or_insert_with(Vec::new).push(answer);
+        acceptable_answers_map
+            .entry(answer.answer_key_id)
+            .or_insert_with(Vec::new)
+            .push(answer);
     }
 
     // Build enriched question JSON per question

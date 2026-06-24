@@ -1,8 +1,8 @@
+use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, Statement};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use sea_orm::{ConnectionTrait, Statement, DbBackend, DatabaseConnection};
 
 use crate::modules::sync::service_operations::push::OperationResult;
 
@@ -21,15 +21,13 @@ pub async fn check_processed(
 
     // Slow path: check persistent DB
     let sql = "SELECT response FROM processed_operations WHERE operation_id = ? LIMIT 1";
-    let statement = Statement::from_sql_and_values(
-        DbBackend::Sqlite,
-        sql,
-        [operation_id.to_string().into()],
-    );
+    let statement =
+        Statement::from_sql_and_values(DbBackend::Sqlite, sql, [operation_id.to_string().into()]);
 
     match db.query_one(statement).await {
         Ok(Some(row)) => {
-            let response_json = row.try_get::<String>("", "response")
+            let response_json = row
+                .try_get::<String>("", "response")
                 .map_err(|e| format!("Failed to parse response: {}", e))?;
             match serde_json::from_str::<OperationResult>(&response_json) {
                 Ok(result) => {

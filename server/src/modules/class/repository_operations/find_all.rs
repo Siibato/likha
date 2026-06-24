@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::classes;
 use crate::utils::{AppError, AppResult};
+use ::entity::classes;
 
 pub async fn find_all(db: &DatabaseConnection) -> AppResult<Vec<classes::Model>> {
     classes::Entity::find()

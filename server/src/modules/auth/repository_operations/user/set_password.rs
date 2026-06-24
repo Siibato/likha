@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
 pub async fn set_password(
     db: &DatabaseConnection,

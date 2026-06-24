@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::school_details;
 use crate::utils::{AppError, AppResult};
+use ::entity::school_details;
 
 pub async fn get_settings(db: &DatabaseConnection) -> AppResult<school_details::Model> {
     school_details::Entity::find_by_id(1)

@@ -36,14 +36,12 @@ AssignmentRepositoryImpl _buildRepo({
   required MockAssignmentRemoteDataSource remote,
   required MockSyncQueue syncQueue,
   required MockStorageService storage,
-  required MockDataEventBus eventBus,
 }) {
   return AssignmentRepositoryImpl(
     remoteDataSource: remote,
     localDataSource: local,
     syncQueue: syncQueue,
     storageService: storage,
-    dataEventBus: eventBus,
   );
 }
 
@@ -54,18 +52,15 @@ void main() {
   late MockAssignmentRemoteDataSource remote;
   late MockSyncQueue syncQueue;
   late MockStorageService storage;
-  late MockDataEventBus eventBus;
 
   setUp(() {
     local = MockAssignmentLocalDataSource();
     remote = MockAssignmentRemoteDataSource();
     syncQueue = MockSyncQueue();
     storage = MockStorageService();
-    eventBus = MockDataEventBus();
     dotenv.testLoad(fileInput: '');
     when(() => storage.getUserId()).thenAnswer((_) async => null);
     when(() => storage.getUserRole()).thenAnswer((_) async => null);
-    when(() => eventBus.onAssignmentsChanged).thenAnswer((_) => const Stream.empty());
 
     registerFallbackValue(_fakeModel());
     registerFallbackValue(SyncQueueEntry(
@@ -88,7 +83,6 @@ void main() {
           remote: remote,
           syncQueue: syncQueue,
           storage: storage,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedAssignments(any(), publishedOnly: any(named: 'publishedOnly'), studentId: any(named: 'studentId')))
@@ -114,7 +108,6 @@ void main() {
           remote: remote,
           syncQueue: syncQueue,
           storage: storage,
-          eventBus: eventBus,
         );
 
         when(() => local.getCachedAssignments('c-1', publishedOnly: false, studentId: null))
@@ -155,7 +148,6 @@ void main() {
           remote: remote,
           syncQueue: syncQueue,
           storage: storage,
-          eventBus: eventBus,
         );
 
         when(() => remote.getAssignments(classId: any(named: 'classId')))

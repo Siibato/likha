@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn find_by_id(
     db: &DatabaseConnection,

@@ -155,7 +155,6 @@ class _DesktopTermGradeTableState extends State<DesktopTermGradeTable> {
                                 child: TextField(
                                   controller: _qgEditController,
                                   focusNode: _qgFocusNode,
-                                  autofocus: true,
                                   textAlign: TextAlign.right,
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],

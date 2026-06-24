@@ -1,14 +1,22 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{answer_key_acceptable_answers, answer_keys};
 use crate::utils::{AppError, AppResult};
+use ::entity::{answer_key_acceptable_answers, answer_keys};
 use std::collections::HashMap;
 
 pub async fn find_enumeration_items_for_questions(
     db: &DatabaseConnection,
     question_ids: &[Uuid],
-) -> AppResult<HashMap<Uuid, Vec<(answer_keys::Model, Vec<answer_key_acceptable_answers::Model>)>>> {
+) -> AppResult<
+    HashMap<
+        Uuid,
+        Vec<(
+            answer_keys::Model,
+            Vec<answer_key_acceptable_answers::Model>,
+        )>,
+    >,
+> {
     if question_ids.is_empty() {
         return Ok(HashMap::new());
     }
@@ -20,7 +28,9 @@ pub async fn find_enumeration_items_for_questions(
         .order_by_asc(answer_keys::Column::Id)
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch answer keys: {}", e))
+        })?;
 
     if keys.is_empty() {
         return Ok(HashMap::new());
@@ -33,17 +43,32 @@ pub async fn find_enumeration_items_for_questions(
         .filter(answer_key_acceptable_answers::Column::AnswerKeyId.is_in(key_ids))
         .all(db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to fetch acceptable answers: {}", e))
+        })?;
 
-    let mut answers_by_key: HashMap<Uuid, Vec<answer_key_acceptable_answers::Model>> = HashMap::new();
+    let mut answers_by_key: HashMap<Uuid, Vec<answer_key_acceptable_answers::Model>> =
+        HashMap::new();
     for answer in answers {
-        answers_by_key.entry(answer.answer_key_id).or_default().push(answer);
+        answers_by_key
+            .entry(answer.answer_key_id)
+            .or_default()
+            .push(answer);
     }
 
-    let mut result: HashMap<Uuid, Vec<(answer_keys::Model, Vec<answer_key_acceptable_answers::Model>)>> = HashMap::new();
+    let mut result: HashMap<
+        Uuid,
+        Vec<(
+            answer_keys::Model,
+            Vec<answer_key_acceptable_answers::Model>,
+        )>,
+    > = HashMap::new();
     for key in keys {
         let answers = answers_by_key.remove(&key.id).unwrap_or_default();
-        result.entry(key.question_id).or_default().push((key, answers));
+        result
+            .entry(key.question_id)
+            .or_default()
+            .push((key, answers));
     }
 
     Ok(result)

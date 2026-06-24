@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessment_questions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessment_questions;
 
 pub async fn reorder_questions(
     db: &DatabaseConnection,
@@ -20,7 +20,9 @@ pub async fn reorder_questions(
         assessment_questions::Entity::update(question)
             .exec(db)
             .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to reorder question: {}", e)))?;
+            .map_err(|e| {
+                AppError::InternalServerError(format!("Failed to reorder question: {}", e))
+            })?;
     }
 
     Ok(())

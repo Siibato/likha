@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::cache::CacheKey;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn list_tos_for_class(
@@ -9,7 +9,11 @@ impl crate::modules::tos::service::TosService {
         class_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<TosListResponse> {
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 

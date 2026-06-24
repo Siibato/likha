@@ -1,13 +1,18 @@
 //! T4 assessments for demo seeding: Physics.
 
+use super::super::{aid, build_questions, cid, compid, tid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, tid, compid, aid, build_questions};
 
 pub fn demo_assessments_t4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(20);
     let now = ctx.now();
-    let comps = &[compid("s10t4_comp_0"), compid("s10t4_comp_1"), compid("s10t4_comp_2"), compid("s10t4_comp_3")];
+    let comps = &[
+        compid("s10t4_comp_0"),
+        compid("s10t4_comp_1"),
+        compid("s10t4_comp_2"),
+        compid("s10t4_comp_3"),
+    ];
 
     let quiz1_qs = build_questions("t4_quiz1",
         &[
@@ -76,33 +81,66 @@ pub fn demo_assessments_t4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
 
     vec![
         AssessmentSpec {
-            id: aid("t4_quiz1"), class_id: cid("sci10"),
+            id: aid("t4_quiz1"),
+            class_id: cid("sci10"),
             title: "T4 Quiz 1: Force and Motion".into(),
-            description: Some("10-item quiz on Newton's laws, speed, velocity, and acceleration.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(7), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t4"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 4,
+            description: Some(
+                "10-item quiz on Newton's laws, speed, velocity, and acceleration.".into(),
+            ),
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(7),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t4"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 4,
             questions: quiz1_qs,
         },
         AssessmentSpec {
-            id: aid("t4_quiz2"), class_id: cid("sci10"),
+            id: aid("t4_quiz2"),
+            class_id: cid("sci10"),
             title: "T4 Quiz 2: Energy and Simple Machines".into(),
-            description: Some("10-item quiz on energy forms, conservation, and simple machines.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(5), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t4"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 4,
+            description: Some(
+                "10-item quiz on energy forms, conservation, and simple machines.".into(),
+            ),
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(5),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t4"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 4,
             questions: quiz2_qs,
         },
         AssessmentSpec {
-            id: aid("t4_exam"), class_id: cid("sci10"),
+            id: aid("t4_exam"),
+            class_id: cid("sci10"),
             title: "T4 Term Exam: Physics".into(),
-            description: Some("25-item term assessment on force, motion, energy, and simple machines.".into()),
-            time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "term_assessment".into(),
-            tos_id: tid("sci10_tos_t4"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 4,
+            description: Some(
+                "25-item term assessment on force, motion, energy, and simple machines.".into(),
+            ),
+            time_limit_minutes: 60,
+            open_at: now - chrono::Duration::days(10),
+            close_at: now - chrono::Duration::days(2),
+            show_results_immediately: true,
+            total_points: 25,
+            component: "term_assessment".into(),
+            tos_id: tid("sci10_tos_t4"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 4,
             questions: exam_qs,
         },
     ]

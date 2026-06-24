@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/domain/assignments/entities/assignment_submission.dart';
@@ -11,8 +10,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<AssignmentSubmission> getSubmissionDetail(
   AssignmentLocalDataSource localDataSource,
-  AssignmentRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  AssignmentRemoteDataSource remoteDataSource, {
   required String submissionId,
 }) async {
   try {
@@ -26,7 +24,6 @@ ResultFuture<AssignmentSubmission> getSubmissionDetail(
             final current = await localDataSource.getCachedSubmission(submissionId);
             if (helpers.submissionDataHasChanged(current, fresh)) {
               await localDataSource.cacheSubmissionDetail(fresh);
-              dataEventBus.notifySubmissionDetailChanged(submissionId);
             }
           },
         );

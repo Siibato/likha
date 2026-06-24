@@ -1,9 +1,9 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::{refresh_tokens, users};
 use crate::modules::auth::repository_operations::user as ops;
 use crate::utils::AppResult;
+use ::entity::{refresh_tokens, users};
 
 pub struct UserRepository {
     db: DatabaseConnection,
@@ -25,11 +25,19 @@ impl UserRepository {
         ops::create_account(&self.db, username, first_name, last_name, role, client_id).await
     }
 
-    pub async fn set_password(&self, user_id: Uuid, password_hash: String) -> AppResult<users::Model> {
+    pub async fn set_password(
+        &self,
+        user_id: Uuid,
+        password_hash: String,
+    ) -> AppResult<users::Model> {
         ops::set_password(&self.db, user_id, password_hash).await
     }
 
-    pub async fn update_account_status(&self, user_id: Uuid, status: &str) -> AppResult<users::Model> {
+    pub async fn update_account_status(
+        &self,
+        user_id: Uuid,
+        status: &str,
+    ) -> AppResult<users::Model> {
         ops::update_account_status(&self.db, user_id, status).await
     }
 
@@ -73,7 +81,10 @@ impl UserRepository {
         ops::create_refresh_token(&self.db, user_id, token_hash, device_id, expires_at).await
     }
 
-    pub async fn find_refresh_token(&self, token_hash: &str) -> AppResult<Option<refresh_tokens::Model>> {
+    pub async fn find_refresh_token(
+        &self,
+        token_hash: &str,
+    ) -> AppResult<Option<refresh_tokens::Model>> {
         ops::find_refresh_token(&self.db, token_hash).await
     }
 

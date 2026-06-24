@@ -23,11 +23,7 @@ fn create_assignment_body(_class_id: Uuid) -> serde_json::Value {
 }
 
 /// Creates an assignment via API and returns its ID.
-async fn create_assignment(
-    db: &sea_orm::DatabaseConnection,
-    class_id: Uuid,
-    token: &str,
-) -> Uuid {
+async fn create_assignment(db: &sea_orm::DatabaseConnection, class_id: Uuid, token: &str) -> Uuid {
     let app = crate::tests::common::test_app::build_test_app(db.clone()).await;
     let req = authed_req(
         "POST",

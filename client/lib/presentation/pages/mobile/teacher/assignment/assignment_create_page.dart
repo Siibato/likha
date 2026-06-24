@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/controllers/teacher/assignment/assignment_create_controller.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_grade_settings.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_instructions_field.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assignment/assignment_points_field.dart';
@@ -34,7 +34,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
     super.initState();
     _controller = AssignmentCreateController(
       classId: widget.classId,
-      notifier: ref.read(assignmentProvider.notifier),
+      notifier: ref.read(assignmentListProvider.notifier),
     );
   }
 
@@ -59,13 +59,14 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ProviderMessageListener<AssignmentState>(
-      provider: assignmentProvider,
+    return ProviderMessageListener<AssignmentListState>(
+      provider: assignmentListProvider,
       successMessage: (s) => s.successMessage,
       errorMessage: (s) => s.error,
-      onClear: () => ref.read(assignmentProvider.notifier).clearMessages(),
+      onClear: () => ref.read(assignmentListProvider.notifier).clearMessages(),
       intercept: (prev, next) {
-        if (next.successMessage == 'Assignment created') {
+        if (next.successMessage == 'Assignment created' &&
+            prev.successMessage != 'Assignment created') {
           Navigator.pop(context, true);
           return true;
         }
@@ -158,10 +159,7 @@ class _CreateAssignmentPageState extends ConsumerState<CreateAssignmentPage> {
                       isSaving: _controller.isSaving,
                       onPressed: () async {
                         if (!_formKey.currentState!.validate()) return;
-                        final success = await _controller.performSave();
-                        if (success && context.mounted) {
-                          Navigator.pop(context, true);
-                        }
+                        await _controller.performSave();
                       },
                     ),
                   ],

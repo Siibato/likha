@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::learning_material::service::LearningMaterialService {
     pub async fn soft_delete(&self, material_id: Uuid, teacher_id: Uuid) -> AppResult<()> {
@@ -15,7 +15,11 @@ impl crate::modules::learning_material::service::LearningMaterialService {
             .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, material.class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, material.class_id)
+            .await?
+        {
             return Err(AppError::Forbidden(
                 "You can only delete materials from your own classes".to_string(),
             ));

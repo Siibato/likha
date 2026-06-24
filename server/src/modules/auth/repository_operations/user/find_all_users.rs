@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
 pub async fn find_all_users(db: &DatabaseConnection) -> AppResult<Vec<users::Model>> {
     users::Entity::find()

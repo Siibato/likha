@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::class::schema::ClassMetadataResponse;
 use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::ClassMetadataResponse;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn get_classes_metadata(
     class_repo: &ClassRepository,
@@ -13,7 +13,10 @@ pub async fn get_classes_metadata(
         "student" => {
             let enrollments = class_repo.find_student_enrollments(user_id).await?;
             let count = enrollments.len();
-            let etag = format!("{:x}", md5::compute(format!("student-{}-{}", user_id, count).as_bytes()));
+            let etag = format!(
+                "{:x}",
+                md5::compute(format!("student-{}-{}", user_id, count).as_bytes())
+            );
             (chrono::Utc::now().naive_utc(), count, etag)
         }
         _ => return Err(AppError::Forbidden("Invalid role".to_string())),

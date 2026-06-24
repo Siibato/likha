@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/providers/student_records_provider.dart';
 import 'package:likha/presentation/widgets/shared/forms/school_year_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_button.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/domain/student_records/entities/school_history.dart';
 
 class Sf10SchoolHistoryEditPage extends ConsumerStatefulWidget {
@@ -43,7 +46,8 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     _schoolNameCtrl = TextEditingController(text: h?.schoolName ?? '');
     _schoolIdCtrl = TextEditingController(text: h?.schoolId ?? '');
     _gradeLevelCtrl = TextEditingController(text: h?.gradeLevel ?? '');
-    _selectedSchoolYear = h?.schoolYear?.isNotEmpty == true ? h!.schoolYear : SchoolYearDropdown.currentSchoolYear;
+    final schoolYear = h?.schoolYear;
+    _selectedSchoolYear = (schoolYear != null && schoolYear.isNotEmpty) ? schoolYear : SchoolYearDropdown.currentSchoolYear;
     _sectionCtrl = TextEditingController(text: h?.section ?? '');
     _dateFromCtrl = TextEditingController(text: h?.dateFrom ?? '');
     _dateToCtrl = TextEditingController(text: h?.dateTo ?? '');
@@ -102,6 +106,25 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     }
   }
 
+  Future<void> _pickDate(TextEditingController controller, String helpText) async {
+    final currentText = controller.text;
+    DateTime? initialDate;
+    if (currentText.isNotEmpty) {
+      initialDate = DateTime.tryParse(currentText);
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+      initialEntryMode: DatePickerEntryMode.input,
+      helpText: helpText,
+    );
+    if (picked != null) {
+      controller.text = picked.toIso8601String().split('T').first;
+    }
+  }
+
   Future<void> _deleteSchoolHistory() async {
     if (_isNew) return;
     final confirmed = await showDialog<bool>(
@@ -141,87 +164,98 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
 
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
-      appBar: AppBar(
-        title: Text(_isNew ? 'Add Previous School — ${widget.studentName}' : 'Edit School History — ${widget.studentName}'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.foregroundDark,
-        elevation: 0,
+      body: DesktopPageScaffold(
+        title: _isNew ? 'Add Previous School' : 'Edit School History',
+        subtitle: widget.studentName,
+        maxWidth: 900,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
+          color: AppColors.foregroundPrimary,
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (!_isNew)
-            TextButton.icon(
-              onPressed: historyState.isSaving ? null : _deleteSchoolHistory,
-              icon: const Icon(Icons.delete_outline_rounded, size: 18),
-              label: const Text('Delete'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.semanticError),
+          if (!_isNew) ...[
+            StyledButton(
+              text: 'Delete',
+              icon: Icons.delete_outline_rounded,
+              variant: StyledButtonVariant.destructive,
+              fullWidth: false,
+              isLoading: historyState.isSaving,
+              onPressed: _deleteSchoolHistory,
             ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: historyState.isSaving ? null : _saveSchoolInfo,
-            icon: historyState.isSaving
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.save_rounded, size: 18),
-            label: const Text('Save School Info'),
-            style: TextButton.styleFrom(foregroundColor: Colors.white, backgroundColor: AppColors.foregroundPrimary),
+            const SizedBox(width: 12),
+          ],
+          StyledButton(
+            text: 'Save School Info',
+            icon: Icons.save_rounded,
+            variant: StyledButtonVariant.primary,
+            fullWidth: false,
+            isLoading: historyState.isSaving,
+            onPressed: _saveSchoolInfo,
           ),
           const SizedBox(width: 16),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 900),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sectionTitle('School Information'),
-                const SizedBox(height: 16),
-                _schoolInfoForm(),
-                const SizedBox(height: 32),
-                if (!_isNew) ...[
-                  _sectionTitle('Subjects'),
-                  const SizedBox(height: 16),
-                  _subjectsTable(subjectsState),
-                  const SizedBox(height: 32),
-                  _sectionTitle('Attendance'),
-                  const SizedBox(height: 16),
-                  _attendanceTable(attendanceState),
-                ],
-              ],
-            ),
-          ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionTitle('School Information'),
+            const SizedBox(height: 16),
+            _schoolInfoForm(),
+            const SizedBox(height: 32),
+            if (!_isNew) ...[
+              _sectionTitle('Subjects'),
+              const SizedBox(height: 16),
+              _subjectsTable(subjectsState),
+              const SizedBox(height: 32),
+              _sectionTitle('Attendance'),
+              const SizedBox(height: 16),
+              _attendanceTable(attendanceState),
+            ],
+          ],
         ),
       ),
     );
   }
 
   Widget _sectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.foregroundDark));
+    return Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.foregroundPrimary));
   }
 
   Widget _schoolInfoForm() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.borderLight)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.borderLight)),
       child: Form(
         key: _formKey,
         child: Column(
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _textField(_schoolNameCtrl, 'School Name', required: true)),
+                Expanded(child: StyledTextField(
+                  controller: _schoolNameCtrl,
+                  label: 'School Name',
+                  icon: Icons.school_outlined,
+                  validator: (v) => v == null || v.isEmpty ? 'School Name is required' : null,
+                )),
                 const SizedBox(width: 16),
-                Expanded(child: _textField(_schoolIdCtrl, 'School ID')),
+                Expanded(child: StyledTextField(
+                  controller: _schoolIdCtrl,
+                  label: 'School ID',
+                  icon: Icons.badge_outlined,
+                )),
               ],
             ),
             const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _textField(_gradeLevelCtrl, 'Grade Level', required: true)),
+                Expanded(child: StyledTextField(
+                  controller: _gradeLevelCtrl,
+                  label: 'Grade Level',
+                  icon: Icons.grade_outlined,
+                  validator: (v) => v == null || v.isEmpty ? 'Grade Level is required' : null,
+                )),
                 const SizedBox(width: 16),
                 Expanded(
                   child: SchoolYearDropdown(
@@ -234,18 +268,43 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
             ),
             const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _textField(_sectionCtrl, 'Section')),
+                Expanded(child: StyledTextField(
+                  controller: _sectionCtrl,
+                  label: 'Section',
+                  icon: Icons.group_outlined,
+                )),
                 const SizedBox(width: 16),
-                Expanded(child: _textField(_recordTypeCtrl, 'Record Type', required: true)),
+                Expanded(child: StyledTextField(
+                  controller: _recordTypeCtrl,
+                  label: 'Record Type',
+                  icon: Icons.category_outlined,
+                  validator: (v) => v == null || v.isEmpty ? 'Record Type is required' : null,
+                )),
               ],
             ),
             const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _textField(_dateFromCtrl, 'Date From', hint: 'YYYY-MM-DD')),
+                Expanded(child: StyledTextField(
+                  controller: _dateFromCtrl,
+                  label: 'Date From',
+                  icon: Icons.event_outlined,
+                  hintText: 'YYYY-MM-DD',
+                  readOnly: true,
+                  onTap: () => _pickDate(_dateFromCtrl, 'Select Date From'),
+                )),
                 const SizedBox(width: 16),
-                Expanded(child: _textField(_dateToCtrl, 'Date To', hint: 'YYYY-MM-DD')),
+                Expanded(child: StyledTextField(
+                  controller: _dateToCtrl,
+                  label: 'Date To',
+                  icon: Icons.event_outlined,
+                  hintText: 'YYYY-MM-DD',
+                  readOnly: true,
+                  onTap: () => _pickDate(_dateToCtrl, 'Select Date To'),
+                )),
               ],
             ),
           ],
@@ -254,23 +313,10 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
     );
   }
 
-  Widget _textField(TextEditingController controller, String label, {bool required = false, String? hint}) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      ),
-      validator: required ? (v) => v == null || v.isEmpty ? '$label is required' : null : null,
-    );
-  }
-
   Widget _subjectsTable(PreviousSubjectsState state) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.borderLight)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.borderLight)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -278,11 +324,13 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
             children: [
               const Text('Subject Records', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.foregroundDark)),
               const Spacer(),
-              TextButton.icon(
+              StyledButton(
+                text: 'Add Subject',
+                icon: Icons.add_rounded,
+                variant: StyledButtonVariant.outlined,
+                fullWidth: false,
+                isLoading: false,
                 onPressed: () => _showAddSubjectDialog(),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Add Subject'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.foregroundPrimary),
               ),
             ],
           ),
@@ -332,7 +380,7 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
   Widget _attendanceTable(PreviousAttendanceState state) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.borderLight)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.borderLight)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -340,11 +388,13 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
             children: [
               const Text('Monthly Attendance', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.foregroundDark)),
               const Spacer(),
-              TextButton.icon(
+              StyledButton(
+                text: 'Add Month',
+                icon: Icons.add_rounded,
+                variant: StyledButtonVariant.outlined,
+                fullWidth: false,
+                isLoading: false,
                 onPressed: () => _showAddAttendanceDialog(),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Add Month'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.foregroundPrimary),
               ),
             ],
           ),
@@ -395,27 +445,29 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _dialogField(nameCtrl, 'Subject Name'),
+              StyledTextField(controller: nameCtrl, label: 'Subject Name', icon: Icons.book_outlined),
               const SizedBox(height: 12),
-              _dialogField(groupCtrl, 'Subject Group (optional)'),
+              StyledTextField(controller: groupCtrl, label: 'Subject Group (optional)', icon: Icons.category_outlined),
               const SizedBox(height: 12),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _dialogField(t1Ctrl, 'T1', numeric: true)),
+                  Expanded(child: StyledTextField(controller: t1Ctrl, label: 'T1', icon: Icons.grade_outlined, keyboardType: TextInputType.number)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(t2Ctrl, 'T2', numeric: true)),
+                  Expanded(child: StyledTextField(controller: t2Ctrl, label: 'T2', icon: Icons.grade_outlined, keyboardType: TextInputType.number)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(t3Ctrl, 'T3', numeric: true)),
+                  Expanded(child: StyledTextField(controller: t3Ctrl, label: 'T3', icon: Icons.grade_outlined, keyboardType: TextInputType.number)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(t4Ctrl, 'T4', numeric: true)),
+                  Expanded(child: StyledTextField(controller: t4Ctrl, label: 'T4', icon: Icons.grade_outlined, keyboardType: TextInputType.number)),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _dialogField(finalCtrl, 'Final Grade', numeric: true)),
+                  Expanded(child: StyledTextField(controller: finalCtrl, label: 'Final Grade', icon: Icons.grade_outlined, keyboardType: TextInputType.number)),
                   const SizedBox(width: 8),
-                  Expanded(child: _dialogField(descriptorCtrl, 'Descriptor')),
+                  Expanded(child: StyledTextField(controller: descriptorCtrl, label: 'Descriptor', icon: Icons.description_outlined)),
                 ],
               ),
             ],
@@ -472,11 +524,11 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _dialogField(monthCtrl, 'Month (e.g. June)'),
+              StyledTextField(controller: monthCtrl, label: 'Month (e.g. June)', icon: Icons.calendar_month_outlined),
               const SizedBox(height: 12),
-              _dialogField(schoolDaysCtrl, 'School Days', numeric: true),
+              StyledTextField(controller: schoolDaysCtrl, label: 'School Days', icon: Icons.calendar_today_outlined, keyboardType: TextInputType.number),
               const SizedBox(height: 12),
-              _dialogField(daysPresentCtrl, 'Days Present', numeric: true),
+              StyledTextField(controller: daysPresentCtrl, label: 'Days Present', icon: Icons.check_circle_outline, keyboardType: TextInputType.number),
             ],
           ),
         ),
@@ -506,17 +558,6 @@ class _Sf10SchoolHistoryEditPageState extends ConsumerState<Sf10SchoolHistoryEdi
             child: const Text('Save'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _dialogField(TextEditingController controller, String label, {bool numeric = false}) {
-    return TextField(
-      controller: controller,
-      keyboardType: numeric ? TextInputType.number : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
       ),
     );
   }

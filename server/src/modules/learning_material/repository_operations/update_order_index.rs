@@ -2,10 +2,14 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learning_materials;
 use crate::utils::{AppError, AppResult};
+use ::entity::learning_materials;
 
-pub async fn update_order_index(db: &DatabaseConnection, id: Uuid, order_index: i32) -> AppResult<learning_materials::Model> {
+pub async fn update_order_index(
+    db: &DatabaseConnection,
+    id: Uuid,
+    order_index: i32,
+) -> AppResult<learning_materials::Model> {
     let mut material: learning_materials::ActiveModel = learning_materials::Entity::find_by_id(id)
         .one(db)
         .await

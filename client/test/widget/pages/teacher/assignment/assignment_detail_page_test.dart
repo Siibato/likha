@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_detail_page.dart' as teacher_assignment;
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_detail_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';
 
@@ -11,8 +12,11 @@ void main() {
   testWidgets('shows default title when no assignment loaded', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        assignmentProvider.overrideWith(
-          (_) => FakeAssignmentNotifier(AssignmentState()),
+        assignmentDetailProvider.overrideWith(
+          (_) => FakeAssignmentDetailNotifier(AssignmentDetailState()),
+        ),
+        assignmentListProvider.overrideWith(
+          (_) => FakeAssignmentListNotifier(AssignmentListState()),
         ),
       ],
       child: const MaterialApp(
@@ -27,8 +31,11 @@ void main() {
   testWidgets('loading state shows spinner', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        assignmentProvider.overrideWith(
-          (_) => FakeAssignmentNotifier(AssignmentState(isLoading: true)),
+        assignmentDetailProvider.overrideWith(
+          (_) => FakeAssignmentDetailNotifier(AssignmentDetailState(isLoading: true)),
+        ),
+        assignmentListProvider.overrideWith(
+          (_) => FakeAssignmentListNotifier(AssignmentListState()),
         ),
       ],
       child: const MaterialApp(
@@ -43,8 +50,11 @@ void main() {
   testWidgets('page renders without crash when state is empty', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        assignmentProvider.overrideWith(
-          (_) => FakeAssignmentNotifier(AssignmentState()),
+        assignmentDetailProvider.overrideWith(
+          (_) => FakeAssignmentDetailNotifier(AssignmentDetailState()),
+        ),
+        assignmentListProvider.overrideWith(
+          (_) => FakeAssignmentListNotifier(AssignmentListState()),
         ),
       ],
       child: const MaterialApp(

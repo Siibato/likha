@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/assessment_detail_controller.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_detail_delete_section.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_detail_grading_section.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/assessment_detail_info_section.dart';
@@ -30,7 +30,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     super.initState();
     _controller = AssessmentDetailController(
       assessmentId: widget.assessmentId,
-      notifier: ref.read(teacherAssessmentProvider.notifier),
+      notifier: ref.read(assessmentDetailProvider.notifier),
     );
     _questionAnimController = AnimationController(
       duration: const Duration(milliseconds: 400),
@@ -38,7 +38,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(assessmentDetailProvider.notifier)
           .loadAssessmentDetail(widget.assessmentId);
     });
   }
@@ -52,16 +52,16 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final assessmentState = ref.watch(teacherAssessmentProvider);
+    final assessmentState = ref.watch(assessmentDetailProvider);
     final assessment = assessmentState.currentAssessment;
     final questions = assessmentState.questions;
 
-    return ProviderMessageListener<TeacherAssessmentState>(
-      provider: teacherAssessmentProvider,
+    return ProviderMessageListener<AssessmentDetailState>(
+      provider: assessmentDetailProvider,
       successMessage: (s) => s.successMessage,
       errorMessage: (s) => s.error,
       onClear: () =>
-          ref.read(teacherAssessmentProvider.notifier).clearMessages(),
+          ref.read(assessmentDetailProvider.notifier).clearMessages(),
       intercept: (prev, next) {
         if (next.successMessage == 'Assessment deleted') {
           Navigator.pop(context, true);
@@ -105,7 +105,7 @@ class _AssessmentDetailPageState extends ConsumerState<AssessmentDetailPage>
                   )
                 : RefreshIndicator(
                     onRefresh: () => ref
-                        .read(teacherAssessmentProvider.notifier)
+                        .read(assessmentDetailProvider.notifier)
                         .loadAssessmentDetail(widget.assessmentId),
                     color: AppColors.accentCharcoal,
                     child: ListenableBuilder(

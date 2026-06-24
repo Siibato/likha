@@ -1,6 +1,5 @@
 import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/database/local_database.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/logging/sync_logger.dart';
 import 'package:likha/core/sync/sync_semaphore.dart';
 import 'package:likha/core/sync/sync_state.dart';
@@ -15,7 +14,6 @@ class InboundSyncHandler {
   final SyncLogger _log;
   final SyncUpsertHelpers _upsertHelpers;
   final SyncStateUpdater _updateState;
-  final DataEventBus _dataEventBus;
 
   InboundSyncHandler(
     this._syncRemoteDataSource,
@@ -23,7 +21,6 @@ class InboundSyncHandler {
     this._log,
     this._upsertHelpers,
     this._updateState,
-    this._dataEventBus,
   );
 
   /// INBOUND SYNC: Fetch server changes (full or delta)
@@ -384,11 +381,6 @@ class InboundSyncHandler {
 
     await _upsertHelpers.recalculateClassStudentCounts(db);
 
-    // Notify gradebook UIs that grades may have changed
-    for (final classId in classMap.keys) {
-      _dataEventBus.notifyGradesChanged(classId);
-    }
-
     // STEP 5: Signal that entity data is now in the local DB
     _updateState(
       assessmentsReady: true,
@@ -445,17 +437,7 @@ class InboundSyncHandler {
 
     // Notify gradebook UIs if grade_scores changed
     if (deltas.gradeScores.updated.isNotEmpty || deltas.gradeScores.deleted.isNotEmpty) {
-      final gradeItemRows = await db.query(
-        DbTables.gradeItems,
-        columns: [GradeItemsCols.classId],
-        distinct: true,
-      );
-      for (final row in gradeItemRows) {
-        final classId = row[GradeItemsCols.classId] as String?;
-        if (classId != null && classId.isNotEmpty) {
-          _dataEventBus.notifyGradesChanged(classId);
-        }
-      }
+      // Grade scores changed - providers will refresh on next access
     }
 
     // Signal that delta data is now merged into local DB

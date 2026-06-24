@@ -1,6 +1,6 @@
-use crate::modules::sync::ProcessedOperationsRepository;
 use crate::modules::auth::UserRepository;
 use crate::modules::sync::service_operations::push::OperationResult;
+use crate::modules::sync::ProcessedOperationsRepository;
 use crate::tests::common::test_db::test_db;
 
 fn sample_result() -> OperationResult {
@@ -28,9 +28,16 @@ async fn test_check_processed_returns_none_for_new_op() {
 async fn test_save_and_check_processed_returns_result() {
     let db = test_db().await;
     let user_id = UserRepository::new(db.clone())
-        .create_account("proc_user1".to_string(), "Proc".to_string(), "One".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "proc_user1".to_string(),
+            "Proc".to_string(),
+            "One".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
-        .expect("user").id;
+        .expect("user")
+        .id;
     let repo = ProcessedOperationsRepository::new(db);
     let op_result = sample_result();
 
@@ -49,9 +56,16 @@ async fn test_save_and_check_processed_returns_result() {
 async fn test_check_processed_ram_cache_hit() {
     let db = test_db().await;
     let user_id = UserRepository::new(db.clone())
-        .create_account("proc_user2".to_string(), "Proc".to_string(), "Two".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "proc_user2".to_string(),
+            "Proc".to_string(),
+            "Two".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
-        .expect("user").id;
+        .expect("user")
+        .id;
     let repo = ProcessedOperationsRepository::new(db);
     let op_result = sample_result();
 

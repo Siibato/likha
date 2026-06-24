@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use uuid::Uuid;
+use crate::modules::assessment::schema::*;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::fmt_utc;
-use crate::modules::assessment::schema::*;
 use entity::question_choices;
+use std::collections::HashMap;
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_assessment_detail(
@@ -12,22 +12,35 @@ impl crate::modules::assessment::service::AssessmentService {
         user_id: Uuid,
         role: &str,
     ) -> AppResult<AssessmentDetailResponse> {
-        let assessment = self.assessment_repo.find_by_id(assessment_id).await?
+        let assessment = self
+            .assessment_repo
+            .find_by_id(assessment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let _class = self.class_repo.find_by_id(assessment.class_id).await?
+        let _class = self
+            .class_repo
+            .find_by_id(assessment.class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
         if role == "student" && !assessment.is_published {
             return Err(AppError::NotFound("Assessment not found".to_string()));
         }
 
-        if role == "teacher" && !self.class_repo.is_teacher_of_class(user_id, assessment.class_id).await? {
+        if role == "teacher"
+            && !self
+                .class_repo
+                .is_teacher_of_class(user_id, assessment.class_id)
+                .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
-        let questions = self.assessment_repo
-            .find_questions_by_assessment_id(assessment_id).await?;
+        let questions = self
+            .assessment_repo
+            .find_questions_by_assessment_id(assessment_id)
+            .await?;
 
         let question_ids: Vec<Uuid> = questions.iter().map(|q| q.id).collect();
 
@@ -39,14 +52,30 @@ impl crate::modules::assessment::service::AssessmentService {
             let mut correct_answers_fut = None;
             let mut enumeration_fut = None;
 
-            if questions.iter().any(|q| q.question_type == "multiple_choice") {
-                choices_fut = Some(self.assessment_repo.find_choices_by_question_ids(&question_ids));
+            if questions
+                .iter()
+                .any(|q| q.question_type == "multiple_choice")
+            {
+                choices_fut = Some(
+                    self.assessment_repo
+                        .find_choices_by_question_ids(&question_ids),
+                );
             }
-            if role == "teacher" && questions.iter().any(|q| q.question_type == "identification") {
-                correct_answers_fut = Some(self.assessment_repo.find_correct_answers_by_question_ids(&question_ids));
+            if role == "teacher"
+                && questions
+                    .iter()
+                    .any(|q| q.question_type == "identification")
+            {
+                correct_answers_fut = Some(
+                    self.assessment_repo
+                        .find_correct_answers_by_question_ids(&question_ids),
+                );
             }
             if role == "teacher" && questions.iter().any(|q| q.question_type == "enumeration") {
-                enumeration_fut = Some(self.assessment_repo.find_enumeration_items_for_questions(&question_ids));
+                enumeration_fut = Some(
+                    self.assessment_repo
+                        .find_enumeration_items_for_questions(&question_ids),
+                );
             }
 
             let choices_vec = if let Some(fut) = choices_fut {
@@ -54,10 +83,11 @@ impl crate::modules::assessment::service::AssessmentService {
             } else {
                 vec![]
             };
-            let choices: HashMap<Uuid, Vec<question_choices::Model>> = choices_vec.into_iter().fold(HashMap::new(), |mut acc, c| {
-                acc.entry(c.question_id).or_default().push(c);
-                acc
-            });
+            let choices: HashMap<Uuid, Vec<question_choices::Model>> =
+                choices_vec.into_iter().fold(HashMap::new(), |mut acc, c| {
+                    acc.entry(c.question_id).or_default().push(c);
+                    acc
+                });
             let correct_answers = if let Some(fut) = correct_answers_fut {
                 fut.await?
             } else {
@@ -72,60 +102,76 @@ impl crate::modules::assessment::service::AssessmentService {
             (choices, correct_answers, enumeration)
         };
 
-        let question_responses: Vec<QuestionResponse> = questions.into_iter().map(|q| {
-            let choices = if q.question_type == "multiple_choice" {
-                choices_map.get(&q.id).map(|choices| {
-                    choices.iter().map(|c| ChoiceResponse {
-                        id: c.id,
-                        choice_text: c.choice_text.clone(),
-                        is_correct: c.is_correct,
-                        order_index: c.order_index,
-                    }).collect()
-                })
-            } else {
-                None
-            };
+        let question_responses: Vec<QuestionResponse> = questions
+            .into_iter()
+            .map(|q| {
+                let choices = if q.question_type == "multiple_choice" {
+                    choices_map.get(&q.id).map(|choices| {
+                        choices
+                            .iter()
+                            .map(|c| ChoiceResponse {
+                                id: c.id,
+                                choice_text: c.choice_text.clone(),
+                                is_correct: c.is_correct,
+                                order_index: c.order_index,
+                            })
+                            .collect()
+                    })
+                } else {
+                    None
+                };
 
-            let correct_answers = if q.question_type == "identification" && role == "teacher" {
-                correct_answers_map.get(&q.id).map(|answers| {
-                    answers.iter().map(|a| CorrectAnswerResponse {
-                        id: a.id,
-                        answer_text: a.answer_text.clone(),
-                    }).collect()
-                })
-            } else {
-                None
-            };
+                let correct_answers = if q.question_type == "identification" && role == "teacher" {
+                    correct_answers_map.get(&q.id).map(|answers| {
+                        answers
+                            .iter()
+                            .map(|a| CorrectAnswerResponse {
+                                id: a.id,
+                                answer_text: a.answer_text.clone(),
+                            })
+                            .collect()
+                    })
+                } else {
+                    None
+                };
 
-            let enumeration_items = if q.question_type == "enumeration" && role == "teacher" {
-                enumeration_map.get(&q.id).map(|items| {
-                    items.iter().enumerate().map(|(i, (key, answers))| EnumerationItemResponse {
-                        id: key.id,
-                        order_index: i as i32,
-                        acceptable_answers: answers.iter().map(|a| EnumerationItemAnswerResponse {
-                            id: a.id,
-                            answer_text: a.answer_text.clone(),
-                        }).collect(),
-                    }).collect()
-                })
-            } else {
-                None
-            };
+                let enumeration_items = if q.question_type == "enumeration" && role == "teacher" {
+                    enumeration_map.get(&q.id).map(|items| {
+                        items
+                            .iter()
+                            .enumerate()
+                            .map(|(i, (key, answers))| EnumerationItemResponse {
+                                id: key.id,
+                                order_index: i as i32,
+                                acceptable_answers: answers
+                                    .iter()
+                                    .map(|a| EnumerationItemAnswerResponse {
+                                        id: a.id,
+                                        answer_text: a.answer_text.clone(),
+                                    })
+                                    .collect(),
+                            })
+                            .collect()
+                    })
+                } else {
+                    None
+                };
 
-            QuestionResponse {
-                id: q.id,
-                question_type: q.question_type,
-                question_text: q.question_text,
-                points: q.points,
-                order_index: q.order_index,
-                is_multi_select: q.is_multi_select,
-                choices,
-                correct_answers,
-                enumeration_items,
-                tos_competency_id: q.tos_competency_id.map(|u| u.to_string()),
-                cognitive_level: q.cognitive_level,
-            }
-        }).collect();
+                QuestionResponse {
+                    id: q.id,
+                    question_type: q.question_type,
+                    question_text: q.question_text,
+                    points: q.points,
+                    order_index: q.order_index,
+                    is_multi_select: q.is_multi_select,
+                    choices,
+                    correct_answers,
+                    enumeration_items,
+                    tos_competency_id: q.tos_competency_id.map(|u| u.to_string()),
+                    cognitive_level: q.cognitive_level,
+                }
+            })
+            .collect();
 
         Ok(AssessmentDetailResponse {
             id: assessment.id,

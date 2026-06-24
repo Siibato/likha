@@ -30,7 +30,6 @@ class QuestionEditPanel extends StatefulWidget {
 
 class _QuestionEditPanelState extends State<QuestionEditPanel> {
   late String _type;
-  late int _points;
   late bool _isMultiSelect;
   late List<ChoiceDraft> _choices;
   late List<String> _acceptableAnswers;
@@ -44,7 +43,6 @@ class _QuestionEditPanelState extends State<QuestionEditPanel> {
     super.initState();
     final d = widget.draft;
     _type = d.type;
-    _points = d.points;
     _isMultiSelect = d.isMultiSelect;
     _choices = d.choices.map((c) => ChoiceDraft(text: c.text, isCorrect: c.isCorrect)).toList();
     _acceptableAnswers = List<String>.from(d.acceptableAnswers);
@@ -84,6 +82,11 @@ class _QuestionEditPanelState extends State<QuestionEditPanel> {
       setState(() => _validationError = 'Question text is required');
       return;
     }
+    final points = int.tryParse(_pointsCtrl.text);
+    if (points == null || points < 1) {
+      setState(() => _validationError = 'Points must be a positive number');
+      return;
+    }
     if (_type == 'multiple_choice') {
       if (_choices.length < 2) {
         setState(() => _validationError = 'At least 2 choices are required');
@@ -107,7 +110,7 @@ class _QuestionEditPanelState extends State<QuestionEditPanel> {
     widget.onSave(QuestionDraft(
       type: _type,
       questionText: questionText,
-      points: int.tryParse(_pointsCtrl.text) ?? _points,
+      points: points,
       isMultiSelect: _isMultiSelect,
       choices: _choices,
       acceptableAnswers: _acceptableAnswers,

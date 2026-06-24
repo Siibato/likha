@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::utils::{parse_datetime, fmt_utc, validators::Validator};
 use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
+use crate::utils::{fmt_utc, parse_datetime, validators::Validator};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn create_assessment(
@@ -11,11 +11,20 @@ impl crate::modules::assessment::service::AssessmentService {
         teacher_id: Uuid,
         client_id: Option<Uuid>,
     ) -> AppResult<AssessmentResponse> {
-        let _ = self.class_repo.find_by_id(class_id).await?
+        let _ = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, class_id).await? {
-            return Err(AppError::Forbidden("You can only create assessments in your own classes".to_string()));
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
+            return Err(AppError::Forbidden(
+                "You can only create assessments in your own classes".to_string(),
+            ));
         }
 
         let title = Validator::validate_title(&request.title)?;
@@ -24,32 +33,38 @@ impl crate::modules::assessment::service::AssessmentService {
         let close_at = parse_datetime(&request.close_at)?;
 
         if close_at <= open_at {
-            return Err(AppError::BadRequest("Close date must be after open date".to_string()));
+            return Err(AppError::BadRequest(
+                "Close date must be after open date".to_string(),
+            ));
         }
 
         let max_order = self.assessment_repo.get_max_order_index(class_id).await?;
         let order_index = max_order + 1;
 
-        let assessment = self.assessment_repo.create_assessment(
-            class_id,
-            title,
-            request.description,
-            request.time_limit_minutes,
-            open_at,
-            close_at,
-            request.show_results_immediately.unwrap_or(true),
-            order_index,
-            client_id,
-            request.is_published.unwrap_or(false),
-            request.term_number,
-            request.component.clone(),
-            request.tos_id,
-        ).await?;
-
+        let assessment = self
+            .assessment_repo
+            .create_assessment(
+                class_id,
+                title,
+                request.description,
+                request.time_limit_minutes,
+                open_at,
+                close_at,
+                request.show_results_immediately.unwrap_or(true),
+                order_index,
+                client_id,
+                request.is_published.unwrap_or(false),
+                request.term_number,
+                request.component.clone(),
+                request.tos_id,
+            )
+            .await?;
 
         let question_count = if let Some(questions) = request.questions {
             if !questions.is_empty() {
-                let created = self.insert_questions_for_assessment(assessment.id, questions, teacher_id).await?;
+                let created = self
+                    .insert_questions_for_assessment(assessment.id, questions, teacher_id)
+                    .await?;
                 created.len() as usize
             } else {
                 0

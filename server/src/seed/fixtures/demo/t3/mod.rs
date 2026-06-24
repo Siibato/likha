@@ -1,9 +1,9 @@
 //! Term 3 fixtures for demo seeding: Chemistry.
 
+pub mod answers;
 pub mod assessments;
 pub mod assignments;
 pub mod materials;
-pub mod answers;
 
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;

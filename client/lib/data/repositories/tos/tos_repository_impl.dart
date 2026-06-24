@@ -1,4 +1,3 @@
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -13,17 +12,14 @@ class TosRepositoryImpl implements TosRepository {
   final TosRemoteDataSource _remoteDataSource;
   final TosLocalDataSource _localDataSource;
   final SyncQueue _syncQueue;
-  final DataEventBus _dataEventBus;
 
   TosRepositoryImpl({
     required TosRemoteDataSource remoteDataSource,
     required TosLocalDataSource localDataSource,
     required SyncQueue syncQueue,
-    required DataEventBus dataEventBus,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
-        _syncQueue = syncQueue,
-        _dataEventBus = dataEventBus;
+        _syncQueue = syncQueue;
 
   @override
   ResultFuture<MutationResult<TableOfSpecifications>> createTos({
@@ -64,7 +60,6 @@ class TosRepositoryImpl implements TosRepository {
       ops.getTosList(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         classId: classId,
       );
 
@@ -75,7 +70,6 @@ class TosRepositoryImpl implements TosRepository {
       ops.getTosDetail(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         tosId: tosId,
       );
 
@@ -92,7 +86,6 @@ class TosRepositoryImpl implements TosRepository {
       ops.searchMelcs(
         _localDataSource,
         _remoteDataSource,
-        _dataEventBus,
         subject: subject,
         gradeLevel: gradeLevel,
         termNumber: termNumber,

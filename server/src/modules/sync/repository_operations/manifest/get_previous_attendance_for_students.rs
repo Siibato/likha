@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::previous_school_attendance;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::previous_school_attendance;
 
 pub async fn get_previous_attendance_for_students(
     db: &DatabaseConnection,
@@ -15,6 +15,8 @@ pub async fn get_previous_attendance_for_students(
     }
     let query = previous_school_attendance::Entity::find()
         .filter(previous_school_attendance::Column::StudentId.is_in(student_ids));
-    helpers::paginate_query(db, query, limit, |r| helpers::previous_school_attendance_to_json(r))
-        .await
+    helpers::paginate_query(db, query, limit, |r| {
+        helpers::previous_school_attendance_to_json(r)
+    })
+    .await
 }

@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -26,8 +25,7 @@ bool _materialDetailHasChanged(
 
 ResultFuture<MaterialDetail> getMaterialDetail(
   LearningMaterialLocalDataSource localDataSource,
-  LearningMaterialRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  LearningMaterialRemoteDataSource remoteDataSource, {
   required String materialId,
   bool skipBackgroundRefresh = false,
 }) async {
@@ -84,7 +82,6 @@ ResultFuture<MaterialDetail> getMaterialDetail(
                 ),
               );
               await localDataSource.cacheMaterialFiles(materialId, fresh.files);
-              dataEventBus.notifyMaterialsChanged(currentMaterial.classId);
             }
           },
         );

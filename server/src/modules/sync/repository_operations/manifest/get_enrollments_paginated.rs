@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
-use crate::utils::{AppError, AppResult};
 use super::PaginatedRecords;
+use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
 pub async fn get_enrollments_paginated(
     db: &DatabaseConnection,
@@ -13,15 +13,14 @@ pub async fn get_enrollments_paginated(
     let query = class_participants::Entity::find()
         .filter(class_participants::Column::Id.is_in(enrollment_ids));
 
-    let all_records = query.all(db).await
+    let all_records = query
+        .all(db)
+        .await
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
     let mut result = Vec::new();
     for r in all_records {
-        if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id)
-            .one(db)
-            .await
-        {
+        if let Ok(Some(user)) = users::Entity::find_by_id(r.user_id).one(db).await {
             if user.role == "student" {
                 result.push(serde_json::json!({
                     "id": r.id.to_string(),

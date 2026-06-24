@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::core_values_records;
 use crate::utils::{AppError, AppResult};
+use ::entity::core_values_records;
 
 pub async fn upsert_core_values(
     db: &DatabaseConnection,
@@ -31,9 +31,9 @@ pub async fn upsert_core_values(
         let mut am: core_values_records::ActiveModel = model.into();
         am.marking = sea_orm::ActiveValue::Set(marking);
         am.updated_at = sea_orm::ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update core values: {}", e)))
+        am.update(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to update core values: {}", e))
+        })
     } else {
         let am = core_values_records::ActiveModel {
             id: sea_orm::ActiveValue::Set(Uuid::new_v4()),
@@ -47,8 +47,8 @@ pub async fn upsert_core_values(
             updated_at: sea_orm::ActiveValue::Set(now),
             deleted_at: sea_orm::ActiveValue::Set(None),
         };
-        am.insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to insert core values: {}", e)))
+        am.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to insert core values: {}", e))
+        })
     }
 }

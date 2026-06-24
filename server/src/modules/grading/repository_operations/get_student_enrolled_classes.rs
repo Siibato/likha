@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use crate::utils::{AppError, AppResult};
 use super::StudentEnrolledClass;
+use crate::utils::{AppError, AppResult};
 
 pub async fn get_student_enrolled_classes(
     db: &DatabaseConnection,
@@ -36,7 +36,9 @@ pub async fn get_student_enrolled_classes(
             params,
         ))
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to get student classes: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to get student classes: {}", e))
+        })?;
 
     let mut results = Vec::new();
     for row in rows {

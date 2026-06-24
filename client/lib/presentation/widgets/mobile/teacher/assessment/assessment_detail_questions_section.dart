@@ -6,7 +6,7 @@ import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/assessment_detail_controller.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assessment/question_add_page.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assessment/question_edit_page.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/question_reorder_list.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/questions_section.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/dashboard/reorder_position_dialog.dart';
@@ -120,7 +120,7 @@ class AssessmentDetailQuestionsSection extends ConsumerWidget {
       body: 'Delete this question? This cannot be undone.',
       confirmLabel: 'Delete',
       onConfirm: () => ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(assessmentDetailProvider.notifier)
           .deleteQuestion(question.id),
       warningBox: warningBox,
     );

@@ -1,9 +1,9 @@
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult};
-use crate::modules::assignment::schema::*;
 use crate::modules::admin::ActivityLogRepository;
-use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::assignment::schema::*;
+use crate::modules::class::repository::ClassRepository;
+use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn unpublish_assignment(
     assignment_repo: &AssignmentRepository,
@@ -12,27 +12,38 @@ pub async fn unpublish_assignment(
     assignment_id: Uuid,
     teacher_id: Uuid,
 ) -> AppResult<AssignmentResponse> {
-    let assignment = assignment_repo.find_by_id(assignment_id).await?
+    let assignment = assignment_repo
+        .find_by_id(assignment_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Assignment not found".to_string()))?;
 
-    let _class = class_repo.find_by_id(assignment.class_id).await?
+    let _class = class_repo
+        .find_by_id(assignment.class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-    if !class_repo.is_teacher_of_class(teacher_id, assignment.class_id).await? {
+    if !class_repo
+        .is_teacher_of_class(teacher_id, assignment.class_id)
+        .await?
+    {
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
     if !assignment.is_published {
-        return Err(AppError::BadRequest("Assignment is not published".to_string()));
+        return Err(AppError::BadRequest(
+            "Assignment is not published".to_string(),
+        ));
     }
 
     let unpublished = assignment_repo.unpublish_assignment(assignment_id).await?;
 
-    let _ = activity_log_repo.create_log(
-        teacher_id,
-        "assignment_unpublished",
-        Some(format!("Assignment '{}' unpublished", unpublished.title)),
-    ).await;
+    let _ = activity_log_repo
+        .create_log(
+            teacher_id,
+            "assignment_unpublished",
+            Some(format!("Assignment '{}' unpublished", unpublished.title)),
+        )
+        .await;
 
     Ok(AssignmentResponse {
         id: unpublished.id,

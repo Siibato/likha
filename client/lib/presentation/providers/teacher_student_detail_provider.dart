@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
 import 'package:likha/data/datasources/remote/assessments/assessment_remote_datasource.dart';
@@ -77,26 +76,10 @@ class TeacherStudentDetailState extends Equatable {
 class TeacherStudentDetailNotifier extends StateNotifier<TeacherStudentDetailState> {
   final String classId;
   final String studentId;
-  late StreamSubscription<String?> _assessmentSub;
-  late StreamSubscription<String?> _assignmentSub;
 
   TeacherStudentDetailNotifier(this.classId, this.studentId)
       : super(const TeacherStudentDetailState(isLoading: true)) {
-    // Subscribe to DataEventBus for auto-refresh
-    _assessmentSub = sl<DataEventBus>().onAssessmentsChanged.listen((id) {
-      if (id == classId) _reloadFromCache();
-    });
-    _assignmentSub = sl<DataEventBus>().onAssignmentsChanged.listen((id) {
-      if (id == classId) _reloadFromCache();
-    });
     _init();
-  }
-
-  @override
-  void dispose() {
-    _assessmentSub.cancel();
-    _assignmentSub.cancel();
-    super.dispose();
   }
 
   Future<void> _init() async {

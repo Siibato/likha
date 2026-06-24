@@ -1,17 +1,16 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignments;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::assignments;
 
 pub async fn get_assignments_paginated(
     db: &DatabaseConnection,
     assignment_ids: Vec<Uuid>,
     limit: i64,
 ) -> AppResult<PaginatedRecords> {
-    let query = assignments::Entity::find()
-        .filter(assignments::Column::Id.is_in(assignment_ids));
+    let query = assignments::Entity::find().filter(assignments::Column::Id.is_in(assignment_ids));
     helpers::paginate_query(db, query, limit, |r| {
         serde_json::json!({
             "id": r.id.to_string(),

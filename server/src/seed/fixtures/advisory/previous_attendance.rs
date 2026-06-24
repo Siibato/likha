@@ -1,9 +1,9 @@
 //! Advisory previous attendance: ~10 months per school year per student.
 
+use super::school_history::advisory_school_history;
+use super::users::{uid, STUDENT_DATA};
 use crate::seed::specs::PreviousAttendanceSpec;
 use crate::seed::tools::seed_id;
-use super::users::{uid, STUDENT_DATA};
-use super::school_history::advisory_school_history;
 
 const PREV_MONTHS: [(&str, i32); 10] = [
     ("June", 22),
@@ -24,7 +24,8 @@ pub fn advisory_previous_attendance() -> Vec<PreviousAttendanceSpec> {
 
     for (sidx, &(uname, _, _)) in STUDENT_DATA.iter().enumerate() {
         let student_id = uid(uname);
-        let student_history: Vec<_> = history.iter()
+        let student_history: Vec<_> = history
+            .iter()
             .filter(|h| h.student_id == student_id)
             .collect();
 
@@ -33,7 +34,10 @@ pub fn advisory_previous_attendance() -> Vec<PreviousAttendanceSpec> {
                 let days_present = school_days - ((sidx + hidx + month_idx) % 6) as i32;
                 let id = seed_id(
                     "previous_school_attendance",
-                    &format!("{}_{}_{}_{}", uname, hist.school_year, month, hist.grade_level),
+                    &format!(
+                        "{}_{}_{}_{}",
+                        uname, hist.school_year, month, hist.grade_level
+                    ),
                 );
                 records.push(PreviousAttendanceSpec {
                     id,

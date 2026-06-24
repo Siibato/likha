@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_submission_grading_page.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';
 
-Widget _buildPage({AssignmentState? state}) {
+Widget _buildPage({SubmissionState? state}) {
   return ProviderScope(
     overrides: [
-      assignmentProvider.overrideWith(
-        (_) => FakeAssignmentNotifier(state ?? AssignmentState()),
+      submissionProvider.overrideWith(
+        (_) => FakeSubmissionNotifier(state ?? SubmissionState()),
       ),
     ],
     child: const MaterialApp(
@@ -29,7 +29,7 @@ void main() {
   });
 
   testWidgets('loading state shows spinner', (tester) async {
-    await tester.pumpWidget(_buildPage(state: AssignmentState(isLoading: true)));
+    await tester.pumpWidget(_buildPage(state: SubmissionState(isLoading: true)));
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);

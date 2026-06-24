@@ -1,10 +1,13 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
-pub async fn find_student_name(db: &DatabaseConnection, student_id: Uuid) -> AppResult<(String, String)> {
+pub async fn find_student_name(
+    db: &DatabaseConnection,
+    student_id: Uuid,
+) -> AppResult<(String, String)> {
     let user = users::Entity::find_by_id(student_id)
         .one(db)
         .await

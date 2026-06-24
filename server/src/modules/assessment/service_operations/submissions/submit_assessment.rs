@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
 use crate::modules::grading::helpers::auto_populate;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn submit_assessment(
@@ -9,52 +9,89 @@ impl crate::modules::assessment::service::AssessmentService {
         submission_id: Uuid,
         student_id: Uuid,
     ) -> AppResult<SubmissionSummaryResponse> {
-        println!("📤 [SERVICE] submit_assessment() START - submission_id: {}, student_id: {}", submission_id, student_id);
+        println!(
+            "📤 [SERVICE] submit_assessment() START - submission_id: {}, student_id: {}",
+            submission_id, student_id
+        );
 
-        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
+        let submission = self
+            .assessment_repo
+            .find_submission_by_id(submission_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         println!("📤 [SERVICE] submit_assessment() - submission found: submitted_at={:?}, assessment_id={}",
             submission.submitted_at, submission.assessment_id);
 
         if submission.user_id != student_id {
-            println!("📤 [SERVICE] submit_assessment() ERROR - student mismatch: expected {}, got {}", submission.user_id, student_id);
+            println!(
+                "📤 [SERVICE] submit_assessment() ERROR - student mismatch: expected {}, got {}",
+                submission.user_id, student_id
+            );
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
         if submission.submitted_at.is_some() {
-            println!("📤 [SERVICE] submit_assessment() ERROR - already submitted at {:?}", submission.submitted_at);
-            return Err(AppError::BadRequest("Assessment already submitted".to_string()));
+            println!(
+                "📤 [SERVICE] submit_assessment() ERROR - already submitted at {:?}",
+                submission.submitted_at
+            );
+            return Err(AppError::BadRequest(
+                "Assessment already submitted".to_string(),
+            ));
         }
 
         println!("? [SERVICE] submit_assessment() - grading submission...");
         let (auto_score, final_score) = self.grade_submission(submission_id).await?;
-        println!("📤 [SERVICE] submit_assessment() - grading complete: auto_score={}, final_score={}", auto_score, final_score);
+        println!(
+            "📤 [SERVICE] submit_assessment() - grading complete: auto_score={}, final_score={}",
+            auto_score, final_score
+        );
 
         println!("📤 [SERVICE] submit_assessment() - marking as submitted...");
         let submitted = self.assessment_repo.mark_submitted(submission_id).await?;
 
-        println!("📤 [SERVICE] submit_assessment() - mark_submitted() returned: submitted_at={:?}",
-            submitted.submitted_at);
+        println!(
+            "📤 [SERVICE] submit_assessment() - mark_submitted() returned: submitted_at={:?}",
+            submitted.submitted_at
+        );
 
         let grade_item_id = auto_populate::auto_populate_score(
-            &self.grade_computation_repo, "assessment", submission.assessment_id, submission.user_id, final_score,
-        ).await?;
+            &self.grade_computation_repo,
+            "assessment",
+            submission.assessment_id,
+            submission.user_id,
+            final_score,
+        )
+        .await?;
 
-        let assessment = self.assessment_repo.find_by_id(submission.assessment_id).await?
+        let assessment = self
+            .assessment_repo
+            .find_by_id(submission.assessment_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Assessment not found".to_string()))?;
 
-        let student = self.user_repo.find_by_id(student_id).await?
+        let student = self
+            .user_repo
+            .find_by_id(student_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
         if let Some(ref inv) = self.invalidator {
-            inv.invalidate_assessment_submissions(submission.assessment_id).await;
-            inv.invalidate_assessment_submission_detail(submission_id).await;
+            inv.invalidate_assessment_submissions(submission.assessment_id)
+                .await;
+            inv.invalidate_assessment_submission_detail(submission_id)
+                .await;
             inv.invalidate_student_results(submission_id).await;
-            inv.invalidate_assessment_student_submission(submission.assessment_id, submission.user_id).await;
+            inv.invalidate_assessment_student_submission(
+                submission.assessment_id,
+                submission.user_id,
+            )
+            .await;
             if let Some(term) = assessment.term_number {
                 inv.invalidate_class_grades(assessment.class_id, term).await;
-                inv.invalidate_student_grades(assessment.class_id, submission.user_id, term).await;
+                inv.invalidate_student_grades(assessment.class_id, submission.user_id, term)
+                    .await;
             }
             if let Some(item_id) = grade_item_id {
                 inv.invalidate_item_scores(item_id).await;

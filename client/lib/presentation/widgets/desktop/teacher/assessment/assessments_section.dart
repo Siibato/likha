@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_create_page.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_detail_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_data_table.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
 
 /// Assessments section widget for TeacherClassDetailDesktop
 /// Displays a list of assessments with create and navigation functionality
@@ -19,7 +19,7 @@ class AssessmentsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(assessmentListProvider);
 
     return DesktopPageScaffold(
       title: 'Assessments',
@@ -33,7 +33,7 @@ class AssessmentsSection extends ConsumerWidget {
           ).then((result) {
             if (result == true) {
               ref
-                  .read(teacherAssessmentProvider.notifier)
+                  .read(assessmentListProvider.notifier)
                   .loadAssessments(classId);
             }
           }),
@@ -68,7 +68,7 @@ class AssessmentsSection extends ConsumerWidget {
                       AssessmentDetailPage(assessmentId: assessment.id),
                 ),
               ).then((_) => ref
-                  .read(teacherAssessmentProvider.notifier)
+                  .read(assessmentListProvider.notifier)
                   .loadAssessments(classId)),
             ),
     );

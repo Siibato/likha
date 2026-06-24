@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{class_participants, users};
 use crate::utils::{AppError, AppResult};
+use ::entity::{class_participants, users};
 
 pub async fn get_enrolled_student_ids(
     db: &DatabaseConnection,

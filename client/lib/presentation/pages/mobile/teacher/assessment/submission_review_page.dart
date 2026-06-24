@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/submission_review_controller.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/submission_review_notifier.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/submission_answer_card.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/assessment/submission_summary_card.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
@@ -26,7 +26,7 @@ class _SubmissionReviewPageState
     super.initState();
     _controller = SubmissionReviewController(
       submissionId: widget.submissionId,
-      notifier: ref.read(teacherAssessmentProvider.notifier),
+      notifier: ref.read(submissionReviewProvider.notifier),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller.init();
@@ -41,7 +41,7 @@ class _SubmissionReviewPageState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(submissionReviewProvider);
     final detail = state.currentSubmission?.id == widget.submissionId
         ? state.currentSubmission
         : null;

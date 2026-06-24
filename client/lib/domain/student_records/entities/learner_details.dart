@@ -4,8 +4,8 @@ class LearnerDetails extends Equatable {
   final String id;
   final String userId;
   final String? lrn;
-  final int? age;
   final String? sex;
+  final int? age;
   final String? trackStrand;
   final String? curriculum;
   final String? birthdate;
@@ -23,8 +23,8 @@ class LearnerDetails extends Equatable {
     required this.id,
     required this.userId,
     this.lrn,
-    this.age,
     this.sex,
+    this.age,
     this.trackStrand,
     this.curriculum,
     this.birthdate,

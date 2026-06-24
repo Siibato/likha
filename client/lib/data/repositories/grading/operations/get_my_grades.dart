@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
@@ -12,8 +11,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<List<TermGrade>> getMyGrades(
   GradingLocalDataSource localDataSource,
-  GradingRemoteDataSource remoteDataSource,
-  DataEventBus dataEventBus, {
+  GradingRemoteDataSource remoteDataSource, {
   required String classId,
 }) async {
   try {
@@ -28,7 +26,6 @@ ResultFuture<List<TermGrade>> getMyGrades(
             final current = await localDataSource.getTermGradesByClass(classId, 0);
             if (current.length != fresh.length) {
               await localDataSource.saveTermGrades(fresh);
-              dataEventBus.notifyGradesChanged(classId);
               return;
             }
             final currentById = {for (final c in current) c.id: c};
@@ -39,13 +36,11 @@ ResultFuture<List<TermGrade>> getMyGrades(
                   c.transmutedGrade != f.transmutedGrade ||
                   c.isLocked != f.isLocked) {
                 await localDataSource.saveTermGrades(fresh);
-                dataEventBus.notifyGradesChanged(classId);
                 return;
               }
             }
           } catch (_) {
             await localDataSource.saveTermGrades(fresh);
-            dataEventBus.notifyGradesChanged(classId);
           }
         },
       );

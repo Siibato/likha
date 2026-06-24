@@ -1,5 +1,5 @@
-use crate::modules::class::repository::ClassRepository;
 use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
 use crate::tests::common::test_db::test_db;
 
 #[tokio::test]
@@ -8,7 +8,12 @@ async fn test_create_and_find_class_by_id() {
     let repo = ClassRepository::new(db);
 
     let class = repo
-        .create_class("Math 101".to_string(), Some("Basic Math".to_string()), None, false)
+        .create_class(
+            "Math 101".to_string(),
+            Some("Basic Math".to_string()),
+            None,
+            false,
+        )
         .await
         .expect("create_class failed");
 
@@ -27,7 +32,13 @@ async fn test_find_by_user_id_returns_empty_when_no_enrollments() {
     let class_repo = ClassRepository::new(db);
 
     let user = user_repo
-        .create_account("teacher01".to_string(), "T".to_string(), "One".to_string(), "teacher".to_string(), None)
+        .create_account(
+            "teacher01".to_string(),
+            "T".to_string(),
+            "One".to_string(),
+            "teacher".to_string(),
+            None,
+        )
         .await
         .expect("create_account failed");
 

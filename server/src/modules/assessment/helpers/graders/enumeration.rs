@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use std::collections::HashSet;
 use crate::modules::assessment::repository::AssessmentRepository;
 use crate::utils::AppResult;
+use std::collections::HashSet;
+use uuid::Uuid;
 
 pub async fn grade_enumeration(
     submission_answer_id: Uuid,
@@ -10,16 +10,23 @@ pub async fn grade_enumeration(
     assessment_repo: &AssessmentRepository,
     submission_repo: &AssessmentRepository,
 ) -> AppResult<(bool, f64)> {
-    let slots = assessment_repo.find_enumeration_items_for_question(question_id).await?;
+    let slots = assessment_repo
+        .find_enumeration_items_for_question(question_id)
+        .await?;
     if slots.is_empty() {
         return Ok((false, 0.0));
     }
 
-    let items = submission_repo.find_answer_items_by_submission_answer_id(submission_answer_id).await?;
+    let items = submission_repo
+        .find_answer_items_by_submission_answer_id(submission_answer_id)
+        .await?;
 
-    let mut available: Vec<(Uuid, String)> = items.iter()
+    let mut available: Vec<(Uuid, String)> = items
+        .iter()
         .filter_map(|item| {
-            let text = item.answer_text.as_deref()
+            let text = item
+                .answer_text
+                .as_deref()
                 .map(|t| t.trim().to_lowercase())
                 .filter(|t| !t.is_empty())?;
             Some((item.id, text))
@@ -31,11 +38,15 @@ pub async fn grade_enumeration(
     let mut correct_item_ids: HashSet<Uuid> = HashSet::new();
 
     for (_key, acceptable_answers) in &slots {
-        let normalized_acceptable: HashSet<String> = acceptable_answers.iter()
+        let normalized_acceptable: HashSet<String> = acceptable_answers
+            .iter()
             .map(|a| a.answer_text.trim().to_lowercase())
             .collect();
 
-        if let Some(pos) = available.iter().position(|(_, text)| normalized_acceptable.contains(text)) {
+        if let Some(pos) = available
+            .iter()
+            .position(|(_, text)| normalized_acceptable.contains(text))
+        {
             let (item_id, _) = available.remove(pos);
             correct_item_ids.insert(item_id);
             correct_count += 1;

@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignments;
-use crate::utils::{AppError, AppResult};
 use super::ManifestEntry;
+use crate::utils::{AppError, AppResult};
+use ::entity::assignments;
 
 pub async fn get_published_assignments_manifest(
     db: &DatabaseConnection,

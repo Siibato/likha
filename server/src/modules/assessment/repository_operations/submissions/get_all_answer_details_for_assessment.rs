@@ -39,7 +39,9 @@ pub async fn get_all_answer_details_for_assessment(
             [assessment_id.into()],
         ))
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to query answer details: {}", e)))?;
+        .map_err(|e| {
+            AppError::InternalServerError(format!("Failed to query answer details: {}", e))
+        })?;
 
     let mut details = Vec::new();
     for row in rows {

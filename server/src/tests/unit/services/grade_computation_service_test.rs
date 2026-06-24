@@ -6,10 +6,10 @@
 //! Note: Mock-based tests for GradeComputationService CRUD require
 //! `mockall = "0.13"` to be vendored. Those tests are pending.
 
-use uuid::Uuid;
 use crate::modules::grading::schema::{
-    GradingConfigResponse, GradeItemResponse, GradeScoreResponse, TermGradeResponse,
+    GradeItemResponse, GradeScoreResponse, GradingConfigResponse, TermGradeResponse,
 };
+use uuid::Uuid;
 
 fn make_grade_record(
     ww: f64,
@@ -159,7 +159,10 @@ fn test_term_grade_descriptor_outstanding_for_transmuted_90() {
 fn test_term_grade_descriptor_did_not_meet_for_transmuted_74() {
     let model = make_term_grade(Some(55.0), Some(74));
     let response = TermGradeResponse::from(model);
-    assert_eq!(response.descriptor.as_deref(), Some("Did Not Meet Expectations"));
+    assert_eq!(
+        response.descriptor.as_deref(),
+        Some("Did Not Meet Expectations")
+    );
 }
 
 #[test]

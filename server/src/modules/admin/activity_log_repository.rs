@@ -1,9 +1,9 @@
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
-use ::entity::activity_logs;
 use crate::modules::admin::repository_operations::activity_log as ops;
 use crate::utils::AppResult;
+use ::entity::activity_logs;
 
 pub struct ActivityLogRepository {
     db: DatabaseConnection,

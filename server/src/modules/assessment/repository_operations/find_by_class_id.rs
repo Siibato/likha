@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assessments;
 use crate::utils::{AppError, AppResult};
+use ::entity::assessments;
 
 pub async fn find_by_class_id(
     db: &DatabaseConnection,

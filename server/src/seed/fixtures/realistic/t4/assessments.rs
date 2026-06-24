@@ -1,8 +1,8 @@
 //! Term 4 assessments for realistic seeding.
 
+use super::super::{aid, build_questions_from_bank, cid, compid, mc_choices, qid, tid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, tid, compid, aid, qid, mc_choices, build_questions_from_bank};
 
 pub fn realistic_assessments_t4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(140);
@@ -114,13 +114,24 @@ pub fn realistic_assessments_t4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     );
     let eng_t4_exam_points: i32 = eng_t4_exam_qs.iter().map(|q| q.points).sum();
     assessments.push(AssessmentSpec {
-        id: aid("eng_t4_exam"), class_id: cid("english_9a"),
+        id: aid("eng_t4_exam"),
+        class_id: cid("english_9a"),
         title: "Term 4 Exam: English 9".into(),
-        description: Some("15-item term assessment on creative writing and literary criticism.".into()),
-        time_limit_minutes: 60, open_at: now - chrono::Duration::days(122), close_at: now - chrono::Duration::days(116),
-        show_results_immediately: true, total_points: eng_t4_exam_points, component: "term_assessment".into(),
-        tos_id: tid("english_9a_tos_t4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, term_number: 4,
+        description: Some(
+            "15-item term assessment on creative writing and literary criticism.".into(),
+        ),
+        time_limit_minutes: 60,
+        open_at: now - chrono::Duration::days(122),
+        close_at: now - chrono::Duration::days(116),
+        show_results_immediately: true,
+        total_points: eng_t4_exam_points,
+        component: "term_assessment".into(),
+        tos_id: tid("english_9a_tos_t4"),
+        created_at: created,
+        deleted_at: None,
+        is_published: true,
+        results_released: true,
+        term_number: 4,
         questions: eng_t4_exam_qs,
     });
 
@@ -269,13 +280,24 @@ pub fn realistic_assessments_t4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     );
     let sci_t4_exam_points: i32 = sci_t4_exam_qs.iter().map(|q| q.points).sum();
     assessments.push(AssessmentSpec {
-        id: aid("sci_t4_exam"), class_id: cid("science_9a"),
+        id: aid("sci_t4_exam"),
+        class_id: cid("science_9a"),
         title: "Term 4 Exam: Science 9".into(),
-        description: Some("15-item term assessment on electricity, magnetism, and climate change.".into()),
-        time_limit_minutes: 60, open_at: now - chrono::Duration::days(123), close_at: now - chrono::Duration::days(117),
-        show_results_immediately: true, total_points: sci_t4_exam_points, component: "term_assessment".into(),
-        tos_id: tid("science_9a_tos_t4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, term_number: 4,
+        description: Some(
+            "15-item term assessment on electricity, magnetism, and climate change.".into(),
+        ),
+        time_limit_minutes: 60,
+        open_at: now - chrono::Duration::days(123),
+        close_at: now - chrono::Duration::days(117),
+        show_results_immediately: true,
+        total_points: sci_t4_exam_points,
+        component: "term_assessment".into(),
+        tos_id: tid("science_9a_tos_t4"),
+        created_at: created,
+        deleted_at: None,
+        is_published: true,
+        results_released: true,
+        term_number: 4,
         questions: sci_t4_exam_qs,
     });
 
@@ -464,13 +486,24 @@ pub fn realistic_assessments_t4(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     );
     let adv_t4_exam_points: i32 = adv_t4_exam_qs.iter().map(|q| q.points).sum();
     assessments.push(AssessmentSpec {
-        id: aid("adv_t4_exam"), class_id: cid("advisory_9a"),
+        id: aid("adv_t4_exam"),
+        class_id: cid("advisory_9a"),
         title: "Term 4 Exam: Advisory 9-A".into(),
-        description: Some("15-item term assessment on career planning and personal development.".into()),
-        time_limit_minutes: 45, open_at: now - chrono::Duration::days(123), close_at: now - chrono::Duration::days(117),
-        show_results_immediately: true, total_points: adv_t4_exam_points, component: "term_assessment".into(),
-        tos_id: tid("advisory_9a_tos_t4"), created_at: created, deleted_at: None,
-        is_published: true, results_released: true, term_number: 4,
+        description: Some(
+            "15-item term assessment on career planning and personal development.".into(),
+        ),
+        time_limit_minutes: 45,
+        open_at: now - chrono::Duration::days(123),
+        close_at: now - chrono::Duration::days(117),
+        show_results_immediately: true,
+        total_points: adv_t4_exam_points,
+        component: "term_assessment".into(),
+        tos_id: tid("advisory_9a_tos_t4"),
+        created_at: created,
+        deleted_at: None,
+        is_published: true,
+        results_released: true,
+        term_number: 4,
         questions: adv_t4_exam_qs,
     });
 

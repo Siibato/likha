@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/core/utils/typedef.dart';
@@ -13,8 +12,7 @@ import '_helpers.dart' as helpers;
 
 ResultFuture<MutationResult<GradeItem>> createGradeItem(
   GradingLocalDataSource localDataSource,
-  SyncQueue syncQueue,
-  DataEventBus dataEventBus, {
+  SyncQueue syncQueue, {
   required String classId,
   required Map<String, dynamic> data,
 }) async {
@@ -22,6 +20,13 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
     final now = DateTime.now();
     final id = const Uuid().v4();
     final queueEntryId = const Uuid().v4();
+
+    final existing = await localDataSource.getItemsByClassTerm(
+      classId,
+      (data['term_number'] as num?)?.toInt() ?? 1,
+      component: data['component'] as String?,
+    );
+    final nextOrderIndex = existing.length;
 
     final model = GradeItemModel(
       id: id,
@@ -32,7 +37,7 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       totalPoints: (data['total_points'] as num).toDouble(),
       sourceType: (data['source_type'] as String?) ?? 'manual',
       sourceId: data['source_id'] as String?,
-      orderIndex: (data['order_index'] as num?)?.toInt() ?? 0,
+      orderIndex: (data['order_index'] as num?)?.toInt() ?? nextOrderIndex,
       createdAt: now,
       updatedAt: now,
     );
@@ -60,8 +65,6 @@ ResultFuture<MutationResult<GradeItem>> createGradeItem(
       );
 
     });
-
-    dataEventBus.notifyGradesChanged(classId);
 
     return Right(MutationResult(entity: helpers.itemToEntity(model), status: SyncStatus.pending));
   } catch (e) {

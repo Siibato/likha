@@ -30,8 +30,8 @@ pub enum AppError {
     Unauthorized(String),
     Forbidden(String),
     Conflict(String),
-    TooManyRequests(i64),              // remaining_seconds
-    InvalidCredentials(String, i32),   // (message, attempts_remaining)
+    TooManyRequests(i64),            // remaining_seconds
+    InvalidCredentials(String, i32), // (message, attempts_remaining)
 }
 
 impl fmt::Display for AppError {
@@ -43,7 +43,9 @@ impl fmt::Display for AppError {
             AppError::Unauthorized(msg) => write!(f, "Unauthorized: {}", msg),
             AppError::Forbidden(msg) => write!(f, "Forbidden: {}", msg),
             AppError::Conflict(msg) => write!(f, "Conflict: {}", msg),
-            AppError::TooManyRequests(secs) => write!(f, "Too Many Requests: {} seconds remaining", secs),
+            AppError::TooManyRequests(secs) => {
+                write!(f, "Too Many Requests: {} seconds remaining", secs)
+            }
             AppError::InvalidCredentials(msg, _) => write!(f, "Invalid Credentials: {}", msg),
         }
     }
@@ -51,15 +53,69 @@ impl fmt::Display for AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, error_message, message, attempts_remaining, remaining_seconds, error_code, lockout_level) = match self {
-            AppError::InternalServerError(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error", msg, None, None, Some("INTERNAL_ERROR".to_string()), None)
-            }
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "Bad Request", msg, None, None, Some("BAD_REQUEST".to_string()), None),
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "Not Found", msg, None, None, Some("USERNAME_NOT_FOUND".to_string()), None),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "Unauthorized", msg, None, None, Some("UNAUTHORIZED".to_string()), None),
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", msg, None, None, Some("ACCOUNT_LOCKED".to_string()), None),
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, "Conflict", msg, None, None, Some("ACTIVATION_REQUIRED".to_string()), None),
+        let (
+            status,
+            error_message,
+            message,
+            attempts_remaining,
+            remaining_seconds,
+            error_code,
+            lockout_level,
+        ) = match self {
+            AppError::InternalServerError(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                msg,
+                None,
+                None,
+                Some("INTERNAL_ERROR".to_string()),
+                None,
+            ),
+            AppError::BadRequest(msg) => (
+                StatusCode::BAD_REQUEST,
+                "Bad Request",
+                msg,
+                None,
+                None,
+                Some("BAD_REQUEST".to_string()),
+                None,
+            ),
+            AppError::NotFound(msg) => (
+                StatusCode::NOT_FOUND,
+                "Not Found",
+                msg,
+                None,
+                None,
+                Some("USERNAME_NOT_FOUND".to_string()),
+                None,
+            ),
+            AppError::Unauthorized(msg) => (
+                StatusCode::UNAUTHORIZED,
+                "Unauthorized",
+                msg,
+                None,
+                None,
+                Some("UNAUTHORIZED".to_string()),
+                None,
+            ),
+            AppError::Forbidden(msg) => (
+                StatusCode::FORBIDDEN,
+                "Forbidden",
+                msg,
+                None,
+                None,
+                Some("ACCOUNT_LOCKED".to_string()),
+                None,
+            ),
+            AppError::Conflict(msg) => (
+                StatusCode::CONFLICT,
+                "Conflict",
+                msg,
+                None,
+                None,
+                Some("ACTIVATION_REQUIRED".to_string()),
+                None,
+            ),
             AppError::TooManyRequests(secs) => (
                 StatusCode::TOO_MANY_REQUESTS,
                 "Too Many Requests",

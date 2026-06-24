@@ -208,7 +208,7 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
             color: AppColors.accentAmber.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -216,7 +216,7 @@ class AssessmentQuestionCardDesktop extends StatelessWidget {
                 size: 14,
                 color: AppColors.accentAmber,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
                 'Manually graded',
                 style: TextStyle(

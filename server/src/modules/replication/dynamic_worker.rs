@@ -23,17 +23,15 @@ pub async fn run_dynamic_replication(
         let active_peers = peer_manager.active_peers().await;
 
         for peer in &active_peers {
-            workers
-                .entry(peer.node_id.clone())
-                .or_insert_with(|| {
-                    spawn_replication_worker(
-                        peer.clone(),
-                        replication_service.clone(),
-                        client.clone(),
-                        replication_secret.clone(),
-                        interval,
-                    )
-                });
+            workers.entry(peer.node_id.clone()).or_insert_with(|| {
+                spawn_replication_worker(
+                    peer.clone(),
+                    replication_service.clone(),
+                    client.clone(),
+                    replication_secret.clone(),
+                    interval,
+                )
+            });
         }
 
         workers.retain(|node_id, handle| {

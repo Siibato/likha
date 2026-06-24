@@ -52,13 +52,48 @@ pub async fn run(
     let school_name = settings.school_name.clone().unwrap_or_default();
     let school_year = sf10.current_school_year.clone().unwrap_or_default();
 
-    engine.draw_text(&layer, "SF10 — Learner's Permanent Record", 14.0, Mm(MARGIN), Mm(PAGE_H - MARGIN - 20.0), true);
-    engine.draw_text(&layer, &format!("School: {}", school_name), 11.0, Mm(MARGIN), Mm(PAGE_H - MARGIN - 30.0), false);
-    engine.draw_text(&layer, &format!("School Year: {}", school_year), 11.0, Mm(MARGIN), Mm(PAGE_H - MARGIN - 40.0), false);
-    engine.draw_text(&layer, &format!("Name: {}", sf10.student_name), 12.0, Mm(MARGIN), Mm(PAGE_H - MARGIN - 55.0), true);
+    engine.draw_text(
+        &layer,
+        "SF10 — Learner's Permanent Record",
+        14.0,
+        Mm(MARGIN),
+        Mm(PAGE_H - MARGIN - 20.0),
+        true,
+    );
+    engine.draw_text(
+        &layer,
+        &format!("School: {}", school_name),
+        11.0,
+        Mm(MARGIN),
+        Mm(PAGE_H - MARGIN - 30.0),
+        false,
+    );
+    engine.draw_text(
+        &layer,
+        &format!("School Year: {}", school_year),
+        11.0,
+        Mm(MARGIN),
+        Mm(PAGE_H - MARGIN - 40.0),
+        false,
+    );
+    engine.draw_text(
+        &layer,
+        &format!("Name: {}", sf10.student_name),
+        12.0,
+        Mm(MARGIN),
+        Mm(PAGE_H - MARGIN - 55.0),
+        true,
+    );
 
     if let Some(lrn) = &sf10.lrn {
-        engine.draw_text(&layer, &format!("LRN: {}", lrn), 11.0, Mm(MARGIN), Mm(PAGE_H - MARGIN - 65.0), false);
+        engine.draw_text(
+            &layer,
+            &format!("LRN: {}", lrn),
+            11.0,
+            Mm(MARGIN),
+            Mm(PAGE_H - MARGIN - 65.0),
+            false,
+        );
     }
 
     let mut y = PAGE_H - MARGIN - 80.0;
@@ -70,7 +105,10 @@ pub async fn run(
                 record.school_year,
                 record.grade_level,
                 record.section.as_deref().unwrap_or(""),
-                record.final_average.map(|f| f.to_string()).unwrap_or_else(|| "N/A".to_string()),
+                record
+                    .final_average
+                    .map(|f| f.to_string())
+                    .unwrap_or_else(|| "N/A".to_string()),
             ),
             10.0,
             Mm(MARGIN),
@@ -84,11 +122,30 @@ pub async fn run(
                 &format!(
                     "  {} — T1:{} T2:{} T3:{} T4:{} Final:{}",
                     subject.class_title,
-                    subject.term_grades.first().and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.term_grades.get(1).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.term_grades.get(2).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.term_grades.get(3).and_then(|g| g.map(|v| v.to_string())).unwrap_or_else(|| "-".to_string()),
-                    subject.final_grade.map(|f| f.to_string()).unwrap_or_else(|| "-".to_string()),
+                    subject
+                        .term_grades
+                        .first()
+                        .and_then(|g| g.map(|v| v.to_string()))
+                        .unwrap_or_else(|| "-".to_string()),
+                    subject
+                        .term_grades
+                        .get(1)
+                        .and_then(|g| g.map(|v| v.to_string()))
+                        .unwrap_or_else(|| "-".to_string()),
+                    subject
+                        .term_grades
+                        .get(2)
+                        .and_then(|g| g.map(|v| v.to_string()))
+                        .unwrap_or_else(|| "-".to_string()),
+                    subject
+                        .term_grades
+                        .get(3)
+                        .and_then(|g| g.map(|v| v.to_string()))
+                        .unwrap_or_else(|| "-".to_string()),
+                    subject
+                        .final_grade
+                        .map(|f| f.to_string())
+                        .unwrap_or_else(|| "-".to_string()),
                 ),
                 9.0,
                 Mm(MARGIN + 5.0),

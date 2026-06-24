@@ -37,7 +37,10 @@ pub async fn search_melcs(
     }
     if let Some(q) = quarter {
         params.push(q.into());
-        sql.push_str(&format!(" AND (quarter = ${} OR quarter IS NULL)", params.len()));
+        sql.push_str(&format!(
+            " AND (quarter = ${} OR quarter IS NULL)",
+            params.len()
+        ));
     }
     if let Some(text) = query {
         let search_term = format!("%{}%", text);

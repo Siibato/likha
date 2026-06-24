@@ -1,6 +1,6 @@
-use sea_orm::DatabaseConnection;
-use crate::modules::auth::UserRepository;
 use crate::modules::admin::ActivityLogRepository;
+use crate::modules::auth::UserRepository;
+use sea_orm::DatabaseConnection;
 
 pub struct AdminRepository {
     pub user_repo: UserRepository,

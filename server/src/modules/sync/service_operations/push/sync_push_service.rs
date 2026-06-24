@@ -1,13 +1,6 @@
-use std::sync::Arc;
+use super::delegate::PushDelegate;
 use crate::modules::entitlement::EntitlementService;
-use crate::modules::class::service::ClassService;
-use crate::modules::assessment::service::AssessmentService;
-use crate::modules::assignment::service::AssignmentService;
-use crate::modules::learning_material::service::LearningMaterialService;
-use crate::modules::tos::service::TosService;
-use crate::modules::auth::service::AuthService;
-use crate::modules::admin::service::AdminService;
-use crate::modules::grading::service::GradeComputationService;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct SyncQueueEntry {
@@ -37,41 +30,20 @@ pub struct PushResponse {
 
 pub struct SyncPushService {
     pub entitlement_service: Arc<EntitlementService>,
-    pub class_service: Arc<ClassService>,
-    pub assessment_service: Arc<AssessmentService>,
-    pub assignment_service: Arc<AssignmentService>,
-    pub material_service: Arc<LearningMaterialService>,
-    pub auth_service: Arc<AuthService>,
-    pub admin_service: Arc<AdminService>,
-    pub grade_computation_service: Arc<GradeComputationService>,
-    pub tos_service: Arc<TosService>,
     pub processed_ops_repo: Arc<crate::modules::sync::ProcessedOperationsRepository>,
+    pub delegates: Vec<Arc<dyn PushDelegate>>,
 }
 
 impl SyncPushService {
     pub fn new(
         entitlement_service: Arc<EntitlementService>,
-        class_service: Arc<ClassService>,
-        assessment_service: Arc<AssessmentService>,
-        assignment_service: Arc<AssignmentService>,
-        material_service: Arc<LearningMaterialService>,
-        auth_service: Arc<AuthService>,
-        admin_service: Arc<AdminService>,
-        grade_computation_service: Arc<GradeComputationService>,
-        tos_service: Arc<TosService>,
         processed_ops_repo: Arc<crate::modules::sync::ProcessedOperationsRepository>,
+        delegates: Vec<Arc<dyn PushDelegate>>,
     ) -> Self {
         Self {
             entitlement_service,
-            class_service,
-            assessment_service,
-            assignment_service,
-            material_service,
-            auth_service,
-            admin_service,
-            grade_computation_service,
-            tos_service,
             processed_ops_repo,
+            delegates,
         }
     }
 }

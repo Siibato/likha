@@ -2,8 +2,8 @@ use chrono::NaiveDateTime;
 use sea_orm::*;
 use serde_json::Value;
 
-use ::entity::school_details;
 use crate::utils::{AppError, AppResult};
+use ::entity::school_details;
 
 pub async fn get_school_details_since(
     db: &DatabaseConnection,

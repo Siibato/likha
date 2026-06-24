@@ -1,4 +1,4 @@
-pub mod push;
+pub mod conflict_service;
 pub mod delta;
 pub mod full;
-pub mod conflict_service;
+pub mod push;

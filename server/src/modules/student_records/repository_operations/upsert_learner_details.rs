@@ -2,15 +2,14 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::learner_details;
-use crate::utils::{AppError, AppResult};
 use super::get_learner_details::get_learner_details;
+use crate::utils::{AppError, AppResult};
+use ::entity::learner_details;
 
 pub async fn upsert_learner_details(
     db: &DatabaseConnection,
     user_id: Uuid,
     lrn: Option<String>,
-    age: Option<i32>,
     sex: Option<String>,
     track_strand: Option<String>,
     curriculum: Option<String>,
@@ -30,7 +29,6 @@ pub async fn upsert_learner_details(
     if let Some(existing) = get_learner_details(db, user_id).await? {
         let mut am: learner_details::ActiveModel = existing.into();
         am.lrn = sea_orm::ActiveValue::Set(lrn);
-        am.age = sea_orm::ActiveValue::Set(age);
         am.sex = sea_orm::ActiveValue::Set(sex);
         am.track_strand = sea_orm::ActiveValue::Set(track_strand);
         am.curriculum = sea_orm::ActiveValue::Set(curriculum);
@@ -45,15 +43,14 @@ pub async fn upsert_learner_details(
         am.guardian_contact = sea_orm::ActiveValue::Set(guardian_contact);
         am.date_admitted = sea_orm::ActiveValue::Set(date_admitted);
         am.updated_at = sea_orm::ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to update learner details: {}", e)))
+        am.update(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to update learner details: {}", e))
+        })
     } else {
         let am = learner_details::ActiveModel {
             id: sea_orm::ActiveValue::Set(Uuid::new_v4()),
             user_id: sea_orm::ActiveValue::Set(user_id),
             lrn: sea_orm::ActiveValue::Set(lrn),
-            age: sea_orm::ActiveValue::Set(age),
             sex: sea_orm::ActiveValue::Set(sex),
             track_strand: sea_orm::ActiveValue::Set(track_strand),
             curriculum: sea_orm::ActiveValue::Set(curriculum),
@@ -71,8 +68,8 @@ pub async fn upsert_learner_details(
             updated_at: sea_orm::ActiveValue::Set(now),
             deleted_at: sea_orm::ActiveValue::Set(None),
         };
-        am.insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to insert learner details: {}", e)))
+        am.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to insert learner details: {}", e))
+        })
     }
 }

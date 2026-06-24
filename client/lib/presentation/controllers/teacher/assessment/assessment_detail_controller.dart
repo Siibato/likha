@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:likha/domain/assessments/entities/assessment.dart';
 import 'package:likha/domain/assessments/entities/question.dart';
 import 'package:likha/domain/assessments/usecases/update_assessment.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 
 /// Controller for the assessment detail flow.
 ///
@@ -10,7 +10,7 @@ import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
 /// Both mobile and desktop pages consume this via [ListenableBuilder].
 class AssessmentDetailController extends ChangeNotifier {
   final String assessmentId;
-  final TeacherAssessmentNotifier notifier;
+  final AssessmentDetailNotifier notifier;
 
   bool isQuestionReorderMode = false;
   List<Question> questionReorderBuffer = [];

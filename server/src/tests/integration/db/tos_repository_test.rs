@@ -1,7 +1,7 @@
-use uuid::Uuid;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::tos::repository::TosRepository;
 use crate::tests::common::test_db::test_db;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_create_tos_and_find_by_id() {
@@ -16,8 +16,22 @@ async fn test_create_tos_and_find_by_id() {
 
     let tos = repo
         .create_tos(
-            tos_id, class_id, 1, "T1 TOS", "difficulty", 30,
-            "days", 50.0, 30.0, 20.0, 16.67, 16.67, 16.67, 16.67, 16.67, 16.67,
+            tos_id,
+            class_id,
+            1,
+            "T1 TOS",
+            "difficulty",
+            30,
+            "days",
+            50.0,
+            30.0,
+            20.0,
+            16.67,
+            16.67,
+            16.67,
+            16.67,
+            16.67,
+            16.67,
         )
         .await
         .expect("create_tos failed");
@@ -40,8 +54,22 @@ async fn test_find_tos_by_class() {
     let repo = TosRepository::new(db);
 
     repo.create_tos(
-        Uuid::new_v4(), class_id, 1, "TOS T1", "blooms", 20,
-        "days", 50.0, 30.0, 20.0, 16.67, 16.67, 16.67, 16.67, 16.67, 16.67,
+        Uuid::new_v4(),
+        class_id,
+        1,
+        "TOS T1",
+        "blooms",
+        20,
+        "days",
+        50.0,
+        30.0,
+        20.0,
+        16.67,
+        16.67,
+        16.67,
+        16.67,
+        16.67,
+        16.67,
     )
     .await
     .expect("create failed");
@@ -54,6 +82,9 @@ async fn test_find_tos_by_class() {
 async fn test_find_tos_by_id_returns_none_for_unknown() {
     let db = test_db().await;
     let repo = TosRepository::new(db);
-    let found = repo.find_tos_by_id(Uuid::new_v4()).await.expect("find failed");
+    let found = repo
+        .find_tos_by_id(Uuid::new_v4())
+        .await
+        .expect("find failed");
     assert!(found.is_none());
 }

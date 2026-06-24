@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::table_of_specifications;
 use crate::utils::{AppError, AppResult};
+use ::entity::table_of_specifications;
 
 pub async fn soft_delete_tos(db: &DatabaseConnection, id: Uuid) -> AppResult<()> {
     let tos = table_of_specifications::Entity::find_by_id(id)

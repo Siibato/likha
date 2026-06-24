@@ -22,16 +22,16 @@ class _StudentClassListPageState extends ConsumerState<StudentClassListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClasses();
+      ref.read(classListProvider.notifier).loadClasses();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
+    final classListState = ref.watch(classListProvider);
 
     return SafeArea(
-      child: classState.isLoading && classState.classes.isEmpty
+      child: classListState.isLoading && classListState.classes.isEmpty
           ? SkeletonPulse(
               child: ListView.builder(
                 physics: const NeverScrollableScrollPhysics(),
@@ -42,19 +42,19 @@ class _StudentClassListPageState extends ConsumerState<StudentClassListPage> {
             )
           : RefreshIndicator(
               onRefresh: () =>
-                  ref.read(classProvider.notifier).loadClasses(),
+                  ref.read(classListProvider.notifier).loadClasses(),
               color: AppColors.accentCharcoal,
               child: CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(
                     child: ClassSectionHeader(title: 'Classes'),
                   ),
-                  classState.classes.isEmpty
+                  classListState.classes.isEmpty
                       ? const SliverFillRemaining(
                           child: EmptyState(),
                         )
                       : ClassListSection(
-                          classes: classState.classes,
+                          classes: classListState.classes,
                           onClassTap: (cls) => Navigator.push(
                             context,
                             MaterialPageRoute(

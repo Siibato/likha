@@ -46,7 +46,10 @@ pub fn choice_id(question_id: &str, choice_order: u32) -> Uuid {
 }
 
 pub fn submission_id(prefix: &str, student_name: &str, assessment_name: &str) -> Uuid {
-    seed_id("submissions", &format!("{prefix}_{student_name}_{assessment_name}"))
+    seed_id(
+        "submissions",
+        &format!("{prefix}_{student_name}_{assessment_name}"),
+    )
 }
 
 pub fn number_to_word(n: u32) -> &'static str {

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::assignment_submissions;
 use crate::utils::{AppError, AppResult};
+use ::entity::assignment_submissions;
 
 pub async fn update_submission_status(
     db: &DatabaseConnection,
@@ -24,8 +24,7 @@ pub async fn update_submission_status(
     }
     submission.updated_at = Set(Utc::now().naive_utc());
 
-    submission
-        .update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to update submission status: {}", e)))
+    submission.update(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to update submission status: {}", e))
+    })
 }

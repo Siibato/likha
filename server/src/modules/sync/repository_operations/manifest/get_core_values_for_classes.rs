@@ -1,9 +1,9 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::core_values_records;
+use super::{helpers, PaginatedRecords};
 use crate::utils::AppResult;
-use super::{PaginatedRecords, helpers};
+use ::entity::core_values_records;
 
 pub async fn get_core_values_for_classes(
     db: &DatabaseConnection,
@@ -15,6 +15,5 @@ pub async fn get_core_values_for_classes(
     }
     let query = core_values_records::Entity::find()
         .filter(core_values_records::Column::ClassId.is_in(class_ids));
-    helpers::paginate_query(db, query, limit, |r| helpers::core_values_record_to_json(r))
-        .await
+    helpers::paginate_query(db, query, limit, |r| helpers::core_values_record_to_json(r)).await
 }

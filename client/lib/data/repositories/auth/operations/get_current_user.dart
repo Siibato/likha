@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/errors/failures.dart';
-import 'package:likha/core/events/data_event_bus.dart';
 import 'package:likha/core/utils/remote_fetch.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
@@ -12,8 +11,7 @@ import 'package:likha/services/storage_service.dart';
 ResultFuture<User> getCurrentUser(
   AuthRemoteDataSource remoteDataSource,
   AuthLocalDataSource localDataSource,
-  StorageService storageService,
-  DataEventBus dataEventBus, {
+  StorageService storageService, {
   bool skipBackgroundRefresh = false,
 }) async {
   try {
@@ -33,7 +31,6 @@ ResultFuture<User> getCurrentUser(
             final current = await localDataSource.getCachedCurrentUser(storedUserId);
             if (current != fresh) {
               await localDataSource.cacheCurrentUser(fresh);
-              dataEventBus.notifyCurrentUserChanged();
             }
           },
         );

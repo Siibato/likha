@@ -1,9 +1,12 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use chrono::Utc;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 
-use crate::seed::specs::{SchoolHistorySpec, PreviousSubjectSpec, PreviousAttendanceSpec};
+use crate::seed::specs::{PreviousAttendanceSpec, PreviousSubjectSpec, SchoolHistorySpec};
 use crate::utils::AppError;
-use ::entity::{student_school_history, previous_school_subjects, previous_school_term_grades, previous_school_attendance};
+use ::entity::{
+    previous_school_attendance, previous_school_subjects, previous_school_term_grades,
+    student_school_history,
+};
 
 pub async fn insert_school_history(
     db: &DatabaseConnection,
@@ -71,7 +74,8 @@ pub async fn insert_previous_subjects(
                 updated_at: Set(now),
                 deleted_at: Set(None),
             };
-            tg_am.insert(db)
+            tg_am
+                .insert(db)
                 .await
                 .map_err(|e| AppError::InternalServerError(e.to_string()))?;
         }

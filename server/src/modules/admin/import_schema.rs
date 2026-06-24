@@ -8,7 +8,8 @@ pub struct StudentCsvRow {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub lrn: Option<String>,
-    pub age: Option<i32>,
+    /// Deprecated - retained only to emit validation errors when present.
+    pub age: Option<String>,
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,

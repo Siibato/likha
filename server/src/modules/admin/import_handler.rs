@@ -6,18 +6,32 @@ use axum::{
 };
 use std::sync::Arc;
 
+use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::admin::csv_handler;
 use crate::modules::admin::import_schema::ImportRequest;
 use crate::modules::admin::service::AdminService;
-use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::auth_guards::require_admin;
 use crate::utils::response::success_response;
 
 const STUDENT_TEMPLATE_HEADERS: &[&str] = &[
-    "username", "first_name", "last_name", "lrn", "age", "sex", "track_strand",
-    "curriculum", "birthdate", "birthplace", "home_address", "father_name",
-    "father_contact", "mother_name", "mother_contact", "guardian_name",
-    "guardian_contact", "date_admitted",
+    "username",
+    "first_name",
+    "last_name",
+    "lrn",
+    "age",
+    "sex",
+    "track_strand",
+    "curriculum",
+    "birthdate",
+    "birthplace",
+    "home_address",
+    "father_name",
+    "father_contact",
+    "mother_name",
+    "mother_contact",
+    "guardian_name",
+    "guardian_contact",
+    "date_admitted",
 ];
 
 pub async fn get_import_template() -> impl IntoResponse {
@@ -26,7 +40,10 @@ pub async fn get_import_template() -> impl IntoResponse {
         StatusCode::OK,
         [
             (header::CONTENT_TYPE, "text/csv"),
-            (header::CONTENT_DISPOSITION, "attachment; filename=\"student_import_template.csv\""),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"student_import_template.csv\"",
+            ),
         ],
         bytes,
     )
@@ -47,7 +64,8 @@ pub async fn preview_student_import(
             return (
                 StatusCode::BAD_REQUEST,
                 Json(serde_json::json!({ "error": "Bad Request", "message": e })),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 

@@ -1,8 +1,8 @@
 //! Demo classes: Science 10 + Advisory 10.
 
+use super::super::cid;
 use crate::seed::specs::ClassSpec;
 use crate::seed::tools::SeedContext;
-use super::super::cid;
 
 pub fn demo_classes(ctx: &SeedContext) -> Vec<ClassSpec> {
     let created = ctx.days_ago(25);

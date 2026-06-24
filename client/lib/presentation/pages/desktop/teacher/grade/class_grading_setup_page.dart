@@ -5,6 +5,8 @@ import 'package:likha/domain/grading/usecases/setup_grading.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 import 'package:likha/presentation/widgets/shared/forms/school_year_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_dropdown.dart';
+import 'package:likha/presentation/widgets/shared/forms/styled_text_field.dart';
 
 class ClassGradingSetupPage extends ConsumerStatefulWidget {
   final String classId;
@@ -23,6 +25,18 @@ class _ClassGradingSetupPageState
   int? _selectedSemester;
   String? _selectedSchoolYear;
 
+  final _customWwController = TextEditingController();
+  final _customPtController = TextEditingController();
+  final _customQaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _customWwController.dispose();
+    _customPtController.dispose();
+    _customQaController.dispose();
+    super.dispose();
+  }
+
   static const _gradeLevels = [
     'Grade 7',
     'Grade 8',
@@ -37,6 +51,8 @@ class _ClassGradingSetupPageState
     'ap_esp': 'AP / EsP',
     'math_sci': 'Math & Science',
     'mapeh_tle': 'MAPEH / EPP / TLE',
+    'jhs_academic_do015': 'Academic (DO 015 s 2026)',
+    'others': 'Others (Custom Weights)',
   };
 
   static const _shsSubjectGroups = {
@@ -44,6 +60,13 @@ class _ClassGradingSetupPageState
     'shs_academic': 'Academic Track',
     'shs_tvl': 'TVL / Sports / Arts',
     'shs_immersion': 'Work Immersion / Research',
+    'shs_core_do015': 'Core & Academic Electives',
+    'shs_field_exposure': 'Field Exposure / Arts',
+    'shs_arts_sports_health': 'Arts / Sports / Health',
+    'shs_research_design': 'Research & Design',
+    'shs_techpro': 'TechPro Electives',
+    'shs_work_immersion_do015': 'Work Immersion (DO 015)',
+    'others': 'Others (Custom Weights)',
   };
 
   static const _weightPresets = {
@@ -51,11 +74,27 @@ class _ClassGradingSetupPageState
     'ap_esp': (ww: 30, pt: 50, qa: 20),
     'math_sci': (ww: 40, pt: 40, qa: 20),
     'mapeh_tle': (ww: 20, pt: 60, qa: 20),
+    'jhs_academic_do015': (ww: 20, pt: 50, qa: 30),
     'shs_core': (ww: 25, pt: 50, qa: 25),
     'shs_academic': (ww: 25, pt: 45, qa: 30),
-    'shs_tvl': (ww: 25, pt: 45, qa: 30),
-    'shs_immersion': (ww: 35, pt: 40, qa: 25),
+    'shs_tvl': (ww: 35, pt: 40, qa: 25),
+    'shs_immersion': (ww: 20, pt: 60, qa: 20),
+    'shs_core_do015': (ww: 20, pt: 50, qa: 30),
+    'shs_field_exposure': (ww: 15, pt: 70, qa: 15),
+    'shs_arts_sports_health': (ww: 20, pt: 60, qa: 20),
+    'shs_research_design': (ww: 40, pt: 60, qa: 0),
+    'shs_techpro': (ww: 15, pt: 65, qa: 20),
+    'shs_work_immersion_do015': (ww: 20, pt: 80, qa: 0),
   };
+
+  bool get _isOthers => _selectedSubjectGroup == 'others';
+
+  int get _customTotal {
+    final ww = int.tryParse(_customWwController.text) ?? 0;
+    final pt = int.tryParse(_customPtController.text) ?? 0;
+    final qa = int.tryParse(_customQaController.text) ?? 0;
+    return ww + pt + qa;
+  }
 
   bool get _isShs {
     if (_selectedGradeLevel == null) return false;
@@ -89,6 +128,34 @@ class _ClassGradingSetupPageState
       return;
     }
 
+    double? customWw;
+    double? customPt;
+    double? customQa;
+
+    if (_isOthers) {
+      customWw = double.tryParse(_customWwController.text);
+      customPt = double.tryParse(_customPtController.text);
+      customQa = double.tryParse(_customQaController.text);
+
+      if (customWw == null || customPt == null || customQa == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Please enter valid numbers for all weights')),
+        );
+        return;
+      }
+
+      final total = customWw + customPt + customQa;
+      if ((total - 100).abs() > 0.01) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Weights must total 100%. Current total: ${total.toStringAsFixed(0)}%')),
+        );
+        return;
+      }
+    }
+
     await ref.read(gradingConfigProvider.notifier).setupGrading(
           SetupGradingParams(
             classId: widget.classId,
@@ -96,6 +163,9 @@ class _ClassGradingSetupPageState
             subjectGroup: _selectedSubjectGroup!,
             schoolYear: _selectedSchoolYear!,
             semester: _isShs ? _selectedSemester : null,
+            wwWeight: customWw,
+            ptWeight: customPt,
+            qaWeight: customQa,
           ),
         );
 
@@ -114,7 +184,7 @@ class _ClassGradingSetupPageState
   @override
   Widget build(BuildContext context) {
     final configState = ref.watch(gradingConfigProvider);
-    final weights = _selectedSubjectGroup != null
+    final weights = _selectedSubjectGroup != null && !_isOthers
         ? _weightPresets[_selectedSubjectGroup!]
         : null;
 
@@ -150,13 +220,10 @@ class _ClassGradingSetupPageState
               const SizedBox(height: 24),
 
               // Grade Level
-              DropdownButtonFormField<String>(
-                initialValue: _selectedGradeLevel,
-                decoration: const InputDecoration(
-                  labelText: 'Grade Level',
-                  prefixIcon: Icon(Icons.school_outlined),
-                  border: OutlineInputBorder(),
-                ),
+              StyledDropdown<String>(
+                value: _selectedGradeLevel,
+                label: 'Grade Level',
+                icon: Icons.school_outlined,
                 items: _gradeLevels
                     .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                     .toList(),
@@ -174,20 +241,16 @@ class _ClassGradingSetupPageState
               const SizedBox(height: 16),
 
               // Subject Group
-              DropdownButtonFormField<String>(
-                initialValue: _selectedSubjectGroup,
-                decoration: const InputDecoration(
-                  labelText: 'Subject Group',
-                  prefixIcon: Icon(Icons.category_outlined),
-                  border: OutlineInputBorder(),
-                ),
+              StyledDropdown<String>(
+                value: _selectedSubjectGroup,
+                label: 'Subject Group',
+                icon: Icons.category_outlined,
+                enabled: _selectedGradeLevel != null,
                 items: _availableSubjectGroups.entries
                     .map((e) =>
                         DropdownMenuItem(value: e.key, child: Text(e.value)))
                     .toList(),
-                onChanged: _selectedGradeLevel != null
-                    ? (val) => setState(() => _selectedSubjectGroup = val)
-                    : null,
+                onChanged: (val) => setState(() => _selectedSubjectGroup = val),
               ),
               const SizedBox(height: 16),
 
@@ -200,13 +263,10 @@ class _ClassGradingSetupPageState
 
               // Semester (SHS only)
               if (_isShs) ...[
-                DropdownButtonFormField<int>(
-                  initialValue: _selectedSemester,
-                  decoration: const InputDecoration(
-                    labelText: 'Semester',
-                    prefixIcon: Icon(Icons.view_timeline_outlined),
-                    border: OutlineInputBorder(),
-                  ),
+                StyledDropdown<int>(
+                  value: _selectedSemester,
+                  label: 'Semester',
+                  icon: Icons.view_timeline_outlined,
                   items: const [
                     DropdownMenuItem(value: 1, child: Text('1st Semester')),
                     DropdownMenuItem(value: 2, child: Text('2nd Semester')),
@@ -243,9 +303,11 @@ class _ClassGradingSetupPageState
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Based on DepEd Order No. 8',
-                        style: TextStyle(
+                      Text(
+                        _selectedSubjectGroup!.contains('do015')
+                            ? 'Based on DepEd Order No. 015, s. 2026'
+                            : 'Based on DepEd Order No. 8, s. 2015',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.foregroundTertiary,
                         ),
@@ -271,6 +333,110 @@ class _ClassGradingSetupPageState
                 const SizedBox(height: 24),
               ],
 
+              // Custom Weight Input (Others)
+              if (_isOthers) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundTertiary,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.borderLight,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Custom Weight Distribution',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foregroundPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Set your own weights — total must equal 100%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.foregroundTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      StyledTextField(
+                        controller: _customWwController,
+                        label: 'Written Works',
+                        icon: Icons.edit_note_outlined,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+                      StyledTextField(
+                        controller: _customPtController,
+                        label: 'Performance Tasks',
+                        icon: Icons.task_alt_outlined,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+                      StyledTextField(
+                        controller: _customQaController,
+                        label: 'Term Assessment',
+                        icon: Icons.assessment_outlined,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 16),
+                      Builder(builder: (context) {
+                        final total = _customTotal;
+                        final isValid = total == 100;
+                        return Row(
+                          children: [
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isValid
+                                    ? const Color(0xFFE8F5E9)
+                                    : (total > 100
+                                        ? const Color(0xFFFFEBEE)
+                                        : AppColors.backgroundSecondary),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isValid
+                                      ? const Color(0xFF4CAF50)
+                                      : (total > 100
+                                          ? const Color(0xFFE53935)
+                                          : AppColors.borderLight),
+                                ),
+                              ),
+                              child: Text(
+                                'Total: $total%${isValid ? ' ✓' : (total == 0 ? '' : ' — must be 100%')}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: isValid
+                                      ? const Color(0xFF2E7D32)
+                                      : (total > 100
+                                          ? const Color(0xFFC62828)
+                                          : AppColors.foregroundTertiary),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
               // Save Button
               SizedBox(
                 width: double.infinity,
@@ -286,7 +452,7 @@ class _ClassGradingSetupPageState
                           ),
                         )
                       : const Icon(Icons.check_rounded),
-                  label: const Text('Use Standard Weights'),
+                  label: Text(_isOthers ? 'Save Custom Weights' : 'Use Standard Weights'),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.foregroundPrimary,
                     foregroundColor: Colors.white,
@@ -348,3 +514,4 @@ class _WeightRow extends StatelessWidget {
     );
   }
 }
+

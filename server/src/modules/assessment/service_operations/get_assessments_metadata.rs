@@ -1,6 +1,6 @@
-use crate::utils::AppResult;
-use crate::utils::fmt_utc;
 use crate::modules::assessment::schema::*;
+use crate::utils::fmt_utc;
+use crate::utils::AppResult;
 use md5;
 
 impl crate::modules::assessment::service::AssessmentService {

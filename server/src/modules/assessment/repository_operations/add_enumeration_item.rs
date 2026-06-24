@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{answer_key_acceptable_answers, answer_keys};
 use crate::utils::{AppError, AppResult};
+use ::entity::{answer_key_acceptable_answers, answer_keys};
 
 pub async fn add_enumeration_item(
     db: &DatabaseConnection,
@@ -15,10 +15,9 @@ pub async fn add_enumeration_item(
         question_id: Set(question_id),
         updated_at: Set(Utc::now().naive_utc()),
     };
-    let inserted = new_key
-        .insert(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to create answer key: {}", e)))?;
+    let inserted = new_key.insert(db).await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to create answer key: {}", e))
+    })?;
 
     for text in acceptable_answers {
         let answer = answer_key_acceptable_answers::ActiveModel {
@@ -26,10 +25,9 @@ pub async fn add_enumeration_item(
             answer_key_id: Set(inserted.id),
             answer_text: Set(text.trim().to_lowercase()),
         };
-        answer
-            .insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to add enumeration answer: {}", e)))?;
+        answer.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to add enumeration answer: {}", e))
+        })?;
     }
     Ok(inserted)
 }

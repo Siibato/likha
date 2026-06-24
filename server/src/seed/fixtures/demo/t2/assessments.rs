@@ -1,28 +1,99 @@
 //! T2 assessments for demo seeding: Genetics & Heredity.
 
+use super::super::{aid, build_questions, cid, compid, tid};
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::super::{cid, tid, compid, aid, build_questions};
 
 pub fn demo_assessments_t2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
     let created = ctx.days_ago(20);
     let now = ctx.now();
-    let comps = &[compid("s10t2_comp_0"), compid("s10t2_comp_1"), compid("s10t2_comp_2"), compid("s10t2_comp_3")];
+    let comps = &[
+        compid("s10t2_comp_0"),
+        compid("s10t2_comp_1"),
+        compid("s10t2_comp_2"),
+        compid("s10t2_comp_3"),
+    ];
 
-    let quiz1_qs = build_questions("t2_quiz1",
+    let quiz1_qs = build_questions(
+        "t2_quiz1",
         &[
-            ("What does DNA stand for?", &["Deoxyribonucleic acid", "Dinucleotide amino acid", "Double helix nucleic acid", "Deoxyribose amino acid"], 0, "easy", "remembering"),
-            ("Which nitrogenous base pairs with adenine in DNA?", &["Cytosine", "Guanine", "Thymine", "Uracil"], 2, "easy", "remembering"),
-            ("What is the function of mRNA?", &["Store genetic information", "Carry amino acids", "Carry genetic code to ribosomes", "Build cell walls"], 2, "medium", "understanding"),
-            ("Where does protein synthesis occur in the cell?", &["Nucleus", "Ribosome", "Mitochondria", "Golgi apparatus"], 1, "easy", "remembering"),
-            ("Which process produces genetically identical cells?", &["Meiosis", "Mitosis", "Fertilization", "Crossing over"], 1, "medium", "understanding"),
+            (
+                "What does DNA stand for?",
+                &[
+                    "Deoxyribonucleic acid",
+                    "Dinucleotide amino acid",
+                    "Double helix nucleic acid",
+                    "Deoxyribose amino acid",
+                ],
+                0,
+                "easy",
+                "remembering",
+            ),
+            (
+                "Which nitrogenous base pairs with adenine in DNA?",
+                &["Cytosine", "Guanine", "Thymine", "Uracil"],
+                2,
+                "easy",
+                "remembering",
+            ),
+            (
+                "What is the function of mRNA?",
+                &[
+                    "Store genetic information",
+                    "Carry amino acids",
+                    "Carry genetic code to ribosomes",
+                    "Build cell walls",
+                ],
+                2,
+                "medium",
+                "understanding",
+            ),
+            (
+                "Where does protein synthesis occur in the cell?",
+                &["Nucleus", "Ribosome", "Mitochondria", "Golgi apparatus"],
+                1,
+                "easy",
+                "remembering",
+            ),
+            (
+                "Which process produces genetically identical cells?",
+                &["Meiosis", "Mitosis", "Fertilization", "Crossing over"],
+                1,
+                "medium",
+                "understanding",
+            ),
         ],
         &[
-            ("What is the basic unit of heredity called?", "Gene", "easy", "remembering"),
-            ("What is the shape of the DNA molecule?", "Double helix", "easy", "remembering"),
-            ("What are the four nitrogenous bases in DNA?", "Adenine, thymine, guanine, cytosine", "easy", "remembering"),
-            ("What is the site of DNA replication in the cell?", "Nucleus", "easy", "remembering"),
-            ("What do you call a segment of DNA that codes for a specific protein?", "Gene", "easy", "remembering"),
+            (
+                "What is the basic unit of heredity called?",
+                "Gene",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What is the shape of the DNA molecule?",
+                "Double helix",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What are the four nitrogenous bases in DNA?",
+                "Adenine, thymine, guanine, cytosine",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What is the site of DNA replication in the cell?",
+                "Nucleus",
+                "easy",
+                "remembering",
+            ),
+            (
+                "What do you call a segment of DNA that codes for a specific protein?",
+                "Gene",
+                "easy",
+                "remembering",
+            ),
         ],
         &[],
         comps,
@@ -76,33 +147,60 @@ pub fn demo_assessments_t2(ctx: &SeedContext) -> Vec<AssessmentSpec> {
 
     vec![
         AssessmentSpec {
-            id: aid("t2_quiz1"), class_id: cid("sci10"),
+            id: aid("t2_quiz1"),
+            class_id: cid("sci10"),
             title: "T2 Quiz 1: DNA, Genes, and Protein Synthesis".into(),
             description: Some("10-item quiz on DNA structure and protein synthesis.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(7), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t2"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 2,
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(7),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t2"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 2,
             questions: quiz1_qs,
         },
         AssessmentSpec {
-            id: aid("t2_quiz2"), class_id: cid("sci10"),
+            id: aid("t2_quiz2"),
+            class_id: cid("sci10"),
             title: "T2 Quiz 2: Mendelian Genetics and Evolution".into(),
             description: Some("10-item quiz on inheritance patterns and evolution.".into()),
-            time_limit_minutes: 30, open_at: now - chrono::Duration::days(5), close_at: now - chrono::Duration::days(1),
-            show_results_immediately: true, total_points: 10, component: "written_work".into(),
-            tos_id: tid("sci10_tos_t2"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 2,
+            time_limit_minutes: 30,
+            open_at: now - chrono::Duration::days(5),
+            close_at: now - chrono::Duration::days(1),
+            show_results_immediately: true,
+            total_points: 10,
+            component: "written_work".into(),
+            tos_id: tid("sci10_tos_t2"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 2,
             questions: quiz2_qs,
         },
         AssessmentSpec {
-            id: aid("t2_exam"), class_id: cid("sci10"),
+            id: aid("t2_exam"),
+            class_id: cid("sci10"),
             title: "T2 Term Exam: Genetics and Heredity".into(),
             description: Some("25-item term assessment on DNA, genetics, and evolution.".into()),
-            time_limit_minutes: 60, open_at: now - chrono::Duration::days(10), close_at: now - chrono::Duration::days(2),
-            show_results_immediately: true, total_points: 25, component: "term_assessment".into(),
-            tos_id: tid("sci10_tos_t2"), created_at: created, deleted_at: None,
-            is_published: true, results_released: true, term_number: 2,
+            time_limit_minutes: 60,
+            open_at: now - chrono::Duration::days(10),
+            close_at: now - chrono::Duration::days(2),
+            show_results_immediately: true,
+            total_points: 25,
+            component: "term_assessment".into(),
+            tos_id: tid("sci10_tos_t2"),
+            created_at: created,
+            deleted_at: None,
+            is_published: true,
+            results_released: true,
+            term_number: 2,
             questions: exam_qs,
         },
     ]

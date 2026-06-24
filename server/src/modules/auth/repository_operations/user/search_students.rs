@@ -1,7 +1,7 @@
 use sea_orm::*;
 
-use ::entity::users;
 use crate::utils::{AppError, AppResult};
+use ::entity::users;
 
 pub async fn search_students(db: &DatabaseConnection, query: &str) -> AppResult<Vec<users::Model>> {
     let mut condition = Condition::all().add(users::Column::Role.eq("student"));

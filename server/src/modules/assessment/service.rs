@@ -2,11 +2,11 @@ use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::cache::{CacheKey, CacheInvalidator, RedisCache};
+use crate::cache::{CacheInvalidator, CacheKey, RedisCache};
 use crate::modules::assessment::repository::AssessmentRepository;
+use crate::modules::auth::UserRepository;
 use crate::modules::class::repository::ClassRepository;
 use crate::modules::grading::repository::GradeComputationRepository;
-use crate::modules::auth::UserRepository;
 
 pub struct AssessmentService {
     pub assessment_repo: AssessmentRepository,
@@ -43,7 +43,10 @@ impl AssessmentService {
     ) -> crate::utils::AppResult<crate::modules::assessment::schema::AssessmentListResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssessmentList(user_id, class_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::AssessmentListResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::AssessmentListResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
@@ -63,11 +66,16 @@ impl AssessmentService {
     ) -> crate::utils::AppResult<crate::modules::assessment::schema::AssessmentDetailResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssessmentDetail(assessment_id, role.to_string()).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::AssessmentDetailResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::AssessmentDetailResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
-        let result = self.get_assessment_detail(assessment_id, user_id, role).await?;
+        let result = self
+            .get_assessment_detail(assessment_id, user_id, role)
+            .await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssessmentDetail(assessment_id, role.to_string()).as_str();
             cache.set(&key, &result, cache.ttl.detail_seconds).await;
@@ -82,7 +90,10 @@ impl AssessmentService {
     ) -> crate::utils::AppResult<crate::modules::assessment::schema::SubmissionListResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssessmentSubmissions(assessment_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::SubmissionListResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::SubmissionListResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
@@ -101,7 +112,10 @@ impl AssessmentService {
     ) -> crate::utils::AppResult<crate::modules::assessment::schema::SubmissionDetailResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssessmentSubmissionDetail(submission_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::SubmissionDetailResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::SubmissionDetailResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
@@ -121,11 +135,16 @@ impl AssessmentService {
     ) -> crate::utils::AppResult<crate::modules::assessment::schema::StudentResultResponse> {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentResults(submission_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::StudentResultResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::StudentResultResponse>(&key)
+                .await
+            {
                 return Ok(cached);
             }
         }
-        let result = self.get_student_results(submission_id, user_id, role).await?;
+        let result = self
+            .get_student_results(submission_id, user_id, role)
+            .await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentResults(submission_id).as_str();
             cache.set(&key, &result, cache.ttl.detail_seconds).await;
@@ -139,14 +158,21 @@ impl AssessmentService {
         student_id: Uuid,
         user_id: Uuid,
         role: &str,
-    ) -> crate::utils::AppResult<Option<crate::modules::assessment::schema::SubmissionSummaryResponse>> {
+    ) -> crate::utils::AppResult<
+        Option<crate::modules::assessment::schema::SubmissionSummaryResponse>,
+    > {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::AssessmentStudentSubmission(assessment_id, student_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::SubmissionSummaryResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::SubmissionSummaryResponse>(&key)
+                .await
+            {
                 return Ok(Some(cached));
             }
         }
-        let result = self.get_student_submission(assessment_id, student_id, user_id, role).await?;
+        let result = self
+            .get_student_submission(assessment_id, student_id, user_id, role)
+            .await?;
         if let (Some(ref cache), Some(ref data)) = (self.cache.clone(), &result) {
             let key = CacheKey::AssessmentStudentSubmission(assessment_id, student_id).as_str();
             cache.set(&key, data, cache.ttl.detail_seconds).await;
@@ -159,14 +185,23 @@ impl AssessmentService {
         class_id: Uuid,
         student_id: Uuid,
         user_id: Uuid,
-    ) -> crate::utils::AppResult<crate::modules::assessment::schema::StudentAssessmentSubmissionsResponse> {
+    ) -> crate::utils::AppResult<
+        crate::modules::assessment::schema::StudentAssessmentSubmissionsResponse,
+    > {
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentAssessmentSubmissions(class_id, student_id).as_str();
-            if let Some(cached) = cache.get::<crate::modules::assessment::schema::StudentAssessmentSubmissionsResponse>(&key).await {
+            if let Some(cached) = cache
+                .get::<crate::modules::assessment::schema::StudentAssessmentSubmissionsResponse>(
+                    &key,
+                )
+                .await
+            {
                 return Ok(cached);
             }
         }
-        let result = self.get_student_assessment_submissions(class_id, student_id, user_id).await?;
+        let result = self
+            .get_student_assessment_submissions(class_id, student_id, user_id)
+            .await?;
         if let Some(ref cache) = self.cache {
             let key = CacheKey::StudentAssessmentSubmissions(class_id, student_id).as_str();
             cache.set(&key, &result, cache.ttl.list_seconds).await;

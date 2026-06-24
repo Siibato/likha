@@ -1,3 +1,4 @@
+use crate::utils::calculate_current_age;
 use serde::{Deserialize, Serialize};
 
 // ===== REQUEST SCHEMAS =====
@@ -5,7 +6,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize)]
 pub struct UpsertLearnerDetailsRequest {
     pub lrn: Option<String>,
-    pub age: Option<i32>,
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,
@@ -260,24 +260,45 @@ pub struct Sf10AttendanceMonth {
 
 impl From<::entity::learner_details::Model> for LearnerDetailsResponse {
     fn from(m: ::entity::learner_details::Model) -> Self {
+        let ::entity::learner_details::Model {
+            id,
+            user_id,
+            lrn,
+            sex,
+            track_strand,
+            curriculum,
+            birthdate,
+            birthplace,
+            home_address,
+            father_name,
+            father_contact,
+            mother_name,
+            mother_contact,
+            guardian_name,
+            guardian_contact,
+            date_admitted,
+            ..
+        } = m;
+
+        let age = calculate_current_age(birthdate);
         Self {
-            id: m.id.to_string(),
-            user_id: m.user_id.to_string(),
-            lrn: m.lrn,
-            age: m.age,
-            sex: m.sex,
-            track_strand: m.track_strand,
-            curriculum: m.curriculum,
-            birthdate: m.birthdate.map(|d| d.to_string()),
-            birthplace: m.birthplace,
-            home_address: m.home_address,
-            father_name: m.father_name,
-            father_contact: m.father_contact,
-            mother_name: m.mother_name,
-            mother_contact: m.mother_contact,
-            guardian_name: m.guardian_name,
-            guardian_contact: m.guardian_contact,
-            date_admitted: m.date_admitted.map(|d| d.to_string()),
+            id: id.to_string(),
+            user_id: user_id.to_string(),
+            lrn,
+            age,
+            sex,
+            track_strand,
+            curriculum,
+            birthdate: birthdate.map(|d| d.to_string()),
+            birthplace,
+            home_address,
+            father_name,
+            father_contact,
+            mother_name,
+            mother_contact,
+            guardian_name,
+            guardian_contact,
+            date_admitted: date_admitted.map(|d| d.to_string()),
         }
     }
 }

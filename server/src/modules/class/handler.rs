@@ -7,13 +7,13 @@ use axum::{
 use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::middleware::auth_middleware::AuthUser;
 use crate::modules::auth::schema::MessageResponse;
 use crate::modules::class::schema::{AddStudentRequest, CreateClassRequest, UpdateClassRequest};
-use crate::utils::response::success_response;
 use crate::modules::class::service::ClassService;
-use crate::middleware::auth_middleware::AuthUser;
 use crate::utils::auth_guards::require_teacher_or_admin;
 use crate::utils::error::AppError;
+use crate::utils::response::success_response;
 
 pub async fn create_class(
     State(class_service): State<Arc<ClassService>>,
@@ -24,7 +24,10 @@ pub async fn create_class(
         return r;
     }
 
-    match class_service.create_class(request, auth_user.user_id, None).await {
+    match class_service
+        .create_class(request, auth_user.user_id, None)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
         Err(e) => e.into_response(),
     }
@@ -40,7 +43,10 @@ pub async fn update_class(
         return r;
     }
 
-    match class_service.update_class(class_id, request, auth_user.user_id, &auth_user.role).await {
+    match class_service
+        .update_class(class_id, request, auth_user.user_id, &auth_user.role)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }
@@ -95,7 +101,12 @@ pub async fn add_student(
     }
 
     match class_service
-        .add_student(class_id, request.student_id, auth_user.user_id, &auth_user.role)
+        .add_student(
+            class_id,
+            request.student_id,
+            auth_user.user_id,
+            &auth_user.role,
+        )
         .await
     {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),
@@ -116,9 +127,13 @@ pub async fn remove_student(
         .remove_student(class_id, student_id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(_) => success_response(MessageResponse {
-            message: "Student removed from class".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Student removed from class".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -136,9 +151,13 @@ pub async fn delete_class(
         .soft_delete(class_id, auth_user.user_id, &auth_user.role)
         .await
     {
-        Ok(_) => success_response(MessageResponse {
-            message: "Class deleted successfully".to_string(),
-        }, StatusCode::OK).into_response(),
+        Ok(_) => success_response(
+            MessageResponse {
+                message: "Class deleted successfully".to_string(),
+            },
+            StatusCode::OK,
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -147,7 +166,10 @@ pub async fn get_classes_metadata(
     State(class_service): State<Arc<ClassService>>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
-    match class_service.get_classes_metadata(auth_user.user_id, &auth_user.role).await {
+    match class_service
+        .get_classes_metadata(auth_user.user_id, &auth_user.role)
+        .await
+    {
         Ok(response) => success_response(response, StatusCode::OK).into_response(),
         Err(e) => e.into_response(),
     }

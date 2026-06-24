@@ -26,8 +26,8 @@ Future<void> removeStudentLocally(
       );
 
       await t.rawUpdate(
-        'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ? WHERE id = ?',
-        [classId, now.toIso8601String(), classId],
+        'UPDATE ${DbTables.classes} SET student_count = (SELECT COUNT(*) FROM ${DbTables.classParticipants} WHERE class_id = ? AND removed_at IS NULL), updated_at = ?, ${CommonCols.syncStatus} = ? WHERE id = ?',
+        [classId, now.toIso8601String(), 'pending', classId],
       );
     }
 

@@ -7,36 +7,66 @@ pub mod t2;
 pub mod t3;
 pub mod t4;
 
-use uuid::Uuid;
+use super::shared::*;
 use crate::seed::specs::*;
 use crate::seed::tools::SeedContext;
-use super::shared::*;
+use uuid::Uuid;
 
 // ─── Class ID helpers ────────────────────────────────────────────────────────
-pub fn cid(key: &str) -> Uuid { class_id(key) }
-pub fn uid(name: &str) -> Uuid { user_id(name) }
-pub fn tid(key: &str) -> Uuid { tos_id(key) }
-pub fn compid(key: &str) -> Uuid { competency_id(key) }
-pub fn aid(key: &str) -> Uuid { assessment_id(key) }
-pub fn qid(a: &str, n: u32) -> Uuid { question_id(a, n) }
-pub fn chid(q: &str, n: u32) -> Uuid { choice_id(q, n) }
-pub fn asid(key: &str) -> Uuid { assignment_id(key) }
-pub fn mid(key: &str) -> Uuid { material_id(key) }
+pub fn cid(key: &str) -> Uuid {
+    class_id(key)
+}
+pub fn uid(name: &str) -> Uuid {
+    user_id(name)
+}
+pub fn tid(key: &str) -> Uuid {
+    tos_id(key)
+}
+pub fn compid(key: &str) -> Uuid {
+    competency_id(key)
+}
+pub fn aid(key: &str) -> Uuid {
+    assessment_id(key)
+}
+pub fn qid(a: &str, n: u32) -> Uuid {
+    question_id(a, n)
+}
+pub fn chid(q: &str, n: u32) -> Uuid {
+    choice_id(q, n)
+}
+pub fn asid(key: &str) -> Uuid {
+    assignment_id(key)
+}
+pub fn mid(key: &str) -> Uuid {
+    material_id(key)
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 pub fn mc_choices(q_key: &str, correct_idx: usize) -> Vec<ChoiceSpec> {
     let texts = ["Option A", "Option B", "Option C", "Option D"];
-    texts.iter().enumerate().map(|(i, t)| ChoiceSpec {
-        id: chid(q_key, i as u32), text: (*t).into(),
-        is_correct: i == correct_idx, order: i as i32,
-    }).collect()
+    texts
+        .iter()
+        .enumerate()
+        .map(|(i, t)| ChoiceSpec {
+            id: chid(q_key, i as u32),
+            text: (*t).into(),
+            is_correct: i == correct_idx,
+            order: i as i32,
+        })
+        .collect()
 }
 
 pub fn realistic_mc_choices(q_key: &str, texts: &[&str], correct_idx: usize) -> Vec<ChoiceSpec> {
-    texts.iter().enumerate().map(|(i, t)| ChoiceSpec {
-        id: chid(q_key, i as u32), text: (*t).into(),
-        is_correct: i == correct_idx, order: i as i32,
-    }).collect()
+    texts
+        .iter()
+        .enumerate()
+        .map(|(i, t)| ChoiceSpec {
+            id: chid(q_key, i as u32),
+            text: (*t).into(),
+            is_correct: i == correct_idx,
+            order: i as i32,
+        })
+        .collect()
 }
 
 pub fn build_questions_from_bank(
@@ -63,7 +93,11 @@ pub fn build_questions_from_bank(
             cognitive_level: Some((*cog).into()),
             choices: realistic_mc_choices(&q_key, choices, *correct),
             answer_key: AnswerKeySpec {
-                acceptable_answers: if *correct < choices.len() { vec![choices[*correct].into()] } else { vec![] }
+                acceptable_answers: if *correct < choices.len() {
+                    vec![choices[*correct].into()]
+                } else {
+                    vec![]
+                },
             },
         });
         idx += 1;
@@ -81,7 +115,9 @@ pub fn build_questions_from_bank(
             difficulty: Some((*diff).into()),
             cognitive_level: Some((*cog).into()),
             choices: vec![],
-            answer_key: AnswerKeySpec { acceptable_answers: vec![(*answer).into()] },
+            answer_key: AnswerKeySpec {
+                acceptable_answers: vec![(*answer).into()],
+            },
         });
         idx += 1;
     }
@@ -98,7 +134,9 @@ pub fn build_questions_from_bank(
             difficulty: Some((*diff).into()),
             cognitive_level: Some((*cog).into()),
             choices: vec![],
-            answer_key: AnswerKeySpec { acceptable_answers: vec![] },
+            answer_key: AnswerKeySpec {
+                acceptable_answers: vec![],
+            },
         });
         idx += 1;
     }

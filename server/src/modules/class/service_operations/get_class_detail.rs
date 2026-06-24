@@ -1,9 +1,9 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::class::schema::{ClassDetailResponse, EnrollmentResponse};
 use crate::modules::auth::schema::UserResponse;
-use crate::modules::class::repository::ClassRepository;
 use crate::modules::auth::UserRepository;
+use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::{ClassDetailResponse, EnrollmentResponse};
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn get_class_detail(
     class_repo: &ClassRepository,
@@ -42,8 +42,12 @@ pub async fn get_class_detail(
         })
         .collect();
 
-    let teacher = class_repo.find_teacher_of_class(class_id).await?
-        .ok_or_else(|| AppError::InternalServerError("Class has no teacher assigned".to_string()))?;
+    let teacher = class_repo
+        .find_teacher_of_class(class_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::InternalServerError("Class has no teacher assigned".to_string())
+        })?;
 
     Ok(ClassDetailResponse {
         id: class.id,

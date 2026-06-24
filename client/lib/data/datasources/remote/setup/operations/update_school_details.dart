@@ -19,7 +19,7 @@ Future<SchoolDetailsModel> updateSchoolDetails(
         ? Options(headers: {'Idempotency-Key': idempotencyKey})
         : null;
     final response = await dioClient.dio.put(
-      '/api/v1/admin/setup/school-settings',
+      '/api/v1/admin/setup/school-details',
       data: {
         'school_name': schoolName,
         'school_region': schoolRegion,

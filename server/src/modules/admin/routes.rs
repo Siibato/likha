@@ -23,10 +23,7 @@ pub fn routes(admin_service: Arc<AdminService>) -> Router {
                 .put(handler::update_account)
                 .delete(handler::delete_account),
         )
-        .route(
-            "/auth/accounts/{id}/logs",
-            get(handler::get_activity_logs),
-        )
+        .route("/auth/accounts/{id}/logs", get(handler::get_activity_logs))
         .route(
             "/auth/accounts/{id}/details",
             get(handler::get_account_details).put(handler::upsert_account_details),

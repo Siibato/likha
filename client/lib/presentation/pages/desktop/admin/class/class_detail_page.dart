@@ -28,8 +28,19 @@ class _AdminClassDetailPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     });
+  }
+
+  @override
+  void didUpdateWidget(AdminClassDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classId != widget.classId) {
+      _currentPage = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
+      });
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -38,10 +49,11 @@ class _AdminClassDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final detail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final classListState = ref.watch(classListProvider);
+    final detail = classDetailState.currentClassDetail;
 
-    final classInfo = classState.classes
+    final classInfo = classListState.classes
         .cast<ClassEntity?>()
         .firstWhere(
           (c) => c?.id == widget.classId,
@@ -57,7 +69,7 @@ class _AdminClassDetailPageState
           color: AppColors.foregroundPrimary,
           onPressed: () => Navigator.pop(context),
         ),
-        body: detail == null || classInfo == null
+        body: detail == null
             ? const Center(
                 child: CircularProgressIndicator(
                   color: AppColors.foregroundPrimary,
@@ -68,23 +80,26 @@ class _AdminClassDetailPageState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Class Info Panel
-                  ClassInfoPanel.withClassInfo(
-                    detail: detail,
-                    classInfo: classInfo,
-                    onEdit: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AdminEditClassPage(
-                          classEntity: classInfo,
+                  if (classInfo != null)
+                    ClassInfoPanel.withClassInfo(
+                      detail: detail,
+                      classInfo: classInfo,
+                      onEdit: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AdminEditClassPage(
+                            classEntity: classInfo,
+                          ),
                         ),
-                      ),
-                    ).then((_) {
-                      ref.read(classProvider.notifier).loadAllClasses();
-                      ref
-                          .read(classProvider.notifier)
-                          .loadClassDetail(widget.classId);
-                    }),
-                  ),
+                      ).then((_) {
+                        ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true);
+                        ref
+                            .read(classDetailProvider.notifier)
+                            .loadClassDetail(widget.classId);
+                      }),
+                    )
+                  else
+                    const SizedBox.shrink(),
 
                   const SizedBox(height: 32),
 
@@ -110,11 +125,7 @@ class _AdminClassDetailPageState
                               classTitle: detail.title,
                             ),
                           ),
-                        ).then((_) {
-                          ref
-                              .read(classProvider.notifier)
-                              .loadClassDetail(widget.classId);
-                        }),
+                        ),
                         icon: const Icon(Icons.group_add_rounded, size: 18),
                         label: const Text('Manage Enrollment'),
                         style: FilledButton.styleFrom(
@@ -162,11 +173,7 @@ class _AdminClassDetailPageState
                                     classTitle: detail.title,
                                   ),
                                 ),
-                              ).then((_) {
-                                ref
-                                    .read(classProvider.notifier)
-                                    .loadClassDetail(widget.classId);
-                              }),
+                              ),
                               child: const Text('Add students'),
                             ),
                           ],

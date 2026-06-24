@@ -17,8 +17,8 @@ import 'package:likha/presentation/widgets/desktop/teacher/class/student_data_ta
 import 'package:likha/presentation/widgets/desktop/teacher/tos/tos_section.dart';
 import 'package:likha/domain/classes/entities/class_entity.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/providers/tos_provider.dart';
 import 'package:likha/presentation/providers/sf9_provider.dart';
@@ -120,7 +120,7 @@ class _TeacherClassDetailPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+      ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
     });
   }
 
@@ -133,7 +133,7 @@ class _TeacherClassDetailPageState
         _loadedTabs = {0};
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(classProvider.notifier).loadClassDetail(widget.classId);
+        ref.read(classDetailProvider.notifier).loadClassDetail(widget.classId);
       });
     }
   }
@@ -171,12 +171,12 @@ class _TeacherClassDetailPageState
       switch (index) {
         case 1:
           ref
-              .read(teacherAssessmentProvider.notifier)
+              .read(assessmentListProvider.notifier)
               .loadAssessments(widget.classId);
           break;
         case 2:
           ref
-              .read(assignmentProvider.notifier)
+              .read(assignmentListProvider.notifier)
               .loadAssignments(widget.classId);
           break;
         case 3:
@@ -196,10 +196,11 @@ class _TeacherClassDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final classState = ref.watch(classProvider);
-    final detail = classState.currentClassDetail;
+    final classDetailState = ref.watch(classDetailProvider);
+    final classListState = ref.watch(classListProvider);
+    final detail = classDetailState.currentClassDetail;
 
-    final classEntity = classState.classes
+    final classEntity = classListState.classes
         .cast<ClassEntity?>()
         .firstWhere(
           (c) => c?.id == widget.classId,

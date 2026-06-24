@@ -1,9 +1,9 @@
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult, parse_datetime, validators::Validator};
-use crate::modules::assignment::schema::*;
 use crate::modules::admin::ActivityLogRepository;
-use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::assignment::schema::*;
+use crate::modules::class::repository::ClassRepository;
+use crate::utils::{parse_datetime, validators::Validator, AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn create_assignment(
     assignment_repo: &AssignmentRepository,
@@ -14,7 +14,9 @@ pub async fn create_assignment(
     teacher_id: Uuid,
     client_id: Option<Uuid>,
 ) -> AppResult<AssignmentResponse> {
-    let _ = class_repo.find_by_id(class_id).await?
+    let _ = class_repo
+        .find_by_id(class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
     if !class_repo.is_teacher_of_class(teacher_id, class_id).await? {
@@ -35,28 +37,32 @@ pub async fn create_assignment(
     let max_order = assignment_repo.get_max_order_index(class_id).await?;
     let order_index = max_order + 1;
 
-    let assignment = assignment_repo.create_assignment(
-        class_id,
-        title,
-        instructions,
-        request.total_points,
-        request.allows_text_submission,
-        request.allows_file_submission,
-        request.allowed_file_types,
-        request.max_file_size_mb,
-        due_at,
-        order_index,
-        client_id,
-        request.is_published.unwrap_or(false),
-        request.term_number,
-        request.component.clone(),
-    ).await?;
+    let assignment = assignment_repo
+        .create_assignment(
+            class_id,
+            title,
+            instructions,
+            request.total_points,
+            request.allows_text_submission,
+            request.allows_file_submission,
+            request.allowed_file_types,
+            request.max_file_size_mb,
+            due_at,
+            order_index,
+            client_id,
+            request.is_published.unwrap_or(false),
+            request.term_number,
+            request.component.clone(),
+        )
+        .await?;
 
-    let _ = activity_log_repo.create_log(
-        teacher_id,
-        "assignment_created",
-        Some(format!("Assignment '{}' created", assignment.title)),
-    ).await;
+    let _ = activity_log_repo
+        .create_log(
+            teacher_id,
+            "assignment_created",
+            Some(format!("Assignment '{}' created", assignment.title)),
+        )
+        .await;
 
     Ok(AssignmentResponse {
         id: assignment.id,

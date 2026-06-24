@@ -9,7 +9,6 @@ pub struct Model {
     #[sea_orm(unique)]
     pub user_id: Uuid,
     pub lrn: Option<String>,
-    pub age: Option<i32>,
     pub sex: Option<String>,
     pub track_strand: Option<String>,
     pub curriculum: Option<String>,

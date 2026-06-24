@@ -9,14 +9,25 @@ import 'package:likha/domain/grading/entities/term_grade.dart';
 
 /// DepEd weight presets — mirrors class_grading_setup_page.dart
 const weightPresets = {
+  // ── JHS: DepEd Order No. 8, s. 2015 ──
   'language': (ww: 30.0, pt: 50.0, qa: 20.0),
   'ap_esp': (ww: 30.0, pt: 50.0, qa: 20.0),
   'math_sci': (ww: 40.0, pt: 40.0, qa: 20.0),
   'mapeh_tle': (ww: 20.0, pt: 60.0, qa: 20.0),
+  // ── SHS: DepEd Order No. 8, s. 2015 ──
   'shs_core': (ww: 25.0, pt: 50.0, qa: 25.0),
   'shs_academic': (ww: 25.0, pt: 45.0, qa: 30.0),
-  'shs_tvl': (ww: 25.0, pt: 45.0, qa: 30.0),
-  'shs_immersion': (ww: 35.0, pt: 40.0, qa: 25.0),
+  'shs_tvl': (ww: 35.0, pt: 40.0, qa: 25.0),
+  'shs_immersion': (ww: 20.0, pt: 60.0, qa: 20.0),
+  // ── JHS: DepEd Order No. 015, s. 2026 ──
+  'jhs_academic_do015': (ww: 20.0, pt: 50.0, qa: 30.0),
+  // ── SHS: DepEd Order No. 015, s. 2026 ──
+  'shs_core_do015': (ww: 20.0, pt: 50.0, qa: 30.0),
+  'shs_field_exposure': (ww: 15.0, pt: 70.0, qa: 15.0),
+  'shs_arts_sports_health': (ww: 20.0, pt: 60.0, qa: 20.0),
+  'shs_research_design': (ww: 40.0, pt: 60.0, qa: 0.0),
+  'shs_techpro': (ww: 15.0, pt: 65.0, qa: 20.0),
+  'shs_work_immersion_do015': (ww: 20.0, pt: 80.0, qa: 0.0),
 };
 
 GradeConfig configToEntity(GradeConfigModel m) => GradeConfig(

@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::modules::tos::schema::*;
 use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::tos::service::TosService {
     pub async fn update_tos(
@@ -9,12 +9,17 @@ impl crate::modules::tos::service::TosService {
         teacher_id: Uuid,
         request: UpdateTosRequest,
     ) -> AppResult<TosResponse> {
-        let tos = self.tos_repo
+        let tos = self
+            .tos_repo
             .find_tos_by_id(tos_id)
             .await?
             .ok_or_else(|| AppError::NotFound("TOS not found".to_string()))?;
 
-        if !self.class_repo.is_teacher_of_class(teacher_id, tos.class_id).await? {
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, tos.class_id)
+            .await?
+        {
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 

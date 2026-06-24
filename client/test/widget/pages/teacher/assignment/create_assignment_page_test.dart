@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:likha/presentation/pages/mobile/teacher/assignment/assignment_create_page.dart';
-import 'package:likha/presentation/providers/assignment_provider.dart';
+import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
 
 import '../../../helpers/widget_test_helpers.dart';
 
-Widget _buildPage({AssignmentState? state}) {
+Widget _buildPage({AssignmentListState? state}) {
   return ProviderScope(
     overrides: [
-      assignmentProvider.overrideWith(
-        (_) => FakeAssignmentNotifier(state ?? AssignmentState()),
+      assignmentListProvider.overrideWith(
+        (_) => FakeAssignmentListNotifier(state ?? AssignmentListState()),
       ),
     ],
     child: const MaterialApp(

@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::tos_competencies;
 use crate::utils::{AppError, AppResult};
+use ::entity::tos_competencies;
 
 pub async fn find_competency_by_id(
     db: &DatabaseConnection,

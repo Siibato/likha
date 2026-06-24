@@ -25,4 +25,8 @@ abstract class DocumentExportRepository {
     required String classId,
     required String studentId,
   });
+
+  ResultFuture<List<int>> exportTosExcel({
+    required String tosId,
+  });
 }

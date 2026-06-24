@@ -1,8 +1,8 @@
 use std::io::Cursor;
 
 use image_crate::codecs::png::PngDecoder;
-use printpdf::*;
 use printpdf::path::PaintMode;
+use printpdf::*;
 
 pub struct PdfEngine {
     pub doc: PdfDocumentReference,
@@ -51,7 +51,11 @@ impl PdfEngine {
         y: Mm,
         bold: bool,
     ) {
-        let font = if bold { &self.font_bold } else { &self.font_regular };
+        let font = if bold {
+            &self.font_bold
+        } else {
+            &self.font_regular
+        };
         layer.set_fill_color(black());
         layer.use_text(text, font_size, x, y, font);
     }
@@ -80,14 +84,12 @@ impl PdfEngine {
     }
 
     pub fn load_png(data: &[u8]) -> Result<Image, Box<dyn std::error::Error>> {
-        use image_crate::{DynamicImage, ImageEncoder, GenericImageView};
         use image_crate::codecs::png::PngEncoder;
         use image_crate::ColorType;
+        use image_crate::{DynamicImage, GenericImageView, ImageEncoder};
 
-        let dynamic = image_crate::load_from_memory_with_format(
-            data,
-            image_crate::ImageFormat::Png,
-        )?;
+        let dynamic =
+            image_crate::load_from_memory_with_format(data, image_crate::ImageFormat::Png)?;
 
         let flattened: DynamicImage = if dynamic.color().has_alpha() {
             let rgba = dynamic.to_rgba8();
@@ -109,7 +111,8 @@ impl PdfEngine {
         let (w, h) = flattened.dimensions();
         PngEncoder::new(&mut png_out).write_image(
             flattened.to_rgb8().as_raw(),
-            w, h,
+            w,
+            h,
             ColorType::Rgb8.into(),
         )?;
 

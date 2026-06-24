@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::grade_scores;
 use crate::utils::{AppError, AppResult};
+use ::entity::grade_scores;
 
 pub async fn get_scores_by_student_class_term(
     db: &DatabaseConnection,
@@ -26,11 +26,7 @@ pub async fn get_scores_by_student_class_term(
     let stmt = Statement::from_sql_and_values(
         DbBackend::Sqlite,
         sql,
-        vec![
-            student_id.into(),
-            class_id.into(),
-            term_number.into(),
-        ],
+        vec![student_id.into(), class_id.into(), term_number.into()],
     );
 
     let rows = db
@@ -40,23 +36,32 @@ pub async fn get_scores_by_student_class_term(
 
     let mut scores = Vec::new();
     for row in rows {
-        let id: String = row.try_get("", "id")
+        let id: String = row
+            .try_get("", "id")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let grade_item_id: String = row.try_get("", "grade_item_id")
+        let grade_item_id: String = row
+            .try_get("", "grade_item_id")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let student_id_str: String = row.try_get("", "student_id")
+        let student_id_str: String = row
+            .try_get("", "student_id")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let score: Option<f64> = row.try_get("", "score")
+        let score: Option<f64> = row
+            .try_get("", "score")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let is_auto_populated: bool = row.try_get("", "is_auto_populated")
+        let is_auto_populated: bool = row
+            .try_get("", "is_auto_populated")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let override_score: Option<f64> = row.try_get("", "override_score")
+        let override_score: Option<f64> = row
+            .try_get("", "override_score")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let created_at: String = row.try_get("", "created_at")
+        let created_at: String = row
+            .try_get("", "created_at")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let updated_at: String = row.try_get("", "updated_at")
+        let updated_at: String = row
+            .try_get("", "updated_at")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
-        let deleted_at: Option<String> = row.try_get("", "deleted_at")
+        let deleted_at: Option<String> = row
+            .try_get("", "deleted_at")
             .map_err(|e| AppError::InternalServerError(format!("Row parse error: {}", e)))?;
 
         scores.push(grade_scores::Model {
@@ -70,18 +75,29 @@ pub async fn get_scores_by_student_class_term(
             is_auto_populated,
             override_score,
             created_at: chrono::NaiveDateTime::parse_from_str(&created_at, "%Y-%m-%d %H:%M:%S%.f")
-                .or_else(|_| chrono::NaiveDateTime::parse_from_str(&created_at, "%Y-%m-%dT%H:%M:%S%.f"))
-                .map_err(|e| AppError::InternalServerError(format!("DateTime parse error: {}", e)))?,
+                .or_else(|_| {
+                    chrono::NaiveDateTime::parse_from_str(&created_at, "%Y-%m-%dT%H:%M:%S%.f")
+                })
+                .map_err(|e| {
+                    AppError::InternalServerError(format!("DateTime parse error: {}", e))
+                })?,
             updated_at: chrono::NaiveDateTime::parse_from_str(&updated_at, "%Y-%m-%d %H:%M:%S%.f")
-                .or_else(|_| chrono::NaiveDateTime::parse_from_str(&updated_at, "%Y-%m-%dT%H:%M:%S%.f"))
-                .map_err(|e| AppError::InternalServerError(format!("DateTime parse error: {}", e)))?,
+                .or_else(|_| {
+                    chrono::NaiveDateTime::parse_from_str(&updated_at, "%Y-%m-%dT%H:%M:%S%.f")
+                })
+                .map_err(|e| {
+                    AppError::InternalServerError(format!("DateTime parse error: {}", e))
+                })?,
             deleted_at: deleted_at
                 .map(|dt| {
-                    chrono::NaiveDateTime::parse_from_str(&dt, "%Y-%m-%d %H:%M:%S%.f")
-                        .or_else(|_| chrono::NaiveDateTime::parse_from_str(&dt, "%Y-%m-%dT%H:%M:%S%.f"))
+                    chrono::NaiveDateTime::parse_from_str(&dt, "%Y-%m-%d %H:%M:%S%.f").or_else(
+                        |_| chrono::NaiveDateTime::parse_from_str(&dt, "%Y-%m-%dT%H:%M:%S%.f"),
+                    )
                 })
                 .transpose()
-                .map_err(|e| AppError::InternalServerError(format!("DateTime parse error: {}", e)))?,
+                .map_err(|e| {
+                    AppError::InternalServerError(format!("DateTime parse error: {}", e))
+                })?,
         });
     }
 

@@ -2,8 +2,8 @@ use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::{answer_key_acceptable_answers, answer_keys};
 use crate::utils::{AppError, AppResult};
+use ::entity::{answer_key_acceptable_answers, answer_keys};
 
 pub async fn add_correct_answer(
     db: &DatabaseConnection,
@@ -24,10 +24,9 @@ pub async fn add_correct_answer(
             question_id: Set(question_id),
             updated_at: Set(Utc::now().naive_utc()),
         };
-        let inserted = new_key
-            .insert(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(format!("Failed to create answer key: {}", e)))?;
+        let inserted = new_key.insert(db).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to create answer key: {}", e))
+        })?;
         inserted.id
     };
 

@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use crate::utils::{AppError, AppResult};
-use crate::modules::class::repository::ClassRepository;
 use crate::modules::assignment::repository::AssignmentRepository;
+use crate::modules::class::repository::ClassRepository;
+use crate::utils::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn reorder_assignments(
     assignment_repo: &AssignmentRepository,
@@ -10,7 +10,9 @@ pub async fn reorder_assignments(
     assignment_ids: Vec<Uuid>,
     teacher_id: Uuid,
 ) -> AppResult<()> {
-    let _class = class_repo.find_by_id(class_id).await?
+    let _class = class_repo
+        .find_by_id(class_id)
+        .await?
         .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
     if !class_repo.is_teacher_of_class(teacher_id, class_id).await? {
@@ -23,7 +25,9 @@ pub async fn reorder_assignments(
         return Ok(());
     }
 
-    assignment_repo.reorder_assignments(class_id, assignment_ids).await?;
+    assignment_repo
+        .reorder_assignments(class_id, assignment_ids)
+        .await?;
 
     Ok(())
 }

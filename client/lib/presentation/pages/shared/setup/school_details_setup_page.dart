@@ -58,7 +58,7 @@ class _SchoolDetailsSetupPageState extends State<SchoolDetailsSetupPage> {
     try {
       final dioClient = di.sl<DioClient>();
       await dioClient.dio.put(
-        '${ApiConstants.baseUrl}/api/v1/admin/setup/school-settings',
+        '${ApiConstants.baseUrl}/api/v1/admin/setup/school-details',
         data: {
           'school_name': name,
           'school_region': _regionController.text.trim().isEmpty

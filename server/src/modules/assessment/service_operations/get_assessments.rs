@@ -1,7 +1,7 @@
-use uuid::Uuid;
+use crate::modules::assessment::schema::*;
 use crate::utils::error::{AppError, AppResult};
 use crate::utils::fmt_utc;
-use crate::modules::assessment::schema::*;
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn get_assessments(
@@ -10,22 +10,36 @@ impl crate::modules::assessment::service::AssessmentService {
         user_id: Uuid,
         role: &str,
     ) -> AppResult<AssessmentListResponse> {
-        let _ = self.class_repo.find_by_id(class_id).await?
+        let _ = self
+            .class_repo
+            .find_by_id(class_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Class not found".to_string()))?;
 
-        let is_teacher_of_class = role == "teacher" && self.class_repo.is_teacher_of_class(user_id, class_id).await?;
+        let is_teacher_of_class = role == "teacher"
+            && self
+                .class_repo
+                .is_teacher_of_class(user_id, class_id)
+                .await?;
         let assessments = if is_teacher_of_class {
             self.assessment_repo.find_by_class_id(class_id).await?
         } else {
-            self.assessment_repo.find_published_by_class_id(class_id).await?
+            self.assessment_repo
+                .find_published_by_class_id(class_id)
+                .await?
         };
 
         let mut responses = Vec::new();
         for a in assessments {
-            let question_count = self.assessment_repo
-                .find_questions_by_assessment_id(a.id).await?.len();
-            let submission_count = self.assessment_repo
-                .count_submissions_by_assessment_id(a.id).await?;
+            let question_count = self
+                .assessment_repo
+                .find_questions_by_assessment_id(a.id)
+                .await?
+                .len();
+            let submission_count = self
+                .assessment_repo
+                .count_submissions_by_assessment_id(a.id)
+                .await?;
 
             responses.push(AssessmentResponse {
                 id: a.id,
@@ -50,6 +64,8 @@ impl crate::modules::assessment::service::AssessmentService {
             });
         }
 
-        Ok(AssessmentListResponse { assessments: responses })
+        Ok(AssessmentListResponse {
+            assessments: responses,
+        })
     }
 }

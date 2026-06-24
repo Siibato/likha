@@ -13,11 +13,13 @@ TEST_DB_URL      := sqlite://./data/lms_e2e_test.db?mode=rwc
 PI_IMAGE_DIR      := deployment/pi-image
 PI_GEN_DIR        := /tmp/pi-gen
 PI_GEN_REPO       := https://github.com/RPi-Distro/pi-gen.git
+PI_GEN_REF        := 2026-06-18-raspios-bookworm-arm64
 PI_DEPLOY_DIR     := $(PI_GEN_DIR)/deploy
+BUILD_DIR         := builds
 
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-delete build-server run-server build-apk build-macos build-windows test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
+.PHONY: help setup dev dev-server dev-client dev-web dev-desktop dev-macos db-reset db-seed db-seed-manifest db-seed-e2e db-seed-realistic db-seed-demo db-seed-demo2 db-delete build-server run-server build-apk build-macos build-windows build-ios build-all test-server test-client test-e2e-auth test-e2e-admin test-e2e-client test-e2e-desktop format lint docker-up docker-up-nginx docker-down clean clean-server clean-client sync-pi-assets build-pi-server-image build-pi-image clean-pi-image
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -63,6 +65,9 @@ db-seed-realistic:
 db-seed-demo:
 	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-demo
 
+db-seed-demo2:
+	@cd $(SERVER_DIR) && cargo run -- reset-db && cargo run -- seed-demo2
+
 db-delete:
 	@cd $(SERVER_DIR) && cargo run -- delete-db
 
@@ -72,14 +77,37 @@ build-server:
 run-server:
 	@cd $(SERVER_DIR) && ./target/release/server
 
-build-apk:
+build-apk: ## Build Android APK and copy to builds/
 	@cd $(CLIENT_DIR) && flutter build apk --release
+	@mkdir -p $(BUILD_DIR)
+	@cp $(CLIENT_DIR)/build/app/outputs/flutter-apk/app-release.apk $(BUILD_DIR)/likha-android.apk
+	@echo "Android APK -> $(BUILD_DIR)/likha-android.apk"
 
-build-macos:
-	@cd $(CLIENT_DIR) && flutter build macos
+build-macos: ## Build macOS app, zip it, and copy to builds/
+	@cd $(CLIENT_DIR) && flutter build macos --release
+	@mkdir -p $(BUILD_DIR)
+	@zip -r $(BUILD_DIR)/likha-macos.zip $(CLIENT_DIR)/build/macos/Build/Products/Release/likha.app
+	@echo "macOS app -> $(BUILD_DIR)/likha-macos.zip"
 
-build-windows:
-	@cd $(CLIENT_DIR) && flutter build windows
+build-windows: ## Build Windows app, zip it, and copy to builds/
+	@cd $(CLIENT_DIR) && flutter build windows --release
+	@mkdir -p $(BUILD_DIR)
+	@cd $(CLIENT_DIR)/build/windows/x64/Release && zip -r ../../../../../$(BUILD_DIR)/likha-windows.zip .
+	@echo "Windows app -> $(BUILD_DIR)/likha-windows.zip"
+
+build-ios: ## Build iOS app (no codesign), zip it, and copy to builds/
+	@cd $(CLIENT_DIR) && flutter build ios --release --no-codesign
+	@mkdir -p $(BUILD_DIR)
+	@cd $(CLIENT_DIR)/build/ios/Release-iphoneos && zip -r ../../../$(BUILD_DIR)/likha-ios.zip Runner.app
+	@echo "iOS app -> $(BUILD_DIR)/likha-ios.zip"
+
+build-all: build-apk build-macos build-ios ## Build all client apps and copy to builds/
+	@if [ "$$(uname)" = "MINGW" ] || [ "$$(uname)" = "MSYS" ] || [ "$$(uname)" = "CYGWIN" ] || [ "$$(uname)" = "Windows_NT" ]; then \
+		$(MAKE) build-windows; \
+	else \
+		echo "Skipping Windows build (requires Windows host)"; \
+	fi
+	@echo "All builds complete. Check $(BUILD_DIR)/"
 
 test-server:
 	@cd $(SERVER_DIR) && cargo test --features seed
@@ -106,11 +134,18 @@ lint:
 	@cd $(SERVER_DIR) && cargo clippy
 	@cd $(CLIENT_DIR) && flutter analyze
 
-docker-up:
-	@docker-compose up -d
+docker-up: ## Build and start dev stack (no nginx, port 8080 exposed)
+	@docker compose up -d --build
 
-docker-down:
-	@docker-compose down
+docker-up-nginx: ## Build and start full stack with nginx + TLS (ports 80/443)
+	@if [ ! -f nginx/certs/server.crt ]; then \
+		echo "No TLS certs found — generating self-signed..."; \
+		SERVER_IP=127.0.0.1 bash scripts/generate-certs.sh; \
+	fi
+	@docker compose -f docker-compose.yml up -d --build
+
+docker-down: ## Stop all containers
+	@docker compose down
 
 sync-pi-assets: ## Sync deployment assets (compose, scripts, systemd) into pi-gen stage
 	@cd $(PI_IMAGE_DIR) && ./sync-assets.sh
@@ -124,7 +159,7 @@ build-pi-server-image: ## Build ARM64 Docker image and save as tar for pi-gen em
 build-pi-image: sync-pi-assets build-pi-server-image ## Build the full Raspberry Pi SD card image (.img.xz)
 	@echo "Cloning pi-gen..."
 	@rm -rf $(PI_GEN_DIR)
-	@git clone --depth 1 $(PI_GEN_REPO) $(PI_GEN_DIR)
+	@git clone --depth 1 --branch $(PI_GEN_REF) $(PI_GEN_REPO) $(PI_GEN_DIR)
 	@echo "Copying Likha config and stage..."
 	@cp $(PI_IMAGE_DIR)/config $(PI_GEN_DIR)/
 	@cp -r $(PI_IMAGE_DIR)/stage-likha $(PI_GEN_DIR)/
@@ -137,9 +172,12 @@ build-pi-image: sync-pi-assets build-pi-server-image ## Build the full Raspberry
 			echo "Output: $$img.xz"; \
 		fi; \
 	done
-	@echo "Done. Image(s) in $(PI_DEPLOY_DIR)/"
+	@mkdir -p $(BUILD_DIR)
+	@cp $(PI_DEPLOY_DIR)/*.img.xz $(BUILD_DIR)/ 2>/dev/null || true
+	@echo "Done. Image(s) in $(BUILD_DIR)/"
 
 clean-pi-image: ## Remove pi-gen clone and build artifacts
+	@docker rm -f pigen_work 2>/dev/null || true
 	@rm -rf $(PI_GEN_DIR)
 	@rm -f $(PI_IMAGE_DIR)/stage-likha/likha-server-arm64.tar
 	@echo "Pi image build artifacts cleaned"

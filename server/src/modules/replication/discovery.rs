@@ -46,17 +46,24 @@ impl DiscoveryService {
     pub async fn new(config: DiscoveryConfig) -> AppResult<Self> {
         let socket = UdpSocket::bind(SocketAddr::from(([0, 0, 0, 0], config.discovery_port)))
             .await
-            .map_err(|err| AppError::InternalServerError(format!("Failed to bind discovery socket: {}", err)))?;
+            .map_err(|err| {
+                AppError::InternalServerError(format!("Failed to bind discovery socket: {}", err))
+            })?;
 
         if let SocketAddr::V4(multicast_v4) = config.multicast_addr {
             socket
                 .join_multicast_v4(*multicast_v4.ip(), Ipv4Addr::UNSPECIFIED)
-                .map_err(|err| AppError::InternalServerError(format!("Failed to join multicast group: {}", err)))?;
+                .map_err(|err| {
+                    AppError::InternalServerError(format!(
+                        "Failed to join multicast group: {}",
+                        err
+                    ))
+                })?;
         }
 
-        socket
-            .set_broadcast(true)
-            .map_err(|err| AppError::InternalServerError(format!("Failed to enable broadcast: {}", err)))?;
+        socket.set_broadcast(true).map_err(|err| {
+            AppError::InternalServerError(format!("Failed to enable broadcast: {}", err))
+        })?;
 
         let hmac_key = hmac::Key::new(
             hmac::HMAC_SHA256,
@@ -73,22 +80,23 @@ impl DiscoveryService {
 
     pub async fn announce(&self) -> AppResult<()> {
         let beacon = self.build_beacon();
-        let bytes = serde_json::to_vec(&beacon)
-            .map_err(|err| AppError::InternalServerError(format!("Failed to encode beacon: {}", err)))?;
+        let bytes = serde_json::to_vec(&beacon).map_err(|err| {
+            AppError::InternalServerError(format!("Failed to encode beacon: {}", err))
+        })?;
         self.socket
             .send_to(&bytes, self.multicast)
             .await
-            .map_err(|err| AppError::InternalServerError(format!("Failed to send beacon: {}", err)))?;
+            .map_err(|err| {
+                AppError::InternalServerError(format!("Failed to send beacon: {}", err))
+            })?;
         Ok(())
     }
 
     pub async fn recv_beacon(&self) -> AppResult<Beacon> {
         let mut buf = vec![0u8; 2048];
-        let (len, _) = self
-            .socket
-            .recv_from(&mut buf)
-            .await
-            .map_err(|err| AppError::InternalServerError(format!("Failed to receive beacon: {}", err)))?;
+        let (len, _) = self.socket.recv_from(&mut buf).await.map_err(|err| {
+            AppError::InternalServerError(format!("Failed to receive beacon: {}", err))
+        })?;
         buf.truncate(len);
 
         let beacon: Beacon = serde_json::from_slice(&buf)

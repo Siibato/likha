@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
 use crate::modules::assessment::schema::*;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 impl crate::modules::assessment::service::AssessmentService {
     pub async fn save_answers(
@@ -11,7 +11,10 @@ impl crate::modules::assessment::service::AssessmentService {
     ) -> AppResult<()> {
         println!("💾 [SERVICE] save_answers() START - submission_id: {}, student_id: {}, answer_count: {}", submission_id, student_id, request.answers.len());
 
-        let submission = self.assessment_repo.find_submission_by_id(submission_id).await?
+        let submission = self
+            .assessment_repo
+            .find_submission_by_id(submission_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Submission not found".to_string()))?;
 
         if submission.user_id != student_id {
@@ -21,16 +24,24 @@ impl crate::modules::assessment::service::AssessmentService {
 
         if submission.submitted_at.is_some() {
             println!("💾 [SERVICE] save_answers() ERROR - submission already submitted");
-            return Err(AppError::BadRequest("Assessment already submitted".to_string()));
+            return Err(AppError::BadRequest(
+                "Assessment already submitted".to_string(),
+            ));
         }
 
         for answer_input in &request.answers {
-            let answer = self.assessment_repo
-                .upsert_answer(submission_id, answer_input.question_id, answer_input.answer_text.clone())
+            let answer = self
+                .assessment_repo
+                .upsert_answer(
+                    submission_id,
+                    answer_input.question_id,
+                    answer_input.answer_text.clone(),
+                )
                 .await?;
 
             if let Some(choice_ids) = &answer_input.selected_choice_ids {
-                let question_choices = self.assessment_repo
+                let question_choices = self
+                    .assessment_repo
                     .find_choices_by_question_id(answer_input.question_id)
                     .await?;
                 let correct_ids: std::collections::HashSet<Uuid> = question_choices
@@ -51,11 +62,14 @@ impl crate::modules::assessment::service::AssessmentService {
                 let mut sorted = enum_answers.clone();
                 sorted.sort_by_key(|e| e.order_index);
 
-                let slots = self.assessment_repo
+                let slots = self
+                    .assessment_repo
                     .find_enumeration_items_for_question(answer_input.question_id)
                     .await?;
 
-                let items: Vec<(Option<Uuid>, String)> = sorted.iter().enumerate()
+                let items: Vec<(Option<Uuid>, String)> = sorted
+                    .iter()
+                    .enumerate()
                     .map(|(i, e)| {
                         let key_id = slots.get(i).map(|(key, _)| key.id);
                         (key_id, e.answer_text.clone())
@@ -74,7 +88,10 @@ impl crate::modules::assessment::service::AssessmentService {
             }
         }
 
-        println!("💾 [SERVICE] save_answers() SUCCESS - saved {} answers", request.answers.len());
+        println!(
+            "💾 [SERVICE] save_answers() SUCCESS - saved {} answers",
+            request.answers.len()
+        );
 
         self.grade_submission(submission_id).await?;
 

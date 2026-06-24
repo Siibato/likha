@@ -9,3 +9,4 @@ export 'get_cached_current_user.dart';
 export 'get_cached_accounts.dart';
 export 'get_cached_activity_logs.dart';
 export 'get_cached_user.dart';
+export 'username_exists.dart';

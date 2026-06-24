@@ -1,8 +1,8 @@
 use sea_orm::*;
 use uuid::Uuid;
 
-use ::entity::previous_school_attendance;
 use crate::utils::{AppError, AppResult};
+use ::entity::previous_school_attendance;
 
 pub async fn get_previous_attendance(
     db: &DatabaseConnection,

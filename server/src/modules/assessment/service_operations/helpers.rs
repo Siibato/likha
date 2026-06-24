@@ -18,8 +18,26 @@ pub fn get_discrimination_label(d: f64) -> String {
 }
 
 pub fn get_verdict(p: f64, d: f64) -> String {
-    let d_tier: u8 = if d >= 0.40 { 3 } else if d >= 0.30 { 2 } else if d >= 0.20 { 1 } else { 0 };
-    let p_tier: u8 = if p >= 0.86 { 4 } else if p >= 0.71 { 3 } else if p >= 0.30 { 0 } else if p >= 0.15 { 2 } else { 4 };
+    let d_tier: u8 = if d >= 0.40 {
+        3
+    } else if d >= 0.30 {
+        2
+    } else if d >= 0.20 {
+        1
+    } else {
+        0
+    };
+    let p_tier: u8 = if p >= 0.86 {
+        4
+    } else if p >= 0.71 {
+        3
+    } else if p >= 0.30 {
+        0
+    } else if p >= 0.15 {
+        2
+    } else {
+        4
+    };
 
     match (p_tier, d_tier) {
         (0, 3) | (0, 2) => "retain",
@@ -30,5 +48,6 @@ pub fn get_verdict(p: f64, d: f64) -> String {
         (2, 2) | (2, 1) | (2, 0) => "revise",
         (4, _) => "discard",
         _ => "discard",
-    }.to_string()
+    }
+    .to_string()
 }

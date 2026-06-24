@@ -5,7 +5,7 @@ import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_edit_page.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_submissions_page.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_statistics_page.dart';
-import 'package:likha/presentation/providers/teacher_assessment_provider.dart';
+import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_action_buttons.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_detail_actions_menu.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_info_section.dart';
@@ -32,22 +32,22 @@ class _AssessmentDetailPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(teacherAssessmentProvider.notifier)
+          .read(assessmentDetailProvider.notifier)
           .loadAssessmentDetail(widget.assessmentId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(teacherAssessmentProvider);
+    final state = ref.watch(assessmentDetailProvider);
     final assessment = state.currentAssessment;
     final questions = state.questions;
 
-    return ProviderMessageListener<TeacherAssessmentState>(
-      provider: teacherAssessmentProvider,
+    return ProviderMessageListener<AssessmentDetailState>(
+      provider: assessmentDetailProvider,
       successMessage: (s) => s.successMessage,
       errorMessage: (s) => s.error,
-      onClear: () => ref.read(teacherAssessmentProvider.notifier).clearMessages(),
+      onClear: () => ref.read(assessmentDetailProvider.notifier).clearMessages(),
       intercept: (prev, next) {
         if (next.successMessage == 'Assessment deleted') {
           Navigator.of(context).pop();
@@ -94,7 +94,7 @@ class _AssessmentDetailPageState
             error: state.error,
             isEmpty: assessment == null,
             onRetry: () => ref
-                .read(teacherAssessmentProvider.notifier)
+                .read(assessmentDetailProvider.notifier)
                 .loadAssessmentDetail(widget.assessmentId),
             emptyState: const Center(
               child: Text(

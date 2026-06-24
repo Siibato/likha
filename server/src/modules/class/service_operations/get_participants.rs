@@ -1,8 +1,8 @@
-use uuid::Uuid;
-use crate::utils::error::{AppError, AppResult};
-use crate::modules::class::schema::EnrollmentResponse;
 use crate::modules::auth::schema::UserResponse;
 use crate::modules::class::repository::ClassRepository;
+use crate::modules::class::schema::EnrollmentResponse;
+use crate::utils::error::{AppError, AppResult};
+use uuid::Uuid;
 
 pub async fn get_participants(
     class_repo: &ClassRepository,
