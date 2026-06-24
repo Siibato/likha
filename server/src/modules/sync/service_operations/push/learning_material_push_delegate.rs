@@ -50,6 +50,7 @@ impl PushDelegate for LearningMaterialPushDelegate {
                     }
                 };
                 let request = CreateMaterialRequest {
+                    id: client_id,
                     title,
                     description: op
                         .payload

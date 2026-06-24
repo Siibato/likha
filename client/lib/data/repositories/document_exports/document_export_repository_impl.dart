@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/utils/typedef.dart';
 import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
@@ -8,6 +11,24 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
   final DocumentExportRemoteDataSource _remoteDataSource;
 
   DocumentExportRepositoryImpl(this._remoteDataSource);
+
+  String _extractErrorMessage(dynamic error) {
+    if (error is DioException && error.response != null) {
+      final data = error.response!.data;
+      if (data is Map<String, dynamic>) {
+        return data['message']?.toString() ?? data['error']?.toString() ?? error.toString();
+      }
+      if (data is List<int>) {
+        try {
+          final json = jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
+          return json['message']?.toString() ?? json['error']?.toString() ?? error.toString();
+        } catch (_) {
+          return error.toString();
+        }
+      }
+    }
+    return error.toString();
+  }
 
   @override
   ResultFuture<List<int>> exportClassGradesPdf({
@@ -21,7 +42,7 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       );
       return Right(bytes);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_extractErrorMessage(e)));
     }
   }
 
@@ -37,7 +58,7 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       );
       return Right(bytes);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_extractErrorMessage(e)));
     }
   }
 
@@ -53,7 +74,7 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       );
       return Right(bytes);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_extractErrorMessage(e)));
     }
   }
 
@@ -69,7 +90,7 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       );
       return Right(bytes);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_extractErrorMessage(e)));
     }
   }
 
@@ -85,7 +106,7 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       );
       return Right(bytes);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_extractErrorMessage(e)));
     }
   }
 
@@ -97,7 +118,7 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       final bytes = await _remoteDataSource.exportTosExcel(tosId: tosId);
       return Right(bytes);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(_extractErrorMessage(e)));
     }
   }
 }

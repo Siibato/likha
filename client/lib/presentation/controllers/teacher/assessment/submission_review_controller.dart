@@ -59,10 +59,6 @@ class SubmissionReviewController extends ChangeNotifier {
         points: points,
       ),
     );
-
-    if (notifier.currentError == null) {
-      notifier.loadSubmissionDetail(submissionId);
-    }
     _syncFormError();
   }
 

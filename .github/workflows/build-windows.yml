@@ -26,6 +26,10 @@ jobs:
         with:
           flutter-version: '3.35.7'
 
+      - name: Create .env from example
+        working-directory: client
+        run: copy .env.example .env
+
       - name: Enable Windows desktop
         working-directory: client
         run: flutter config --enable-windows-desktop

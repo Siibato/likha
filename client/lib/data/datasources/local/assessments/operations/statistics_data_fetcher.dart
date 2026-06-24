@@ -148,7 +148,7 @@ class StatisticsDataFetcher {
     final submissions = submissionRows.map((r) => SubmissionRow(
       id: r[CommonCols.id] as String,
       userId: r[AssessmentSubmissionsCols.userId] as String,
-      totalPoints: (r[AssessmentSubmissionsCols.totalPoints] as num?)?.toDouble() ?? 0.0,
+      totalPoints: (r[AssessmentSubmissionsCols.earnedPoints] as num?)?.toDouble() ?? 0.0,
     )).toList();
 
     final questionRows = await db.query(

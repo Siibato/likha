@@ -15,12 +15,15 @@ impl StudentRecordsService {
         student_id: Uuid,
         teacher_id: Uuid,
     ) -> AppResult<Sf10Response> {
+        tracing::info!(class_id=%class_id, student_id=%student_id, "get_sf10 starting");
+
         // Authorization: teacher must be the advisory teacher
         if !self
             .class_repo
             .is_teacher_of_class(teacher_id, class_id)
             .await?
         {
+            tracing::warn!(teacher_id=%teacher_id, class_id=%class_id, "get_sf10: teacher is not advisory teacher");
             return Err(AppError::Forbidden("Access denied".to_string()));
         }
 
@@ -54,10 +57,15 @@ impl StudentRecordsService {
         let learner_details = self.repo.get_learner_details(student_id).await?;
 
         // Get SF9 data for current school year (scholastic records)
+        tracing::info!("get_sf10: calling compute_sf9");
         let sf9 = self
             .grade_service
             .compute_sf9(class_id, student_id, teacher_id)
-            .await?;
+            .await
+            .map_err(|e| {
+                tracing::error!(error=%e, "get_sf10: compute_sf9 failed");
+                e
+            })?;
 
         // Build current year record from SF9
         let current_year = Sf10YearRecord {
@@ -85,10 +93,15 @@ impl StudentRecordsService {
         };
 
         // Get attendance for current school year
+        tracing::info!("get_sf10: fetching current attendance");
         let current_attendance = self
             .repo
             .get_attendance(student_id, Some(class_id), class.school_year.as_deref())
-            .await?;
+            .await
+            .map_err(|e| {
+                tracing::error!(error=%e, "get_sf10: get_attendance failed");
+                e
+            })?;
 
         let current_attendance_months: Vec<Sf10AttendanceMonth> = current_attendance
             .iter()
@@ -105,18 +118,31 @@ impl StudentRecordsService {
         }];
 
         // Get school history (previous schools)
-        let history = self.repo.get_school_history(student_id).await?;
+        tracing::info!("get_sf10: fetching school history");
+        let history = self.repo.get_school_history(student_id).await
+            .map_err(|e| {
+                tracing::error!(error=%e, "get_sf10: get_school_history failed");
+                e
+            })?;
         let mut school_history_entries: Vec<Sf10SchoolHistory> = Vec::new();
 
         for h in &history {
             let subjects = self
                 .repo
                 .get_previous_subjects(student_id, Some(h.id))
-                .await?;
+                .await
+                .map_err(|e| {
+                    tracing::error!(error=%e, history_id=%h.id, "get_sf10: get_previous_subjects failed");
+                    e
+                })?;
             let attendance = self
                 .repo
                 .get_previous_attendance(student_id, Some(h.id))
-                .await?;
+                .await
+                .map_err(|e| {
+                    tracing::error!(error=%e, history_id=%h.id, "get_sf10: get_previous_attendance failed");
+                    e
+                })?;
 
             let mut subject_rows: Vec<Sf10PreviousSubject> = Vec::new();
             for s in &subjects {
@@ -164,11 +190,19 @@ impl StudentRecordsService {
             let prev_subjects = self
                 .repo
                 .get_previous_subjects(student_id, Some(h.id))
-                .await?;
+                .await
+                .map_err(|e| {
+                    tracing::error!(error=%e, history_id=%h.id, "get_sf10: prev get_previous_subjects failed");
+                    e
+                })?;
             let prev_attendance = self
                 .repo
                 .get_previous_attendance(student_id, Some(h.id))
-                .await?;
+                .await
+                .map_err(|e| {
+                    tracing::error!(error=%e, history_id=%h.id, "get_sf10: prev get_previous_attendance failed");
+                    e
+                })?;
 
             let mut subject_rows: Vec<Sf10SubjectRow> = Vec::new();
             for s in &prev_subjects {
@@ -224,6 +258,7 @@ impl StudentRecordsService {
         let computed_age =
             calculate_current_age(learner_details.as_ref().and_then(|d| d.birthdate));
 
+        tracing::info!("get_sf10 completed successfully");
         Ok(Sf10Response {
             student_id: student_id.to_string(),
             student_name,

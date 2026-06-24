@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/term_utils.dart';
+import 'package:likha/core/network/server_reachability_service.dart';
+import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
@@ -143,41 +145,55 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
   }
 
   Future<void> _downloadSf10(bool isPdf) async {
-    setState(() => _isDownloading = true);
-    try {
-      if (isPdf) {
-        await ref.read(documentExportProvider.notifier).exportSf10Pdf(
-          classId: widget.classId,
-          studentId: widget.studentId,
-          studentName: widget.studentName,
-        );
-      } else {
-        await ref.read(documentExportProvider.notifier).exportSf10Excel(
-          classId: widget.classId,
-          studentId: widget.studentId,
-          studentName: widget.studentName,
-        );
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('SF10 ${isPdf ? 'PDF' : 'Excel'} downloaded successfully'),
-            backgroundColor: AppColors.semanticSuccess,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to download SF10: $e'),
-            backgroundColor: AppColors.semanticError,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isDownloading = false);
+    final reachability = sl<ServerReachabilityService>();
+    if (!reachability.isServerReachable) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only available when connected to Likha server'),
+          backgroundColor: AppColors.semanticError,
+        ),
+      );
+      return;
     }
+
+    setState(() => _isDownloading = true);
+
+    if (isPdf) {
+      await ref.read(documentExportProvider.notifier).exportSf10Pdf(
+        classId: widget.classId,
+        studentId: widget.studentId,
+        studentName: widget.studentName,
+      );
+    } else {
+      await ref.read(documentExportProvider.notifier).exportSf10Excel(
+        classId: widget.classId,
+        studentId: widget.studentId,
+        studentName: widget.studentName,
+      );
+    }
+
+    if (!mounted) return;
+
+    final exportState = ref.read(documentExportProvider);
+
+    if (exportState.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(exportState.error!),
+          backgroundColor: AppColors.semanticError,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('SF10 ${isPdf ? 'PDF' : 'Excel'} downloaded successfully'),
+          backgroundColor: AppColors.semanticSuccess,
+        ),
+      );
+    }
+
+    setState(() => _isDownloading = false);
   }
 
   @override
@@ -197,22 +213,44 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
         ),
         actions: [
           if (state.data != null) ...[
-            StyledButton(
-              text: _isDownloading ? 'Generating...' : 'PDF',
-              icon: Icons.picture_as_pdf_rounded,
-              variant: StyledButtonVariant.primary,
-              fullWidth: false,
-              isLoading: _isDownloading,
-              onPressed: () => _downloadSf10(true),
+            TextButton.icon(
+              onPressed: _isDownloading ? null : () => _downloadSf10(true),
+              icon: _isDownloading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.picture_as_pdf_rounded, size: 18),
+              label: Text(_isDownloading ? 'Generating...' : 'PDF'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: AppColors.accentCharcoal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
-            const SizedBox(width: 12),
-            StyledButton(
-              text: 'Excel',
-              icon: Icons.table_chart_rounded,
-              variant: StyledButtonVariant.accent,
-              fullWidth: false,
-              isLoading: _isDownloading,
-              onPressed: () => _downloadSf10(false),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: _isDownloading ? null : () => _downloadSf10(false),
+              icon: _isDownloading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.table_chart_rounded, size: 18),
+              label: Text(_isDownloading ? 'Generating...' : 'Excel'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: AppColors.accentCharcoal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             const SizedBox(width: 16),
           ],

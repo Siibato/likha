@@ -6,6 +6,7 @@ import 'package:likha/presentation/controllers/teacher/material/material_detail_
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/material/material_body.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/material/edit_material_dialog.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/material/material_detail_actions_menu.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/feedback/provider_message_listener.dart';
@@ -71,43 +72,12 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
             tooltip: 'Back',
           ),
           actions: [
-            if (material != null) ...[
-              OutlinedButton.icon(
-                onPressed: state.isLoading
-                    ? null
-                    : () => _controller.uploadFile(
-                          materialId: widget.materialId,
-                          notifier:
-                              ref.read(learningMaterialProvider.notifier),
-                        ),
-                icon: state.isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.foregroundDark,
-                        ),
-                      )
-                    : const Icon(Icons.upload_file_rounded, size: 18),
-                label: Text(state.isLoading ? 'Uploading...' : 'Upload File'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.foregroundDark,
-                  side: const BorderSide(color: AppColors.borderLight),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
+            if (material != null)
               MaterialDetailActionsMenu(
                 material: material,
                 materialId: widget.materialId,
                 controller: _controller,
               ),
-            ],
           ],
           body: isInitialLoad
               ? const Center(
@@ -149,6 +119,14 @@ class _MaterialDetailPageState extends ConsumerState<MaterialDetailPage> {
                         materialId: widget.materialId,
                         notifier:
                             ref.read(learningMaterialProvider.notifier),
+                      ),
+                      onEdit: () => showDialog(
+                        context: context,
+                        builder: (_) => EditMaterialDialog(
+                          materialId: material.id,
+                          initialTitle: material.title,
+                          initialContent: material.contentText,
+                        ),
                       ),
                     ),
         ),

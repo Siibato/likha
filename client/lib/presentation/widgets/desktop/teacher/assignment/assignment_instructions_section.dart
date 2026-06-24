@@ -5,8 +5,13 @@ import 'package:likha/presentation/widgets/shared/cards/markdown_display.dart';
 /// Section displaying assignment instructions.
 class AssignmentInstructionsSection extends StatelessWidget {
   final String instructions;
+  final VoidCallback? onEdit;
 
-  const AssignmentInstructionsSection({super.key, required this.instructions});
+  const AssignmentInstructionsSection({
+    super.key,
+    required this.instructions,
+    this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +26,27 @@ class AssignmentInstructionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Instructions',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundDark,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Instructions',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.foregroundDark,
+                ),
+              ),
+              const Spacer(),
+              if (onEdit != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  color: AppColors.foregroundSecondary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  onPressed: onEdit,
+                  tooltip: 'Edit Instructions',
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           const Divider(color: AppColors.borderLight),
