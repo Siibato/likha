@@ -64,4 +64,24 @@ impl crate::modules::tos::service::TosService {
         }
         Ok(result)
     }
+
+    pub async fn get_tos_for_teacher(
+        &self,
+        tos_id: Uuid,
+        teacher_id: Uuid,
+    ) -> AppResult<TosResponse> {
+        let tos = self.get_tos(tos_id).await?;
+        let class_id = Uuid::parse_str(&tos.class_id)
+            .map_err(|_| AppError::InternalServerError("Invalid TOS class id".to_string()))?;
+
+        if !self
+            .class_repo
+            .is_teacher_of_class(teacher_id, class_id)
+            .await?
+        {
+            return Err(AppError::Forbidden("Access denied".to_string()));
+        }
+
+        Ok(tos)
+    }
 }

@@ -88,4 +88,16 @@ class DocumentExportRepositoryImpl implements DocumentExportRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  ResultFuture<List<int>> exportTosExcel({
+    required String tosId,
+  }) async {
+    try {
+      final bytes = await _remoteDataSource.exportTosExcel(tosId: tosId);
+      return Right(bytes);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

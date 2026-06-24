@@ -173,6 +173,7 @@ import 'package:likha/domain/document_exports/repositories/document_export_repos
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
+import 'package:likha/domain/document_exports/usecases/export_tos.dart';
 import 'package:likha/data/datasources/remote/document_exports/document_export_remote_datasource.dart';
 import 'package:likha/data/repositories/document_exports/document_export_repository_impl.dart';
 import 'package:likha/data/datasources/remote/student_records/student_records_remote_datasource.dart';
@@ -648,6 +649,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ExportSf9(sl()));
   sl.registerLazySingleton(() => ExportSf10Pdf(sl()));
   sl.registerLazySingleton(() => ExportSf10Excel(sl()));
+  sl.registerLazySingleton(() => ExportTos(sl()));
 
   // Student Records use cases
   sl.registerLazySingleton(() => GetLearnerDetails(sl()));

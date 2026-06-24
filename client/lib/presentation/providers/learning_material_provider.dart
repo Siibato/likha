@@ -133,11 +133,27 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
         isLoading: false,
         error: AppErrorMapper.fromFailure(failure),
       ),
-      (mutationResult) => state = state.copyWith(
-        isLoading: false,
-        materials: [...state.materials, mutationResult.entity],
-        successMessage: 'Material created successfully',
-      ),
+      (mutationResult) {
+        final entity = mutationResult.entity;
+        state = state.copyWith(
+          isLoading: false,
+          materials: [...state.materials, entity],
+          successMessage: 'Material created successfully',
+          currentMaterial: MaterialDetail(
+            id: entity.id,
+            classId: entity.classId,
+            title: entity.title,
+            description: entity.description,
+            contentText: entity.contentText,
+            orderIndex: entity.orderIndex,
+            files: const [],
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
+            cachedAt: entity.cachedAt,
+            syncStatus: entity.syncStatus,
+          ),
+        );
+      },
     );
   }
 

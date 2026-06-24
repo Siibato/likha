@@ -6,6 +6,7 @@ import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/domain/document_exports/usecases/export_class_grades.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf9.dart';
 import 'package:likha/domain/document_exports/usecases/export_sf10.dart';
+import 'package:likha/domain/document_exports/usecases/export_tos.dart';
 import 'package:likha/injection_container.dart';
 
 class DocumentExportState {
@@ -34,6 +35,7 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
   final ExportSf9 _exportSf9;
   final ExportSf10Pdf _exportSf10Pdf;
   final ExportSf10Excel _exportSf10Excel;
+  final ExportTos _exportTos;
   final ServerReachabilityService _reachability;
 
   DocumentExportNotifier(
@@ -41,6 +43,7 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
     this._exportSf9,
     this._exportSf10Pdf,
     this._exportSf10Excel,
+    this._exportTos,
     this._reachability,
   ) : super(const DocumentExportState());
 
@@ -166,6 +169,46 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
     );
   }
 
+  Future<void> exportTos({
+    required String tosId,
+    required String tosTitle,
+  }) async {
+    if (state.isExporting) return;
+
+    if (!_reachability.isServerReachable) {
+      state = const DocumentExportState(
+        error: 'Only available when connected to Likha server',
+      );
+      return;
+    }
+
+    state = state.copyWith(isExporting: true, clearError: true);
+
+    final result = await _exportTos(tosId: tosId);
+
+    result.fold(
+      (failure) {
+        ServiceLogger.instance.warn('TOS export failed: ${failure.message}');
+        state = state.copyWith(isExporting: false, error: failure.message);
+      },
+      (bytes) async {
+        try {
+          final safeName = tosTitle.replaceAll(' ', '_');
+          await _saveBytes(
+            bytes: Uint8List.fromList(bytes),
+            fileName: 'TOS_$safeName',
+            ext: '.xlsx',
+            mimeType: MimeType.microsoftExcel,
+          );
+          state = state.copyWith(isExporting: false);
+        } catch (e) {
+          ServiceLogger.instance.warn('TOS save failed: $e');
+          state = state.copyWith(isExporting: false, error: 'Export failed');
+        }
+      },
+    );
+  }
+
   Future<void> exportSf10Excel({
     required String classId,
     required String studentId,
@@ -242,6 +285,7 @@ final documentExportProvider =
     sl<ExportSf9>(),
     sl<ExportSf10Pdf>(),
     sl<ExportSf10Excel>(),
+    sl<ExportTos>(),
     sl<ServerReachabilityService>(),
   );
 });

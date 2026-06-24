@@ -487,6 +487,7 @@ async fn main() {
         grade_computation_service.clone(),
         setup_service.clone(),
         student_records_service.clone(),
+        tos_service.clone(),
     ));
 
     let replication_service = Arc::new(ReplicationService::new(db.clone(), config.node_id.clone()));
