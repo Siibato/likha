@@ -42,9 +42,9 @@ pub const TEACHER_DATA: [(&str, &str, &str); 6] = [
     ("rodrigo.santos", "Rodrigo", "Santos"),
     ("maria.reyes", "Maria", "Reyes"),
     ("antonio.cruz", "Antonio", "Cruz"),
-    ("carmen.bautista", "Carmen", "Bautista"),
-    ("pedro.lim", "Pedro", "Lim"),
-    ("rosa.mendoza", "Rosa", "Mendoza"),
+    ("carmen.diaz", "Carmen", "Diaz"),
+    ("pedro.castro", "Pedro", "Castro"),
+    ("rosa.lopez", "Rosa", "Lopez"),
 ];
 
 pub fn demo2_users(ctx: &SeedContext) -> Vec<UserSpec> {

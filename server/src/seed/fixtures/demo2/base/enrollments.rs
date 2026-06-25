@@ -27,20 +27,20 @@ pub fn demo2_enrollments() -> Vec<EnrollmentSpec> {
         class_id: cid("math10"),
         user_id: uid("antonio.cruz"),
     });
-    // Carmen Bautista: AP
+    // Carmen Diaz: AP
     enrollments.push(EnrollmentSpec {
         class_id: cid("ap10"),
-        user_id: uid("carmen.bautista"),
+        user_id: uid("carmen.diaz"),
     });
-    // Pedro Lim: Filipino
+    // Pedro Castro: Filipino
     enrollments.push(EnrollmentSpec {
         class_id: cid("fil10"),
-        user_id: uid("pedro.lim"),
+        user_id: uid("pedro.castro"),
     });
-    // Rosa Mendoza: TLE
+    // Rosa Lopez: TLE
     enrollments.push(EnrollmentSpec {
         class_id: cid("tle10"),
-        user_id: uid("rosa.mendoza"),
+        user_id: uid("rosa.lopez"),
     });
 
     // All 30 students in all 7 classes
