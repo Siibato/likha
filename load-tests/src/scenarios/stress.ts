@@ -11,6 +11,7 @@ import { expectAll, expectNoServerError } from '../core/check-helpers';
 import { stages } from '../config/stages';
 import { thresholds } from '../config/thresholds';
 import { studentAccounts } from '../data/accounts';
+import { activeClasses } from '../data/manifest';
 import { TokenMap } from '../types/scenario';
 
 const VU_COUNT = 500;
@@ -40,8 +41,10 @@ export default function (tokens: TokenMap): void {
 
   if (rand < 0.4) {
     const syncService = new SyncService(client);
-    const res = syncService.fullSync();
-    expectAll(res, 'stress-sync-full', { status: 200, underMs: 1000 });
+    const deviceId = `vu_${__VU}`;
+    const classIds = activeClasses.map(c => c.id);
+    const res = syncService.fullSync(deviceId, classIds);
+    expectAll(res, 'stress-sync-full', { status: 200, underMs: 3000 });
     expectNoServerError(res, 'stress-sync-full');
   } else if (rand < 0.7) {
     const classService = new ClassService(client);

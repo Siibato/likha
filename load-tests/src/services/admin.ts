@@ -24,7 +24,7 @@ export class AdminService {
   }
 
   getSchoolSettings() {
-    return this.client.get('/admin/setup/school-settings', { tags: { name: 'Admin:SchoolSettings' } });
+    return this.client.get('/admin/setup/school-details', { tags: { name: 'Admin:SchoolSettings' } });
   }
 
   searchStudents(query: string) {

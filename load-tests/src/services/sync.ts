@@ -1,11 +1,15 @@
 import { ApiClient } from '../core/api-client';
-import { SyncPushPayload, SyncDeltaPayload } from '../types/api';
+import { SyncPushPayload, SyncDeltaPayload, FullSyncPayload } from '../types/api';
 
 export class SyncService {
   constructor(private client: ApiClient) {}
 
-  fullSync() {
-    return this.client.post('/sync/full', undefined, {
+  fullSync(deviceId: string, classIds?: string[]) {
+    const payload: FullSyncPayload = { device_id: deviceId };
+    if (classIds !== undefined) {
+      payload.class_ids = classIds;
+    }
+    return this.client.post('/sync/full', payload, {
       tags: { name: 'Sync:Full' },
       timeout: '15s',
     });
