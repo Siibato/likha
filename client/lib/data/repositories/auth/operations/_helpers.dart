@@ -5,6 +5,8 @@ import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/services/storage_service.dart';
 
@@ -17,7 +19,9 @@ Future<void> clearAllUserData({
   required AuthLocalDataSource localDataSource,
   required SyncQueue syncQueue,
   required StorageService storageService,
-  bool clearSyncQueue = false,
+  TosLocalDataSource? tosLocalDataSource,
+  StudentRecordsLocalDataSource? studentRecordsLocalDataSource,
+  bool clearSyncQueue = true,
 }) async {
   try {
     final futures = <Future>[
@@ -27,7 +31,14 @@ Future<void> clearAllUserData({
       learningMaterialLocalDataSource.clearAllCache(),
       gradingLocalDataSource.clearAllCache(),
       localDataSource.clearAllCache(),
+      storageService.clearAuthData(),
     ];
+    if (tosLocalDataSource != null) {
+      futures.add(tosLocalDataSource.clearAllCache());
+    }
+    if (studentRecordsLocalDataSource != null) {
+      futures.add(studentRecordsLocalDataSource.clearAllCache());
+    }
     if (clearSyncQueue) futures.add(syncQueue.clear());
     await Future.wait(futures);
   } catch (e) {
