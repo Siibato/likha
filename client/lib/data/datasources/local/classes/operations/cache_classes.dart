@@ -2,7 +2,6 @@ import 'package:likha/core/database/db_schema.dart';
 import 'package:likha/core/errors/exceptions.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/data/models/classes/class_model.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 Future<void> cacheClasses(
   LocalDatabase localDatabase,
@@ -40,7 +39,20 @@ Future<void> cacheClasses(
           map[CommonCols.syncStatus] = 'synced';
         }
 
-        await txn.insert(DbTables.classes, map, conflictAlgorithm: ConflictAlgorithm.replace);
+        // Use UPDATE-or-INSERT instead of REPLACE to avoid triggering
+        // ON DELETE CASCADE on class_participants.
+        final existingClass = await txn.query(
+          DbTables.classes,
+          columns: [CommonCols.id],
+          where: '${CommonCols.id} = ?',
+          whereArgs: [classModel.id],
+          limit: 1,
+        );
+        if (existingClass.isNotEmpty) {
+          await txn.update(DbTables.classes, map, where: '${CommonCols.id} = ?', whereArgs: [classModel.id]);
+        } else {
+          await txn.insert(DbTables.classes, map);
+        }
       }
     });
   } catch (e) {

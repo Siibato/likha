@@ -66,9 +66,10 @@ Future<void> cacheClassDetail(
         updatedAt: classDetail.updatedAt,
       ).toMap();
       classMap[CommonCols.cachedAt] = DateTime.now().toIso8601String();
-      classMap[CommonCols.syncStatus] = 'synced';
 
-      // Only update the classes table if there are no pending local mutations
+      // If the class row has pending mutations, preserve that status
+      // so downstream consumers know not to overwrite metadata, but
+      // always update student_count from local participants.
       final pendingClassRow = await txn.query(
         DbTables.classes,
         columns: [CommonCols.syncStatus],
@@ -76,8 +77,25 @@ Future<void> cacheClassDetail(
         whereArgs: [classDetail.id, 'pending'],
         limit: 1,
       );
-      if (pendingClassRow.isEmpty) {
-        await txn.insert(DbTables.classes, classMap, conflictAlgorithm: ConflictAlgorithm.replace);
+      if (pendingClassRow.isNotEmpty) {
+        classMap[CommonCols.syncStatus] = 'pending';
+      } else {
+        classMap[CommonCols.syncStatus] = 'synced';
+      }
+
+      // Use UPDATE-or-INSERT instead of REPLACE to avoid triggering
+      // ON DELETE CASCADE on class_participants.
+      final existingClass = await txn.query(
+        DbTables.classes,
+        columns: [CommonCols.id],
+        where: '${CommonCols.id} = ?',
+        whereArgs: [classDetail.id],
+        limit: 1,
+      );
+      if (existingClass.isNotEmpty) {
+        await txn.update(DbTables.classes, classMap, where: '${CommonCols.id} = ?', whereArgs: [classDetail.id]);
+      } else {
+        await txn.insert(DbTables.classes, classMap);
       }
 
       // Cache students as class_participants (v18 - no user detail columns)

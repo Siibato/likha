@@ -1,18 +1,25 @@
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
+use sea_orm::{DatabaseConnection, EntityTrait, Set};
 
 use crate::seed::specs::LearnerDetailsSpec;
 use crate::utils::AppError;
 use ::entity::learner_details;
 
+const CHUNK_SIZE: usize = 100;
+
 pub async fn insert_learner_details(
     db: &DatabaseConnection,
     specs: &[LearnerDetailsSpec],
 ) -> Result<(), AppError> {
+    if specs.is_empty() {
+        return Ok(());
+    }
+
     let now = Utc::now().naive_utc();
 
-    for spec in specs {
-        let am = learner_details::ActiveModel {
+    let models: Vec<learner_details::ActiveModel> = specs
+        .iter()
+        .map(|spec| learner_details::ActiveModel {
             id: Set(spec.id),
             user_id: Set(spec.user_id),
             lrn: Set(spec.lrn.clone()),
@@ -32,8 +39,12 @@ pub async fn insert_learner_details(
             created_at: Set(now),
             updated_at: Set(now),
             deleted_at: Set(None),
-        };
-        am.insert(db)
+        })
+        .collect();
+
+    for chunk in models.chunks(CHUNK_SIZE) {
+        learner_details::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
             .await
             .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }

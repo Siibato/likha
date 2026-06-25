@@ -33,12 +33,8 @@ pub async fn add_student(
         return Err(AppError::BadRequest("User is not a student".to_string()));
     }
 
-    if class_repo.is_student_enrolled(class_id, student_id).await? {
-        return Err(AppError::BadRequest(
-            "Student is already enrolled in this class".to_string(),
-        ));
-    }
-
+    // add_participant is idempotent: it returns an existing active participant
+    // or re-enables a soft-deleted one, so retries do not fail.
     let enrollment = class_repo.add_student(class_id, student_id).await?;
 
     let is_active = student.account_status != "locked" && student.account_status != "deactivated";

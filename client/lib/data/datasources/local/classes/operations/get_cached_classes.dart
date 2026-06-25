@@ -27,7 +27,22 @@ Future<List<ClassModel>> getCachedClasses(
       return [];
     }
 
-    final models = results.map((r) => ClassModel.fromMap(r)).toList();
+    // Recalculate student_count from local participants for each class
+    // to ensure accurate counts regardless of cached values
+    final models = <ClassModel>[];
+    for (final row in results) {
+      final classId = row[CommonCols.id] as String;
+      final countResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM ${DbTables.classParticipants} WHERE ${ClassParticipantsCols.classId} = ? AND ${ClassParticipantsCols.removedAt} IS NULL',
+        [classId],
+      );
+      final localCount = (countResult.first['count'] as int?) ?? 0;
+
+      final map = Map<String, dynamic>.from(row);
+      map[ClassesCols.studentCount] = localCount;
+      models.add(ClassModel.fromMap(map));
+    }
+
     return models;
   } catch (e) {
     if (e is CacheException) rethrow;

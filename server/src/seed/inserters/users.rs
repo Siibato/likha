@@ -1,40 +1,36 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 
-use crate::modules::auth::UserRepository;
 use crate::seed::specs::UserSpec;
 use crate::utils::AppError;
 use ::entity::users;
 
+const CHUNK_SIZE: usize = 100;
+
 pub async fn insert_users(db: &DatabaseConnection, specs: &[UserSpec]) -> Result<(), AppError> {
-    let repo = UserRepository::new(db.clone());
+    if specs.is_empty() {
+        return Ok(());
+    }
 
-    for spec in specs {
-        repo.create_account(
-            spec.username.clone(),
-            spec.first_name.clone(),
-            spec.last_name.clone(),
-            spec.role.clone(),
-            Some(spec.id),
-        )
-        .await?;
+    let models: Vec<users::ActiveModel> = specs
+        .iter()
+        .map(|spec| users::ActiveModel {
+            id: Set(spec.id),
+            username: Set(spec.username.clone()),
+            password_hash: Set(spec.password_hash.clone()),
+            first_name: Set(spec.first_name.clone()),
+            last_name: Set(spec.last_name.clone()),
+            role: Set(spec.role.clone()),
+            account_status: Set(spec.account_status.clone()),
+            activated_at: Set(spec.activated_at),
+            created_at: Set(spec.created_at),
+            updated_at: Set(spec.created_at),
+            deleted_at: Set(spec.deleted_at),
+        })
+        .collect();
 
-        if let Some(hash) = &spec.password_hash {
-            repo.set_password(spec.id, hash.clone()).await?;
-        }
-
-        let user = users::Entity::find_by_id(spec.id)
-            .one(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(e.to_string()))?
-            .ok_or_else(|| AppError::NotFound(format!("User {} not found", spec.id)))?;
-
-        let mut am: users::ActiveModel = user.into();
-        am.created_at = Set(spec.created_at);
-        am.updated_at = Set(spec.created_at);
-        am.account_status = Set(spec.account_status.clone());
-        am.activated_at = Set(spec.activated_at);
-        am.deleted_at = Set(spec.deleted_at);
-        am.update(db)
+    for chunk in models.chunks(CHUNK_SIZE) {
+        users::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
             .await
             .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }

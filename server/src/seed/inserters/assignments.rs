@@ -1,61 +1,45 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{DatabaseConnection, EntityTrait, Set};
 
-use crate::modules::assignment::repository::AssignmentRepository;
 use crate::seed::specs::AssignmentSpec;
 use crate::utils::AppError;
 use ::entity::assignments;
 
-pub async fn insert_assignment(
+const CHUNK_SIZE: usize = 100;
+
+pub async fn insert_assignments(
     db: &DatabaseConnection,
-    spec: &AssignmentSpec,
+    specs: &[AssignmentSpec],
 ) -> Result<(), AppError> {
-    let repo = AssignmentRepository::new(db.clone());
-    let created_at = spec.created_at;
-
-    repo.create_assignment(
-        spec.class_id,
-        spec.title.clone(),
-        spec.instructions.clone(),
-        spec.total_points,
-        spec.allows_text_submission,
-        spec.allows_file_submission,
-        None, // min_words
-        None, // max_words
-        spec.due_at,
-        0, // order_index
-        Some(spec.id),
-        false, // is_draft
-        Some(spec.term_number),
-        Some(spec.component.clone()),
-    )
-    .await?;
-
-    let assignment = assignments::Entity::find_by_id(spec.id)
-        .one(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound(format!("Assignment {} not found", spec.id)))?;
-
-    let mut am: assignments::ActiveModel = assignment.into();
-    am.created_at = Set(created_at);
-    am.updated_at = Set(created_at);
-    am.update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
-
-    if spec.deleted_at.is_none() {
-        repo.publish_assignment(spec.id).await?;
+    if specs.is_empty() {
+        return Ok(());
     }
 
-    if let Some(deleted_at) = spec.deleted_at {
-        let assignment = assignments::Entity::find_by_id(spec.id)
-            .one(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(e.to_string()))?
-            .ok_or_else(|| AppError::NotFound(format!("Assignment {} not found", spec.id)))?;
-        let mut am: assignments::ActiveModel = assignment.into();
-        am.deleted_at = Set(Some(deleted_at));
-        am.update(db)
+    let models: Vec<assignments::ActiveModel> = specs
+        .iter()
+        .map(|spec| assignments::ActiveModel {
+            id: Set(spec.id),
+            class_id: Set(spec.class_id),
+            title: Set(spec.title.clone()),
+            instructions: Set(spec.instructions.clone()),
+            total_points: Set(spec.total_points),
+            allows_text_submission: Set(spec.allows_text_submission),
+            allows_file_submission: Set(spec.allows_file_submission),
+            allowed_file_types: Set(None),
+            max_file_size_mb: Set(None),
+            due_at: Set(spec.due_at),
+            is_published: Set(spec.is_published && spec.deleted_at.is_none()),
+            order_index: Set(0),
+            created_at: Set(spec.created_at),
+            updated_at: Set(spec.created_at),
+            deleted_at: Set(spec.deleted_at),
+            term_number: Set(Some(spec.term_number)),
+            component: Set(Some(spec.component.clone())),
+        })
+        .collect();
+
+    for chunk in models.chunks(CHUNK_SIZE) {
+        assignments::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
             .await
             .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
