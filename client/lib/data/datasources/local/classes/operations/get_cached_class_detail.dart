@@ -20,7 +20,7 @@ Future<ClassDetailModel> getCachedClassDetail(
       FROM ${DbTables.classParticipants} cp
       JOIN ${DbTables.users} u ON u.id = cp.user_id
       WHERE cp.class_id = ? AND cp.removed_at IS NULL
-      ORDER BY u.first_name ASC
+      ORDER BY u.last_name ASC, u.first_name ASC
     ''', [classId]);
 
     final classMap = classResult.first;

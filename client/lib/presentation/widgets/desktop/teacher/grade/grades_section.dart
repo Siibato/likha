@@ -11,6 +11,8 @@ import 'package:likha/presentation/providers/class_grades_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 import 'package:likha/presentation/providers/document_export_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 
 /// Grades section widget for TeacherClassDetailDesktop
 /// Displays grading setup and grade spreadsheet functionality
@@ -153,6 +155,15 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     final grades = gradesState.grades;
     final isLoading = gradesState.isLoading && grades == null;
 
+    // Listen for sync completion — when the server confirms pending grade
+    // mutations (score saves, item creates/deletes), reload grades from the
+    // local DB so the UI reflects the server-acknowledged state.
+    ref.listen<SyncState>(syncProvider, (previous, next) {
+      if (previous?.phase == SyncPhase.syncing && next.phase == SyncPhase.idle) {
+        _reloadGrades();
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.backgroundSecondary,
       body: Column(
@@ -253,6 +264,10 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                         onScoreChanged: _handleScoreChanged,
                         onQgChanged: _handleQgChanged,
                         onAddColumn: _handleAddColumn,
+                        onDeleteItem: (itemId) async {
+                          await ref.read(gradeItemsProvider.notifier).deleteItem(itemId);
+                          _reloadGrades();
+                        },
                       ),
                       // Floating action button
                       Positioned(

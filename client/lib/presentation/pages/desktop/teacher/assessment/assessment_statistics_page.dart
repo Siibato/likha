@@ -244,11 +244,7 @@ class _AssessmentStatisticsPageState
                   rows: stats.questionStatistics.map((q) {
                     return DataRow(cells: [
                       DataCell(
-                        Text(
-                          q.questionText,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
+                        Text(q.questionText),
                       ),
                         DataCell(Text('${q.correctCount}')),
                         DataCell(Text('${q.incorrectCount}')),
@@ -374,11 +370,7 @@ class _AssessmentStatisticsPageState
           return DataRow(
             cells: [
               DataCell(
-                Text(
-                  item.questionText,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
+                Text(item.questionText),
               ),
                 DataCell(
                   Column(

@@ -13,7 +13,7 @@ Future<List<SubmissionSummaryModel>> getCachedSubmissions(
       FROM assessment_submissions s
       LEFT JOIN users u ON u.id = s.user_id
       WHERE s.assessment_id = ? AND s.deleted_at IS NULL
-      ORDER BY s.started_at DESC
+      ORDER BY u.last_name ASC, u.first_name ASC
     ''', [assessmentId]);
 
     if (results.isEmpty) return [];

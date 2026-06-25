@@ -22,6 +22,11 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let classes = fixtures::base::demo2_classes(&ctx);
     let enrollments = fixtures::base::demo2_enrollments();
     let learner_details = fixtures::base::demo2_learner_details();
+    let attendance = fixtures::base::demo2_attendance();
+    let core_values = fixtures::base::demo2_core_values();
+    let school_history = fixtures::base::demo2_school_history();
+    let previous_subjects = fixtures::base::demo2_previous_subjects();
+    let previous_attendance = fixtures::base::demo2_previous_attendance();
     let tos_list = fixtures::base::demo2_tos();
     let competencies = fixtures::base::demo2_competencies();
 
@@ -158,6 +163,13 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
     inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
 
+    inserters::student_records::insert_attendance_records(db, &attendance).await?;
+    inserters::student_records::insert_core_values_records(db, &core_values).await?;
+
+    inserters::school_history::insert_school_history(db, &school_history).await?;
+    inserters::school_history::insert_previous_subjects(db, &previous_subjects).await?;
+    inserters::school_history::insert_previous_attendance(db, &previous_attendance).await?;
+
     enable_foreign_keys(db)
         .await
         .map_err(|e| AppError::InternalServerError(e.to_string()))?;
@@ -169,11 +181,12 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     }
 
     println!(
-        "Demo-2 seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
+        "Demo-2 seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades, {} attendance records, {} core values records, {} school history, {} previous subjects, {} previous attendance",
         users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),
-        term_grades.len()
+        term_grades.len(), attendance.len(), core_values.len(), school_history.len(),
+        previous_subjects.len(), previous_attendance.len()
     );
 
     Ok(())

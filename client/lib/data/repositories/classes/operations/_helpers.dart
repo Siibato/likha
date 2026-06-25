@@ -13,6 +13,14 @@ Future<String?> getCurrentUserId() async {
   }
 }
 
+Future<String?> getCurrentUserRole() async {
+  try {
+    return await sl<StorageService>().getUserRole();
+  } catch (e) {
+    return null;
+  }
+}
+
 Future<void> syncInBackgroundForClass(
   ClassRemoteDataSource remoteDataSource,
   ClassLocalDataSource localDataSource,

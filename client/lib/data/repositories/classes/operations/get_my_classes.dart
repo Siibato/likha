@@ -17,6 +17,9 @@ ResultFuture<List<ClassEntity>> getMyClasses(
     final currentUserId = await helpers.getCurrentUserId();
     if (currentUserId == null) return const Right([]);
 
+    final userRole = await helpers.getCurrentUserRole();
+    final isStudent = userRole == 'student';
+
     try {
       final cachedClasses = await localDataSource.getCachedClassesForUser(currentUserId);
 
@@ -33,16 +36,21 @@ ResultFuture<List<ClassEntity>> getMyClasses(
           },
         );
       }
-      return Right(cachedClasses.where((c) => !c.isAdvisory).toList());
+      final classes = isStudent
+          ? cachedClasses.where((c) => !c.isAdvisory).toList()
+          : cachedClasses;
+      return Right(classes);
     } on CacheException {
       final freshClasses = await remoteFetch(
         dedupKey: 'classes/myClasses/$currentUserId',
         remote: remoteDataSource.getMyClasses,
       );
-      final nonAdvisoryClasses = freshClasses.where((c) => !c.isAdvisory).toList();
-      await localDataSource.cacheClasses(nonAdvisoryClasses);
-      await helpers.cacheStudentParticipations(localDataSource, nonAdvisoryClasses, currentUserId);
-      return Right(nonAdvisoryClasses);
+      final classes = isStudent
+          ? freshClasses.where((c) => !c.isAdvisory).toList()
+          : freshClasses;
+      await localDataSource.cacheClasses(classes);
+      await helpers.cacheStudentParticipations(localDataSource, classes, currentUserId);
+      return Right(classes);
     }
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

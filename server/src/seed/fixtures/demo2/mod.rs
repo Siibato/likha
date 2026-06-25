@@ -164,6 +164,26 @@ pub fn demo2_learner_details() -> Vec<LearnerDetailsSpec> {
     base::learner_details::demo2_learner_details()
 }
 
+pub fn demo2_attendance() -> Vec<AttendanceSpec> {
+    base::attendance::demo2_attendance()
+}
+
+pub fn demo2_core_values() -> Vec<CoreValuesSpec> {
+    base::core_values::demo2_core_values()
+}
+
+pub fn demo2_school_history() -> Vec<SchoolHistorySpec> {
+    base::school_history::demo2_school_history()
+}
+
+pub fn demo2_previous_subjects() -> Vec<PreviousSubjectSpec> {
+    base::previous_subjects::demo2_previous_subjects()
+}
+
+pub fn demo2_previous_attendance() -> Vec<PreviousAttendanceSpec> {
+    base::previous_attendance::demo2_previous_attendance()
+}
+
 pub fn demo2_tos() -> Vec<TosSpec> {
     base::tos::demo2_tos()
 }
