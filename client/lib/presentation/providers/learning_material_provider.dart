@@ -9,6 +9,7 @@ import 'package:likha/domain/learning_materials/entities/material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
+import 'package:likha/domain/learning_materials/usecases/check_file_cached.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/get_material_detail.dart';
 import 'package:likha/domain/learning_materials/usecases/get_materials.dart';
@@ -72,6 +73,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
   final material.UploadFile _uploadFile;
   final material.DeleteFile _deleteFile;
   final material.DownloadFile _downloadFile;
+  final material.CheckFileCached _checkFileCached;
 
   LearningMaterialNotifier(
     this._createMaterial,
@@ -84,6 +86,7 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     this._uploadFile,
     this._deleteFile,
     this._downloadFile,
+    this._checkFileCached,
   ) : super(LearningMaterialState());
 
   Future<void> loadMaterials(String classId) async {
@@ -345,6 +348,17 @@ class LearningMaterialNotifier extends StateNotifier<LearningMaterialState> {
     return bytes;
   }
 
+  Future<void> checkFilesCacheStatus() async {
+    final current = state.currentMaterial;
+    if (current == null || current.files.isEmpty) return;
+
+    for (final file in current.files) {
+      await _checkFileCached(file.id);
+    }
+
+    await loadMaterialDetail(current.id);
+  }
+
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
@@ -363,5 +377,6 @@ final learningMaterialProvider =
     sl<material.UploadFile>(),
     sl<material.DeleteFile>(),
     sl<material.DownloadFile>(),
+    sl<material.CheckFileCached>(),
   ),
 );

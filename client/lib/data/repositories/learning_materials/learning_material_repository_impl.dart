@@ -139,4 +139,8 @@ class LearningMaterialRepositoryImpl implements LearningMaterialRepository {
         _remoteDataSource,
         fileId: fileId,
       );
+
+  @override
+  Future<bool> checkFileCached({required String fileId}) =>
+      _localDataSource.isFileCached(fileId);
 }

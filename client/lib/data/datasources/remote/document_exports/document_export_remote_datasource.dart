@@ -45,7 +45,7 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportGradesPdf(classId, termNumber: termNumber),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
     );
     return (response.data as List<dynamic>).cast<int>();
   }
@@ -57,7 +57,7 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportGradesExcel(classId, termNumber: termNumber),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
     );
     return (response.data as List<dynamic>).cast<int>();
   }
@@ -69,7 +69,7 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportSf9Pdf(classId, studentId),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
     );
     return (response.data as List<dynamic>).cast<int>();
   }
@@ -81,7 +81,7 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportSf10Pdf(classId, studentId),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
     );
     return (response.data as List<dynamic>).cast<int>();
   }
@@ -93,7 +93,7 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportSf10Excel(classId, studentId),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
     );
     return (response.data as List<dynamic>).cast<int>();
   }
@@ -104,7 +104,7 @@ class DocumentExportRemoteDataSourceImpl implements DocumentExportRemoteDataSour
   }) async {
     final response = await _dioClient.dio.get(
       ApiEndpoints.exportTosExcel(tosId),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
     );
     return (response.data as List<dynamic>).cast<int>();
   }

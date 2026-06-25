@@ -111,6 +111,7 @@ import 'package:likha/data/datasources/remote/sync/sync_remote_datasource.dart';
 import 'package:likha/data/repositories/learning_materials/learning_material_repository_impl.dart';
 import 'package:likha/domain/learning_materials/repositories/learning_material_repository.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
+import 'package:likha/domain/learning_materials/usecases/check_file_cached.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
 import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
@@ -544,6 +545,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => material.UploadFile(sl()));
   sl.registerLazySingleton(() => material.DeleteFile(sl()));
   sl.registerLazySingleton(() => material.DownloadFile(sl()));
+  sl.registerLazySingleton(() => material.CheckFileCached(sl()));
 
   // Grading - Repository
   sl.registerLazySingleton<GradingRepository>(

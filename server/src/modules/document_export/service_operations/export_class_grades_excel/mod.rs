@@ -150,10 +150,6 @@ pub async fn run(
         .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
     row += 1;
 
-    table::write_gender_row(sheet, row, &table)
-        .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
-    row += 1;
-
     table::write_student_rows(sheet, row, &table)
         .map_err(|e| AppError::InternalServerError(format!("Excel: {}", e)))?;
 

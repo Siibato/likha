@@ -156,7 +156,7 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
           final safeName = studentName.replaceAll(' ', '_');
           await _saveBytes(
             bytes: Uint8List.fromList(bytes),
-            fileName: 'SF10_$safeName',
+            fileName: 'SF10_${safeName}_${DateTime.now().millisecondsSinceEpoch}',
             ext: '.pdf',
             mimeType: MimeType.pdf,
           );
@@ -237,7 +237,7 @@ class DocumentExportNotifier extends StateNotifier<DocumentExportState> {
           final safeName = studentName.replaceAll(' ', '_');
           await _saveBytes(
             bytes: Uint8List.fromList(bytes),
-            fileName: 'SF10_$safeName',
+            fileName: 'SF10_${safeName}_${DateTime.now().millisecondsSinceEpoch}',
             ext: '.xlsx',
             mimeType: MimeType.microsoftExcel,
           );

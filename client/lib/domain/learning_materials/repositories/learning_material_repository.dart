@@ -50,4 +50,6 @@ abstract class LearningMaterialRepository {
   ResultFuture<MutationResult<void>> deleteFile({required String fileId});
 
   ResultFuture<List<int>> downloadFile({required String fileId});
+
+  Future<bool> checkFileCached({required String fileId});
 }

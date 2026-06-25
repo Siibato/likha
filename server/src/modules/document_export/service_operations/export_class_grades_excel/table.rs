@@ -138,41 +138,6 @@ pub fn write_hps_row(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MALE gender row
-// ─────────────────────────────────────────────────────────────────────────────
-
-pub fn write_gender_row(
-    sheet: &mut rust_xlsxwriter::Worksheet,
-    row: u32,
-    table: &GradeTableData,
-) -> Result<(), rust_xlsxwriter::XlsxError> {
-    let (name_col, ww_start, pt_start, qa_start, initial_col, tg_col, remarks_col) =
-        calc_col_indices(table);
-    let fmt = tbl_header_fmt();
-
-    sheet.write_with_format(row, name_col as u16, "MALE", &fmt)?;
-
-    for (section, start) in [
-        (&table.ww, ww_start),
-        (&table.pt, pt_start),
-        (&table.qa, qa_start),
-    ] {
-        if start < 0 {
-            continue;
-        }
-        for c in 0..(section.items.len() as i32 + 3) {
-            sheet.write_with_format(row, (start + c) as u16, "", &fmt)?;
-        }
-    }
-
-    sheet.write_with_format(row, initial_col as u16, "", &fmt)?;
-    sheet.write_with_format(row, tg_col as u16, "", &fmt)?;
-    sheet.write_with_format(row, remarks_col as u16, "", &fmt)?;
-
-    Ok(())
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Student rows  — with REMARKS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -189,7 +154,7 @@ pub fn write_student_rows(
     for sr in &table.students {
         // Name
         let name = format!("{}. {}", sr.index, sr.student_name);
-        sheet.write_with_format(row, name_col as u16, &name, &data_fmt)?;
+        sheet.write_with_format(row, name_col as u16, &name, &name_data_fmt())?;
 
         // Scores
         for (result, section, start) in [

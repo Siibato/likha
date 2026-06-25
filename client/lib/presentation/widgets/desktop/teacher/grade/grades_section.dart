@@ -487,18 +487,6 @@ class _DesktopExportDialog extends ConsumerWidget {
                 );
               },
             ),
-            ListTile(
-              title: const Text('PDF'),
-              subtitle: const Text('Printable document (.pdf)'),
-              leading: const Icon(Icons.picture_as_pdf),
-              onTap: () {
-                ref.read(documentExportProvider.notifier).exportClassGrades(
-                  classId: classId,
-                  termNumber: termNumber,
-                  isPdf: true,
-                );
-              },
-            ),
             if (exportState.error != null) ...[
               const SizedBox(height: 8),
               Text(

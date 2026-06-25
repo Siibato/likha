@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/term_utils.dart';
-import 'package:likha/core/network/server_reachability_service.dart';
-import 'package:likha/injection_container.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/empty_state.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/base_data_table.dart';
@@ -134,8 +132,6 @@ class Sf10DetailPage extends ConsumerStatefulWidget {
 }
 
 class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
-  bool _isDownloading = false;
-
   @override
   void initState() {
     super.initState();
@@ -144,56 +140,18 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
     });
   }
 
-  Future<void> _downloadSf10(bool isPdf) async {
-    final reachability = sl<ServerReachabilityService>();
-    if (!reachability.isServerReachable) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Only available when connected to Likha server'),
-          backgroundColor: AppColors.semanticError,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isDownloading = true);
-
-    if (isPdf) {
-      await ref.read(documentExportProvider.notifier).exportSf10Pdf(
-        classId: widget.classId,
-        studentId: widget.studentId,
-        studentName: widget.studentName,
-      );
-    } else {
-      await ref.read(documentExportProvider.notifier).exportSf10Excel(
-        classId: widget.classId,
-        studentId: widget.studentId,
-        studentName: widget.studentName,
-      );
-    }
-
-    if (!mounted) return;
-
-    final exportState = ref.read(documentExportProvider);
-
-    if (exportState.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(exportState.error!),
-          backgroundColor: AppColors.semanticError,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('SF10 ${isPdf ? 'PDF' : 'Excel'} downloaded successfully'),
-          backgroundColor: AppColors.semanticSuccess,
-        ),
-      );
-    }
-
-    setState(() => _isDownloading = false);
+  void _showExportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return _Sf10ExportDialog(
+          classId: widget.classId,
+          studentId: widget.studentId,
+          studentName: widget.studentName,
+          parentContext: context,
+        );
+      },
+    );
   }
 
   @override
@@ -214,35 +172,9 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
         actions: [
           if (state.data != null) ...[
             TextButton.icon(
-              onPressed: _isDownloading ? null : () => _downloadSf10(true),
-              icon: _isDownloading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.picture_as_pdf_rounded, size: 18),
-              label: Text(_isDownloading ? 'Generating...' : 'PDF'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: AppColors.accentCharcoal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: _isDownloading ? null : () => _downloadSf10(false),
-              icon: _isDownloading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.table_chart_rounded, size: 18),
-              label: Text(_isDownloading ? 'Generating...' : 'Excel'),
+              onPressed: () => _showExportDialog(context),
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('Export'),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: AppColors.accentCharcoal,
@@ -649,4 +581,94 @@ class _Sf10Content extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Text(text, style: const TextStyle(fontSize: 12, color: AppColors.foregroundDark)),
   );
+}
+
+class _Sf10ExportDialog extends ConsumerWidget {
+  final String classId;
+  final String studentId;
+  final String studentName;
+  final BuildContext parentContext;
+
+  const _Sf10ExportDialog({
+    required this.classId,
+    required this.studentId,
+    required this.studentName,
+    required this.parentContext,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exportState = ref.watch(documentExportProvider);
+
+    ref.listen<DocumentExportState>(documentExportProvider, (previous, next) {
+      if (previous?.isExporting == true && !next.isExporting && next.error == null) {
+        Navigator.of(context).pop();
+        if (parentContext.mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            const SnackBar(content: Text('Document exported successfully!')),
+          );
+        }
+      }
+    });
+
+    return AlertDialog(
+      title: const Text('Export SF10'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Choose export format:'),
+          const SizedBox(height: 16),
+          if (exportState.isExporting) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                    SizedBox(height: 12),
+                    Text('Preparing document…'),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            ListTile(
+              title: const Text('Excel'),
+              subtitle: const Text('Editable spreadsheet (.xlsx)'),
+              leading: const Icon(Icons.table_chart),
+              onTap: () {
+                ref.read(documentExportProvider.notifier).exportSf10Excel(
+                  classId: classId,
+                  studentId: studentId,
+                  studentName: studentName,
+                );
+              },
+            ),
+            if (exportState.error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                exportState.error!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.semanticError,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: exportState.isExporting
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: Text(exportState.isExporting ? 'Exporting…' : 'Cancel'),
+        ),
+      ],
+    );
+  }
 }

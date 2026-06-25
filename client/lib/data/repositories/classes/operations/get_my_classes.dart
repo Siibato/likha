@@ -33,15 +33,16 @@ ResultFuture<List<ClassEntity>> getMyClasses(
           },
         );
       }
-      return Right(cachedClasses);
+      return Right(cachedClasses.where((c) => !c.isAdvisory).toList());
     } on CacheException {
       final freshClasses = await remoteFetch(
         dedupKey: 'classes/myClasses/$currentUserId',
         remote: remoteDataSource.getMyClasses,
       );
-      await localDataSource.cacheClasses(freshClasses);
-      await helpers.cacheStudentParticipations(localDataSource, freshClasses, currentUserId);
-      return Right(freshClasses);
+      final nonAdvisoryClasses = freshClasses.where((c) => !c.isAdvisory).toList();
+      await localDataSource.cacheClasses(nonAdvisoryClasses);
+      await helpers.cacheStudentParticipations(localDataSource, nonAdvisoryClasses, currentUserId);
+      return Right(nonAdvisoryClasses);
     }
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

@@ -52,6 +52,11 @@ class _StudentAssignmentListPageState extends ConsumerState<StudentAssignmentLis
         title: 'Assignments',
         showBackButton: true,
       ),
+      isLoading: state.isLoading && state.assignments.isEmpty,
+      error: state.error,
+      onRetry: () => ref
+          .read(assignmentListProvider.notifier)
+          .loadAssignments(widget.classId, publishedOnly: true),
       body: state.isLoading && state.assignments.isEmpty
           ? SkeletonPulse(
               child: ListView.builder(

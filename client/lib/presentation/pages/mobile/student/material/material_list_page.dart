@@ -49,6 +49,11 @@ class _StudentMaterialListPageState extends ConsumerState<StudentMaterialListPag
         title: 'Learning Modules',
         showBackButton: true,
       ),
+      isLoading: state.isLoading && state.materials.isEmpty,
+      error: state.error,
+      onRetry: () => ref
+          .read(learningMaterialProvider.notifier)
+          .loadMaterials(widget.classId),
       body: state.isLoading && state.materials.isEmpty
           ? SkeletonPulse(
               child: ListView.builder(
