@@ -86,6 +86,7 @@ export const endpointThresholds = {
   // Sync endpoints (critical - can be heavy)
   'http_req_duration{name:Sync:Full}': ['p(95)<3000'],
   'http_req_duration{name:Sync:Delta}': ['p(95)<1500'],
+  'http_req_duration{name:SyncPush}': ['p(95)<1000'],
 
   // Admin endpoints
   'http_req_duration{name:Admin:AccountList}': ['p(95)<500'],

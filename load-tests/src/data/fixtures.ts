@@ -50,3 +50,69 @@ export function fakeAnswerSave(questionIds: string[]): { answers: Record<string,
 export function uniqueId(prefix: string): string {
   return `${prefix}_vu${__VU}_${Date.now()}`;
 }
+
+export interface ServerPushOperation {
+  id: string;
+  entity_type: string;
+  operation: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ServerPushPayload {
+  operations: ServerPushOperation[];
+}
+
+export function fakeGradeScorePush(
+  classId: string,
+  studentId: string,
+  gradeItemId?: string,
+): ServerPushPayload {
+  const op: ServerPushOperation = {
+    id: `op_grade_${__VU}_${__ITER}_${Date.now()}`,
+    entity_type: 'grade_score',
+    operation: 'update',
+    payload: {
+      class_id: classId,
+      student_id: studentId,
+      grade_item_id: gradeItemId ?? `gi_${classId}_default`,
+      score: Math.floor(Math.random() * 100),
+      grading_period_number: 1,
+    },
+  };
+  return { operations: [op] };
+}
+
+export function fakeAssessmentSubmissionServerPush(
+  assessmentId: string,
+  studentId: string,
+): ServerPushPayload {
+  const op: ServerPushOperation = {
+    id: `op_sub_${__VU}_${__ITER}_${Date.now()}`,
+    entity_type: 'assessment_submission',
+    operation: 'create',
+    payload: {
+      assessment_id: assessmentId,
+      student_id: studentId,
+      submitted_at: new Date().toISOString(),
+      answers: {},
+    },
+  };
+  return { operations: [op] };
+}
+
+export function fakeAssignmentSubmissionServerPush(
+  assignmentId: string,
+  studentId: string,
+): ServerPushPayload {
+  const op: ServerPushOperation = {
+    id: `op_asub_${__VU}_${__ITER}_${Date.now()}`,
+    entity_type: 'assignment_submission',
+    operation: 'create',
+    payload: {
+      assignment_id: assignmentId,
+      student_id: studentId,
+      submitted_at: new Date().toISOString(),
+    },
+  };
+  return { operations: [op] };
+}
