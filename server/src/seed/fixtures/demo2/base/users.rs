@@ -1,4 +1,4 @@
-//! Demo-2 users: 6 teachers + 30 Filipino students.
+//! Demo-2 users: 1 teacher + 30 Filipino students.
 
 use super::super::uid;
 use crate::seed::fixtures::shared::{PASSWORD_STUDENT, PASSWORD_TEACHER};
@@ -38,19 +38,14 @@ pub const STUDENT_DATA: [(&str, &str, &str); 30] = [
     ("cristina.domingo", "Cristina", "Domingo"),
 ];
 
-pub const TEACHER_DATA: [(&str, &str, &str); 6] = [
+pub const TEACHER_DATA: [(&str, &str, &str); 1] = [
     ("rodrigo.santos", "Rodrigo", "Santos"),
-    ("maria.reyes", "Maria", "Reyes"),
-    ("antonio.cruz", "Antonio", "Cruz"),
-    ("carmen.diaz", "Carmen", "Diaz"),
-    ("pedro.castro", "Pedro", "Castro"),
-    ("rosa.lopez", "Rosa", "Lopez"),
 ];
 
 pub fn demo2_users(ctx: &SeedContext) -> Vec<UserSpec> {
     let created = ctx.days_ago(30);
     let activated = ctx.days_ago(29);
-    let mut users = Vec::with_capacity(36);
+    let mut users = Vec::with_capacity(31);
 
     // Teachers
     for &(uname, fname, lname) in &TEACHER_DATA {

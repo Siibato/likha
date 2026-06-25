@@ -1,6 +1,6 @@
 //! Demo-2 seeding fixtures for full single-class demonstration dataset.
 //!
-//! 6 teachers + 30 students, 7 classes (1 Advisory + 6 subjects),
+//! 1 teacher + 30 students, 7 classes (1 Advisory + 6 subjects),
 //! 3 terms of complete assessments, assignments, and learning modules.
 
 pub mod base;

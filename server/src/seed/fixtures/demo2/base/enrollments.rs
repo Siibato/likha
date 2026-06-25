@@ -1,14 +1,13 @@
-//! Demo-2 enrollments: 6 teachers + 30 students in all 7 classes.
+//! Demo-2 enrollments: 1 teacher + 30 students in all 7 classes.
 
 use super::super::{cid, uid};
 use super::users::STUDENT_DATA;
 use crate::seed::specs::EnrollmentSpec;
 
 pub fn demo2_enrollments() -> Vec<EnrollmentSpec> {
-    let mut enrollments = Vec::with_capacity(217);
+    let mut enrollments = Vec::with_capacity(212);
 
-    // Teacher enrollments
-    // Rodrigo Santos: Advisory + Science
+    // Teacher enrollments — single teacher for all classes
     enrollments.push(EnrollmentSpec {
         class_id: cid("adv_mahogany"),
         user_id: uid("rodrigo.santos"),
@@ -17,30 +16,25 @@ pub fn demo2_enrollments() -> Vec<EnrollmentSpec> {
         class_id: cid("sci10"),
         user_id: uid("rodrigo.santos"),
     });
-    // Maria Reyes: English
     enrollments.push(EnrollmentSpec {
         class_id: cid("eng10"),
-        user_id: uid("maria.reyes"),
+        user_id: uid("rodrigo.santos"),
     });
-    // Antonio Cruz: Math
     enrollments.push(EnrollmentSpec {
         class_id: cid("math10"),
-        user_id: uid("antonio.cruz"),
+        user_id: uid("rodrigo.santos"),
     });
-    // Carmen Diaz: AP
     enrollments.push(EnrollmentSpec {
         class_id: cid("ap10"),
-        user_id: uid("carmen.diaz"),
+        user_id: uid("rodrigo.santos"),
     });
-    // Pedro Castro: Filipino
     enrollments.push(EnrollmentSpec {
         class_id: cid("fil10"),
-        user_id: uid("pedro.castro"),
+        user_id: uid("rodrigo.santos"),
     });
-    // Rosa Lopez: TLE
     enrollments.push(EnrollmentSpec {
         class_id: cid("tle10"),
-        user_id: uid("rosa.lopez"),
+        user_id: uid("rodrigo.santos"),
     });
 
     // All 30 students in all 7 classes

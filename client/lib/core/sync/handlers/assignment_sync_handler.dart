@@ -312,10 +312,23 @@ class AssignmentSyncHandler {
     final submissionId = payload['submission_id'] as String?;
     if (submissionId != null) {
       final cached = await _local.getCachedSubmission(submissionId);
-      if (cached != null) {
-        final textContent = payload['text_content'] as String?;
+      final textContent = payload['text_content'] as String?;
+      
+      if (cached != null && cached.assignmentId.isNotEmpty) {
         final model = await _remote.createSubmission(
           assignmentId: cached.assignmentId,
+          textContent: textContent,
+          idempotencyKey: entry.id,
+        );
+        await _local.cacheSubmissionDetail(model);
+        return const SyncResult.success();
+      }
+      
+      // If cache lookup failed, try to get assignmentId from DB directly
+      final assignmentId = await _local.getAssignmentIdForSubmission(submissionId);
+      if (assignmentId != null) {
+        final model = await _remote.createSubmission(
+          assignmentId: assignmentId,
           textContent: textContent,
           idempotencyKey: entry.id,
         );

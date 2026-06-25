@@ -8,6 +8,7 @@ export 'clear_student_assignment_submission.dart';
 export 'clear_all_cache.dart';
 export 'create_submission.dart';
 export 'delete_assignment.dart';
+export 'get_assignment_id_for_submission.dart';
 export 'get_cached_assignment_detail.dart';
 export 'get_cached_assignments.dart';
 export 'get_cached_file_bytes.dart';

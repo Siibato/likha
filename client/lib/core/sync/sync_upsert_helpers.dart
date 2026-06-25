@@ -2145,95 +2145,100 @@ class SyncUpsertHelpers {
       }
     }
 
-    // Handle core_values_records delta
-    final coreValuesRecordsDeltas = deltas['core_values_records'];
-    if (coreValuesRecordsDeltas != null) {
-      final updated = coreValuesRecordsDeltas.updated;
-      updatedCounts['core_values_records'] = updated.length;
-      await upsertCoreValuesRecords(db, updated);
+    // Skip core_values_records in delta sync to avoid FK constraint failures
+    // These are only synced during full sync
+    // final coreValuesRecordsDeltas = deltas['core_values_records'];
+    // if (coreValuesRecordsDeltas != null) {
+    //   final updated = coreValuesRecordsDeltas.updated;
+    //   updatedCounts['core_values_records'] = updated.length;
+    //   await upsertCoreValuesRecords(db, updated);
+    //
+    //   final deleted = coreValuesRecordsDeltas.deleted;
+    //   deletedCounts['core_values_records'] = deleted.length;
+    //   for (final id in deleted) {
+    //     await db.delete(
+    //       DbTables.coreValuesRecords,
+    //       where: '${CommonCols.id} = ?',
+    //       whereArgs: [id],
+    //     );
+    //   }
+    // }
 
-      final deleted = coreValuesRecordsDeltas.deleted;
-      deletedCounts['core_values_records'] = deleted.length;
-      for (final id in deleted) {
-        await db.delete(
-          DbTables.coreValuesRecords,
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
+    // Skip student_school_history in delta sync to avoid FK constraint failures
+    // These are only synced during full sync
+    // final studentSchoolHistoryDeltas = deltas['student_school_history'];
+    // if (studentSchoolHistoryDeltas != null) {
+    //   final updated = studentSchoolHistoryDeltas.updated;
+    //   updatedCounts['student_school_history'] = updated.length;
+    //   await upsertStudentSchoolHistory(db, updated);
+    //
+    //   final deleted = studentSchoolHistoryDeltas.deleted;
+    //   deletedCounts['student_school_history'] = deleted.length;
+    //   for (final id in deleted) {
+    //     await db.delete(
+    //       DbTables.studentSchoolHistory,
+    //       where: '${CommonCols.id} = ?',
+    //       whereArgs: [id],
+    //     );
+    //   }
+    // }
 
-    // Handle student_school_history delta
-    final studentSchoolHistoryDeltas = deltas['student_school_history'];
-    if (studentSchoolHistoryDeltas != null) {
-      final updated = studentSchoolHistoryDeltas.updated;
-      updatedCounts['student_school_history'] = updated.length;
-      await upsertStudentSchoolHistory(db, updated);
+    // Skip previous_school_subjects in delta sync to avoid FK constraint failures
+    // These are only synced during full sync
+    // final previousSchoolSubjectsDeltas = deltas['previous_school_subjects'];
+    // if (previousSchoolSubjectsDeltas != null) {
+    //   final updated = previousSchoolSubjectsDeltas.updated;
+    //   updatedCounts['previous_school_subjects'] = updated.length;
+    //   await upsertPreviousSchoolSubjects(db, updated);
+    //
+    //   final deleted = previousSchoolSubjectsDeltas.deleted;
+    //   deletedCounts['previous_school_subjects'] = deleted.length;
+    //   for (final id in deleted) {
+    //     await db.delete(
+    //       DbTables.previousSchoolSubjects,
+    //       where: '${CommonCols.id} = ?',
+    //       whereArgs: [id],
+    //     );
+    //   }
+    // }
 
-      final deleted = studentSchoolHistoryDeltas.deleted;
-      deletedCounts['student_school_history'] = deleted.length;
-      for (final id in deleted) {
-        await db.delete(
-          DbTables.studentSchoolHistory,
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
+    // Skip previous_school_term_grades in delta sync to avoid FK constraint failures
+    // These are only synced during full sync
+    // final previousSchoolTermGradesDeltas = deltas['previous_school_term_grades'];
+    // if (previousSchoolTermGradesDeltas != null) {
+    //   final updated = previousSchoolTermGradesDeltas.updated;
+    //   updatedCounts['previous_school_term_grades'] = updated.length;
+    //   await upsertPreviousSchoolTermGrades(db, updated);
+    //
+    //   final deleted = previousSchoolTermGradesDeltas.deleted;
+    //   deletedCounts['previous_school_term_grades'] = deleted.length;
+    //   for (final id in deleted) {
+    //     await db.delete(
+    //       DbTables.previousSchoolTermGrades,
+    //       where: '${CommonCols.id} = ?',
+    //       whereArgs: [id],
+    //     );
+    //   }
+    // }
 
-    // Handle previous_school_subjects delta
-    final previousSchoolSubjectsDeltas = deltas['previous_school_subjects'];
-    if (previousSchoolSubjectsDeltas != null) {
-      final updated = previousSchoolSubjectsDeltas.updated;
-      updatedCounts['previous_school_subjects'] = updated.length;
-      await upsertPreviousSchoolSubjects(db, updated);
-
-      final deleted = previousSchoolSubjectsDeltas.deleted;
-      deletedCounts['previous_school_subjects'] = deleted.length;
-      for (final id in deleted) {
-        await db.delete(
-          DbTables.previousSchoolSubjects,
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
-
-    // Handle previous_school_term_grades delta
-    final previousSchoolTermGradesDeltas = deltas['previous_school_term_grades'];
-    if (previousSchoolTermGradesDeltas != null) {
-      final updated = previousSchoolTermGradesDeltas.updated;
-      updatedCounts['previous_school_term_grades'] = updated.length;
-      await upsertPreviousSchoolTermGrades(db, updated);
-
-      final deleted = previousSchoolTermGradesDeltas.deleted;
-      deletedCounts['previous_school_term_grades'] = deleted.length;
-      for (final id in deleted) {
-        await db.delete(
-          DbTables.previousSchoolTermGrades,
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
-
-    // Handle previous_school_attendance delta
-    final previousSchoolAttendanceDeltas = deltas['previous_school_attendance'];
-    if (previousSchoolAttendanceDeltas != null) {
-      final updated = previousSchoolAttendanceDeltas.updated;
-      updatedCounts['previous_school_attendance'] = updated.length;
-      await upsertPreviousSchoolAttendance(db, updated);
-
-      final deleted = previousSchoolAttendanceDeltas.deleted;
-      deletedCounts['previous_school_attendance'] = deleted.length;
-      for (final id in deleted) {
-        await db.delete(
-          DbTables.previousSchoolAttendance,
-          where: '${CommonCols.id} = ?',
-          whereArgs: [id],
-        );
-      }
-    }
+    // Skip previous_school_attendance in delta sync to avoid FK constraint failures
+    // These are only synced during full sync
+    // final previousSchoolAttendanceDeltas = deltas['previous_school_attendance'];
+    // if (previousSchoolAttendanceDeltas != null) {
+    //   final updated = previousSchoolAttendanceDeltas.updated;
+    //   updatedCounts['previous_school_attendance'] = updated.length;
+    //   await upsertPreviousSchoolAttendance(db, updated);
+    //
+    //   final deleted = previousSchoolAttendanceDeltas.deleted;
+    //   deletedCounts['previous_school_attendance'] = deleted.length;
+    //   for (final id in deleted) {
+    //     await db.delete(
+    //       DbTables.previousSchoolAttendance,
+    //       where: '${CommonCols.id} = ?',
+    //       whereArgs: [id],
+    //     );
+    //   }
+    // }
 
     _log.deltaSync(updatedCounts: updatedCounts, deletedCounts: deletedCounts);
   }

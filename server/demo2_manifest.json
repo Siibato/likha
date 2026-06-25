@@ -8,41 +8,6 @@
       "last_name": "Santos"
     },
     {
-      "id": "e43bd932-1beb-4e9b-a9c3-2b8c3f51c53b",
-      "username": "maria.reyes",
-      "role": "teacher",
-      "first_name": "Maria",
-      "last_name": "Reyes"
-    },
-    {
-      "id": "c2534532-4561-4d80-ba0f-f25f1e81c806",
-      "username": "antonio.cruz",
-      "role": "teacher",
-      "first_name": "Antonio",
-      "last_name": "Cruz"
-    },
-    {
-      "id": "9d373ad9-acf8-4225-b84d-3dee8112a855",
-      "username": "carmen.diaz",
-      "role": "teacher",
-      "first_name": "Carmen",
-      "last_name": "Diaz"
-    },
-    {
-      "id": "3db5157b-a416-4d55-baa1-d2c57d06a88a",
-      "username": "pedro.castro",
-      "role": "teacher",
-      "first_name": "Pedro",
-      "last_name": "Castro"
-    },
-    {
-      "id": "598590d7-412c-42aa-b1d9-ec4d760cd42a",
-      "username": "rosa.lopez",
-      "role": "teacher",
-      "first_name": "Rosa",
-      "last_name": "Lopez"
-    },
-    {
       "id": "eff15793-a7a2-4b36-9ef3-5d22f7ce66c6",
       "username": "juan.delacruz",
       "role": "student",

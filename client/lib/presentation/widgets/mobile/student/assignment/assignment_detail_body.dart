@@ -245,7 +245,9 @@ class AssignmentDetailBody extends ConsumerWidget {
         controller.submissionController.document.toPlainText().trim().isEmpty) {
       final id = controller.submissionId;
       if (id != null) {
-        controller.loadOfflineSubmissionText(id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          controller.loadOfflineSubmissionText(id);
+        });
       }
     }
   }

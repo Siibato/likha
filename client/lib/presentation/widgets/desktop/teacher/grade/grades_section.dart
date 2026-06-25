@@ -151,7 +151,10 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     final configState = ref.watch(gradingConfigProvider);
     final gradesState = ref.watch(classGradesProvider);
     final classDetailState = ref.watch(classDetailProvider);
-    final students = classDetailState.currentClassDetail?.students ?? [];
+    final students = classDetailState.currentClassDetail?.students
+            .where((p) => p.student.isStudent)
+            .toList() ??
+        [];
     final grades = gradesState.grades;
     final isLoading = gradesState.isLoading && grades == null;
 

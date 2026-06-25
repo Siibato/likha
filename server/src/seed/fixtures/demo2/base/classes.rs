@@ -9,7 +9,7 @@ pub fn demo2_classes(ctx: &SeedContext) -> Vec<ClassSpec> {
     vec![
         ClassSpec {
             id: cid("adv_mahogany"),
-            title: "Grade 10 - Mahogany".into(),
+            title: "Mahogany".into(),
             description: Some("Grade 10 Advisory class - Mahogany section".into()),
             grade_level: Some("10".into()),
             school_year: Some("2025-2026".into()),
