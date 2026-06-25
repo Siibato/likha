@@ -77,7 +77,12 @@ Future<String> createSubmission(
         id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignmentSubmission,
         operation: SyncOperation.create,
-        payload: {'id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
+        payload: {
+          'id': submissionId,
+          'assignment_id': assignmentId,
+          'student_id': studentId,
+          if (textContent != null) 'text_content': textContent,
+        },
         status: SyncStatus.pending,
         retryCount: 0,
         maxRetries: 3,

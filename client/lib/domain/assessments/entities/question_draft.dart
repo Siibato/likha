@@ -37,6 +37,9 @@ class QuestionDraft {
   List<ChoiceDraft> choices;
   List<String> acceptableAnswers;
   List<EnumerationItemDraft> enumerationItems;
+  String? difficulty;
+  String? cognitiveLevel;
+  String? tosCompetencyId;
 
   QuestionDraft({
     this.type = 'multiple_choice',
@@ -46,6 +49,9 @@ class QuestionDraft {
     List<ChoiceDraft>? choices,
     List<String>? acceptableAnswers,
     List<EnumerationItemDraft>? enumerationItems,
+    this.difficulty,
+    this.cognitiveLevel,
+    this.tosCompetencyId,
   })  : choices = choices ?? [ChoiceDraft(), ChoiceDraft()],
         acceptableAnswers = acceptableAnswers ?? [''],
         enumerationItems = enumerationItems ?? [];
@@ -58,6 +64,9 @@ class QuestionDraft {
     'choices': choices.map((c) => c.toJson()).toList(),
     'acceptableAnswers': acceptableAnswers,
     'enumerationItems': enumerationItems.map((e) => e.toJson()).toList(),
+    'difficulty': difficulty,
+    'cognitiveLevel': cognitiveLevel,
+    'tosCompetencyId': tosCompetencyId,
   };
 
   factory QuestionDraft.fromJson(Map<String, dynamic> json) => QuestionDraft(
@@ -68,5 +77,8 @@ class QuestionDraft {
     choices: (json['choices'] as List?)?.map((c) => ChoiceDraft.fromJson(c as Map<String, dynamic>)).toList(),
     acceptableAnswers: List<String>.from(json['acceptableAnswers'] as List? ?? ['']),
     enumerationItems: (json['enumerationItems'] as List?)?.map((e) => EnumerationItemDraft.fromJson(e as Map<String, dynamic>)).toList(),
+    difficulty: json['difficulty'] as String?,
+    cognitiveLevel: json['cognitiveLevel'] as String?,
+    tosCompetencyId: json['tosCompetencyId'] as String?,
   );
 }

@@ -80,6 +80,12 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
         totalPoints += q['points'] as int? ?? 0;
       }
 
+      final payloadQuestions = List.generate(questionModels.length, (i) {
+        final q = questions[i];
+        final model = questionModels[i];
+        return <String, dynamic>{...q, 'id': model.id};
+      });
+
       final payload = {
         'id': assessmentId,
         'class_id': classId,
@@ -93,7 +99,7 @@ ResultFuture<MutationResult<Assessment>> createAssessment(
         if (termNumber != null) 'term_number': termNumber,
         if (component != null) 'component': component,
         if (tosId != null) 'tos_id': tosId,
-        'questions': questions,
+        'questions': payloadQuestions,
       };
 
       final optimisticModel = AssessmentModel(

@@ -715,12 +715,16 @@ impl super::SyncFullService {
                     crate::utils::AppError::InternalServerError(format!("Database error: {}", e))
                 })?;
 
-            let student_ids: Vec<Uuid> = participants
-                .iter()
-                .map(|p| p.user_id)
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
+            let student_ids: Vec<Uuid> = if user_role == "student" {
+                vec![user_id]
+            } else {
+                participants
+                    .iter()
+                    .map(|p| p.user_id)
+                    .collect::<HashSet<_>>()
+                    .into_iter()
+                    .collect()
+            };
 
             learner_details = self
                 .manifest_repo

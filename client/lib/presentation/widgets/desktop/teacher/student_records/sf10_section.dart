@@ -438,7 +438,7 @@ class _Sf10Content extends StatelessWidget {
             _attendanceLabel('No. of\nSchool Days'),
             ..._monthOrder.map((m) {
               final rec = sorted.where((a) => a.month == m).firstOrNull;
-              return _attendanceCell(rec?.schoolDays.toString() ?? '');
+              return _attendanceCell(rec?.schoolDays.toString() ?? '0');
             }),
             _attendanceCell(totalSchoolDays.toString(), isBold: true),
           ],
@@ -449,7 +449,7 @@ class _Sf10Content extends StatelessWidget {
             _attendanceLabel('No. of\nDays Present'),
             ..._monthOrder.map((m) {
               final rec = sorted.where((a) => a.month == m).firstOrNull;
-              return _attendanceCell(rec?.daysPresent.toString() ?? '');
+              return _attendanceCell(rec?.daysPresent.toString() ?? '0');
             }),
             _attendanceCell(totalDaysPresent.toString(), isBold: true),
           ],
@@ -461,9 +461,9 @@ class _Sf10Content extends StatelessWidget {
             ..._monthOrder.map((m) {
               final rec = sorted.where((a) => a.month == m).firstOrNull;
               final absent = rec != null ? rec.schoolDays - rec.daysPresent : 0;
-              return _attendanceCell(absent > 0 ? absent.toString() : '');
+              return _attendanceCell(absent.toString());
             }),
-            _attendanceCell(totalDaysAbsent > 0 ? totalDaysAbsent.toString() : '', isBold: true),
+            _attendanceCell(totalDaysAbsent.toString(), isBold: true),
           ],
         ),
       ],

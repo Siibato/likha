@@ -304,12 +304,16 @@ impl super::SyncDeltaService {
                     crate::utils::AppError::InternalServerError(format!("Database error: {}", e))
                 })?;
 
-            let student_ids: Vec<Uuid> = participants
-                .iter()
-                .map(|p| p.user_id)
-                .collect::<std::collections::HashSet<_>>()
-                .into_iter()
-                .collect();
+            let student_ids: Vec<Uuid> = if user_role == "student" {
+                vec![user_id]
+            } else {
+                participants
+                    .iter()
+                    .map(|p| p.user_id)
+                    .collect::<std::collections::HashSet<_>>()
+                    .into_iter()
+                    .collect()
+            };
 
             // Derive teacher_ids from class_participants by looking up user roles
             let teacher_ids: Vec<Uuid> = if user_role == "admin" {

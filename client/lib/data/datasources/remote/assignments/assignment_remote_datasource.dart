@@ -72,6 +72,7 @@ abstract class AssignmentRemoteDataSource {
 
   Future<AssignmentSubmissionModel> submitAssignment({
     required String submissionId,
+    String? textContent,
     String? idempotencyKey,
   });
 
@@ -263,11 +264,13 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
   @override
   Future<AssignmentSubmissionModel> submitAssignment({
     required String submissionId,
+    String? textContent,
     String? idempotencyKey,
   }) =>
       ops.submitAssignment(
         _dioClient,
         submissionId: submissionId,
+        textContent: textContent,
         idempotencyKey: idempotencyKey,
       );
 

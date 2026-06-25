@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_add_question_form_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_card_desktop.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_edit_form_desktop.dart';
@@ -13,6 +14,8 @@ class AssessmentQuestionsPanel extends StatelessWidget {
   final bool isReorderMode;
   final bool isSaving;
   final int? editingQuestionIndex;
+  final TableOfSpecifications? linkedTos;
+  final List<TosCompetency> tosCompetencies;
   final VoidCallback onEnterReorderMode;
   final VoidCallback onExitReorderMode;
   final VoidCallback onOpenAddForm;
@@ -31,6 +34,8 @@ class AssessmentQuestionsPanel extends StatelessWidget {
     required this.isReorderMode,
     required this.isSaving,
     required this.editingQuestionIndex,
+    this.linkedTos,
+    this.tosCompetencies = const [],
     required this.onEnterReorderMode,
     required this.onExitReorderMode,
     required this.onOpenAddForm,
@@ -108,6 +113,8 @@ class AssessmentQuestionsPanel extends StatelessWidget {
               return AssessmentQuestionEditFormDesktop(
                 key: ValueKey('edit_$i'),
                 draft: q,
+                linkedTos: linkedTos,
+                tosCompetencies: tosCompetencies,
                 onSave: (updated) => onSaveEdit(i, updated),
                 onCancel: onCancelEdit,
               );
@@ -136,6 +143,8 @@ class AssessmentQuestionsPanel extends StatelessWidget {
             AssessmentAddQuestionFormDesktop(
               onConfirm: onConfirmAdd,
               onCancel: onCancelAdd,
+              linkedTos: linkedTos,
+              tosCompetencies: tosCompetencies,
             )
           else
             Padding(

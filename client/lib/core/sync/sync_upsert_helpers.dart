@@ -269,8 +269,8 @@ class SyncUpsertHelpers {
 
       final tosId = data['tos_id']?.toString();
       if (tosId != null && tosId.isNotEmpty && !await _fkExists(db, DbTables.tableOfSpecifications, tosId)) {
-        _log.warn('Skipping assessment $assessmentId: tos $tosId not found locally');
-        continue;
+        _log.warn('Assessment $assessmentId: tos $tosId not found locally, setting to null');
+        data['tos_id'] = null;
       }
 
       final map = {

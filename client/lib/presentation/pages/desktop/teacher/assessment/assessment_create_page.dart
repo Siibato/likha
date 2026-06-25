@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/controllers/teacher/assessment/assessment_create_controller.dart';
 import 'package:likha/presentation/providers/assessment/assessment_list_notifier.dart';
 import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
@@ -11,6 +12,7 @@ import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_draft_resume_banner.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_questions_panel.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_settings_panel.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/assessment/tos_progress_tracker.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 
 class CreateAssessmentPage extends ConsumerStatefulWidget {
@@ -47,6 +49,47 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
     super.dispose();
   }
 
+  Future<void> _handleSave(TableOfSpecifications? linkedTos, List<TosCompetency> competencies) async {
+    if (!_detailsFormKey.currentState!.validate()) return;
+
+    if (linkedTos != null) {
+      final summary = _controller.computeTosProgress(linkedTos, competencies: competencies);
+      if (!summary.isComplete) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('TOS Targets Not Met'),
+            content: const Text(
+              "You haven't fulfilled all TOS level targets yet. Save anyway?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Go Back'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentCharcoal,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Save Anyway'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+      }
+    }
+
+    final assessment = await _controller.performSave();
+    if (!mounted || assessment == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final tosState = ref.watch(tosProvider);
@@ -56,6 +99,18 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) {
+          final TableOfSpecifications? linkedTos = _controller.linkedTosId != null
+              ? tosState.tosList.where((t) => t.id == _controller.linkedTosId).firstOrNull
+              : null;
+
+          final competencies = (linkedTos != null && tosState.currentTos?.id == linkedTos.id)
+              ? tosState.competencies
+              : <TosCompetency>[];
+
+          final tosSummary = linkedTos != null
+              ? _controller.computeTosProgress(linkedTos, competencies: competencies)
+              : null;
+
           return DesktopPageScaffold(
             title: 'Create Assessment',
             leading: IconButton(
@@ -75,15 +130,7 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                     context.showSuccessSnackBar('Draft saved', durationMs: 1500);
                   });
                 },
-                onSave: () async {
-                  if (!_detailsFormKey.currentState!.validate()) return;
-                  final assessment = await _controller.performSave();
-                  if (!mounted || assessment == null) return;
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    Navigator.pop(context, true);
-                  });
-                },
+                onSave: () => _handleSave(linkedTos, competencies),
               ),
             ],
             body: Column(
@@ -96,6 +143,12 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                   message: _controller.formError,
                   severity: MessageSeverity.error,
                 ),
+                if (linkedTos != null && tosSummary != null)
+                  TosProgressTracker(
+                    tos: linkedTos,
+                    summary: tosSummary,
+                    competencies: competencies,
+                  ),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -148,6 +201,9 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         onLinkedTosChanged: (v) {
                           _controller.setLinkedTosId(v);
                           _controller.scheduleAutoSave();
+                          if (v != null) {
+                            ref.read(tosProvider.notifier).loadTosDetail(v);
+                          }
                         },
                         onAutoSave: _controller.scheduleAutoSave,
                       ),
@@ -161,6 +217,8 @@ class _CreateAssessmentPageState extends ConsumerState<CreateAssessmentPage> {
                         isSaving: _controller.isSaving,
                         editingQuestionIndex:
                             _controller.editingQuestionIndex,
+                        linkedTos: linkedTos,
+                        tosCompetencies: competencies,
                         onEnterReorderMode:
                             _controller.enterQuestionReorderMode,
                         onExitReorderMode:
