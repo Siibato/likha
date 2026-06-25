@@ -46,13 +46,13 @@ class ConnectionMethodPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _OptionButton(
-            icon: Icons.qr_code_scanner_rounded,
-            label: 'Scan QR code',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const QrScanPage()),
-            ),
-          ),
+          // _OptionButton(
+          //   icon: Icons.qr_code_scanner_rounded,
+          //   label: 'Scan QR code',
+          //   onTap: () => Navigator.of(context).push(
+          //     MaterialPageRoute(builder: (_) => const QrScanPage()),
+          //   ),
+          // ),
         ],
       ),
     );

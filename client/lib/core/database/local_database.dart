@@ -1197,6 +1197,18 @@ class LocalDatabase {
     }
   }
 
+  Future<void> reset() async {
+    await close();
+    final dbPath = await databaseFactory.getDatabasesPath();
+    final dbFilePath = '$dbPath/likha.db';
+    try {
+      await databaseFactory.deleteDatabase(dbFilePath);
+    } catch (_) {
+      // Ignore if database doesn't exist
+    }
+    await database; // Recreate
+  }
+
   @visibleForTesting
   static Future<void> createSchemaForTesting(Database db) =>
       _instance._createTables(db, 1);

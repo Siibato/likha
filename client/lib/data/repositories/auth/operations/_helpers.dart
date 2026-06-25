@@ -24,23 +24,27 @@ Future<void> clearAllUserData({
   bool clearSyncQueue = true,
 }) async {
   try {
-    final futures = <Future>[
-      classLocalDataSource.clearAllCache(),
-      assignmentLocalDataSource.clearAllCache(),
-      assessmentLocalDataSource.clearAllCache(),
-      learningMaterialLocalDataSource.clearAllCache(),
-      gradingLocalDataSource.clearAllCache(),
-      localDataSource.clearAllCache(),
-      storageService.clearAuthData(),
-    ];
+    // Run database operations sequentially — sqflite uses a single serialized
+    // connection, so concurrent db.delete() calls lock each other and trigger
+    // "database has been locked" warnings. Only non-database work (storageService)
+    // runs in parallel.
+    final storageFuture = storageService.clearAuthData();
+
+    await classLocalDataSource.clearAllCache();
+    await assignmentLocalDataSource.clearAllCache();
+    await assessmentLocalDataSource.clearAllCache();
+    await learningMaterialLocalDataSource.clearAllCache();
+    await gradingLocalDataSource.clearAllCache();
+    await localDataSource.clearAllCache();
     if (tosLocalDataSource != null) {
-      futures.add(tosLocalDataSource.clearAllCache());
+      await tosLocalDataSource.clearAllCache();
     }
     if (studentRecordsLocalDataSource != null) {
-      futures.add(studentRecordsLocalDataSource.clearAllCache());
+      await studentRecordsLocalDataSource.clearAllCache();
     }
-    if (clearSyncQueue) futures.add(syncQueue.clear());
-    await Future.wait(futures);
+    if (clearSyncQueue) await syncQueue.clear();
+
+    await storageFuture;
   } catch (e) {
     // Best-effort cache clearing — don't fail login/logout if cache clearing fails
   }
