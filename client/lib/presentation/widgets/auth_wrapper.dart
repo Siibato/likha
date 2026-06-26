@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/config/api_config.dart';
 import 'package:likha/core/network/dio_client.dart';
@@ -19,6 +20,7 @@ import 'package:likha/domain/setup/usecases/get_school_details.dart';
 import 'package:likha/presentation/providers/admin/admin_provider.dart';
 import 'package:likha/presentation/providers/auth_provider.dart';
 import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/services/storage_service.dart';
 
 class AuthWrapper extends ConsumerStatefulWidget {
   const AuthWrapper({super.key});
@@ -67,6 +69,16 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       di.sl<DioClient>().onForceLogout = () {
         ref.read(authProvider.notifier).forceLogout();
       };
+
+      // Check if a previous logout was interrupted (app killed mid-clear).
+      // If so, nuke the DB and clear auth data before proceeding.
+      final storage = di.sl<StorageService>();
+      if (await storage.isLogoutInProgress()) {
+        await di.sl<LocalDatabase>().reset();
+        await storage.clearAuthData();
+        await storage.clearLogoutInProgress();
+      }
+
       ref.read(authProvider.notifier).checkAuthStatus();
     }
   }
@@ -106,6 +118,10 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
       return _ForceLogoutWarningPage(
         pendingSyncCount: authState.pendingSyncCount,
       );
+    }
+
+    if (authState.isLoggingOut) {
+      return const _LogoutLoadingPage();
     }
 
     if (authState.isAuthenticated) {
@@ -205,6 +221,95 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
 
   void _acknowledgeSyncFailure() {
     setState(() => _syncFailureAcknowledged = true);
+  }
+}
+
+class _LogoutLoadingPage extends StatefulWidget {
+  const _LogoutLoadingPage();
+
+  @override
+  State<_LogoutLoadingPage> createState() => _LogoutLoadingPageState();
+}
+
+class _LogoutLoadingPageState extends State<_LogoutLoadingPage> {
+  LogoutProgress? _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = di.sl<LocalDatabase>().logoutProgressNotifier.value;
+    di.sl<LocalDatabase>().logoutProgressNotifier.addListener(_onProgressChanged);
+  }
+
+  @override
+  void dispose() {
+    di.sl<LocalDatabase>().logoutProgressNotifier.removeListener(_onProgressChanged);
+    super.dispose();
+  }
+
+  void _onProgressChanged() {
+    if (!mounted) return;
+    setState(() {
+      _progress = di.sl<LocalDatabase>().logoutProgressNotifier.value;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _progress;
+    final pct = progress?.progress ?? 0.0;
+
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 48,
+                height: 48,
+                child: CircularProgressIndicator(
+                  value: pct > 0 ? pct : null,
+                  strokeWidth: 4,
+                  color: AppColors.accentCharcoal,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Logging out…',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.accentCharcoal,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                progress?.phase ?? 'Preparing…',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.foregroundSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (progress != null) ...[
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: pct,
+                    minHeight: 6,
+                    backgroundColor: AppColors.backgroundSecondary,
+                    color: AppColors.accentCharcoal,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

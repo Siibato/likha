@@ -4,8 +4,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite_common/sqflite.dart' hide openDatabase, databaseFactory;
 import 'package:likha/core/database/db_schema.dart';
+import 'package:likha/core/database/clear_all_data_incrementally.dart' as clear_all;
 import 'package:likha/core/database/open_database.dart';
 import 'package:likha/core/logging/core_logger.dart';
+
+class LogoutProgress {
+  final String phase;
+  final int currentStep;
+  final int totalSteps;
+
+  const LogoutProgress({
+    required this.phase,
+    required this.currentStep,
+    required this.totalSteps,
+  });
+
+  double get progress => totalSteps > 0 ? currentStep / totalSteps : 0.0;
+}
 
 /// Local SQLite Database for offline-first functionality
 ///
@@ -36,6 +51,9 @@ class LocalDatabase {
 
   Database? _db;
   String? _dbPassword;
+
+  final ValueNotifier<LogoutProgress?> logoutProgressNotifier =
+      ValueNotifier<LogoutProgress?>(null);
 
   LocalDatabase._internal();
 
@@ -1189,6 +1207,9 @@ class LocalDatabase {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
+
+  Future<void> clearAllDataIncrementally() =>
+      clear_all.clearAllDataIncrementally(this);
 
   Future<void> close() async {
     if (_db != null) {

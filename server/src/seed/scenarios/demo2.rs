@@ -64,25 +64,25 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     // Build answer bank for all subjects and terms
     let mut answers = std::collections::HashMap::new();
     answers.insert(("sci", "t1"), fixtures::t1::demo2_answers_sci_t1());
-    answers.insert(("eng", "t1"), fixtures::t1::demo2_answers_eng_t1());
+    // answers.insert(("eng", "t1"), fixtures::t1::demo2_answers_eng_t1());
     answers.insert(("math", "t1"), fixtures::t1::demo2_answers_math_t1());
-    answers.insert(("ap", "t1"), fixtures::t1::demo2_answers_ap_t1());
-    answers.insert(("fil", "t1"), fixtures::t1::demo2_answers_fil_t1());
-    answers.insert(("tle", "t1"), fixtures::t1::demo2_answers_tle_t1());
+    // answers.insert(("ap", "t1"), fixtures::t1::demo2_answers_ap_t1());
+    // answers.insert(("fil", "t1"), fixtures::t1::demo2_answers_fil_t1());
+    // answers.insert(("tle", "t1"), fixtures::t1::demo2_answers_tle_t1());
 
     answers.insert(("sci", "t2"), fixtures::t2::demo2_answers_sci_t2());
-    answers.insert(("eng", "t2"), fixtures::t2::demo2_answers_eng_t2());
+    // answers.insert(("eng", "t2"), fixtures::t2::demo2_answers_eng_t2());
     answers.insert(("math", "t2"), fixtures::t2::demo2_answers_math_t2());
-    answers.insert(("ap", "t2"), fixtures::t2::demo2_answers_ap_t2());
-    answers.insert(("fil", "t2"), fixtures::t2::demo2_answers_fil_t2());
-    answers.insert(("tle", "t2"), fixtures::t2::demo2_answers_tle_t2());
+    // answers.insert(("ap", "t2"), fixtures::t2::demo2_answers_ap_t2());
+    // answers.insert(("fil", "t2"), fixtures::t2::demo2_answers_fil_t2());
+    // answers.insert(("tle", "t2"), fixtures::t2::demo2_answers_tle_t2());
 
     answers.insert(("sci", "t3"), fixtures::t3::demo2_answers_sci_t3());
-    answers.insert(("eng", "t3"), fixtures::t3::demo2_answers_eng_t3());
+    // answers.insert(("eng", "t3"), fixtures::t3::demo2_answers_eng_t3());
     answers.insert(("math", "t3"), fixtures::t3::demo2_answers_math_t3());
-    answers.insert(("ap", "t3"), fixtures::t3::demo2_answers_ap_t3());
-    answers.insert(("fil", "t3"), fixtures::t3::demo2_answers_fil_t3());
-    answers.insert(("tle", "t3"), fixtures::t3::demo2_answers_tle_t3());
+    // answers.insert(("ap", "t3"), fixtures::t3::demo2_answers_ap_t3());
+    // answers.insert(("fil", "t3"), fixtures::t3::demo2_answers_fil_t3());
+    // answers.insert(("tle", "t3"), fixtures::t3::demo2_answers_tle_t3());
 
     let teachers: Vec<_> = users
         .iter()

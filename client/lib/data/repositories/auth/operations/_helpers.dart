@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
@@ -9,6 +11,7 @@ import 'package:likha/data/datasources/local/student_records/student_records_loc
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/services/storage_service.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<void> clearAllUserData({
   required ClassLocalDataSource classLocalDataSource,
@@ -24,29 +27,21 @@ Future<void> clearAllUserData({
   bool clearSyncQueue = true,
 }) async {
   try {
-    // Run database operations sequentially — sqflite uses a single serialized
-    // connection, so concurrent db.delete() calls lock each other and trigger
-    // "database has been locked" warnings. Only non-database work (storageService)
-    // runs in parallel.
+    await storageService.setLogoutInProgress();
     final storageFuture = storageService.clearAuthData();
 
-    await classLocalDataSource.clearAllCache();
-    await assignmentLocalDataSource.clearAllCache();
-    await assessmentLocalDataSource.clearAllCache();
-    await learningMaterialLocalDataSource.clearAllCache();
-    await gradingLocalDataSource.clearAllCache();
-    await localDataSource.clearAllCache();
-    if (tosLocalDataSource != null) {
-      await tosLocalDataSource.clearAllCache();
-    }
-    if (studentRecordsLocalDataSource != null) {
-      await studentRecordsLocalDataSource.clearAllCache();
-    }
-    if (clearSyncQueue) await syncQueue.clear();
+    await classLocalDataSource.localDatabase.clearAllDataIncrementally();
+
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final cacheDir = Directory('${dir.path}/submission_file_cache');
+      if (await cacheDir.exists()) await cacheDir.delete(recursive: true);
+    } catch (_) {}
 
     await storageFuture;
-  } catch (e) {
-    // Best-effort cache clearing — don't fail login/logout if cache clearing fails
+    await storageService.clearLogoutInProgress();
+  } catch (_) {
+    await storageService.clearLogoutInProgress();
   }
 }
 
