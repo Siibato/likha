@@ -159,7 +159,6 @@ class _SubmissionReviewPageState
                                   child: SingleChildScrollView(
                                     child: SubmissionReviewGradingPanel(
                                       detail: detail,
-                                      onOverride: _confirmOverride,
                                     ),
                                   ),
                                 ),

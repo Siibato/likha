@@ -12,23 +12,23 @@ import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 import 'package:likha/presentation/providers/assignment/file_upload_provider.dart';
 
-class GradeSubmissionPage extends ConsumerStatefulWidget {
+class AssignmentSubmissionGradePage extends ConsumerStatefulWidget {
   final String submissionId;
   final int totalPoints;
 
-  const GradeSubmissionPage({
+  const AssignmentSubmissionGradePage({
     super.key,
     required this.submissionId,
     required this.totalPoints,
   });
 
   @override
-  ConsumerState<GradeSubmissionPage> createState() =>
-      _GradeSubmissionPageState();
+  ConsumerState<AssignmentSubmissionGradePage> createState() =>
+      _AssignmentSubmissionGradePageState();
 }
 
-class _GradeSubmissionPageState
-    extends ConsumerState<GradeSubmissionPage> {
+class _AssignmentSubmissionGradePageState
+    extends ConsumerState<AssignmentSubmissionGradePage> {
   final _scoreController = TextEditingController();
   final _feedbackController = TextEditingController();
   String? _formError;

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/presentation/widgets/shared/cards/markdown_display.dart';
 
 /// Desktop content section for material body text ("Content" heading).
 class MaterialContentTextSection extends StatelessWidget {
   final String contentText;
+  final VoidCallback? onEdit;
 
   const MaterialContentTextSection({
     super.key,
     required this.contentText,
+    this.onEdit,
   });
 
   @override
@@ -24,24 +27,33 @@ class MaterialContentTextSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Content',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.foregroundDark,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Content',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.foregroundDark,
+                ),
+              ),
+              const Spacer(),
+              if (onEdit != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  color: AppColors.foregroundSecondary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  onPressed: onEdit,
+                  tooltip: 'Edit Content',
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           const Divider(color: AppColors.borderLight),
           const SizedBox(height: 12),
-          SelectableText(
-            contentText,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.foregroundSecondary,
-              height: 1.5,
-            ),
+          MarkdownDisplay(
+            content: contentText,
           ),
         ],
       ),

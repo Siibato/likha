@@ -33,35 +33,83 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId);
+      ref.read(learningMaterialProvider.notifier).loadMaterialDetail(widget.materialId).then((_) {
+        ref.read(learningMaterialProvider.notifier).checkFilesCacheStatus();
+      });
     });
   }
 
   Future<void> _openFile(MaterialFile file) async {
     if (kIsWeb) {
-      setState(() => _formError = 'Opening file...');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Opening ${file.fileName}...'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
       final bytes = await ref
           .read(learningMaterialProvider.notifier)
           .downloadFile(file.id);
       if (!mounted) return;
       if (bytes != null) {
         await openFileInBrowser(bytes, file.fileName);
-        setState(() => _formError = null);
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
       } else {
-        setState(() => _formError = 'Failed to open file');
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to open file'),
+              backgroundColor: AppColors.semanticError,
+            ),
+          );
+        }
       }
       return;
     }
 
     if (file.localPath == null || file.localPath!.isEmpty) {
       if (!mounted) return;
-      setState(() => _formError = 'File not cached. Downloading...');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Downloading ${file.fileName}...'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
       await _saveFile(file);
+      // After download, try to open the file
+      final updatedState = ref.read(learningMaterialProvider);
+      final updatedMaterial = updatedState.currentMaterial;
+      if (updatedMaterial != null) {
+        final updatedFile = updatedMaterial.files.where((f) => f.id == file.id).firstOrNull;
+        if (updatedFile != null && updatedFile.localPath != null && updatedFile.localPath!.isNotEmpty) {
+          try {
+            await openLocalFile(updatedFile.localPath!);
+          } catch (e) {
+            if (!mounted) return;
+            setState(() => _formError = 'Error opening file: $e');
+          }
+        }
+      }
       return;
     }
 
     try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Opening ${file.fileName}...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
       await openLocalFile(file.localPath!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _formError = 'Error opening file: $e');
@@ -70,6 +118,27 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
 
   Future<void> _saveFile(MaterialFile file) async {
     setState(() => _downloadingFileId = file.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text('Downloading ${file.fileName}...')),
+            ],
+          ),
+          duration: const Duration(minutes: 5),
+        ),
+      );
+    }
     await ref.read(learningMaterialProvider.notifier).downloadFile(file.id);
 
     if (!mounted) return;
@@ -77,10 +146,25 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
 
     final providerState = ref.read(learningMaterialProvider);
     if (providerState.error != null) {
-      setState(() => _formError = 'Failed to download file');
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to download ${file.fileName}'),
+          backgroundColor: AppColors.semanticError,
+        ),
+      );
     } else {
-      setState(() => _formError = null);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${file.fileName} downloaded'),
+          backgroundColor: AppColors.semanticSuccess,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
+
+    await ref.read(learningMaterialProvider.notifier).checkFilesCacheStatus();
   }
 
   Future<void> _downloadAllFiles() async {
@@ -90,12 +174,42 @@ class _StudentMaterialDetailPageState extends ConsumerState<StudentMaterialDetai
     final toDownload = material.files.where((f) => !f.isCached).toList();
     if (toDownload.isEmpty) return;
 
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text('Downloading ${toDownload.length} file(s)...'),
+            ],
+          ),
+          duration: const Duration(minutes: 5),
+        ),
+      );
+    }
+
     for (final file in toDownload) {
       await _saveFile(file);
       if (!mounted) return;
     }
 
     if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('All files downloaded'),
+        backgroundColor: AppColors.semanticSuccess,
+        duration: Duration(seconds: 2),
+      ),
+    );
     setState(() => _formError = null);
   }
 

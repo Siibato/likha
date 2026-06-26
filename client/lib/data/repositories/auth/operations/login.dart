@@ -12,6 +12,8 @@ import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/domain/auth/entities/user.dart';
 import 'package:likha/services/storage_service.dart';
@@ -26,7 +28,9 @@ ResultFuture<User> login(
   AssignmentLocalDataSource assignmentLocalDataSource,
   AssessmentLocalDataSource assessmentLocalDataSource,
   LearningMaterialLocalDataSource learningMaterialLocalDataSource,
-  GradingLocalDataSource gradingLocalDataSource, {
+  GradingLocalDataSource gradingLocalDataSource,
+  TosLocalDataSource tosLocalDataSource,
+  StudentRecordsLocalDataSource studentRecordsLocalDataSource, {
   required String username,
   required String password,
   String? deviceId,
@@ -50,6 +54,8 @@ ResultFuture<User> login(
         localDataSource: localDataSource,
         syncQueue: syncQueue,
         storageService: storageService,
+        tosLocalDataSource: tosLocalDataSource,
+        studentRecordsLocalDataSource: studentRecordsLocalDataSource,
         clearSyncQueue: true,
       );
     }

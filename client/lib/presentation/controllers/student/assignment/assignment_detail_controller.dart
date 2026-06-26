@@ -165,14 +165,11 @@ class AssignmentDetailController extends ChangeNotifier {
   Future<void> performSubmit() async {
     PageLogger.instance.warn(
         '[SUBMIT] _performSubmit START — submissionId=$_submissionId isNewAttempt=$isNewAttempt');
+    await createSubmission();
+    PageLogger.instance.warn('[SUBMIT] after _createSubmission — submissionId=$_submissionId');
     if (_submissionId == null) {
-      PageLogger.instance.warn('[SUBMIT] no submissionId, calling createSubmission');
-      await createSubmission();
-      PageLogger.instance.warn('[SUBMIT] after _createSubmission — submissionId=$_submissionId');
-      if (_submissionId == null) {
-        PageLogger.instance.warn('[SUBMIT] _createSubmission failed, aborting');
-        return;
-      }
+      PageLogger.instance.warn('[SUBMIT] _createSubmission failed, aborting');
+      return;
     }
 
     PageLogger.instance.warn('[SUBMIT] calling submitAssignment($_submissionId)');

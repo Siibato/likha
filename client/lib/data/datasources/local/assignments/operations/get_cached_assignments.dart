@@ -20,7 +20,7 @@ Future<List<AssignmentModel>> getCachedAssignments(
       whereArgs: [classId],
       orderBy: '${AssignmentsCols.orderIndex} ASC',
     );
-    if (results.isEmpty) return [];
+    if (results.isEmpty) throw CacheException('No cached assignments found');
 
     // If no studentId provided (teacher path), enrich with submission counts
     if (studentId == null) {

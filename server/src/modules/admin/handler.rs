@@ -25,8 +25,9 @@ pub async fn create_account(
         return e.into_response();
     }
 
+    let client_id = request.id;
     match admin_service
-        .create_account(request, auth_user.user_id, None)
+        .create_account(request, auth_user.user_id, client_id)
         .await
     {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),

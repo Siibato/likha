@@ -22,6 +22,11 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     let classes = fixtures::base::demo2_classes(&ctx);
     let enrollments = fixtures::base::demo2_enrollments();
     let learner_details = fixtures::base::demo2_learner_details();
+    let attendance = fixtures::base::demo2_attendance();
+    let core_values = fixtures::base::demo2_core_values();
+    let school_history = fixtures::base::demo2_school_history();
+    let previous_subjects = fixtures::base::demo2_previous_subjects();
+    let previous_attendance = fixtures::base::demo2_previous_attendance();
     let tos_list = fixtures::base::demo2_tos();
     let competencies = fixtures::base::demo2_competencies();
 
@@ -59,25 +64,25 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     // Build answer bank for all subjects and terms
     let mut answers = std::collections::HashMap::new();
     answers.insert(("sci", "t1"), fixtures::t1::demo2_answers_sci_t1());
-    answers.insert(("eng", "t1"), fixtures::t1::demo2_answers_eng_t1());
+    // answers.insert(("eng", "t1"), fixtures::t1::demo2_answers_eng_t1());
     answers.insert(("math", "t1"), fixtures::t1::demo2_answers_math_t1());
-    answers.insert(("ap", "t1"), fixtures::t1::demo2_answers_ap_t1());
-    answers.insert(("fil", "t1"), fixtures::t1::demo2_answers_fil_t1());
-    answers.insert(("tle", "t1"), fixtures::t1::demo2_answers_tle_t1());
+    // answers.insert(("ap", "t1"), fixtures::t1::demo2_answers_ap_t1());
+    // answers.insert(("fil", "t1"), fixtures::t1::demo2_answers_fil_t1());
+    // answers.insert(("tle", "t1"), fixtures::t1::demo2_answers_tle_t1());
 
     answers.insert(("sci", "t2"), fixtures::t2::demo2_answers_sci_t2());
-    answers.insert(("eng", "t2"), fixtures::t2::demo2_answers_eng_t2());
+    // answers.insert(("eng", "t2"), fixtures::t2::demo2_answers_eng_t2());
     answers.insert(("math", "t2"), fixtures::t2::demo2_answers_math_t2());
-    answers.insert(("ap", "t2"), fixtures::t2::demo2_answers_ap_t2());
-    answers.insert(("fil", "t2"), fixtures::t2::demo2_answers_fil_t2());
-    answers.insert(("tle", "t2"), fixtures::t2::demo2_answers_tle_t2());
+    // answers.insert(("ap", "t2"), fixtures::t2::demo2_answers_ap_t2());
+    // answers.insert(("fil", "t2"), fixtures::t2::demo2_answers_fil_t2());
+    // answers.insert(("tle", "t2"), fixtures::t2::demo2_answers_tle_t2());
 
     answers.insert(("sci", "t3"), fixtures::t3::demo2_answers_sci_t3());
-    answers.insert(("eng", "t3"), fixtures::t3::demo2_answers_eng_t3());
+    // answers.insert(("eng", "t3"), fixtures::t3::demo2_answers_eng_t3());
     answers.insert(("math", "t3"), fixtures::t3::demo2_answers_math_t3());
-    answers.insert(("ap", "t3"), fixtures::t3::demo2_answers_ap_t3());
-    answers.insert(("fil", "t3"), fixtures::t3::demo2_answers_fil_t3());
-    answers.insert(("tle", "t3"), fixtures::t3::demo2_answers_tle_t3());
+    // answers.insert(("ap", "t3"), fixtures::t3::demo2_answers_ap_t3());
+    // answers.insert(("fil", "t3"), fixtures::t3::demo2_answers_fil_t3());
+    // answers.insert(("tle", "t3"), fixtures::t3::demo2_answers_tle_t3());
 
     let teachers: Vec<_> = users
         .iter()
@@ -140,13 +145,9 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::tos::insert_tos(db, &tos_list).await?;
     inserters::tos::insert_competencies(db, &competencies).await?;
 
-    for spec in &assessments {
-        inserters::assessments::insert_assessment_with_questions(db, spec).await?;
-    }
+    inserters::assessments::insert_assessments_with_questions(db, &assessments).await?;
 
-    for spec in &assignments {
-        inserters::assignments::insert_assignment(db, spec).await?;
-    }
+    inserters::assignments::insert_assignments(db, &assignments).await?;
 
     inserters::materials::insert_materials(db, &materials).await?;
 
@@ -157,6 +158,13 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::grading::insert_grade_items(db, &grade_items, ctx.now()).await?;
     inserters::grading::insert_grade_scores(db, &grade_scores, ctx.now()).await?;
     inserters::grading::insert_term_grades(db, &term_grades, ctx.now()).await?;
+
+    inserters::student_records::insert_attendance_records(db, &attendance).await?;
+    inserters::student_records::insert_core_values_records(db, &core_values).await?;
+
+    inserters::school_history::insert_school_history(db, &school_history).await?;
+    inserters::school_history::insert_previous_subjects(db, &previous_subjects).await?;
+    inserters::school_history::insert_previous_attendance(db, &previous_attendance).await?;
 
     enable_foreign_keys(db)
         .await
@@ -169,11 +177,12 @@ pub async fn seed_demo2_world(db: &DatabaseConnection) -> Result<(), AppError> {
     }
 
     println!(
-        "Demo-2 seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades",
+        "Demo-2 seed complete: {} users, {} classes, {} enrollments, {} learner details, {} TOS, {} competencies, {} assessments, {} assignments, {} materials, {} assessment submissions, {} assignment submissions, {} grade records, {} grade items, {} grade scores, {} term grades, {} attendance records, {} core values records, {} school history, {} previous subjects, {} previous attendance",
         users.len(), classes.len(), enrollments.len(), learner_details.len(), tos_list.len(), competencies.len(),
         assessments.len(), assignments.len(), materials.len(), assessment_submissions.len(),
         assignment_submissions.len(), grade_records.len(), grade_items.len(), grade_scores.len(),
-        term_grades.len()
+        term_grades.len(), attendance.len(), core_values.len(), school_history.len(),
+        previous_subjects.len(), previous_attendance.len()
     );
 
     Ok(())

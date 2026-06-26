@@ -6,6 +6,7 @@ import { spawn } from 'child_process';
 const PORT = 3050;
 const REPORTS_DIR = 'reports';
 const ASSETS_DIR = 'src/assets';
+const EXCLUDED_DIRS = ['load-test-to-failure'];
 
 const MIME = {
   '.html': 'text/html',
@@ -52,6 +53,7 @@ function generateManifest() {
       try {
         const stat = statSync(scenarioPath);
         if (!stat.isDirectory()) continue;
+        if (EXCLUDED_DIRS.includes(entry)) continue;
 
         // This is a scenario folder - scan for JSON files
         const files = readdirSync(scenarioPath);

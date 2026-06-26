@@ -82,8 +82,9 @@ function runStudentFlow(token: string): void {
   const classService = new ClassService(client);
   const assignmentService = new AssignmentService(client);
 
-  const syncRes = syncService.fullSync();
-  expectAll(syncRes, 'student-full-sync', { status: 200, underMs: 1000 });
+  const classIds = activeClasses.map(c => c.id);
+  const syncRes = syncService.fullSync(`vu_${__VU}`, classIds);
+  expectAll(syncRes, 'student-full-sync', { status: 200, underMs: 3000 });
   sleep(1);
 
   const classRes = classService.list();

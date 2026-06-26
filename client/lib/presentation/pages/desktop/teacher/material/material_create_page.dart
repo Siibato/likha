@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
@@ -9,6 +12,7 @@ import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_message.dart';
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/forms/rich_text_field.dart';
 
 class CreateMaterialPage extends ConsumerStatefulWidget {
   final String classId;
@@ -24,9 +28,15 @@ class _CreateMaterialPageState
     extends ConsumerState<CreateMaterialPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  late final FleatherController _contentController;
   final List<PlatformFile> _selectedFiles = [];
   String? _formError;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentController = FleatherController();
+  }
 
   @override
   void dispose() {
@@ -63,10 +73,10 @@ class _CreateMaterialPageState
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final content = _contentController.text.trim();
+    final contentPlainText = _contentController.document.toPlainText().trim();
 
     // Validate: must have either text content or files
-    if (content.isEmpty && _selectedFiles.isEmpty) {
+    if (contentPlainText.isEmpty && _selectedFiles.isEmpty) {
       setState(() => _formError = 'Add either text content or files');
       return;
     }
@@ -78,7 +88,9 @@ class _CreateMaterialPageState
           classId: widget.classId,
           title: _titleController.text.trim(),
           description: null,
-          contentText: content.isEmpty ? null : content,
+          contentText: contentPlainText.isEmpty
+              ? null
+              : jsonEncode(_contentController.document.toJson()),
         );
 
     final state = ref.read(learningMaterialProvider);
@@ -188,13 +200,11 @@ class _CreateMaterialPageState
                     const SizedBox(height: 16),
 
                     // Content
-                    TextFormField(
+                    RichTextField(
                       controller: _contentController,
-                      decoration: StyledTextFieldDecoration.styled(
-                        labelText: 'Content (Optional)',
-                      ),
-                      maxLines: 8,
-                      minLines: 4,
+                      label: 'Content (Optional)',
+                      icon: Icons.description_outlined,
+                      minHeight: 200,
                     ),
                     const SizedBox(height: 24),
 

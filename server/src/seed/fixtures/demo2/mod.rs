@@ -1,6 +1,6 @@
 //! Demo-2 seeding fixtures for full single-class demonstration dataset.
 //!
-//! 6 teachers + 30 students, 7 classes (1 Advisory + 6 subjects),
+//! 1 teacher + 30 students, 7 classes (1 Advisory + 6 subjects),
 //! 3 terms of complete assessments, assignments, and learning modules.
 
 pub mod base;
@@ -164,6 +164,26 @@ pub fn demo2_learner_details() -> Vec<LearnerDetailsSpec> {
     base::learner_details::demo2_learner_details()
 }
 
+pub fn demo2_attendance() -> Vec<AttendanceSpec> {
+    base::attendance::demo2_attendance()
+}
+
+pub fn demo2_core_values() -> Vec<CoreValuesSpec> {
+    base::core_values::demo2_core_values()
+}
+
+pub fn demo2_school_history() -> Vec<SchoolHistorySpec> {
+    base::school_history::demo2_school_history()
+}
+
+pub fn demo2_previous_subjects() -> Vec<PreviousSubjectSpec> {
+    base::previous_subjects::demo2_previous_subjects()
+}
+
+pub fn demo2_previous_attendance() -> Vec<PreviousAttendanceSpec> {
+    base::previous_attendance::demo2_previous_attendance()
+}
+
 pub fn demo2_tos() -> Vec<TosSpec> {
     base::tos::demo2_tos()
 }
@@ -196,32 +216,32 @@ pub fn demo2_assignments(ctx: &SeedContext) -> Vec<AssignmentSpec> {
     assignments
 }
 
-/// Answer bank keyed by "{subject}_{term}" e.g. "sci_t1", "eng_t2"
+/// Answer bank keyed by "{subject}_{term}" e.g. "sci_t1", "math_t2"
 pub fn demo2_answers() -> std::collections::HashMap<String, SubjectTermAnswers> {
     let mut map = std::collections::HashMap::new();
     // Science
     map.insert("sci_t1".into(), t1::answers::demo2_answers_sci_t1());
     map.insert("sci_t2".into(), t2::answers::demo2_answers_sci_t2());
     map.insert("sci_t3".into(), t3::answers::demo2_answers_sci_t3());
-    // English
-    map.insert("eng_t1".into(), t1::answers::demo2_answers_eng_t1());
-    map.insert("eng_t2".into(), t2::answers::demo2_answers_eng_t2());
-    map.insert("eng_t3".into(), t3::answers::demo2_answers_eng_t3());
+    // English (disconnected from seed)
+    // map.insert("eng_t1".into(), t1::answers::demo2_answers_eng_t1());
+    // map.insert("eng_t2".into(), t2::answers::demo2_answers_eng_t2());
+    // map.insert("eng_t3".into(), t3::answers::demo2_answers_eng_t3());
     // Math
     map.insert("math_t1".into(), t1::answers::demo2_answers_math_t1());
     map.insert("math_t2".into(), t2::answers::demo2_answers_math_t2());
     map.insert("math_t3".into(), t3::answers::demo2_answers_math_t3());
-    // AP
-    map.insert("ap_t1".into(), t1::answers::demo2_answers_ap_t1());
-    map.insert("ap_t2".into(), t2::answers::demo2_answers_ap_t2());
-    map.insert("ap_t3".into(), t3::answers::demo2_answers_ap_t3());
-    // Filipino
-    map.insert("fil_t1".into(), t1::answers::demo2_answers_fil_t1());
-    map.insert("fil_t2".into(), t2::answers::demo2_answers_fil_t2());
-    map.insert("fil_t3".into(), t3::answers::demo2_answers_fil_t3());
-    // TLE
-    map.insert("tle_t1".into(), t1::answers::demo2_answers_tle_t1());
-    map.insert("tle_t2".into(), t2::answers::demo2_answers_tle_t2());
-    map.insert("tle_t3".into(), t3::answers::demo2_answers_tle_t3());
+    // AP (disconnected from seed)
+    // map.insert("ap_t1".into(), t1::answers::demo2_answers_ap_t1());
+    // map.insert("ap_t2".into(), t2::answers::demo2_answers_ap_t2());
+    // map.insert("ap_t3".into(), t3::answers::demo2_answers_ap_t3());
+    // Filipino (disconnected from seed)
+    // map.insert("fil_t1".into(), t1::answers::demo2_answers_fil_t1());
+    // map.insert("fil_t2".into(), t2::answers::demo2_answers_fil_t2());
+    // map.insert("fil_t3".into(), t3::answers::demo2_answers_fil_t3());
+    // TLE (disconnected from seed)
+    // map.insert("tle_t1".into(), t1::answers::demo2_answers_tle_t1());
+    // map.insert("tle_t2".into(), t2::answers::demo2_answers_tle_t2());
+    // map.insert("tle_t3".into(), t3::answers::demo2_answers_tle_t3());
     map
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/domain/assignments/entities/assignment.dart';
 import 'package:likha/presentation/providers/assignment/assignment_list_provider.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/assignment/edit_assignment_dialog.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 
 /// Popup menu for assignment actions (publish / unpublish / delete).
@@ -61,6 +62,12 @@ class AssignmentActionsMenu extends ConsumerWidget {
           color: AppColors.foregroundDark),
       onSelected: (value) {
         switch (value) {
+          case 'edit':
+            showDialog(
+              context: context,
+              builder: (_) => EditAssignmentDialog(assignment: assignment),
+            );
+            break;
           case 'publish':
             _confirmPublish(context, ref);
             break;
@@ -73,6 +80,17 @@ class AssignmentActionsMenu extends ConsumerWidget {
         }
       },
       itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit_rounded,
+                  size: 18, color: AppColors.foregroundSecondary),
+              SizedBox(width: 12),
+              Text('Edit'),
+            ],
+          ),
+        ),
         PopupMenuItem(
           value: assignment.isPublished ? 'unpublish' : 'publish',
           child: Row(

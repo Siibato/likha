@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateMaterialRequest {
+    pub id: Option<Uuid>,
     pub title: String,
     pub description: Option<String>,
     pub content_text: Option<String>,

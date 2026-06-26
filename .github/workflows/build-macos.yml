@@ -24,7 +24,11 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.35.7'
+
+      - name: Create .env from example
+        working-directory: client
+        run: cp .env.example .env
 
       - name: Install dependencies
         working-directory: client

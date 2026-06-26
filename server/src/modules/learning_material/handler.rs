@@ -28,8 +28,9 @@ pub async fn create_material(
         return r;
     }
 
+    let client_id = request.id;
     match service
-        .create_material(class_id, request, auth_user.user_id, None)
+        .create_material(class_id, request, auth_user.user_id, client_id)
         .await
     {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),

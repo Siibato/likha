@@ -7,11 +7,13 @@ import 'package:likha/data/models/assignments/assignment_submission_model.dart';
 Future<AssignmentSubmissionModel> submitAssignment(
   DioClient dioClient, {
   required String submissionId,
+  String? textContent,
   String? idempotencyKey,
 }) async {
   try {
     return await dioClient.postTyped(
       ApiEndpoints.assignmentSubmissionSubmit(submissionId),
+      data: textContent != null ? {'text_content': textContent} : null,
       headers: idempotencyKey != null ? {'Idempotency-Key': idempotencyKey} : null,
     );
   } on DioException catch (e) {

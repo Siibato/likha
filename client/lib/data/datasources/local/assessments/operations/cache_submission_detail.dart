@@ -25,7 +25,7 @@ Future<void> cacheSubmissionDetail(
           'started_at': submission.startedAt.toIso8601String(),
           'submitted_at': submission.submittedAt?.toIso8601String(),
           'total_points': submission.totalPoints,
-          'earned_points': submission.autoScore,
+          'earned_points': submission.finalScore,
           'created_at': submission.startedAt.toIso8601String(),
           'updated_at': submission.submittedAt?.toIso8601String() ?? submission.startedAt.toIso8601String(),
           'cached_at': now,

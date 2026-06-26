@@ -25,6 +25,14 @@ pub fn val_fmt() -> Format {
         .set_border(FormatBorder::Thin)
 }
 
+pub fn name_data_fmt() -> Format {
+    Format::new()
+        .set_font_size(8)
+        .set_align(FormatAlign::Left)
+        .set_align(FormatAlign::VerticalCenter)
+        .set_border(FormatBorder::Thin)
+}
+
 pub fn grey_cell_fmt() -> Format {
     Format::new()
         .set_background_color(Color::RGB(0xD9D9D9))

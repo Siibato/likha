@@ -4,9 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_navigation_rail.dart';
-import 'package:likha/presentation/pages/desktop/teacher/class/class_list_page.dart';
 import 'package:likha/presentation/pages/desktop/teacher/dashboard_page.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/grades_page.dart';
 import 'package:likha/presentation/utils/logout_helper.dart';
 
 class TeacherDesktopShell extends ConsumerStatefulWidget {
@@ -36,10 +34,6 @@ class _TeacherDesktopShellState extends ConsumerState<TeacherDesktopShell> {
       bindings: {
         SingleActivator(LogicalKeyboardKey.digit1, meta: _isMacOS, control: !_isMacOS):
             () => _navigateToIndex(0),
-        SingleActivator(LogicalKeyboardKey.digit2, meta: _isMacOS, control: !_isMacOS):
-            () => _navigateToIndex(1),
-        SingleActivator(LogicalKeyboardKey.digit3, meta: _isMacOS, control: !_isMacOS):
-            () => _navigateToIndex(2),
       },
       child: Focus(
         autofocus: true,
@@ -54,16 +48,6 @@ class _TeacherDesktopShellState extends ConsumerState<TeacherDesktopShell> {
                 icon: Icons.dashboard_outlined,
                 selectedIcon: Icons.dashboard_rounded,
                 label: 'Dashboard',
-              ),
-              DesktopNavDestination(
-                icon: Icons.school_outlined,
-                selectedIcon: Icons.school_rounded,
-                label: 'Classes',
-              ),
-              DesktopNavDestination(
-                icon: Icons.grading_outlined,
-                selectedIcon: Icons.grading,
-                label: 'Grades',
               ),
             ],
             onDestinationSelected: _navigateToIndex,
@@ -81,14 +65,6 @@ class _TeacherDesktopShellState extends ConsumerState<TeacherDesktopShell> {
                 ExcludeFocus(
                   excluding: _currentIndex != 0,
                   child: TeacherDashboardPage(onNavigate: _navigateToIndex),
-                ),
-                ExcludeFocus(
-                  excluding: _currentIndex != 1,
-                  child: const TeacherClassesPage(),
-                ),
-                ExcludeFocus(
-                  excluding: _currentIndex != 2,
-                  child: const TeacherGradesPage(),
                 ),
               ],
             ),

@@ -8,6 +8,7 @@ import 'package:likha/core/errors/failures.dart';
 import 'package:likha/core/sync/mutation_result.dart';
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/domain/learning_materials/usecases/create_material.dart';
+import 'package:likha/domain/learning_materials/usecases/check_file_cached.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_file.dart' as material;
 import 'package:likha/domain/learning_materials/usecases/delete_material.dart';
 import 'package:likha/domain/learning_materials/usecases/download_file.dart' as material;
@@ -32,6 +33,7 @@ class MockReorderAllMaterials extends Mock implements material.ReorderAllMateria
 class MockUploadFile extends Mock implements material.UploadFile {}
 class MockDeleteFile extends Mock implements material.DeleteFile {}
 class MockDownloadFile extends Mock implements material.DownloadFile {}
+class MockCheckFileCached extends Mock implements material.CheckFileCached {}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +53,7 @@ LearningMaterialNotifier _buildNotifier({
     MockUploadFile(),
     MockDeleteFile(),
     MockDownloadFile(),
+    MockCheckFileCached(),
   );
 }
 

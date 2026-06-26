@@ -17,19 +17,19 @@ Future<String> createSubmission(
     final db = await localDatabase.database;
     final now = DateTime.now();
 
-    // Check for existing submission (UNIQUE constraint: one per student per assignment)
-    final existing = await db.query(
-      DbTables.assignmentSubmissions,
-      columns: [CommonCols.id],
-      where: '${AssignmentSubmissionsCols.assignmentId} = ? AND ${AssignmentSubmissionsCols.studentId} = ?',
-      whereArgs: [assignmentId, studentId],
-      limit: 1,
-    );
+    return db.transaction((txn) async {
+      // Check for existing submission (UNIQUE constraint: one per student per assignment)
+      final existing = await txn.query(
+        DbTables.assignmentSubmissions,
+        columns: [CommonCols.id],
+        where: '${AssignmentSubmissionsCols.assignmentId} = ? AND ${AssignmentSubmissionsCols.studentId} = ?',
+        whereArgs: [assignmentId, studentId],
+        limit: 1,
+      );
 
-    if (existing.isNotEmpty) {
-      // Upsert: update text on the existing row, enqueue an update op
-      final existingId = existing.first[CommonCols.id] as String;
-      await db.transaction((txn) async {
+      if (existing.isNotEmpty) {
+        // Upsert: update text on the existing row, enqueue an update op
+        final existingId = existing.first[CommonCols.id] as String;
         await txn.update(
           DbTables.assignmentSubmissions,
           {
@@ -52,13 +52,11 @@ Future<String> createSubmission(
           maxRetries: 3,
           createdAt: now,
         ), txn: txn);
-      });
-      return existingId;
-    }
+        return existingId;
+      }
 
-    // Fresh insert
-    final submissionId = const Uuid().v4();
-    await db.transaction((txn) async {
+      // Fresh insert
+      final submissionId = const Uuid().v4();
       await txn.insert(
         DbTables.assignmentSubmissions,
         {
@@ -77,14 +75,19 @@ Future<String> createSubmission(
         id: queueEntryId ?? const Uuid().v4(),
         entityType: SyncEntityType.assignmentSubmission,
         operation: SyncOperation.create,
-        payload: {'id': submissionId, 'assignment_id': assignmentId, 'student_id': studentId},
+        payload: {
+          'id': submissionId,
+          'assignment_id': assignmentId,
+          'student_id': studentId,
+          if (textContent != null) 'text_content': textContent,
+        },
         status: SyncStatus.pending,
         retryCount: 0,
         maxRetries: 3,
         createdAt: now,
       ), txn: txn);
+      return submissionId;
     });
-    return submissionId;
   } catch (e) {
     throw CacheException('Failed to create submission locally: $e');
   }

@@ -13,6 +13,7 @@ class StorageService {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
   static const String _userRoleKey = 'user_role';
+  static const String _logoutInProgressKey = 'logout_in_progress';
 
   // Access Token
   Future<void> saveAccessToken(String token) async {
@@ -74,6 +75,18 @@ class StorageService {
   Future<bool> isAuthenticated() async {
     final token = await getAccessToken();
     return token != null && token.isNotEmpty;
+  }
+
+  Future<void> setLogoutInProgress() async {
+    await _prefs.setBool(_logoutInProgressKey, true);
+  }
+
+  Future<void> clearLogoutInProgress() async {
+    await _prefs.remove(_logoutInProgressKey);
+  }
+
+  Future<bool> isLogoutInProgress() async {
+    return _prefs.getBool(_logoutInProgressKey) ?? false;
   }
 
   // Platform-aware storage helpers.

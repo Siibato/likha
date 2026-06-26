@@ -40,6 +40,9 @@ pub fn write(
         (19, FULL_WIDTH_END, "ACTION TAKEN"),
     ];
 
+    sheet.set_row_height(row, 28.0).ok();
+    sheet.set_row_height(row + 1, 28.0).ok();
+
     for (start_col, end_col, text) in &headers {
         sheet
             .merge_range(row, *start_col, row + 1, *end_col, *text, &formats.table_header)
@@ -49,9 +52,15 @@ pub fn write(
 
     for _ in 0..4 {
         for (start_col, end_col, _) in &headers {
-            sheet
-                .merge_range(row, *start_col, row, *end_col, "", &formats.table_cell_center)
-                .map_err(excel_err)?;
+            if start_col == end_col {
+                sheet
+                    .write_with_format(row, *start_col, "", &formats.table_cell_center)
+                    .map_err(excel_err)?;
+            } else {
+                sheet
+                    .merge_range(row, *start_col, row, *end_col, "", &formats.table_cell_center)
+                    .map_err(excel_err)?;
+            }
         }
         row += 1;
     }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
-import 'package:likha/presentation/pages/desktop/teacher/grade/grade_submission_page.dart';
+import 'package:likha/presentation/pages/desktop/teacher/assignment/assignment_submission_grade_page.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/shared/submission_data_table.dart';
 import 'package:likha/presentation/providers/assignment/submission_provider.dart';
 
@@ -115,7 +115,7 @@ class _AssignmentSubmissionsPageState
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => GradeSubmissionPage(
+                      builder: (_) => AssignmentSubmissionGradePage(
                         submissionId: submission.id,
                         totalPoints: widget.totalPoints,
                       ),

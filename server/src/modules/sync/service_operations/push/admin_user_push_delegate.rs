@@ -52,6 +52,7 @@ impl PushDelegate for AdminUserPushDelegate {
                 };
                 let client_id = parse_uuid_field(&op.payload, "id").ok();
                 let request = CreateAccountRequest {
+                    id: client_id,
                     username,
                     first_name,
                     last_name,

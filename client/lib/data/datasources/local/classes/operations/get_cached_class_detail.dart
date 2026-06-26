@@ -13,14 +13,13 @@ Future<ClassDetailModel> getCachedClassDetail(
     final classResult = await db.query(DbTables.classes, where: '${CommonCols.id} = ? AND ${CommonCols.deletedAt} IS NULL', whereArgs: [classId]);
     if (classResult.isEmpty) throw CacheException('Class $classId not cached');
 
-    // v18: Join to get student details from users table
     final participantResults = await db.rawQuery('''
       SELECT cp.id, cp.class_id, cp.user_id, cp.joined_at,
              u.username, u.first_name, u.last_name, u.role, u.account_status, u.created_at
       FROM ${DbTables.classParticipants} cp
       JOIN ${DbTables.users} u ON u.id = cp.user_id
       WHERE cp.class_id = ? AND cp.removed_at IS NULL
-      ORDER BY u.first_name ASC
+      ORDER BY u.last_name ASC, u.first_name ASC
     ''', [classId]);
 
     final classMap = classResult.first;

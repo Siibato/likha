@@ -35,6 +35,7 @@ abstract class TosLocalDataSource {
   Future<void> updateCompetencyFields(String competencyId, Map<String, dynamic> data, {Transaction? txn});
   Future<void> softDeleteCompetency(String competencyId, {Transaction? txn});
   Future<void> bulkSaveCompetencies(List<CompetencyModel> competencies, {Transaction? txn});
+  Future<void> clearAllCache();
 }
 
 class TosLocalDataSourceImpl implements TosLocalDataSource {
@@ -133,4 +134,7 @@ class TosLocalDataSourceImpl implements TosLocalDataSource {
   @override
   Future<void> bulkSaveCompetencies(List<CompetencyModel> competencies, {Transaction? txn}) =>
       ops.bulkSaveCompetencies(localDatabase, syncQueue, competencies, txn: txn);
+
+  @override
+  Future<void> clearAllCache() => ops.clearAllCache(localDatabase);
 }

@@ -27,6 +27,7 @@ class AuthState {
   final int? lockoutLevel;
   final bool pendingForceLogout;
   final int pendingSyncCount;
+  final bool isLoggingOut;
 
   AuthState({
     this.user,
@@ -42,6 +43,7 @@ class AuthState {
     this.lockoutLevel,
     this.pendingForceLogout = false,
     this.pendingSyncCount = 0,
+    this.isLoggingOut = false,
   });
 
   AuthState copyWith({
@@ -58,6 +60,7 @@ class AuthState {
     int? lockoutLevel,
     bool? pendingForceLogout,
     int? pendingSyncCount,
+    bool? isLoggingOut,
     bool clearError = false,
     bool clearUser = false,
     bool clearPendingActivation = false,
@@ -85,6 +88,7 @@ class AuthState {
       lockoutLevel: clearLockout ? null : (lockoutLevel ?? this.lockoutLevel),
       pendingForceLogout: pendingForceLogout ?? this.pendingForceLogout,
       pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
+      isLoggingOut: isLoggingOut ?? this.isLoggingOut,
     );
   }
 }
@@ -277,7 +281,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, isLoggingOut: true);
 
     final result = await _logout();
 

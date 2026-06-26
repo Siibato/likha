@@ -253,6 +253,10 @@ class _ClassRecordPageState extends ConsumerState<ClassRecordPage> {
                   _reloadGrades();
                 },
                 onAddColumn: (_) => _showAddGradeItemDialog(),
+                onDeleteItem: (itemId) async {
+                  await ref.read(gradeItemsProvider.notifier).deleteItem(itemId);
+                  _reloadGrades();
+                },
               ),
             ),
         ],

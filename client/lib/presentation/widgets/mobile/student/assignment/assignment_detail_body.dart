@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:likha/core/sync/sync_queue.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/services/server_clock_service.dart';
 import 'package:likha/core/errors/error_messages.dart';
@@ -246,7 +245,9 @@ class AssignmentDetailBody extends ConsumerWidget {
         controller.submissionController.document.toPlainText().trim().isEmpty) {
       final id = controller.submissionId;
       if (id != null) {
-        controller.loadOfflineSubmissionText(id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          controller.loadOfflineSubmissionText(id);
+        });
       }
     }
   }
@@ -262,11 +263,10 @@ class AssignmentDetailBody extends ConsumerWidget {
       controller.clearFormError();
       ref.read(submissionProvider.notifier).clearMessages();
       if (next.successMessage == 'Assignment submitted') {
-        final isOffline = next.currentSubmission?.syncStatus != SyncStatus.synced;
-        if (isOffline && context.mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Saved offline — will sync when connected'),
+              content: Text('Assignment submitted!'),
               duration: Duration(seconds: 3),
             ),
           );

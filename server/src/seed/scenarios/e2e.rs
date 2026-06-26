@@ -30,13 +30,9 @@ pub async fn seed_e2e_world(db: &DatabaseConnection) -> Result<(), AppError> {
     inserters::tos::insert_tos(db, &tos).await?;
     inserters::tos::insert_competencies(db, &competencies).await?;
 
-    for spec in &assessments {
-        inserters::assessments::insert_assessment_with_questions(db, spec).await?;
-    }
+    inserters::assessments::insert_assessments_with_questions(db, &assessments).await?;
 
-    for spec in &assignments {
-        inserters::assignments::insert_assignment(db, spec).await?;
-    }
+    inserters::assignments::insert_assignments(db, &assignments).await?;
 
     inserters::materials::insert_materials(db, &materials).await?;
 

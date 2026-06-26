@@ -31,7 +31,7 @@ Future<void> cacheStudentSubmission(
         AssessmentSubmissionsCols.startedAt: submission.startedAt.toIso8601String(),
         AssessmentSubmissionsCols.submittedAt: submission.submittedAt?.toIso8601String(),
         AssessmentSubmissionsCols.totalPoints: submission.totalPoints,
-        AssessmentSubmissionsCols.earnedPoints: submission.autoScore,
+        AssessmentSubmissionsCols.earnedPoints: submission.finalScore,
         CommonCols.createdAt: submission.createdAt?.toIso8601String(),
         CommonCols.updatedAt: DateTime.now().toIso8601String(),
         CommonCols.cachedAt: DateTime.now().toIso8601String(),

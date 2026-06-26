@@ -32,16 +32,18 @@ impl RedisCache {
         let client = RedisClient::new(config, None, None, None);
         let _ = client.connect();
 
+        let mut effective_enabled = enabled;
         if let Err(e) = client.wait_for_connect().await {
             warn!(
-                "Redis not available — cache will fallback to DB reads: {}",
+                "Redis not available — cache disabled, falling back to DB reads: {}",
                 e
             );
+            effective_enabled = false;
         }
 
         Arc::new(Self {
             client,
-            enabled,
+            enabled: effective_enabled,
             ttl,
         })
     }

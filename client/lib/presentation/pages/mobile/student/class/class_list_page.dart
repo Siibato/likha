@@ -6,6 +6,8 @@ import 'package:likha/presentation/widgets/shared/primitives/class_section_heade
 import 'package:likha/presentation/widgets/mobile/student/class/class_list_section.dart';
 import 'package:likha/presentation/widgets/mobile/student/class/empty_state.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
+import 'package:likha/presentation/providers/auth_provider.dart';
+import 'package:likha/presentation/utils/logout_helper.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/skeleton_pulse.dart';
 import 'package:likha/presentation/widgets/shared/skeletons/class_card_skeleton.dart';
 
@@ -29,48 +31,116 @@ class _StudentClassListPageState extends ConsumerState<StudentClassListPage> {
   @override
   Widget build(BuildContext context) {
     final classListState = ref.watch(classListProvider);
+    ref.watch(authProvider);
 
-    return SafeArea(
-      child: classListState.isLoading && classListState.classes.isEmpty
-          ? SkeletonPulse(
-              child: ListView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                itemCount: 6,
-                itemBuilder: (_, __) => const ClassCardSkeleton(),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () =>
-                  ref.read(classListProvider.notifier).loadClasses(),
-              color: AppColors.accentCharcoal,
-              child: CustomScrollView(
-                slivers: [
-                  const SliverToBoxAdapter(
-                    child: ClassSectionHeader(title: 'Classes'),
-                  ),
-                  classListState.classes.isEmpty
-                      ? const SliverFillRemaining(
-                          child: EmptyState(),
-                        )
-                      : ClassListSection(
-                          classes: classListState.classes,
-                          onClassTap: (cls) => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StudentClassDetailPage(
-                                classId: cls.id,
-                                classTitle: cls.title,
-                              ),
-                            ),
+    return Scaffold(
+      backgroundColor: AppColors.backgroundSecondary,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: classListState.isLoading && classListState.classes.isEmpty
+                  ? SkeletonPulse(
+                      child: ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(24),
+                        itemCount: 6,
+                        itemBuilder: (_, __) => const ClassCardSkeleton(),
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(classListProvider.notifier).loadClasses(),
+                      color: AppColors.accentCharcoal,
+                      child: CustomScrollView(
+                        slivers: [
+                          const SliverToBoxAdapter(
+                            child: ClassSectionHeader(title: 'Classes'),
                           ),
-                        ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 40),
-                  ),
-                ],
+                          classListState.classes.isEmpty
+                              ? const SliverFillRemaining(
+                                  child: EmptyState(),
+                                )
+                              : ClassListSection(
+                                  classes: classListState.classes,
+                                  onClassTap: (cls) => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => StudentClassDetailPage(
+                                        classId: cls.id,
+                                        classTitle: cls.title,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: _LogoutButton(
+                  onTap: () => handleLogoutTap(context, ref)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.borderLight,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(1, 1, 1, 3.5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(15),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(15),
+              onTap: onTap,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.logout_rounded,
+                        color: AppColors.foregroundDark, size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'Log out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.foregroundDark,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
+        ),
+      ),
     );
   }
 }

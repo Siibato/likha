@@ -18,7 +18,6 @@ ResultFuture<MutationResult<Participant>> addStudent(
   try {
     final now = DateTime.now();
     final queueEntryId = const Uuid().v4();
-    final participantId = const Uuid().v4();
 
     UserModel? cachedStudent;
     try {
@@ -28,8 +27,8 @@ ResultFuture<MutationResult<Participant>> addStudent(
     final studentModel = cachedStudent ?? _skeletonStudent(studentId);
 
     final db = await localDataSource.localDatabase.database;
-    await db.transaction((txn) async {
-      await localDataSource.addStudentLocally(
+    final participantId = await db.transaction((txn) async {
+      final localId = await localDataSource.addStudentLocally(
         classId: classId,
         student: studentModel,
         txn: txn,
@@ -42,7 +41,7 @@ ResultFuture<MutationResult<Participant>> addStudent(
           payload: {
             'class_id': classId,
             'student_id': studentId,
-            'local_enrollment_id': participantId,
+            'local_enrollment_id': localId,
             if (cachedStudent != null) 'student_username': cachedStudent.username,
             if (cachedStudent != null) 'student_full_name': cachedStudent.fullName,
           },
@@ -53,6 +52,7 @@ ResultFuture<MutationResult<Participant>> addStudent(
         ),
         txn: txn,
       );
+      return localId;
     });
 
     final participant = Participant(

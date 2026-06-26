@@ -6,6 +6,7 @@ import 'package:likha/data/datasources/remote/classes/operations/classes.dart' a
 
 abstract class ClassRemoteDataSource {
   Future<ClassModel> createClass({
+    String? id,
     required String title,
     String? description,
     String? teacherId,
@@ -57,6 +58,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
 
   @override
   Future<ClassModel> createClass({
+    String? id,
     required String title,
     String? description,
     String? teacherId,
@@ -65,6 +67,7 @@ class ClassRemoteDataSourceImpl implements ClassRemoteDataSource {
   }) =>
       ops.createClass(
         _dioClient,
+        id: id,
         title: title,
         description: description,
         teacherId: teacherId,
