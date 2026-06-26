@@ -35,7 +35,7 @@ pub fn write_semester_block(
             ("SCHOOL ID", ctx.settings.school_code.clone(), 11, 13),
             ("GRADE LEVEL", record.grade_level.clone(), 14, 15),
             ("SY", record.school_year.clone(), 16, 18),
-            ("SEM", semester.sem_no.to_string(), 19, FULL_WIDTH_END),
+            ("TERM", semester.sem_no.to_string(), 19, FULL_WIDTH_END),
         ],
         formats,
     )?;
@@ -240,7 +240,7 @@ fn write_table_header(
         .merge_range(row, QUARTER_COL_START, row, QUARTER_COL_END, "Quarter", &formats.table_header)
         .map_err(excel_err)?;
     sheet
-        .merge_range(row, FINAL_COL, row + 1, FINAL_COL, "SEM FINAL GRADE", &formats.table_header)
+        .merge_range(row, FINAL_COL, row + 1, FINAL_COL, "TERM FINAL GRADE", &formats.table_header)
         .map_err(excel_err)?;
     sheet
         .merge_range(row, ACTION_COL_START, row + 1, ACTION_COL_END, "ACTION TAKEN", &formats.table_header)

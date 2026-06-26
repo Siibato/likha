@@ -24,8 +24,9 @@ pub async fn create_class(
         return r;
     }
 
+    let client_id = request.id;
     match class_service
-        .create_class(request, auth_user.user_id, None)
+        .create_class(request, auth_user.user_id, client_id)
         .await
     {
         Ok(response) => success_response(response, StatusCode::CREATED).into_response(),

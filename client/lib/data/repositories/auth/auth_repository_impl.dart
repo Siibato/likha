@@ -7,6 +7,8 @@ import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/data/models/auth/account_detail_response_model.dart';
 import 'package:likha/domain/auth/entities/activity_log.dart';
@@ -26,6 +28,8 @@ class AuthRepositoryImpl implements AuthRepository {
   final AssessmentLocalDataSource _assessmentLocalDataSource;
   final LearningMaterialLocalDataSource _learningMaterialLocalDataSource;
   final GradingLocalDataSource _gradingLocalDataSource;
+  final TosLocalDataSource _tosLocalDataSource;
+  final StudentRecordsLocalDataSource _studentRecordsLocalDataSource;
 
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
@@ -37,6 +41,8 @@ class AuthRepositoryImpl implements AuthRepository {
     required AssessmentLocalDataSource assessmentLocalDataSource,
     required LearningMaterialLocalDataSource learningMaterialLocalDataSource,
     required GradingLocalDataSource gradingLocalDataSource,
+    required TosLocalDataSource tosLocalDataSource,
+    required StudentRecordsLocalDataSource studentRecordsLocalDataSource,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource,
         _storageService = storageService,
@@ -45,7 +51,9 @@ class AuthRepositoryImpl implements AuthRepository {
         _assignmentLocalDataSource = assignmentLocalDataSource,
         _assessmentLocalDataSource = assessmentLocalDataSource,
         _learningMaterialLocalDataSource = learningMaterialLocalDataSource,
-        _gradingLocalDataSource = gradingLocalDataSource;
+        _gradingLocalDataSource = gradingLocalDataSource,
+        _tosLocalDataSource = tosLocalDataSource,
+        _studentRecordsLocalDataSource = studentRecordsLocalDataSource;
 
   @override
   ResultFuture<CheckUsernameResult> checkUsername({required String username}) =>
@@ -80,6 +88,8 @@ class AuthRepositoryImpl implements AuthRepository {
         _assessmentLocalDataSource,
         _learningMaterialLocalDataSource,
         _gradingLocalDataSource,
+        _tosLocalDataSource,
+        _studentRecordsLocalDataSource,
         username: username,
         password: password,
         deviceId: deviceId,
@@ -109,6 +119,8 @@ class AuthRepositoryImpl implements AuthRepository {
         _assessmentLocalDataSource,
         _learningMaterialLocalDataSource,
         _gradingLocalDataSource,
+        _tosLocalDataSource,
+        _studentRecordsLocalDataSource,
       );
 
   @override

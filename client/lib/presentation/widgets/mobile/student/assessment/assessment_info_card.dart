@@ -51,7 +51,7 @@ class AssessmentInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseInfoCard(
       title: 'Assessment Details',
-      subtitle: '$totalPoints pts • $_formatTimeLimit(timeLimitMinutes) • $questionCount question${questionCount != 1 ? 's' : ''}',
+      subtitle: '$totalPoints pts • ${_formatTimeLimit(timeLimitMinutes)} • $questionCount question${questionCount != 1 ? 's' : ''}',
       icon: const Icon(Icons.info_outline_rounded),
       margin: const EdgeInsets.only(bottom: 14),
       content: Column(

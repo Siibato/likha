@@ -388,37 +388,3 @@ fn draw_labeled_header_line(
         );
     }
 }
-
-fn draw_lrn_boxes(
-    engine: &PdfEngine,
-    layer: &PdfLayerReference,
-    x: f32,
-    y: f32,
-    total_w: f32,
-    label: &str,
-    lrn: &str,
-) -> f32 {
-    engine.draw_text(layer, label, FONT_SIZE_LARGE, Mm(x), Mm(y), true);
-    let boxes = 12usize;
-    let box_size = 7.0;
-    let box_gap = 1.4;
-    let boxes_width = boxes as f32 * box_size + (boxes - 1) as f32 * box_gap;
-    let start_x = x + total_w - boxes_width;
-    let box_y = y - 8.5;
-    let chars: Vec<char> = lrn.chars().collect();
-    for i in 0..boxes {
-        let bx = start_x + i as f32 * (box_size + box_gap);
-        engine.draw_rect(layer, Mm(bx), Mm(box_y), Mm(box_size), Mm(7.5), None, true);
-        if let Some(ch) = chars.get(i) {
-            engine.draw_text(
-                layer,
-                &ch.to_string(),
-                FONT_SIZE_NORMAL,
-                Mm(bx + 2.0),
-                Mm(box_y + 2.5),
-                false,
-            );
-        }
-    }
-    box_y - 2.5
-}

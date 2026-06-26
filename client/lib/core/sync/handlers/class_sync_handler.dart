@@ -84,12 +84,34 @@ class ClassSyncHandler {
     // ID reconciliation: server may return a different ID for creates.
     if (model.id != localId) {
       final db = await _localDatabase.database;
-      await db.update(
-        DbTables.classes,
-        {CommonCols.id: model.id},
-        where: '${CommonCols.id} = ?',
-        whereArgs: [localId],
-      );
+      // Must update all FK child tables that reference classes.id BEFORE
+      // updating the PK, because the schema only has ON DELETE CASCADE
+      // (no ON UPDATE CASCADE). Updating the PK directly with foreign_keys=ON
+      // would either raise a constraint violation or orphan child rows.
+      await db.transaction((txn) async {
+        await txn.update(
+          DbTables.classParticipants,
+          {ClassParticipantsCols.classId: model.id},
+          where: '${ClassParticipantsCols.classId} = ?',
+          whereArgs: [localId],
+        );
+        // Update any pending enrollment/removal queue entries that still
+        // reference the old optimistic UUID in their class_id payload field,
+        // otherwise those entries will 404 on the server when they sync.
+        await txn.rawUpdate(
+          "UPDATE ${DbTables.syncQueue}"
+          " SET ${SyncQueueCols.payload} = json_replace(${SyncQueueCols.payload}, '\$.class_id', ?)"
+          " WHERE ${SyncQueueCols.status} = '${SyncStatus.pending.dbValue}'"
+          " AND json_extract(${SyncQueueCols.payload}, '\$.class_id') = ?",
+          [model.id, localId],
+        );
+        await txn.update(
+          DbTables.classes,
+          {CommonCols.id: model.id},
+          where: '${CommonCols.id} = ?',
+          whereArgs: [localId],
+        );
+      });
     }
 
     final conflict = await _isLocalModifiedAfter(
@@ -157,6 +179,7 @@ class ClassSyncHandler {
   Future<SyncResult> _handleClassCreate(SyncQueueEntry entry) async {
     final payload = entry.payload;
     final model = await _remote.createClass(
+      id: payload['id'] as String?,
       title: payload['title'] as String,
       description: payload['description'] as String?,
       teacherId: payload['teacher_id'] as String?,

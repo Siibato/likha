@@ -16,8 +16,12 @@
     "test:grading": "mkdir -p reports/teacher-grading && export $(grep -v '^#' .env | xargs) && k6 run dist/teacher-grading.js",
     "test:all-endpoints": "mkdir -p reports/get-all-endpoints && export $(grep -v '^#' .env | xargs) && k6 run dist/get-all-endpoints.js",
     "test:all-endpoints-quick": "mkdir -p reports/get-all-endpoints-quick && export $(grep -v '^#' .env | xargs) && k6 run dist/get-all-endpoints-quick.js",
+    "test:all-endpoints-quick-probe": "mkdir -p reports/get-all-endpoints-quick-probe && export $(grep -v '^#' .env | xargs) && k6 run dist/get-all-endpoints-quick-probe.js",
+    "test:realistic": "mkdir -p reports/realistic-150 && export $(grep -v '^#' .env | xargs) && k6 run dist/realistic-150.js",
+    "test:to-failure": "mkdir -p reports/load-test-to-failure && export $(grep -v '^#' .env | xargs) && k6 run dist/load-test-to-failure.js",
     "test:all": "pnpm build && export $(grep -v '^#' .env | xargs) && k6 run dist/baseline.js && k6 run dist/stress.js",
     "dashboard": "node scripts/dashboard-server.mjs",
+    "dashboard:to-failure": "node scripts/dashboard-to-failure-server.mjs",
     "reports:clean": "rm -rf reports/*/ reports/index.json",
     "reports:list": "find reports -name '*.json' -type f 2>/dev/null | head -20 || echo 'No reports found'"
   },

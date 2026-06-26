@@ -14,6 +14,7 @@ import 'package:likha/data/datasources/local/learning_materials/learning_materia
 import 'package:likha/data/datasources/remote/learning_materials/learning_material_remote_datasource.dart';
 import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/tos/tos_remote_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
 import 'package:likha/core/database/local_database.dart';
 import 'package:likha/core/network/server_reachability_service.dart';
 import 'package:likha/core/network/connectivity_service.dart';
@@ -83,6 +84,11 @@ class MockLearningMaterialRemoteDataSource extends Mock
 class MockTosLocalDataSource extends Mock implements TosLocalDataSource {}
 
 class MockTosRemoteDataSource extends Mock implements TosRemoteDataSource {}
+
+// ── Student Records ───────────────────────────────────────────────────────────
+
+class MockStudentRecordsLocalDataSource extends Mock
+    implements StudentRecordsLocalDataSource {}
 
 // ── Database ──────────────────────────────────────────────────────────────────
 

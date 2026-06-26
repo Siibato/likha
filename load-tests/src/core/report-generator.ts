@@ -142,9 +142,15 @@ function buildReport(scenarioName: string, data: Record<string, any>): ScenarioR
   const failedRate = httpReqFailed.rate ?? 0;
   const p95 = httpReqDuration['p(95)'] ?? 0;
 
-  // Max VUs from stages
+  // Max VUs from actual metric first, then fall back to stages config
+  const vusMaxMetric = metrics['vus_max']?.values ?? {};
+  const maxVusFromMetrics = vusMaxMetric.max ?? 0;
   const stages = options.stages ?? [];
-  const maxVus = stages.length > 0 ? Math.max(...stages.map((s: any) => s.target ?? 0)) : 0;
+  const maxVusFromStages = stages.length > 0 ? Math.max(...stages.map((s: any) => s.target ?? 0)) : 0;
+  // Also check scenarios.default.stages in case k6 resolved top-level stages there
+  const scenarioStages = options.scenarios?.default?.stages ?? [];
+  const maxVusFromScenarios = scenarioStages.length > 0 ? Math.max(...scenarioStages.map((s: any) => s.target ?? 0)) : 0;
+  const maxVus = maxVusFromMetrics || maxVusFromStages || maxVusFromScenarios;
 
   // Check if all thresholds passed
   const thresholdResults = buildThresholds(metrics);

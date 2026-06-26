@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateAssignmentRequest {
+    pub id: Option<Uuid>,
     pub title: String,
     pub instructions: String,
     pub total_points: i32,

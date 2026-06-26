@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assessment/assessment_question_type_editors.dart';
 import 'package:likha/presentation/widgets/shared/forms/form_decorators.dart';
 import 'package:likha/domain/assessments/entities/question_draft.dart';
@@ -13,12 +14,16 @@ class AssessmentQuestionEditFormDesktop extends StatefulWidget {
   final QuestionDraft draft;
   final void Function(QuestionDraft updated) onSave;
   final VoidCallback onCancel;
+  final TableOfSpecifications? linkedTos;
+  final List<TosCompetency> tosCompetencies;
 
   const AssessmentQuestionEditFormDesktop({
     super.key,
     required this.draft,
     required this.onSave,
     required this.onCancel,
+    this.linkedTos,
+    this.tosCompetencies = const [],
   });
 
   @override
@@ -36,6 +41,9 @@ class _AssessmentQuestionEditFormDesktopState
   late List<String> _answers;
   late List<EnumerationItemDraft> _enumItems;
   String? _validationError;
+  String? _difficulty;
+  String? _cognitiveLevel;
+  String? _tosCompetencyId;
 
   @override
   void initState() {
@@ -52,6 +60,9 @@ class _AssessmentQuestionEditFormDesktopState
     _enumItems = q.enumerationItems
         .map((e) => EnumerationItemDraft(answers: List<String>.from(e.answers)))
         .toList();
+    _difficulty = q.difficulty;
+    _cognitiveLevel = q.cognitiveLevel;
+    _tosCompetencyId = q.tosCompetencyId;
   }
 
   @override
@@ -156,6 +167,9 @@ class _AssessmentQuestionEditFormDesktopState
         choices: savedChoices,
         acceptableAnswers: savedAnswers,
         enumerationItems: savedEnumItems,
+        difficulty: _difficulty,
+        cognitiveLevel: _cognitiveLevel,
+        tosCompetencyId: _tosCompetencyId,
       ),
     );
   }
@@ -341,9 +355,79 @@ class _AssessmentQuestionEditFormDesktopState
                 ),
               ),
             ),
+
+          if (widget.linkedTos != null) ..._buildLevelTagField(),
+          if (widget.tosCompetencies.isNotEmpty) ..._buildCompetencyField(),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildCompetencyField() {
+    return [
+      const SizedBox(height: 12),
+      DropdownButtonFormField<String?>(
+        value: _tosCompetencyId,
+        decoration: assessmentInputDecoration('Competency (optional)'),
+        isExpanded: true,
+        items: [
+          const DropdownMenuItem(value: null, child: Text('None')),
+          ...widget.tosCompetencies.map((c) {
+            final label = c.competencyCode != null
+                ? '${c.competencyCode} — ${c.competencyText}'
+                : c.competencyText;
+            return DropdownMenuItem(
+              value: c.id,
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }),
+        ],
+        onChanged: (v) => setState(() => _tosCompetencyId = v),
+      ),
+    ];
+  }
+
+  List<Widget> _buildLevelTagField() {
+    final tos = widget.linkedTos!;
+    final isBlooms = tos.classificationMode == 'blooms';
+
+    if (isBlooms) {
+      return [
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String?>(
+          value: _cognitiveLevel,
+          decoration: assessmentInputDecoration("Bloom's Level (optional)"),
+          items: const [
+            DropdownMenuItem(value: null, child: Text('None')),
+            DropdownMenuItem(value: 'remembering', child: Text('Remembering')),
+            DropdownMenuItem(value: 'understanding', child: Text('Understanding')),
+            DropdownMenuItem(value: 'applying', child: Text('Applying')),
+            DropdownMenuItem(value: 'analyzing', child: Text('Analyzing')),
+            DropdownMenuItem(value: 'evaluating', child: Text('Evaluating')),
+            DropdownMenuItem(value: 'creating', child: Text('Creating')),
+          ],
+          onChanged: (v) => setState(() => _cognitiveLevel = v),
+        ),
+      ];
+    }
+
+    return [
+      const SizedBox(height: 12),
+      DropdownButtonFormField<String?>(
+        value: _difficulty,
+        decoration: assessmentInputDecoration('Difficulty Level (optional)'),
+        items: const [
+          DropdownMenuItem(value: null, child: Text('None')),
+          DropdownMenuItem(value: 'easy', child: Text('Easy')),
+          DropdownMenuItem(value: 'medium', child: Text('Average')),
+          DropdownMenuItem(value: 'hard', child: Text('Difficult')),
+        ],
+        onChanged: (v) => setState(() => _difficulty = v),
+      ),
+    ];
   }
 }
 

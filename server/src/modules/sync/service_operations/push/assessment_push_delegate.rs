@@ -1,7 +1,7 @@
 use super::delegate::PushDelegate;
 use super::result_helpers::{error_result, parse_str_field, parse_uuid_field, success_result};
 use super::sync_push_service::{OperationResult, SyncQueueEntry};
-use crate::modules::assessment::schema::{CreateAssessmentRequest, UpdateAssessmentRequest};
+use crate::modules::assessment::schema::{AddQuestionRequest, CreateAssessmentRequest, UpdateAssessmentRequest};
 use crate::modules::assessment::service::AssessmentService;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -77,6 +77,10 @@ impl PushDelegate for AssessmentPushDelegate {
                         )
                     }
                 };
+                let questions: Option<Vec<AddQuestionRequest>> = op
+                    .payload
+                    .get("questions")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
                 let request = CreateAssessmentRequest {
                     id: client_id,
                     title,
@@ -86,7 +90,7 @@ impl PushDelegate for AssessmentPushDelegate {
                     close_at,
                     show_results_immediately: None,
                     is_published: op.payload.get("is_published").and_then(|v| v.as_bool()),
-                    questions: None,
+                    questions,
                     term_number: op
                         .payload
                         .get("term_number")

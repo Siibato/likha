@@ -239,6 +239,8 @@ class AssignmentSyncHandler {
 
   Future<SyncResult> _handleAssignmentSubmission(SyncQueueEntry entry) async {
     switch (entry.operation) {
+      case SyncOperation.create:
+        return await _handleSubmissionCreate(entry);
       case SyncOperation.submit:
         return await _handleSubmissionSubmit(entry);
       case SyncOperation.grade:
@@ -252,11 +254,26 @@ class AssignmentSyncHandler {
     }
   }
 
+  Future<SyncResult> _handleSubmissionCreate(SyncQueueEntry entry) async {
+    final payload = entry.payload;
+    final assignmentId = payload['assignment_id'] as String;
+    final textContent = payload['text_content'] as String?;
+    final model = await _remote.createSubmission(
+      assignmentId: assignmentId,
+      textContent: textContent,
+      idempotencyKey: entry.id,
+    );
+    await _local.cacheSubmissionDetail(model);
+    return SyncResult.success(serverId: model.id);
+  }
+
   Future<SyncResult> _handleSubmissionSubmit(SyncQueueEntry entry) async {
     final payload = entry.payload;
     final submissionId = payload['submission_id'] as String;
+    final textContent = payload['text_content'] as String?;
     final model = await _remote.submitAssignment(
       submissionId: submissionId,
+      textContent: textContent,
       idempotencyKey: entry.id,
     );
     await _local.cacheSubmissionDetail(model);
@@ -290,6 +307,34 @@ class AssignmentSyncHandler {
       );
       await _local.cacheSubmissionDetail(model);
       return const SyncResult.success();
+    }
+
+    final submissionId = payload['submission_id'] as String?;
+    if (submissionId != null) {
+      final cached = await _local.getCachedSubmission(submissionId);
+      final textContent = payload['text_content'] as String?;
+      
+      if (cached != null && cached.assignmentId.isNotEmpty) {
+        final model = await _remote.createSubmission(
+          assignmentId: cached.assignmentId,
+          textContent: textContent,
+          idempotencyKey: entry.id,
+        );
+        await _local.cacheSubmissionDetail(model);
+        return const SyncResult.success();
+      }
+      
+      // If cache lookup failed, try to get assignmentId from DB directly
+      final assignmentId = await _local.getAssignmentIdForSubmission(submissionId);
+      if (assignmentId != null) {
+        final model = await _remote.createSubmission(
+          assignmentId: assignmentId,
+          textContent: textContent,
+          idempotencyKey: entry.id,
+        );
+        await _local.cacheSubmissionDetail(model);
+        return const SyncResult.success();
+      }
     }
 
     return SyncResult.permanentFailure(

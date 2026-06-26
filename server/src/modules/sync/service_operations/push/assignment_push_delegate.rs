@@ -64,6 +64,7 @@ impl PushDelegate for AssignmentPushDelegate {
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
                 let request = CreateAssignmentRequest {
+                    id: client_id,
                     title,
                     instructions,
                     total_points: op

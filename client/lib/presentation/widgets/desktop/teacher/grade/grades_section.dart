@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
 import 'package:likha/core/utils/term_utils.dart';
+import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/grade/class_grading_setup_page.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 import 'package:likha/presentation/widgets/mobile/teacher/grade/add_grade_item_dialog.dart';
-import 'package:likha/presentation/pages/mobile/teacher/grade/grade_summary_page.dart';
 import 'package:likha/presentation/providers/class_grades_provider.dart';
 import 'package:likha/presentation/providers/class_provider.dart';
 import 'package:likha/presentation/providers/grading_provider.dart';
 import 'package:likha/presentation/providers/document_export_provider.dart';
+import 'package:likha/presentation/providers/sync_provider.dart';
+import 'package:likha/core/sync/sync_manager.dart';
 
 /// Grades section widget for TeacherClassDetailDesktop
 /// Displays grading setup and grade spreadsheet functionality
@@ -149,18 +151,73 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     final configState = ref.watch(gradingConfigProvider);
     final gradesState = ref.watch(classGradesProvider);
     final classDetailState = ref.watch(classDetailProvider);
-    final students = classDetailState.currentClassDetail?.students ?? [];
+    final students = classDetailState.currentClassDetail?.students
+            .where((p) => p.student.isStudent)
+            .toList() ??
+        [];
     final grades = gradesState.grades;
     final isLoading = gradesState.isLoading && grades == null;
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+    // Listen for sync completion — when the server confirms pending grade
+    // mutations (score saves, item creates/deletes), reload grades from the
+    // local DB so the UI reflects the server-acknowledged state.
+    ref.listen<SyncState>(syncProvider, (previous, next) {
+      if (previous?.phase == SyncPhase.syncing && next.phase == SyncPhase.idle) {
+        _reloadGrades();
+      }
+    });
+
+    return DesktopPageScaffold(
+      title: 'Class Record',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.calculate_outlined, size: 20),
+          color: AppColors.foregroundSecondary,
+          tooltip: 'Compute Grades',
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            await ref
+                .read(termGradesProvider.notifier)
+                .computeGrades(widget.classId, _selectedTerm);
+            if (!mounted) return;
+            ref
+                .read(termGradesProvider.notifier)
+                .loadSummary(widget.classId, _selectedTerm);
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Grades computed')),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings_outlined, size: 20),
+          color: AppColors.foregroundSecondary,
+          tooltip: 'Grading Settings',
+          onPressed: () =>
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ClassGradingSetupPage(classId: widget.classId),
+                ),
+              ).then((_) {
+            ref
+                .read(gradingConfigProvider.notifier)
+                .loadConfig(widget.classId);
+            _reloadGrades();
+          }),
+        ),
+        IconButton(
+          icon: const Icon(Icons.download_outlined, size: 20),
+          color: AppColors.foregroundSecondary,
+          tooltip: 'Download Grades',
+          onPressed: () => _showExportDialog(context),
+        ),
+      ],
+      scrollable: false,
+      maxWidth: double.infinity,
       body: Column(
         children: [
-          // Custom header matching mobile design
-          _buildCustomHeader(),
-
-          // Term selector and actions
+          // Term selector
           _buildTermSelector(),
 
           const Divider(height: 1, color: AppColors.borderLight),
@@ -253,6 +310,10 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
                         onScoreChanged: _handleScoreChanged,
                         onQgChanged: _handleQgChanged,
                         onAddColumn: _handleAddColumn,
+                        onDeleteItem: (itemId) async {
+                          await ref.read(gradeItemsProvider.notifier).deleteItem(itemId);
+                          _reloadGrades();
+                        },
                       ),
                       // Floating action button
                       Positioned(
@@ -276,149 +337,41 @@ class _GradesSectionState extends ConsumerState<GradesSection> {
     );
   }
 
-  // Helper methods for mobile-style design
-  Widget _buildCustomHeader() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 3)),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 24, 12, 12),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundTertiary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.foregroundDark,
-                size: 24,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Text(
-              'Class Record',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: AppColors.accentCharcoal,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTermSelector() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 4, 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(termCountFromType(null), (i) {
-                  final q = i + 1;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text('T$q'),
-                      selected: _selectedTerm == q,
-                      selectedColor: AppColors.accentCharcoal,
-                      backgroundColor: Colors.white,
-                      labelStyle: TextStyle(
-                        color: _selectedTerm == q
-                            ? Colors.white
-                            : AppColors.foregroundSecondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: _selectedTerm == q
-                              ? AppColors.accentCharcoal
-                              : AppColors.borderLight,
-                        ),
-                      ),
-                      onSelected: (_) => _onTermChanged(q),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.calculate_outlined, size: 20),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Compute Grades',
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              await ref
-                  .read(termGradesProvider.notifier)
-                  .computeGrades(widget.classId, _selectedTerm);
-              if (!mounted) return;
-              ref
-                  .read(termGradesProvider.notifier)
-                  .loadSummary(widget.classId, _selectedTerm);
-              messenger.showSnackBar(
-                const SnackBar(content: Text('Grades computed')),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.grade_outlined, size: 20),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Final Grades',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => GradeSummaryPage(
-                  classId: widget.classId,
-                  initialTerm: _selectedTerm,
+      padding: const EdgeInsets.only(bottom: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(termCountFromType(null), (i) {
+            final q = i + 1;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text('T$q'),
+                selected: _selectedTerm == q,
+                selectedColor: AppColors.accentCharcoal,
+                backgroundColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: _selectedTerm == q
+                      ? Colors.white
+                      : AppColors.foregroundSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, size: 20),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Grading Settings',
-            onPressed: () =>
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ClassGradingSetupPage(classId: widget.classId),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(
+                    color: _selectedTerm == q
+                        ? AppColors.accentCharcoal
+                        : AppColors.borderLight,
                   ),
-                ).then((_) {
-                  ref
-                      .read(gradingConfigProvider.notifier)
-                      .loadConfig(widget.classId);
-                  _reloadGrades();
-                }),
-          ),
-          IconButton(
-            icon: const Icon(Icons.download_outlined, size: 20),
-            color: AppColors.foregroundSecondary,
-            tooltip: 'Download Grades',
-            onPressed: () => _showExportDialog(context),
-          ),
-        ],
+                ),
+                onSelected: (_) => _onTermChanged(q),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -484,18 +437,6 @@ class _DesktopExportDialog extends ConsumerWidget {
                   classId: classId,
                   termNumber: termNumber,
                   isPdf: false,
-                );
-              },
-            ),
-            ListTile(
-              title: const Text('PDF'),
-              subtitle: const Text('Printable document (.pdf)'),
-              leading: const Icon(Icons.picture_as_pdf),
-              onTap: () {
-                ref.read(documentExportProvider.notifier).exportClassGrades(
-                  classId: classId,
-                  termNumber: termNumber,
-                  isPdf: true,
                 );
               },
             ),

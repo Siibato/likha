@@ -14,7 +14,7 @@ Future<List<SubmissionListItemModel>> getCachedSubmissions(
       FROM ${DbTables.assignmentSubmissions} s
       LEFT JOIN ${DbTables.users} u ON u.id = s.student_id
       WHERE s.assignment_id = ? AND s.deleted_at IS NULL
-      ORDER BY CASE WHEN s.submitted_at IS NULL THEN 1 ELSE 0 END ASC, s.submitted_at ASC
+      ORDER BY u.last_name ASC, u.first_name ASC
     ''', [assignmentId]);
     if (results.isEmpty) return [];
     return results.map((row) {

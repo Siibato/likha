@@ -76,7 +76,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
             MaterialPageRoute(
               builder: (_) => const AdminCreateClassPage(),
             ),
-          ).then((_) => ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true)),
+          ),
           icon: const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create Class'),
           style: FilledButton.styleFrom(
@@ -124,7 +124,7 @@ class _AdminClassesPageState extends ConsumerState<AdminClassesPage> {
                   builder: (_) =>
                       AdminClassDetailPage(classId: cls.id),
                 ),
-              ).then((_) => ref.read(classListProvider.notifier).loadAllClasses(skipBackgroundRefresh: true)),
+              ),
               onDelete: (cls) => _showDeleteConfirmation(cls),
             ),
         ],

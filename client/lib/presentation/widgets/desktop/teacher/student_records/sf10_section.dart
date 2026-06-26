@@ -132,8 +132,6 @@ class Sf10DetailPage extends ConsumerStatefulWidget {
 }
 
 class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
-  bool _isDownloading = false;
-
   @override
   void initState() {
     super.initState();
@@ -142,42 +140,18 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
     });
   }
 
-  Future<void> _downloadSf10(bool isPdf) async {
-    setState(() => _isDownloading = true);
-    try {
-      if (isPdf) {
-        await ref.read(documentExportProvider.notifier).exportSf10Pdf(
+  void _showExportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return _Sf10ExportDialog(
           classId: widget.classId,
           studentId: widget.studentId,
           studentName: widget.studentName,
+          parentContext: context,
         );
-      } else {
-        await ref.read(documentExportProvider.notifier).exportSf10Excel(
-          classId: widget.classId,
-          studentId: widget.studentId,
-          studentName: widget.studentName,
-        );
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('SF10 ${isPdf ? 'PDF' : 'Excel'} downloaded successfully'),
-            backgroundColor: AppColors.semanticSuccess,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to download SF10: $e'),
-            backgroundColor: AppColors.semanticError,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isDownloading = false);
-    }
+      },
+    );
   }
 
   @override
@@ -197,22 +171,18 @@ class _Sf10DetailPageState extends ConsumerState<Sf10DetailPage> {
         ),
         actions: [
           if (state.data != null) ...[
-            StyledButton(
-              text: _isDownloading ? 'Generating...' : 'PDF',
-              icon: Icons.picture_as_pdf_rounded,
-              variant: StyledButtonVariant.primary,
-              fullWidth: false,
-              isLoading: _isDownloading,
-              onPressed: () => _downloadSf10(true),
-            ),
-            const SizedBox(width: 12),
-            StyledButton(
-              text: 'Excel',
-              icon: Icons.table_chart_rounded,
-              variant: StyledButtonVariant.accent,
-              fullWidth: false,
-              isLoading: _isDownloading,
-              onPressed: () => _downloadSf10(false),
+            TextButton.icon(
+              onPressed: () => _showExportDialog(context),
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('Export'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: AppColors.accentCharcoal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             const SizedBox(width: 16),
           ],
@@ -468,7 +438,7 @@ class _Sf10Content extends StatelessWidget {
             _attendanceLabel('No. of\nSchool Days'),
             ..._monthOrder.map((m) {
               final rec = sorted.where((a) => a.month == m).firstOrNull;
-              return _attendanceCell(rec?.schoolDays.toString() ?? '');
+              return _attendanceCell(rec?.schoolDays.toString() ?? '0');
             }),
             _attendanceCell(totalSchoolDays.toString(), isBold: true),
           ],
@@ -479,7 +449,7 @@ class _Sf10Content extends StatelessWidget {
             _attendanceLabel('No. of\nDays Present'),
             ..._monthOrder.map((m) {
               final rec = sorted.where((a) => a.month == m).firstOrNull;
-              return _attendanceCell(rec?.daysPresent.toString() ?? '');
+              return _attendanceCell(rec?.daysPresent.toString() ?? '0');
             }),
             _attendanceCell(totalDaysPresent.toString(), isBold: true),
           ],
@@ -491,9 +461,9 @@ class _Sf10Content extends StatelessWidget {
             ..._monthOrder.map((m) {
               final rec = sorted.where((a) => a.month == m).firstOrNull;
               final absent = rec != null ? rec.schoolDays - rec.daysPresent : 0;
-              return _attendanceCell(absent > 0 ? absent.toString() : '');
+              return _attendanceCell(absent.toString());
             }),
-            _attendanceCell(totalDaysAbsent > 0 ? totalDaysAbsent.toString() : '', isBold: true),
+            _attendanceCell(totalDaysAbsent.toString(), isBold: true),
           ],
         ),
       ],
@@ -611,4 +581,94 @@ class _Sf10Content extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Text(text, style: const TextStyle(fontSize: 12, color: AppColors.foregroundDark)),
   );
+}
+
+class _Sf10ExportDialog extends ConsumerWidget {
+  final String classId;
+  final String studentId;
+  final String studentName;
+  final BuildContext parentContext;
+
+  const _Sf10ExportDialog({
+    required this.classId,
+    required this.studentId,
+    required this.studentName,
+    required this.parentContext,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exportState = ref.watch(documentExportProvider);
+
+    ref.listen<DocumentExportState>(documentExportProvider, (previous, next) {
+      if (previous?.isExporting == true && !next.isExporting && next.error == null) {
+        Navigator.of(context).pop();
+        if (parentContext.mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            const SnackBar(content: Text('Document exported successfully!')),
+          );
+        }
+      }
+    });
+
+    return AlertDialog(
+      title: const Text('Export SF10'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Choose export format:'),
+          const SizedBox(height: 16),
+          if (exportState.isExporting) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppColors.foregroundPrimary,
+                      strokeWidth: 2.5,
+                    ),
+                    SizedBox(height: 12),
+                    Text('Preparing document…'),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            ListTile(
+              title: const Text('Excel'),
+              subtitle: const Text('Editable spreadsheet (.xlsx)'),
+              leading: const Icon(Icons.table_chart),
+              onTap: () {
+                ref.read(documentExportProvider.notifier).exportSf10Excel(
+                  classId: classId,
+                  studentId: studentId,
+                  studentName: studentName,
+                );
+              },
+            ),
+            if (exportState.error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                exportState.error!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.semanticError,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: exportState.isExporting
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: Text(exportState.isExporting ? 'Exporting…' : 'Cancel'),
+        ),
+      ],
+    );
+  }
 }

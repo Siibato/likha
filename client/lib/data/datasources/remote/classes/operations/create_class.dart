@@ -6,6 +6,7 @@ import 'package:likha/data/models/classes/class_model.dart';
 
 Future<ClassModel> createClass(
   DioClient dioClient, {
+  String? id,
   required String title,
   String? description,
   String? teacherId,
@@ -16,6 +17,7 @@ Future<ClassModel> createClass(
     return await dioClient.postTyped(
       ApiEndpoints.classCreate,
       data: {
+        if (id != null) 'id': id,
         'title': title,
         if (description != null) 'description': description,
         if (teacherId != null) 'teacher_id': teacherId,

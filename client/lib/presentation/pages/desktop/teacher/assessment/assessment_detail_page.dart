@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:likha/core/theme/app_colors.dart';
+import 'package:likha/domain/assessments/entities/question_draft.dart';
+import 'package:likha/domain/assessments/usecases/add_questions.dart';
 import 'package:likha/presentation/layouts/desktop/desktop_page_scaffold.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_edit_page.dart';
 import 'package:likha/presentation/pages/desktop/teacher/assessment/assessment_submissions_page.dart';
@@ -27,6 +29,8 @@ class AssessmentDetailPage extends ConsumerStatefulWidget {
 
 class _AssessmentDetailPageState
     extends ConsumerState<AssessmentDetailPage> {
+  bool _isAddingQuestion = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,58 @@ class _AssessmentDetailPageState
           .read(assessmentDetailProvider.notifier)
           .loadAssessmentDetail(widget.assessmentId);
     });
+  }
+
+  Map<String, dynamic> _draftToApiMap(QuestionDraft draft, int orderIndex) {
+    final map = <String, dynamic>{
+      'question_type': draft.type,
+      'question_text': draft.questionText.trim(),
+      'points': draft.points,
+      'order_index': orderIndex,
+    };
+
+    if (draft.type == 'multiple_choice') {
+      map['is_multi_select'] = draft.isMultiSelect;
+      map['choices'] = draft.choices.asMap().entries.map((ce) {
+        return {
+          'choice_text': ce.value.text.trim(),
+          'is_correct': ce.value.isCorrect,
+          'order_index': ce.key,
+        };
+      }).toList();
+    } else if (draft.type == 'identification') {
+      map['correct_answers'] = draft.acceptableAnswers
+          .where((a) => a.trim().isNotEmpty)
+          .map((a) => a.trim())
+          .toList();
+    } else if (draft.type == 'enumeration') {
+      map['enumeration_items'] = draft.enumerationItems.asMap().entries.map((ie) {
+        return {
+          'order_index': ie.key,
+          'acceptable_answers': ie.value.answers
+              .where((a) => a.trim().isNotEmpty)
+              .map((a) => a.trim())
+              .toList(),
+        };
+      }).toList();
+    }
+
+    return map;
+  }
+
+  Future<void> _handleAddQuestion(QuestionDraft draft) async {
+    final notifier = ref.read(assessmentDetailProvider.notifier);
+    final currentQuestions = ref.read(assessmentDetailProvider).questions;
+    final orderIndex = currentQuestions.length;
+
+    setState(() => _isAddingQuestion = false);
+
+    await notifier.addQuestions(
+      AddQuestionsParams(
+        assessmentId: widget.assessmentId,
+        questions: [_draftToApiMap(draft, orderIndex)],
+      ),
+    );
   }
 
   @override
@@ -115,7 +171,15 @@ class _AssessmentDetailPageState
                             const SizedBox(height: 24),
                             AssessmentInfoSection(assessment: assessment),
                             const SizedBox(height: 24),
-                            AssessmentQuestionsSection(questions: questions),
+                            AssessmentQuestionsSection(
+                              questions: questions,
+                              isAddingQuestion: _isAddingQuestion,
+                              onOpenAddForm: () =>
+                                  setState(() => _isAddingQuestion = true),
+                              onCancelAdd: () =>
+                                  setState(() => _isAddingQuestion = false),
+                              onConfirmAdd: _handleAddQuestion,
+                            ),
                           ],
                         ),
                       ),

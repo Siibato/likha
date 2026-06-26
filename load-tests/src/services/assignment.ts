@@ -7,8 +7,8 @@ export class AssignmentService {
     return this.client.get(`/classes/${classId}/assignments`, { tags: { name: `${role}:AssignmentList` } });
   }
 
-  metadata() {
-    return this.client.get('/classes/{class_id}/assignments/metadata', { tags: { name: 'Shared:AssignmentMetadata' } });
+  metadata(classId: string) {
+    return this.client.get(`/classes/${classId}/assignments/metadata`, { tags: { name: 'Shared:AssignmentMetadata' } });
   }
 
   studentList() {

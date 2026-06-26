@@ -17,7 +17,7 @@ Future<List<LearningMaterialModel>> getCachedMaterials(
       whereArgs: [classId],
       orderBy: '${LearningMaterialsCols.orderIndex} ASC',
     );
-    if (results.isEmpty) return [];
+    if (results.isEmpty) throw CacheException('No cached materials found');
 
     final materials = <LearningMaterialModel>[];
 

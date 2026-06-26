@@ -86,7 +86,13 @@ export interface SyncPushPayload {
 }
 
 export interface SyncDeltaPayload {
+  device_id: string;
   last_sync_at: string;
+}
+
+export interface FullSyncPayload {
+  device_id: string;
+  class_ids?: string[];
 }
 
 export interface GradeItem {

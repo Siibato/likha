@@ -276,16 +276,18 @@ export function runAllEndpoints(data: MixedSetupData, opts: RunnerOptions): void
 
   // 60% do delta sync, 30% do full sync (to compare performance)
   const syncRand = Math.random();
+  const deviceId = `vu_${__VU}`;
   if (syncRand < 0.6) {
     // Delta sync with random time window (1 min to 24 hours ago)
     const minutesAgo = Math.floor(Math.random() * 1440) + 1;
     const lastSyncAt = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
-    const deltaRes = syncSvc.deltaSync({ last_sync_at: lastSyncAt });
+    const deltaRes = syncSvc.deltaSync({ device_id: deviceId, last_sync_at: lastSyncAt });
     expectAll(deltaRes, 'sync-delta', { status: 200, underMs: 1000 });
   } else if (syncRand < 0.9) {
-    // Full sync (the heavy one!)
-    const fullRes = syncSvc.fullSync();
-    expectAll(fullRes, 'sync-full', { status: 200, underMs: 2500 });
+    // Full sync (batch request with class_ids for heavy data)
+    const classIds = activeClasses.map(c => c.id);
+    const fullRes = syncSvc.fullSync(deviceId, classIds);
+    expectAll(fullRes, 'sync-full', { status: 200, underMs: 3000 });
   }
 
   // Minimal sleep to maximize throughput

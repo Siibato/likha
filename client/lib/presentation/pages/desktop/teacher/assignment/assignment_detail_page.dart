@@ -11,6 +11,7 @@ import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_submissions_summary.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_actions_menu.dart';
 import 'package:likha/presentation/widgets/desktop/teacher/assignment/assignment_view_submissions_button.dart';
+import 'package:likha/presentation/widgets/desktop/teacher/assignment/edit_assignment_dialog.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -49,6 +50,11 @@ class _AssignmentDetailPageState
           ),
         );
         ref.read(assignmentListProvider.notifier).clearMessages();
+
+        if (next.successMessage == 'Assignment updated') {
+          ref.read(assignmentDetailProvider.notifier)
+              .loadAssignmentDetail(widget.assignmentId);
+        }
 
         if (next.successMessage == 'Assignment deleted') {
           Navigator.of(context).pop(true);
@@ -112,7 +118,14 @@ class _AssignmentDetailPageState
                               AssignmentInfoSection(assignment: assignment),
                               const SizedBox(height: 24),
                               AssignmentInstructionsSection(
-                                  instructions: assignment.instructions),
+                                instructions: assignment.instructions,
+                                onEdit: () => showDialog(
+                                  context: context,
+                                  builder: (_) => EditAssignmentDialog(
+                                    assignment: assignment,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),

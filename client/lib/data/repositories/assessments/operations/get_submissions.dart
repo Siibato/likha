@@ -68,7 +68,11 @@ ResultFuture<List<SubmissionSummary>> getSubmissions(
         RepoLogger.instance.log('getSubmissions: Caching failed (non-fatal): $e');
       }
 
-      return Right(fresh);
+      final sorted = [...fresh]..sort((a, b) {
+        return a.studentName.toLowerCase().compareTo(b.studentName.toLowerCase());
+      });
+
+      return Right(sorted);
     }
   } on ServerException catch (e) {
     return Left(ServerFailure(e.message, statusCode: e.statusCode));

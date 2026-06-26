@@ -14,3 +14,6 @@ reports/*.html
 
 # Legacy archive (replaced by per-scenario files)
 reports/archive.json
+
+# Load-test-to-failure index (auto-generated)
+reports/load-test-to-failure-index.json

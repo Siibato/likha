@@ -1,8 +1,12 @@
+import 'dart:convert';
+
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:likha/presentation/providers/learning_material_provider.dart';
 import 'package:likha/presentation/widgets/shared/dialogs/styled_dialog.dart';
+import 'package:likha/presentation/widgets/shared/forms/rich_text_field.dart';
 
 /// Desktop dialog for editing a learning material's title and content.
 class EditMaterialDialog extends ConsumerStatefulWidget {
@@ -24,14 +28,24 @@ class EditMaterialDialog extends ConsumerStatefulWidget {
 
 class _EditMaterialDialogState extends ConsumerState<EditMaterialDialog> {
   late final TextEditingController _titleController;
-  late final TextEditingController _contentController;
+  late final FleatherController _contentController;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.initialTitle);
-    _contentController =
-        TextEditingController(text: widget.initialContent ?? '');
+
+    final content = widget.initialContent;
+    if (content != null && content.isNotEmpty) {
+      try {
+        final doc = ParchmentDocument.fromJson(jsonDecode(content));
+        _contentController = FleatherController(document: doc);
+      } catch (_) {
+        _contentController = FleatherController();
+      }
+    } else {
+      _contentController = FleatherController();
+    }
   }
 
   @override
@@ -52,12 +66,15 @@ class _EditMaterialDialogState extends ConsumerState<EditMaterialDialog> {
 
     Navigator.pop(context);
 
-    final content = _contentController.text.trim();
+    final contentPlainText = _contentController.document.toPlainText().trim();
+    final contentJson = contentPlainText.isEmpty
+        ? null
+        : jsonEncode(_contentController.document.toJson());
     ref.read(learningMaterialProvider.notifier).updateMaterial(
       materialId: widget.materialId,
       title: newTitle,
       description: null,
-      contentText: content.isEmpty ? null : content,
+      contentText: contentJson,
     );
   }
 
@@ -65,27 +82,25 @@ class _EditMaterialDialogState extends ConsumerState<EditMaterialDialog> {
   Widget build(BuildContext context) {
     return StyledDialog(
       title: 'Edit Module',
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: StyledTextFieldDecoration.styled(
-                labelText: 'Title',
-              ),
+      maxWidth: 680,
+      maxHeight: MediaQuery.of(context).size.height * 0.85,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            controller: _titleController,
+            decoration: StyledTextFieldDecoration.styled(
+              labelText: 'Title',
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _contentController,
-              decoration: StyledTextFieldDecoration.styled(
-                labelText: 'Content (Optional)',
-              ),
-              maxLines: 8,
-              minLines: 4,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          RichTextField(
+            controller: _contentController,
+            label: 'Content (Optional)',
+            icon: Icons.description_outlined,
+            minHeight: 350,
+          ),
+        ],
       ),
       actions: [
         StyledDialogAction(

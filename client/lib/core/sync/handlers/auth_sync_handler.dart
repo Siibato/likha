@@ -174,6 +174,7 @@ class AuthSyncHandler {
     final learnerDetails = payload['learner_details'] as Map<String, dynamic>?;
     final teacherDetails = payload['teacher_details'] as Map<String, dynamic>?;
     final model = await _remote.createAccount(
+      id: payload['id'] as String?,
       username: payload['username'] as String,
       firstName: payload['first_name'] as String? ?? '',
       lastName: payload['last_name'] as String? ?? '',

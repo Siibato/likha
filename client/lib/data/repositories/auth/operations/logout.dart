@@ -9,6 +9,8 @@ import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/datasources/remote/auth/auth_remote_datasource.dart';
 import 'package:likha/services/storage_service.dart';
 import '_helpers.dart' as helpers;
@@ -23,6 +25,8 @@ ResultVoid logout(
   AssessmentLocalDataSource assessmentLocalDataSource,
   LearningMaterialLocalDataSource learningMaterialLocalDataSource,
   GradingLocalDataSource gradingLocalDataSource,
+  TosLocalDataSource tosLocalDataSource,
+  StudentRecordsLocalDataSource studentRecordsLocalDataSource,
 ) async {
   try {
     final token = await storageService.getRefreshToken();
@@ -38,6 +42,8 @@ ResultVoid logout(
       localDataSource: localDataSource,
       syncQueue: syncQueue,
       storageService: storageService,
+      tosLocalDataSource: tosLocalDataSource,
+      studentRecordsLocalDataSource: studentRecordsLocalDataSource,
     );
     return const Right(null);
   } on ServerException catch (e) {
@@ -50,6 +56,8 @@ ResultVoid logout(
       localDataSource: localDataSource,
       syncQueue: syncQueue,
       storageService: storageService,
+      tosLocalDataSource: tosLocalDataSource,
+      studentRecordsLocalDataSource: studentRecordsLocalDataSource,
     );
     return Left(ServerFailure(e.message));
   } on NetworkException catch (e) {
@@ -62,6 +70,8 @@ ResultVoid logout(
       localDataSource: localDataSource,
       syncQueue: syncQueue,
       storageService: storageService,
+      tosLocalDataSource: tosLocalDataSource,
+      studentRecordsLocalDataSource: studentRecordsLocalDataSource,
     );
     return Left(NetworkFailure(e.message));
   } catch (e) {
@@ -74,6 +84,8 @@ ResultVoid logout(
       localDataSource: localDataSource,
       syncQueue: syncQueue,
       storageService: storageService,
+      tosLocalDataSource: tosLocalDataSource,
+      studentRecordsLocalDataSource: studentRecordsLocalDataSource,
     );
     return Left(ServerFailure(e.toString()));
   }

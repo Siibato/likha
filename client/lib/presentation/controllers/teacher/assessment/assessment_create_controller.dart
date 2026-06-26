@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
+import 'package:likha/domain/tos/entities/tos_entity.dart';
 import 'package:likha/core/errors/error_messages.dart';
 import 'package:likha/core/logging/page_logger.dart';
 import 'package:likha/core/utils/formatters.dart';
@@ -11,6 +12,42 @@ import 'package:likha/presentation/providers/assessment/assessment_list_notifier
 import 'package:likha/presentation/providers/assessment/assessment_detail_notifier.dart';
 import 'package:likha/domain/assessments/entities/question_draft.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Per-competency progress row.
+class TosCompetencyProgress {
+  final String competencyId;
+  final String label;
+  final Map<String, int> required;
+  final Map<String, int> added;
+  final Map<String, int> remaining;
+  final bool isComplete;
+
+  const TosCompetencyProgress({
+    required this.competencyId,
+    required this.label,
+    required this.required,
+    required this.added,
+    required this.remaining,
+    required this.isComplete,
+  });
+}
+
+/// Holds progress data computed from the linked TOS vs. question drafts.
+class TosLevelSummary {
+  final Map<String, int> required;
+  final Map<String, int> added;
+  final Map<String, int> remaining;
+  final bool isComplete;
+  final List<TosCompetencyProgress> competencyProgress;
+
+  const TosLevelSummary({
+    required this.required,
+    required this.added,
+    required this.remaining,
+    required this.isComplete,
+    this.competencyProgress = const [],
+  });
+}
 
 /// Controller for the assessment creation flow.
 ///
@@ -300,6 +337,114 @@ class AssessmentCreateController extends ChangeNotifier {
     return null;
   }
 
+  /// Computes how many questions of each level are required by the TOS,
+  /// how many have been tagged so far, and how many remain.
+  /// If [competencies] is provided, also computes per-competency progress.
+  TosLevelSummary computeTosProgress(
+    TableOfSpecifications tos, {
+    List<TosCompetency> competencies = const [],
+  }) {
+    final total = tos.totalItems;
+    final isBlooms = tos.classificationMode == 'blooms';
+    final totalDays = competencies.fold<int>(0, (s, c) => s + c.timeUnitsTaught);
+
+    Map<String, int> _levelRequired(int targetItems) => isBlooms
+        ? {
+            'remembering': (targetItems * tos.rememberingPercentage / 100).round(),
+            'understanding': (targetItems * tos.understandingPercentage / 100).round(),
+            'applying': (targetItems * tos.applyingPercentage / 100).round(),
+            'analyzing': (targetItems * tos.analyzingPercentage / 100).round(),
+            'evaluating': (targetItems * tos.evaluatingPercentage / 100).round(),
+            'creating': (targetItems * tos.creatingPercentage / 100).round(),
+          }
+        : {
+            'easy': (targetItems * tos.easyPercentage / 100).round(),
+            'medium': (targetItems * tos.mediumPercentage / 100).round(),
+            'hard': (targetItems * tos.hardPercentage / 100).round(),
+          };
+
+    Map<String, int> _levelRequiredFromCompetency(TosCompetency c, int targetItems) {
+      if (isBlooms) {
+        return {
+          'remembering': c.rememberingCount ?? (targetItems * tos.rememberingPercentage / 100).round(),
+          'understanding': c.understandingCount ?? (targetItems * tos.understandingPercentage / 100).round(),
+          'applying': c.applyingCount ?? (targetItems * tos.applyingPercentage / 100).round(),
+          'analyzing': c.analyzingCount ?? (targetItems * tos.analyzingPercentage / 100).round(),
+          'evaluating': c.evaluatingCount ?? (targetItems * tos.evaluatingPercentage / 100).round(),
+          'creating': c.creatingCount ?? (targetItems * tos.creatingPercentage / 100).round(),
+        };
+      }
+      return {
+        'easy': c.easyCount ?? (targetItems * tos.easyPercentage / 100).round(),
+        'medium': c.mediumCount ?? (targetItems * tos.mediumPercentage / 100).round(),
+        'hard': c.hardCount ?? (targetItems * tos.hardPercentage / 100).round(),
+      };
+    }
+
+    // Overall totals
+    final Map<String, int> required = _levelRequired(total);
+    final Map<String, int> added = {for (final k in required.keys) k: 0};
+
+    for (final q in questions) {
+      final tag = isBlooms ? q.cognitiveLevel : q.difficulty;
+      if (tag != null && added.containsKey(tag)) {
+        added[tag] = added[tag]! + 1;
+      }
+    }
+
+    final Map<String, int> remaining = {
+      for (final k in required.keys)
+        k: (required[k]! - added[k]!).clamp(0, required[k]!),
+    };
+
+    final isComplete = remaining.values.every((v) => v == 0);
+
+    // Per-competency progress
+    final List<TosCompetencyProgress> competencyProgress = [];
+    if (competencies.isNotEmpty) {
+      for (final comp in competencies) {
+        final weight = totalDays > 0 ? comp.timeUnitsTaught / totalDays : 0.0;
+        final targetItems = (weight * total).round();
+        final compRequired = _levelRequiredFromCompetency(comp, targetItems);
+        final compAdded = {for (final k in compRequired.keys) k: 0};
+
+        for (final q in questions) {
+          if (q.tosCompetencyId != comp.id) continue;
+          final tag = isBlooms ? q.cognitiveLevel : q.difficulty;
+          if (tag != null && compAdded.containsKey(tag)) {
+            compAdded[tag] = compAdded[tag]! + 1;
+          }
+        }
+
+        final compRemaining = {
+          for (final k in compRequired.keys)
+            k: (compRequired[k]! - compAdded[k]!).clamp(0, compRequired[k]!),
+        };
+
+        final compLabel = comp.competencyCode != null
+            ? '${comp.competencyCode} — ${comp.competencyText}'
+            : comp.competencyText;
+
+        competencyProgress.add(TosCompetencyProgress(
+          competencyId: comp.id,
+          label: compLabel,
+          required: compRequired,
+          added: compAdded,
+          remaining: compRemaining,
+          isComplete: compRemaining.values.every((v) => v == 0),
+        ));
+      }
+    }
+
+    return TosLevelSummary(
+      required: required,
+      added: added,
+      remaining: remaining,
+      isComplete: isComplete,
+      competencyProgress: competencyProgress,
+    );
+  }
+
   List<Map<String, dynamic>> buildQuestionsData() {
     return questions.asMap().entries.map((entry) {
       final i = entry.key;
@@ -336,6 +481,10 @@ class AssessmentCreateController extends ChangeNotifier {
           };
         }).toList();
       }
+
+      if (q.difficulty != null) map['difficulty'] = q.difficulty;
+      if (q.cognitiveLevel != null) map['cognitive_level'] = q.cognitiveLevel;
+      if (q.tosCompetencyId != null) map['tos_competency_id'] = q.tosCompetencyId;
 
       return map;
     }).toList();

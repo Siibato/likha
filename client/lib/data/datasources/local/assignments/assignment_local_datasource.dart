@@ -39,6 +39,7 @@ abstract class AssignmentLocalDataSource {
     String? queueEntryId,
   });
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId);
+  Future<String?> getAssignmentIdForSubmission(String submissionId);
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId);
   Future<List<SubmissionFileModel>> getCachedSubmissionFiles(String submissionId);
   Future<void> cacheSubmissions(String assignmentId, List<SubmissionListItemModel> submissions);
@@ -160,6 +161,10 @@ class AssignmentLocalDataSourceImpl implements AssignmentLocalDataSource {
   @override
   Future<AssignmentSubmissionModel?> getCachedSubmission(String submissionId) =>
       ops.getCachedSubmission(localDatabase, submissionId);
+
+  @override
+  Future<String?> getAssignmentIdForSubmission(String submissionId) =>
+      ops.getAssignmentIdForSubmission(localDatabase, submissionId);
 
   @override
   Future<List<SubmissionListItemModel>> getCachedSubmissions(String assignmentId) =>

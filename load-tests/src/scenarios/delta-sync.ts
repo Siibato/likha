@@ -10,7 +10,7 @@ import { stages } from '../config/stages';
 import { thresholds } from '../config/thresholds';
 import { studentAccounts } from '../data/accounts';
 import { fakeAssessmentSubmissionPush } from '../data/fixtures';
-import { publishedAssessments, manifest, randomItem } from '../data/manifest';
+import { publishedAssessments, manifest, randomItem, activeClasses } from '../data/manifest';
 import { TokenMap } from '../types/scenario';
 
 // Tests POST /sync/deltas vs POST /sync/full under load to compare bandwidth/latency.
@@ -45,13 +45,14 @@ export default function (tokens: TokenMap): void {
     // Delta sync: simulate a device that last synced some time ago (varies 1min to 24h)
     const minutesAgo = Math.floor(Math.random() * 1440) + 1;
     const lastSyncAt = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
-    const res = syncService.deltaSync({ last_sync_at: lastSyncAt });
+    const res = syncService.deltaSync({ device_id: `vu_${__VU}`, last_sync_at: lastSyncAt });
     expectAll(res, 'delta-sync', { status: 200, underMs: 800 });
     expectNoServerError(res, 'delta-sync');
   } else if (rand < 0.9) {
-    // Full sync
-    const res = syncService.fullSync();
-    expectAll(res, 'full-sync', { status: 200, underMs: 1500 });
+    // Full sync (batch request with class_ids for heavy data)
+    const classIds = activeClasses.map(c => c.id);
+    const res = syncService.fullSync(`vu_${__VU}`, classIds);
+    expectAll(res, 'full-sync', { status: 200, underMs: 3000 });
     expectNoServerError(res, 'full-sync');
   } else {
     // Sync push

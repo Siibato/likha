@@ -1,0 +1,743 @@
+{
+  "users": [
+    {
+      "id": "49dbd6bc-df07-4c86-950f-c19c3f08e154",
+      "username": "rodrigo.santos",
+      "role": "teacher",
+      "first_name": "Rodrigo",
+      "last_name": "Santos"
+    },
+    {
+      "id": "eff15793-a7a2-4b36-9ef3-5d22f7ce66c6",
+      "username": "juan.delacruz",
+      "role": "student",
+      "first_name": "Juan",
+      "last_name": "Dela Cruz"
+    },
+    {
+      "id": "bd2ee33b-0f20-4dad-b90f-e33ec0cd9f82",
+      "username": "maria.santos",
+      "role": "student",
+      "first_name": "Maria",
+      "last_name": "Santos"
+    },
+    {
+      "id": "783fdc54-e3a5-4334-bcee-25386102cb8e",
+      "username": "antonio.garcia",
+      "role": "student",
+      "first_name": "Antonio",
+      "last_name": "Garcia"
+    },
+    {
+      "id": "57c2bb8a-a70f-43a0-9527-cf0d339852bb",
+      "username": "carmen.bautista",
+      "role": "student",
+      "first_name": "Carmen",
+      "last_name": "Bautista"
+    },
+    {
+      "id": "2779fc06-93a3-48a7-84ed-f58acdc4151c",
+      "username": "pedro.lim",
+      "role": "student",
+      "first_name": "Pedro",
+      "last_name": "Lim"
+    },
+    {
+      "id": "f401aa90-b7eb-488d-b7f1-2495d5817a6b",
+      "username": "rosa.mendoza",
+      "role": "student",
+      "first_name": "Rosa",
+      "last_name": "Mendoza"
+    },
+    {
+      "id": "d2d5ba0a-5d83-485e-a7ed-dbf76abca55b",
+      "username": "miguel.fernandez",
+      "role": "student",
+      "first_name": "Miguel",
+      "last_name": "Fernandez"
+    },
+    {
+      "id": "1e34615e-7f41-45a1-902b-c502062c89c6",
+      "username": "lucia.tan",
+      "role": "student",
+      "first_name": "Lucia",
+      "last_name": "Tan"
+    },
+    {
+      "id": "ae9b8cdd-bb11-4d47-a1af-99b9c4dad12f",
+      "username": "francisco.ramos",
+      "role": "student",
+      "first_name": "Francisco",
+      "last_name": "Ramos"
+    },
+    {
+      "id": "c9961b32-f673-4fd0-8897-4efad2b334b6",
+      "username": "teresa.villanueva",
+      "role": "student",
+      "first_name": "Teresa",
+      "last_name": "Villanueva"
+    },
+    {
+      "id": "b5ad689e-28ef-44e6-a64f-f5d45cf9ec12",
+      "username": "carlos.navarro",
+      "role": "student",
+      "first_name": "Carlos",
+      "last_name": "Navarro"
+    },
+    {
+      "id": "1994aff6-f491-4436-a4f2-c05630caa412",
+      "username": "dolores.castillo",
+      "role": "student",
+      "first_name": "Dolores",
+      "last_name": "Castillo"
+    },
+    {
+      "id": "41363536-612f-4b16-88ad-bf5c60a85e28",
+      "username": "manuel.flores",
+      "role": "student",
+      "first_name": "Manuel",
+      "last_name": "Flores"
+    },
+    {
+      "id": "a0345052-66f5-442d-acae-b5d97fdb19ee",
+      "username": "esperanza.morales",
+      "role": "student",
+      "first_name": "Esperanza",
+      "last_name": "Morales"
+    },
+    {
+      "id": "d0617536-e7ed-4393-bcba-dda8f6238117",
+      "username": "rafael.santiago",
+      "role": "student",
+      "first_name": "Rafael",
+      "last_name": "Santiago"
+    },
+    {
+      "id": "9deb7f3d-9bf6-413b-9d9e-40bbaf2c560f",
+      "username": "consuelo.delrosario",
+      "role": "student",
+      "first_name": "Consuelo",
+      "last_name": "Del Rosario"
+    },
+    {
+      "id": "8704eb57-7ec6-4195-b8f9-f6b17a60dc2d",
+      "username": "andres.deleon",
+      "role": "student",
+      "first_name": "Andres",
+      "last_name": "De Leon"
+    },
+    {
+      "id": "56047697-e3a2-446a-899d-8b18370ef5a8",
+      "username": "mercedes.reyes",
+      "role": "student",
+      "first_name": "Mercedes",
+      "last_name": "Reyes"
+    },
+    {
+      "id": "4f73f09b-0737-4973-b23b-6175ad746617",
+      "username": "gabriel.aguilar",
+      "role": "student",
+      "first_name": "Gabriel",
+      "last_name": "Aguilar"
+    },
+    {
+      "id": "6497ef62-b275-4c4b-b557-354676c14923",
+      "username": "remedios.silva",
+      "role": "student",
+      "first_name": "Remedios",
+      "last_name": "Silva"
+    },
+    {
+      "id": "1ae5fc4d-c418-4619-b460-31878976a185",
+      "username": "diego.alvarez",
+      "role": "student",
+      "first_name": "Diego",
+      "last_name": "Alvarez"
+    },
+    {
+      "id": "cbe73908-6ccd-4f21-9296-764ad9912a72",
+      "username": "milagros.pascual",
+      "role": "student",
+      "first_name": "Milagros",
+      "last_name": "Pascual"
+    },
+    {
+      "id": "2df69f4b-ce4c-4762-bbb3-27d4687b7d5b",
+      "username": "lorenzo.gonzalez",
+      "role": "student",
+      "first_name": "Lorenzo",
+      "last_name": "Gonzalez"
+    },
+    {
+      "id": "fbabdf59-9856-459e-8af9-af81e4f1aaac",
+      "username": "trinidad.soriano",
+      "role": "student",
+      "first_name": "Trinidad",
+      "last_name": "Soriano"
+    },
+    {
+      "id": "f63884e1-3e2e-4308-8eb4-e493a2e0050c",
+      "username": "ramon.rivera",
+      "role": "student",
+      "first_name": "Ramon",
+      "last_name": "Rivera"
+    },
+    {
+      "id": "d5c07ad4-f5ec-4837-aee3-a938e748220e",
+      "username": "pilar.delacruz",
+      "role": "student",
+      "first_name": "Pilar",
+      "last_name": "Dela Cruz"
+    },
+    {
+      "id": "2cb19c10-4f32-47ba-abe9-ce48655ec4cc",
+      "username": "ernesto.bautista",
+      "role": "student",
+      "first_name": "Ernesto",
+      "last_name": "Bautista"
+    },
+    {
+      "id": "4e42a6ba-2368-471a-9137-3c0787820683",
+      "username": "soledad.ortega",
+      "role": "student",
+      "first_name": "Soledad",
+      "last_name": "Ortega"
+    },
+    {
+      "id": "bbc904ac-ef38-43a1-a584-293543ac7ce9",
+      "username": "eduardo.martinez",
+      "role": "student",
+      "first_name": "Eduardo",
+      "last_name": "Martinez"
+    },
+    {
+      "id": "8d4d5dbe-e34e-4ad8-9aa0-b1be226e28ba",
+      "username": "cristina.domingo",
+      "role": "student",
+      "first_name": "Cristina",
+      "last_name": "Domingo"
+    }
+  ],
+  "classes": [
+    {
+      "id": "017704e4-62fc-4d9a-8bdd-75d8471393e2",
+      "title": "Mahogany",
+      "grade_level": "10",
+      "is_deleted": false
+    },
+    {
+      "id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Science",
+      "grade_level": "10",
+      "is_deleted": false
+    },
+    {
+      "id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Mathematics",
+      "grade_level": "10",
+      "is_deleted": false
+    }
+  ],
+  "assessments": [
+    {
+      "id": "537c19d9-56b2-4f88-941a-c452364e2f85",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T1 Quiz 1: Earth's Structure & Plate Boundaries",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 1,
+      "question_ids": [
+        "d1eec24e-7da6-4e9d-98bd-bc53be780b2b",
+        "01f02257-d1e7-4701-9f2f-606593824fed",
+        "9eac067c-125f-4b33-ac9a-92199c277077",
+        "be5e86bb-7612-4a13-ad6d-46ba3744faaa",
+        "6248d460-8102-463f-aa49-406c23000ccc",
+        "0290239a-ef21-43de-ac8f-a11b70a04599",
+        "7f09300b-c5e5-4657-83f4-f2cee8ee1aef",
+        "75c47a04-2093-448f-b4a8-0188ba507754",
+        "400a6fc1-c471-49d6-ab8f-029758da3d96",
+        "81f2f242-1d06-4079-b440-f1d60d70531b"
+      ]
+    },
+    {
+      "id": "0ded5476-112c-4f92-a258-8cc3691a2b02",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T1 Quiz 2: Earthquakes & Volcanoes",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 1,
+      "question_ids": [
+        "2b6d0a59-7ce5-4fc9-9f8b-f72e3f1a8028",
+        "a824bd02-b291-4928-94ae-f11312599882",
+        "f5a773e2-003d-4726-abc8-0adf63bd15b8",
+        "d5c2f6af-dc63-4639-b8b4-26506f5e4246",
+        "84749cd6-e135-4f84-843c-70c08504c0e9",
+        "626b63e0-8bc8-411f-9ecd-fc13529e25de",
+        "d58e405a-0ac5-4d9a-b6aa-9468439d1661",
+        "e594fccd-7c7b-44ef-9a60-45970e2dfbae",
+        "941ab331-c4ff-4d9d-b862-f022910c60b4",
+        "fb5d7f21-1036-4679-9fa6-dde7823abfa4"
+      ]
+    },
+    {
+      "id": "b7fd1ba3-5cfb-45cc-a2d6-754c33a2da8a",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T1 Term Exam: Earth & Space Science",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 1,
+      "question_ids": [
+        "3d42f15a-7634-43ad-a49f-602e5ba91ef3",
+        "656b131a-751a-4d4b-8e9f-7d9cb7677e09",
+        "93b0aefa-0423-4ac2-8963-7ef8167d1a47",
+        "43f50e0b-466f-4d7a-9132-f08a33998c6c",
+        "6340adec-151a-48eb-ba48-e552a63a4c37",
+        "8683d415-8f4f-486e-83ce-b1e831f420a1",
+        "922bf179-a725-4f5b-a586-222d868662fd",
+        "df4125b0-4bd8-4a51-b4fe-b67e4a3d0ccf",
+        "61f6b0b9-6e77-426c-8945-6eb78cd3f1b8",
+        "f41ec1b4-80f3-4b58-a8c3-dad8bf5853e6",
+        "ffed61f8-1fa0-4482-8c3b-73201cc3264b",
+        "ff541374-76de-4a9e-aeac-f0f4f8883cf3",
+        "e0098e4a-313b-497f-a7c5-cd1474e0e4a7",
+        "c52e6fb9-9343-47cb-80e4-20f16c95f81f",
+        "a5ab3685-1aee-41ec-818e-170b6a042fcc",
+        "52dc79c4-31d4-4893-9ed7-501f485db99d",
+        "2f21e88a-d6e4-4ea1-b10c-7dbf74f5e3c4"
+      ]
+    },
+    {
+      "id": "d99f8f0a-4c9f-4283-9e9b-e12f06b709e7",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T1 Quiz 1: Linear Equations",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 1,
+      "question_ids": [
+        "d3b82ccd-3497-4065-96fe-3251116d7890",
+        "ec25d61c-e185-4539-8653-057993fc75ea",
+        "246e6b49-a568-483b-865b-ea754e3f20a0",
+        "44fbfe44-60cf-4ef1-895a-69c5c66c78b9",
+        "aa2060ef-2cea-4f32-9658-61e4dcbb2379",
+        "6d0f2840-7f78-47ed-8741-a6c12904c024",
+        "f65070fa-bec2-4066-bd06-ef94e9a0ac1c",
+        "8a585cf8-fc45-42ac-afcc-0617bd1c00cc",
+        "2d1fa5bf-bee2-4dbd-9ca4-c149d9824745",
+        "1b442325-19ac-4d83-b949-0da174947723"
+      ]
+    },
+    {
+      "id": "cda2ddfc-16e1-4c84-b1b5-887479f4207f",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T1 Quiz 2: Systems of Equations",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 1,
+      "question_ids": [
+        "54d05ff6-641e-4c01-a59b-d388cc328550",
+        "031a43d9-265f-4a5d-8598-ac5661e71429",
+        "4b3b9f69-554e-4c52-8067-c06b453d346a",
+        "2bc37f4a-8ec9-4d11-a6e7-6c9abb45d886",
+        "37c931bc-4da3-4430-aeaf-94dfef7972a8",
+        "796c8b9f-bd08-4483-951c-4208180d7643",
+        "51ea5fb2-407d-41b8-a3d1-5eaed3fd20eb",
+        "c369238b-20ab-4777-ac34-28eb411ee2a3",
+        "296c50c0-d46d-4516-abfc-0d237883f29a",
+        "7bf64ee2-a5cd-42f6-bbf9-91d9654cf4ec"
+      ]
+    },
+    {
+      "id": "67b5f995-29ff-440c-b53b-92d4c4c4a282",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T1 Term Exam: Linear Equations & Inequalities",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 1,
+      "question_ids": [
+        "e7bb541f-4e6e-4f8f-a463-e18cb4b18fe2",
+        "4dede0d5-48a5-4208-a6a7-16f218c2e44a",
+        "9c816338-3742-4add-97ed-d8fc160cf6f2",
+        "a637f273-3bdd-48b8-b03c-7d20537cb615",
+        "229dfa2b-bfea-46cb-800c-b8f86e9c503b",
+        "451b83ac-cd5d-41a4-b87f-0e6755c7d811",
+        "ecbcf919-6f5f-4148-b2b4-98d3a106ff82",
+        "810a9abc-277f-4669-90a4-6a88fe273cf4",
+        "0a0f14be-3e71-48c8-924b-a8b598d653c8",
+        "f1264de7-15ff-4d5d-8cdb-facebbdf48c5",
+        "d1e6eafe-5542-41b8-8503-ea0e25bcc4c5",
+        "15732c98-d51b-4aaf-a309-a0579e7b9ef1",
+        "e4bb8bb6-ada5-44ef-ad5f-88e7057dbf9c",
+        "a43bc468-0fc1-470b-8594-f6dc16293336",
+        "57e444e3-afd8-4098-b488-892244b655c3",
+        "90ae6712-cee4-4ede-a66c-8df1b8976b6d",
+        "c7045bc2-8616-4d4f-a276-86b5ec751bd7"
+      ]
+    },
+    {
+      "id": "e9069df8-9f5b-4c6a-b837-715c3d0b9df3",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T2 Quiz 1: Introduction to Genetics",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 2,
+      "question_ids": [
+        "fa5effd6-cdae-4694-956e-378e48deac73",
+        "8975e7ef-db41-408e-a136-604f59b0e824",
+        "654826ad-a78f-42b5-ba96-212acb575538",
+        "36cbfab4-4f76-482f-9b31-46a02be2b1cd",
+        "aabf8867-934a-4aa3-912e-1e80df008b79",
+        "ec928303-cc8e-4ddc-8bfd-e36864abd977",
+        "54cbe0e0-d531-492d-8ddb-a4efa7a16ea7",
+        "f0076bff-ee55-4633-a256-c3f5101927ca",
+        "3b95be6c-96af-4b27-9661-3d9f99b2d3ac",
+        "80781e49-02d7-4a86-b998-8333f948ebce"
+      ]
+    },
+    {
+      "id": "bebd3a46-c6cf-44c6-ba18-dd755bebb474",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T2 Quiz 2: DNA & Protein Synthesis",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 2,
+      "question_ids": [
+        "13969140-e0b7-49fe-85f0-2646e7547498",
+        "955e1f11-5103-4f8e-8749-18814a9b2c8f",
+        "ec1082d5-34b7-4be3-a1ef-c04b8809b473",
+        "10c93474-5063-4e84-a684-0f1f6c751cce",
+        "7c3fc22b-503b-447b-bc43-5f2ec181f985",
+        "8ac8d512-7402-4cd2-b576-05b82e4d9107",
+        "63250dce-874d-4376-add4-e44c6d5c8698",
+        "c73cd509-2801-4ce1-b23e-671026af4089",
+        "8a58b9ad-495e-4432-a986-39602ce102b3",
+        "e86292e7-0811-4628-af8e-0361e9a03a4c"
+      ]
+    },
+    {
+      "id": "409c0470-6744-4498-9e03-c9be68a1e758",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T2 Term Exam: Genetics & Heredity",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 2,
+      "question_ids": [
+        "cd0600fb-0f3f-45f7-a6f7-dc91ea2fb905",
+        "c2914e4a-6f15-4a57-a99e-83ee87cd7773",
+        "15da49ac-2349-4e36-8956-238ac124f19c",
+        "a44c5d7e-9531-42f3-9bf4-6ccf842ab8b1",
+        "049c10ab-ae87-40c5-be40-58e8d6f4aa2a",
+        "20337a5e-f121-4a4f-80c7-471003999c40",
+        "2b4c3c2a-41ed-4545-99f8-47fdb260bfe9",
+        "b34db663-c398-4ab3-a6a7-7a0d207d637e",
+        "6274b8c8-48b2-41bc-96c4-62eba2d96144",
+        "384897b1-1898-41d9-875b-59c020d9386c",
+        "d0911d58-67f7-4bc2-9f0e-24dc45b93f9a",
+        "2881a968-d2d8-4be4-ae2c-c61096ef6ba3",
+        "3f532155-7738-474a-ba2b-b3897e7c8961",
+        "b828f90f-8563-477c-83b5-710b93d6bbc7",
+        "7e6bde49-1e7b-4876-9d49-9a218b74bb5e",
+        "ba4fbaa3-be6a-4f33-8ea4-e806a5dc8458",
+        "0e68da4e-79e6-46d2-a762-972d11de3e9d"
+      ]
+    },
+    {
+      "id": "998f39dc-0f10-4bc8-b7ea-ba9753c51f98",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T2 Quiz 1: Quadratic Functions",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 2,
+      "question_ids": [
+        "aad1d78d-535d-458a-8b44-62852a9ba590",
+        "42a5c43c-1a5b-454e-a5c5-c7a3035def70",
+        "d72dcc7a-6c10-49d1-b87a-fb96ccb18478",
+        "91b952dd-79e6-408d-8b54-5528d6d168d4",
+        "cf979fed-877e-4724-a4f2-d7d8976b8dc5",
+        "65a04fed-4c6b-4d39-9d4c-4407ae304771",
+        "b5903c3d-8d43-4986-a1d6-90813b0a76d8",
+        "882f4b84-2b74-4c6b-98d3-bd2d6e79f120",
+        "322187d9-f8f5-4753-97ab-958aa0662b69",
+        "50e19d28-9c3b-42e1-bcd3-4e7dbed4e474"
+      ]
+    },
+    {
+      "id": "e27061ac-ef02-44fb-ab8b-2a00f908f30d",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T2 Quiz 2: Solving Quadratic Equations",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 2,
+      "question_ids": [
+        "10ff6b79-c294-4bd1-98b2-e42c166a5ed2",
+        "0fa7dc39-9fac-43c8-97d1-e9cbb3eefff9",
+        "5e20714f-341f-46d7-86c2-97ecd9b45968",
+        "7de94ff0-f6ba-4fd0-aa1a-c26f77738168",
+        "8df95385-679d-44dc-ac4f-8d96d4bd7fff",
+        "e5a35ef9-95c2-4caf-848f-146b91ba1de6",
+        "fd6d6062-bd69-40ee-b119-1e0fb13cc08c",
+        "11bbc37d-25e1-4118-8090-5eaf719a3909",
+        "8ccf1862-eedf-4460-8261-9a5c5a7c3905",
+        "a070f3ea-035d-45b3-8184-e9723e1dcde5"
+      ]
+    },
+    {
+      "id": "73f1bef0-5243-4d2a-a2b6-850be582dcb9",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T2 Term Exam: Quadratic Functions",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 2,
+      "question_ids": [
+        "3a99382f-a2b2-4da1-b7c8-e5d217363d8a",
+        "5b344c46-ca5d-4813-9a2f-3d99ae90dd8c",
+        "cf56321e-2afc-4a03-bb7b-7f61b0fc0f6f",
+        "41a7cd18-17f4-4955-afcc-bae456021cdb",
+        "8abb1caa-2488-4511-a986-de0f1dd93a41",
+        "31ce54b6-6cd5-487c-9814-b9940736282d",
+        "88c4d6bf-25b7-4e4d-946e-615dc20a47bb",
+        "2b4e52a2-bdfc-4b18-8ea8-cab9358eb3b2",
+        "c6534b86-f2bb-419e-afda-9d8110e5e7bb",
+        "34e842cb-b75a-4bd9-bcad-3ec97b3d1d3d",
+        "74da6914-7c08-497a-acba-d38428a070ef",
+        "da82b9ac-1e43-447f-84d8-c59e78f0e388",
+        "68171037-9793-498b-a6a6-45e27aacc8e8",
+        "14079bc3-fec6-4549-827f-33d59c1eb3f5",
+        "41774344-6df2-45ba-808a-0cd0d4ec695b",
+        "3d259da0-276d-4e35-b545-53ee82d70f14",
+        "e66f287e-1f82-4f6a-8865-57e643bf9556"
+      ]
+    },
+    {
+      "id": "1d42e44a-8f97-41a3-92a8-109ef500b087",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T3 Quiz 1: Chemical Bonding",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 3,
+      "question_ids": [
+        "09757bf1-fb90-4bbe-a2c7-2a70b682f862",
+        "bde74405-98c7-4b4c-8d04-a536ebb4dd53",
+        "d2f9a84b-dcc9-4b9c-b095-4d36898a9486",
+        "91852765-e31d-49f8-b787-b7894443526a",
+        "abc289c8-1143-4eda-897c-9fac5fb2e044",
+        "15f25a62-6f47-4930-9dd4-bd19405e2b41",
+        "163e07b4-01a0-46fc-b820-eada4fa3a5e8",
+        "403b8308-4fce-43dd-a0b1-cca1871baf08",
+        "0db6c947-9c51-4069-9669-c4bf997aa27d",
+        "aadab9b2-3af9-40ef-a9fc-725ce07923cf"
+      ]
+    },
+    {
+      "id": "8c2b410a-5542-4fe0-9ba9-9aa89af52060",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T3 Quiz 2: Chemical Reactions",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 3,
+      "question_ids": [
+        "bae8c95d-6f26-4d99-83fe-add6c1cbdd7e",
+        "69745767-b3b0-42d7-ad43-f3a00b82cb55",
+        "f26e43e8-ff60-406c-ba59-b88a48bbc1ed",
+        "68a9ac7b-3ed5-4d7c-bd10-0c8ff6db3d39",
+        "cb879f39-65c4-4f1b-8cb3-8e28c7b5dad2",
+        "6b097196-f370-431f-83bd-4271fbe4053b",
+        "9973c931-bc7f-439e-b0b7-bf44a1985adc",
+        "c7fb250e-b3e6-46ad-a26c-b55ba98bd215",
+        "3a2d32aa-be42-43b6-8880-2991663592d1",
+        "d68d2b5d-6de6-4d44-a1a8-b2f3e0ceb3bc"
+      ]
+    },
+    {
+      "id": "7929a0e7-5789-441e-81ee-56c2df73d067",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "T3 Term Exam: Chemistry",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 3,
+      "question_ids": [
+        "768afdd1-beea-4dcd-8631-2c08fa58c716",
+        "3981b3cd-6ccb-4fde-8fdd-4bc3234e36d6",
+        "8b7d5b38-cfd3-4966-a51b-a49555bac8f2",
+        "69138501-cdde-4cce-be83-6dca8134926e",
+        "dfb8f7e1-c110-4606-ad14-fd8c0a7ad1da",
+        "68560146-bb77-47e6-8743-cd8f17a83167",
+        "94c73558-672b-444a-a2bd-d6477b7afbdf",
+        "dd3ab30a-0d08-4f18-8ad5-20693aec1980",
+        "10cb6eeb-4f9b-4638-bf53-ce0b904265a4",
+        "f440b597-8c58-4c27-bee9-0cdf4359692c",
+        "bf7465e4-91d2-40b6-bf16-dff03798e004",
+        "99b646d1-0d20-4046-bf86-e92ec63e8e54",
+        "38df49b6-8f20-4ef5-bc13-ec0ed97c3cdf",
+        "c22bc743-0fb5-4f13-bb83-411cc14ac70e",
+        "088fe83f-4a74-42b0-a705-dad5b4bc3290",
+        "96b85113-cd75-4fbe-8899-5946947385e0",
+        "ee4468cf-c6f0-4165-a15c-ccbef476463a"
+      ]
+    },
+    {
+      "id": "b6f5fb57-312a-4ae9-a694-988095ee5967",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T3 Quiz 1: Geometric Sequences",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 3,
+      "question_ids": [
+        "96478b0a-1c6e-483b-bd5d-a0eaee692c39",
+        "dcfc5310-6016-4285-b514-3bf1eece820f",
+        "4d4b7df7-142c-4d79-be98-2c9cb823023f",
+        "c8b2c5c3-da89-4259-916b-74077f17501c",
+        "1528fe78-07fb-4fb8-bd51-c9c0b01bef75",
+        "9bf40dc4-858e-4c61-847c-bf8d0f00578a",
+        "a9baedcb-4ef3-4845-80ff-0729bc60834f",
+        "c4cd8cdf-ea07-495f-86e8-f8510de2f490",
+        "6b5a7ae1-1876-4947-ac53-0e2fa11522be",
+        "d4c791b8-c755-49dd-a940-8dceed4a1b88"
+      ]
+    },
+    {
+      "id": "d47015ae-7305-4073-999d-0641742779ca",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T3 Quiz 2: Series and Applications",
+      "total_points": 10,
+      "is_published": true,
+      "term_number": 3,
+      "question_ids": [
+        "142e37c7-1271-4f51-850b-e7ec6af7bba4",
+        "be90ad26-1ace-4d10-814b-2c13128b3f24",
+        "6534a94b-2d1c-463c-aac9-28f630ca2e9b",
+        "a505e9c2-710d-436e-be0e-83ef1947cc89",
+        "1cf5be13-6624-48e9-a935-09facac9aa40",
+        "a77c1ad6-b526-4c62-86ae-05ee93c6a439",
+        "1359d9aa-5749-4139-8df4-46d7036f57eb",
+        "c9bbfa1a-e664-4bc8-99e6-2dccc40b25da",
+        "1a1907c2-5a7b-45bf-acec-a69a86d941bd",
+        "2188dcbb-ab6d-4b15-a463-07af811f165c"
+      ]
+    },
+    {
+      "id": "bf4d6a88-37c5-4486-bc95-da417851c9f6",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "T3 Term Exam: Geometry",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 3,
+      "question_ids": [
+        "38c4bc9d-8de4-4174-8e1b-fbf6c3d83dd7",
+        "6782cfd6-8077-4a39-9b26-0b65b4f91217",
+        "a5f53d6f-ebdd-4241-aede-c650466dcf11",
+        "90b3b5b9-83dd-4c7c-826a-97797255a2ec",
+        "c2b9b822-81c8-4a3d-97fe-894406f39eb1",
+        "c6f5f331-e109-46fd-af17-83e352b7c870",
+        "d2e0fa09-9fd3-416f-948e-ddec7d1fbdbb",
+        "5afdadfb-5375-49b2-a90f-9676bb6b8246",
+        "3084326b-66cf-44d8-b5c8-0eb9c576d058",
+        "3266e429-5b28-4439-9b2b-e779826c4158",
+        "c9590d19-8abf-4065-b66e-952905af39ec",
+        "d21bd419-8ee7-461d-b3af-ca8626a5c4de",
+        "453297e4-383c-4309-8fe2-ff914081fdd2",
+        "7ccbe888-1f94-4095-8cfb-7b997422c395",
+        "875e33eb-3323-4932-9468-6e31e3f2b521",
+        "7f1d2df1-ebbe-4b6c-aaff-c2c673d65e51",
+        "3b60bf8a-eb39-49c5-8d42-83c5f7089407"
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "id": "61fc83eb-5a09-407c-8145-5be127ec1c69",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: Plate Tectonics and Mountain Formation",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 1
+    },
+    {
+      "id": "65841d2d-cdd3-4e18-814a-d637331a6479",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: Earth's Interior",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 1
+    },
+    {
+      "id": "2cf420dd-e422-40a2-b8fb-6a84a2a6006c",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Problem Set: Linear Equations",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 1
+    },
+    {
+      "id": "0f39f850-e921-4246-b621-7ecae9df556c",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Word Problems: Systems of Equations",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 1
+    },
+    {
+      "id": "28d9449b-f648-4abe-a640-b682f61fa45f",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: Mendel's Laws and Human Inheritance",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 2
+    },
+    {
+      "id": "48d1c457-39bd-4750-a1ab-e44cdee96763",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: DNA and Protein Synthesis",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 2
+    },
+    {
+      "id": "a6365240-129a-45b3-8a24-bf55aa2f04e4",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Problem Set: Quadratic Functions",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 2
+    },
+    {
+      "id": "9eb64ac2-87f7-4318-a995-7ab70a1bf817",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Word Problems: Quadratic Applications",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 2
+    },
+    {
+      "id": "88a0181c-eca8-4652-ab87-b7d34c2c85a1",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Essay: Chemical Bonds in Everyday Life",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 3
+    },
+    {
+      "id": "2825c5de-0a13-462a-8b8e-3d8bdd6f641e",
+      "class_id": "e8bac3b9-99ec-437e-8220-236e608ed9c2",
+      "title": "Short Answer: Chemical Reactions",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 3
+    },
+    {
+      "id": "ae925f7c-84bc-4d18-8744-ae613a853fbd",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Problem Set: Geometric Sequences",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 3
+    },
+    {
+      "id": "17f93c6e-9052-42fe-b1f9-166907e632d8",
+      "class_id": "09d14b07-c65f-41b4-b9e4-7e7dee936330",
+      "title": "Word Problems: Geometric Applications",
+      "total_points": 25,
+      "is_published": true,
+      "term_number": 3
+    }
+  ]
+}

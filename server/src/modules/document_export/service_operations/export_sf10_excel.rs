@@ -56,10 +56,26 @@ pub async fn run(
     student_id: Uuid,
     teacher_id: Uuid,
 ) -> AppResult<Vec<u8>> {
-    let sf10 = student_records_service
+    tracing::info!(class_id=%class_id, student_id=%student_id, "Starting SF10 Excel export");
+
+    let sf10 = match student_records_service
         .get_sf10(class_id, student_id, teacher_id)
-        .await?;
-    let settings = setup_service.get_school_details().await?;
+        .await
+    {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!(error=%e, "SF10 Excel export failed at get_sf10");
+            return Err(e);
+        }
+    };
+
+    let settings = match setup_service.get_school_details().await {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!(error=%e, "SF10 Excel export failed at get_school_details");
+            return Err(e);
+        }
+    };
 
     let adviser_name_owned = grade_service
         .class_repo
@@ -82,21 +98,45 @@ pub async fn run(
     let formats = Formats::new();
     let mut row: u32 = 0;
 
-    row = header::write(sheet, row, &ctx, &formats)?;
-    row = learner_info::write(sheet, row + 1, &ctx, &formats)?;
-    row = eligibility::write(sheet, row + 1, &ctx, &formats)?;
+    row = header::write(sheet, row, &ctx, &formats).map_err(|e| {
+        tracing::error!(error=%e, "SF10 Excel export failed at header::write");
+        e
+    })?;
+    row = learner_info::write(sheet, row + 1, &ctx, &formats).map_err(|e| {
+        tracing::error!(error=%e, "SF10 Excel export failed at learner_info::write");
+        e
+    })?;
+    row = eligibility::write(sheet, row + 1, &ctx, &formats).map_err(|e| {
+        tracing::error!(error=%e, "SF10 Excel export failed at eligibility::write");
+        e
+    })?;
 
-    for record in &sf10.scholastic_records {
-        for sem in SEMESTERS.iter() {
-            row = scholastic::write_semester_block(sheet, row + 1, &ctx, record, sem, &formats)?;
-            row = remarks::write_signature_block(sheet, row + 1, &ctx, record, &formats)?;
-            row = remedial::write(sheet, row + 1, &formats)?;
+    for (record_idx, record) in sf10.scholastic_records.iter().enumerate() {
+        for (sem_idx, sem) in SEMESTERS.iter().enumerate() {
+            row = scholastic::write_semester_block(sheet, row + 1, &ctx, record, sem, &formats)
+                .map_err(|e| {
+                    tracing::error!(error=%e, record_idx, sem_idx, "SF10 Excel export failed at scholastic::write_semester_block");
+                    e
+                })?;
+            row = remarks::write_signature_block(sheet, row + 1, &ctx, record, &formats)
+                .map_err(|e| {
+                    tracing::error!(error=%e, record_idx, sem_idx, "SF10 Excel export failed at remarks::write_signature_block");
+                    e
+                })?;
+            row = remedial::write(sheet, row + 1, &formats).map_err(|e| {
+                tracing::error!(error=%e, record_idx, sem_idx, "SF10 Excel export failed at remedial::write");
+                e
+            })?;
         }
     }
 
-    engine
-        .save()
-        .map_err(|e| AppError::InternalServerError(format!("Excel save: {}", e)))
+    let result = engine.save().map_err(|e| {
+        tracing::error!(error=%e, "SF10 Excel export failed at engine.save()");
+        AppError::InternalServerError(format!("Excel save: {}", e))
+    });
+
+    tracing::info!("SF10 Excel export completed successfully");
+    result
 }
 
 pub(crate) fn excel_err(e: impl std::fmt::Display) -> AppError {

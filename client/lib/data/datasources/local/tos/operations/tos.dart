@@ -14,3 +14,4 @@ export 'get_tos_by_class.dart';
 export 'get_tos_by_id.dart';
 export 'search_melcs.dart';
 export 'seed_melcs_if_empty.dart';
+export 'clear_all_cache.dart';

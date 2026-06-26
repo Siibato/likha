@@ -1,143 +1,138 @@
-use chrono::Utc;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 
-use crate::modules::assessment::repository::AssessmentRepository;
-use crate::seed::specs::{AssessmentSpec, QuestionSpec};
+use crate::seed::specs::AssessmentSpec;
 use crate::utils::AppError;
-use ::entity::{answer_key_acceptable_answers, answer_keys, assessment_questions};
+use ::entity::{
+    answer_key_acceptable_answers, answer_keys, assessment_questions, assessments,
+    question_choices,
+};
 
-pub async fn insert_assessment_with_questions(
+const CHUNK_SIZE: usize = 100;
+
+pub async fn insert_assessments_with_questions(
     db: &DatabaseConnection,
-    spec: &AssessmentSpec,
+    specs: &[AssessmentSpec],
 ) -> Result<(), AppError> {
-    let repo = AssessmentRepository::new(db.clone());
-    let created_at = spec.created_at;
-
-    repo.create_assessment(
-        spec.class_id,
-        spec.title.clone(),
-        spec.description.clone(),
-        spec.time_limit_minutes,
-        spec.open_at,
-        spec.close_at,
-        spec.show_results_immediately,
-        spec.total_points,
-        Some(spec.id),
-        false, // allow_retake
-        Some(spec.term_number),
-        Some(spec.component.clone()),
-        Some(spec.tos_id.to_string()),
-    )
-    .await?;
-
-    let assessment = ::entity::assessments::Entity::find_by_id(spec.id)
-        .one(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound(format!("Assessment {} not found", spec.id)))?;
-    let mut am: ::entity::assessments::ActiveModel = assessment.into();
-    am.created_at = Set(created_at);
-    am.updated_at = Set(created_at);
-    am.update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
-
-    for q_spec in &spec.questions {
-        insert_question_with_choices_and_key(db, spec.id, q_spec).await?;
+    if specs.is_empty() {
+        return Ok(());
     }
 
-    if spec.is_published && spec.deleted_at.is_none() {
-        repo.update_total_points(spec.id).await?;
-        repo.publish_assessment(spec.id).await?;
+    let now = chrono::Utc::now().naive_utc();
 
-        if spec.results_released {
-            repo.release_results(spec.id).await?;
+    let mut assessment_models: Vec<assessments::ActiveModel> = Vec::new();
+    let mut question_models: Vec<assessment_questions::ActiveModel> = Vec::new();
+    let mut choice_models: Vec<question_choices::ActiveModel> = Vec::new();
+    let mut answer_key_models: Vec<answer_keys::ActiveModel> = Vec::new();
+    let mut acceptable_answer_models: Vec<answer_key_acceptable_answers::ActiveModel> =
+        Vec::new();
+
+    for spec in specs {
+        let total_points: i32 = spec.questions.iter().map(|q| q.points).sum();
+
+        assessment_models.push(assessments::ActiveModel {
+            id: Set(spec.id),
+            class_id: Set(spec.class_id),
+            title: Set(spec.title.clone()),
+            description: Set(spec.description.clone()),
+            time_limit_minutes: Set(spec.time_limit_minutes),
+            open_at: Set(spec.open_at),
+            close_at: Set(spec.close_at),
+            show_results_immediately: Set(spec.show_results_immediately),
+            results_released: Set(spec.results_released && spec.is_published && spec.deleted_at.is_none()),
+            is_published: Set(spec.is_published && spec.deleted_at.is_none()),
+            order_index: Set(spec.total_points),
+            total_points: Set(total_points),
+            created_at: Set(spec.created_at),
+            updated_at: Set(spec.created_at),
+            deleted_at: Set(spec.deleted_at),
+            term_number: Set(Some(spec.term_number)),
+            component: Set(Some(spec.component.clone())),
+            tos_id: Set(Some(spec.tos_id)),
+        });
+
+        for q_spec in &spec.questions {
+            question_models.push(assessment_questions::ActiveModel {
+                id: Set(q_spec.id),
+                assessment_id: Set(spec.id),
+                question_type: Set(q_spec.question_type.clone()),
+                question_text: Set(q_spec.text.clone()),
+                points: Set(q_spec.points),
+                order_index: Set(q_spec.order),
+                is_multi_select: Set(q_spec.is_multi_select),
+                created_at: Set(now),
+                updated_at: Set(now),
+                deleted_at: Set(None),
+                tos_competency_id: Set(q_spec.tos_competency_id),
+                cognitive_level: Set(q_spec.cognitive_level.clone()),
+                difficulty: Set(q_spec.difficulty.clone()),
+            });
+
+            if q_spec.question_type == "multiple_choice" {
+                for choice in &q_spec.choices {
+                    choice_models.push(question_choices::ActiveModel {
+                        id: Set(choice.id),
+                        question_id: Set(q_spec.id),
+                        choice_text: Set(choice.text.clone()),
+                        is_correct: Set(choice.is_correct),
+                        order_index: Set(choice.order),
+                        updated_at: Set(now),
+                    });
+                }
+            }
+
+            if !q_spec.answer_key.acceptable_answers.is_empty() || q_spec.question_type == "essay" {
+                let ak_id = Uuid::new_v4();
+                answer_key_models.push(answer_keys::ActiveModel {
+                    id: Set(ak_id),
+                    question_id: Set(q_spec.id),
+                    updated_at: Set(now),
+                });
+
+                for answer_text in &q_spec.answer_key.acceptable_answers {
+                    acceptable_answer_models.push(answer_key_acceptable_answers::ActiveModel {
+                        id: Set(Uuid::new_v4()),
+                        answer_key_id: Set(ak_id),
+                        answer_text: Set(answer_text.clone()),
+                    });
+                }
+            }
         }
     }
 
-    if let Some(deleted_at) = spec.deleted_at {
-        let assessment = ::entity::assessments::Entity::find_by_id(spec.id)
-            .one(db)
-            .await
-            .map_err(|e| AppError::InternalServerError(e.to_string()))?
-            .ok_or_else(|| AppError::NotFound(format!("Assessment {} not found", spec.id)))?;
-        let mut am: ::entity::assessments::ActiveModel = assessment.into();
-        am.deleted_at = Set(Some(deleted_at));
-        am.update(db)
+    for chunk in assessment_models.chunks(CHUNK_SIZE) {
+        assessments::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
             .await
             .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
-    Ok(())
-}
-
-async fn insert_question_with_choices_and_key(
-    db: &DatabaseConnection,
-    assessment_id: Uuid,
-    spec: &QuestionSpec,
-) -> Result<(), AppError> {
-    let repo = AssessmentRepository::new(db.clone());
-
-    repo.add_question(
-        assessment_id,
-        spec.question_type.clone(),
-        spec.text.clone(),
-        spec.points,
-        spec.order,
-        spec.is_multi_select,
-        Some(spec.id),
-    )
-    .await?;
-
-    let question = assessment_questions::Entity::find_by_id(spec.id)
-        .one(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound(format!("Question {} not found", spec.id)))?;
-
-    let mut qam: assessment_questions::ActiveModel = question.into();
-    qam.tos_competency_id = Set(spec.tos_competency_id);
-    qam.difficulty = Set(spec.difficulty.clone());
-    qam.cognitive_level = Set(spec.cognitive_level.clone());
-    qam.update(db)
-        .await
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
-
-    if spec.question_type == "multiple_choice" {
-        for choice in &spec.choices {
-            repo.add_choice(
-                spec.id,
-                choice.text.clone(),
-                choice.is_correct,
-                choice.order,
-                Some(choice.id),
-            )
-            .await?;
-        }
-    }
-
-    if !spec.answer_key.acceptable_answers.is_empty() || spec.question_type == "essay" {
-        let ak = answer_keys::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            question_id: Set(spec.id),
-            updated_at: Set(Utc::now().naive_utc()),
-        };
-        let inserted_ak = ak
-            .insert(db)
+    for chunk in question_models.chunks(CHUNK_SIZE) {
+        assessment_questions::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
             .await
             .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    }
 
-        for answer_text in &spec.answer_key.acceptable_answers {
-            let acc = answer_key_acceptable_answers::ActiveModel {
-                id: Set(Uuid::new_v4()),
-                answer_key_id: Set(inserted_ak.id),
-                answer_text: Set(answer_text.clone()),
-            };
-            acc.insert(db)
-                .await
-                .map_err(|e| AppError::InternalServerError(e.to_string()))?;
-        }
+    for chunk in choice_models.chunks(CHUNK_SIZE) {
+        question_choices::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    }
+
+    for chunk in answer_key_models.chunks(CHUNK_SIZE) {
+        answer_keys::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+    }
+
+    for chunk in acceptable_answer_models.chunks(CHUNK_SIZE) {
+        answer_key_acceptable_answers::Entity::insert_many(chunk.iter().cloned())
+            .exec(db)
+            .await
+            .map_err(|e| AppError::InternalServerError(e.to_string()))?;
     }
 
     Ok(())

@@ -5,6 +5,7 @@ import 'package:likha/domain/classes/entities/class_detail.dart';
 import 'package:likha/domain/grading/entities/grade_config.dart';
 import 'package:likha/domain/grading/entities/grade_item.dart';
 import 'package:likha/domain/grading/entities/grade_score.dart';
+import 'package:likha/presentation/widgets/shared/dialogs/app_dialogs.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_data_row.dart';
 import 'package:likha/presentation/widgets/shared/teacher/grade/grade_spreadsheet_cells.dart';
 
@@ -51,6 +52,10 @@ class GradeSpreadsheet extends StatefulWidget {
   /// [component] is 'ww', 'pt', or 'qa'.
   final void Function(String component) onAddColumn;
 
+  /// Called when the teacher long-presses a numbered grade-item header
+  /// to confirm deletion. [itemId] is the grade item's id.
+  final void Function(String itemId)? onDeleteItem;
+
   const GradeSpreadsheet({
     super.key,
     required this.students,
@@ -63,6 +68,7 @@ class GradeSpreadsheet extends StatefulWidget {
     required this.onScoreChanged,
     required this.onQgChanged,
     required this.onAddColumn,
+    this.onDeleteItem,
   });
 
   @override
@@ -353,9 +359,9 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
                       height: _d.hdrH2,
                       child: Row(
                         children: [
-                          ..._sectionHdrs(wwItems),
-                          ..._sectionHdrs(ptItems),
-                          ..._sectionHdrs(qaItems),
+                          ..._sectionHdrs(context, wwItems),
+                          ..._sectionHdrs(context, ptItems),
+                          ..._sectionHdrs(context, qaItems),
                           GradeColumnHeaderCell(
                             text: 'Initial Grade',
                             width: _d.initGradeW,
@@ -508,14 +514,26 @@ class _GradeSpreadsheetState extends State<GradeSpreadsheet> {
     );
   }
 
-  List<Widget> _sectionHdrs(List<GradeItem> items) => [
+  List<Widget> _sectionHdrs(BuildContext context, List<GradeItem> items) => [
         for (int i = 0; i < items.length; i++)
           Tooltip(
             message: items[i].title,
-            child: GradeColumnHeaderCell(
-              text: '${i + 1}',
-              width: _d.scoreColW,
-              height: _d.hdrH2,
+            child: GestureDetector(
+              onTap: () {
+                if (widget.onDeleteItem == null) return;
+                AppDialogs.showDestructive(
+                  context: context,
+                  title: 'Delete Grade Item',
+                  body: 'Are you sure you want to delete "${items[i].title}"? This will also remove all scores associated with it.',
+                  confirmLabel: 'Delete',
+                  onConfirm: () => widget.onDeleteItem!(items[i].id),
+                );
+              },
+              child: GradeColumnHeaderCell(
+                text: '${i + 1}',
+                width: _d.scoreColW,
+                height: _d.hdrH2,
+              ),
             ),
           ),
         GradeColumnHeaderCell(

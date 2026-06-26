@@ -58,6 +58,37 @@ export interface ScenarioReport {
   };
 }
 
+export interface BatchEndpointMetrics {
+  name: string;
+  count: number;
+  failRate: number;
+  avg: number;
+  p95: number;
+  p99: number;
+}
+
+export interface VUBatch {
+  batch: string;
+  vuRange: string;
+  endpoints: BatchEndpointMetrics[];
+}
+
+export interface BatchReport {
+  meta: {
+    scenario: string;
+    timestamp: string;
+    duration: string;
+    maxVus: number;
+    totalRequests: number;
+    failedRate: number;
+    throughput: number;
+    passed: boolean;
+  };
+  vuBatches: VUBatch[];
+  thresholds: ThresholdResult[];
+  errors: ErrorDistribution[];
+}
+
 export interface HistoryEntry {
   scenario: string;
   timestamp: string;

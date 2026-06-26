@@ -364,24 +364,24 @@ class _AdminSchoolDetailsPageState
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        onPressed: isSaving ? null : _showQrCodeDialog,
-                        icon: const Icon(Icons.qr_code),
-                        label: const Text('View QR Code'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.foregroundPrimary,
-                          side: const BorderSide(
-                            color: AppColors.borderLight,
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
+                    // SizedBox(
+                    //   height: 48,
+                    //   child: OutlinedButton.icon(
+                    //     onPressed: isSaving ? null : _showQrCodeDialog,
+                    //     icon: const Icon(Icons.qr_code),
+                    //     label: const Text('View QR Code'),
+                    //     style: OutlinedButton.styleFrom(
+                    //       foregroundColor: AppColors.foregroundPrimary,
+                    //       side: const BorderSide(
+                    //         color: AppColors.borderLight,
+                    //         width: 1.5,
+                    //       ),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(12),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

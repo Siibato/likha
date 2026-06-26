@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:likha/core/sync/sync_queue.dart';
 import 'package:likha/data/datasources/local/assessments/assessment_local_datasource.dart';
 import 'package:likha/data/datasources/local/assignments/assignment_local_datasource.dart';
@@ -5,8 +7,11 @@ import 'package:likha/data/datasources/local/auth/auth_local_datasource.dart';
 import 'package:likha/data/datasources/local/classes/class_local_datasource.dart';
 import 'package:likha/data/datasources/local/grading/grading_local_datasource.dart';
 import 'package:likha/data/datasources/local/learning_materials/learning_material_local_datasource.dart';
+import 'package:likha/data/datasources/local/student_records/student_records_local_datasource.dart';
+import 'package:likha/data/datasources/local/tos/tos_local_datasource.dart';
 import 'package:likha/data/models/auth/user_model.dart';
 import 'package:likha/services/storage_service.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<void> clearAllUserData({
   required ClassLocalDataSource classLocalDataSource,
@@ -17,21 +22,26 @@ Future<void> clearAllUserData({
   required AuthLocalDataSource localDataSource,
   required SyncQueue syncQueue,
   required StorageService storageService,
-  bool clearSyncQueue = false,
+  TosLocalDataSource? tosLocalDataSource,
+  StudentRecordsLocalDataSource? studentRecordsLocalDataSource,
+  bool clearSyncQueue = true,
 }) async {
   try {
-    final futures = <Future>[
-      classLocalDataSource.clearAllCache(),
-      assignmentLocalDataSource.clearAllCache(),
-      assessmentLocalDataSource.clearAllCache(),
-      learningMaterialLocalDataSource.clearAllCache(),
-      gradingLocalDataSource.clearAllCache(),
-      localDataSource.clearAllCache(),
-    ];
-    if (clearSyncQueue) futures.add(syncQueue.clear());
-    await Future.wait(futures);
-  } catch (e) {
-    // Best-effort cache clearing — don't fail login/logout if cache clearing fails
+    await storageService.setLogoutInProgress();
+    final storageFuture = storageService.clearAuthData();
+
+    await classLocalDataSource.localDatabase.clearAllDataIncrementally();
+
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final cacheDir = Directory('${dir.path}/submission_file_cache');
+      if (await cacheDir.exists()) await cacheDir.delete(recursive: true);
+    } catch (_) {}
+
+    await storageFuture;
+    await storageService.clearLogoutInProgress();
+  } catch (_) {
+    await storageService.clearLogoutInProgress();
   }
 }
 

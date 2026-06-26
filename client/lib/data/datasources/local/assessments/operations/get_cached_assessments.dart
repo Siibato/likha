@@ -20,7 +20,7 @@ Future<List<AssessmentModel>> getCachedAssessments(
       whereArgs: [classId],
       orderBy: '${AssessmentsCols.orderIndex} ASC',
     );
-    if (results.isEmpty) return [];
+    if (results.isEmpty) throw CacheException('No cached assessments found');
 
     final assessmentIds = results.map((r) => r['id'] as String).toList();
     final inClause = assessmentIds.map((_) => '?').join(',');

@@ -43,6 +43,8 @@ AuthRepositoryImpl _buildRepo({
   MockAssessmentLocalDataSource? assessmentLocal,
   MockLearningMaterialLocalDataSource? materialLocal,
   MockGradingLocalDataSource? gradingLocal,
+  MockTosLocalDataSource? tosLocal,
+  MockStudentRecordsLocalDataSource? studentRecordsLocal,
 }) {
   return AuthRepositoryImpl(
     remoteDataSource: remote,
@@ -54,6 +56,8 @@ AuthRepositoryImpl _buildRepo({
     assessmentLocalDataSource: assessmentLocal ?? MockAssessmentLocalDataSource(),
     learningMaterialLocalDataSource: materialLocal ?? MockLearningMaterialLocalDataSource(),
     gradingLocalDataSource: gradingLocal ?? MockGradingLocalDataSource(),
+    tosLocalDataSource: tosLocal ?? MockTosLocalDataSource(),
+    studentRecordsLocalDataSource: studentRecordsLocal ?? MockStudentRecordsLocalDataSource(),
   );
 }
 
@@ -223,6 +227,8 @@ void main() {
         final assessmentLocal = MockAssessmentLocalDataSource();
         final materialLocal = MockLearningMaterialLocalDataSource();
         final gradingLocal = MockGradingLocalDataSource();
+        final tosLocal = MockTosLocalDataSource();
+        final studentRecordsLocal = MockStudentRecordsLocalDataSource();
 
         final repo = _buildRepo(
           local: local,
@@ -233,6 +239,8 @@ void main() {
           assessmentLocal: assessmentLocal,
           materialLocal: materialLocal,
           gradingLocal: gradingLocal,
+          tosLocal: tosLocal,
+          studentRecordsLocal: studentRecordsLocal,
         );
 
         when(() => storage.getRefreshToken()).thenAnswer((_) async => 'rt');
@@ -243,6 +251,9 @@ void main() {
         when(() => assessmentLocal.clearAllCache()).thenAnswer((_) async {});
         when(() => materialLocal.clearAllCache()).thenAnswer((_) async {});
         when(() => gradingLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => tosLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => studentRecordsLocal.clearAllCache()).thenAnswer((_) async {});
+        when(() => storage.clearAuthData()).thenAnswer((_) async {});
 
         final result = await repo.logout();
 
@@ -250,6 +261,8 @@ void main() {
         verify(() => remote.logout('rt')).called(1);
         verify(() => local.clearAllCache()).called(1);
         verify(() => gradingLocal.clearAllCache()).called(1);
+        verify(() => tosLocal.clearAllCache()).called(1);
+        verify(() => studentRecordsLocal.clearAllCache()).called(1);
       });
     });
   });

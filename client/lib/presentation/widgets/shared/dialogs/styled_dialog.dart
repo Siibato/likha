@@ -36,6 +36,7 @@ class StyledDialog extends StatelessWidget {
   /// content-sized, creating a [Delete]      [Cancel][Save] layout.
   final StyledDialogAction? leadingAction;
   final double? maxWidth;
+  final double? maxHeight;
   final VoidCallback? onClose;
 
   const StyledDialog({
@@ -47,16 +48,44 @@ class StyledDialog extends StatelessWidget {
     this.warningBox,
     this.leadingAction,
     this.maxWidth,
+    this.maxHeight,
     this.onClose,
   });
 
   @override
   Widget build(BuildContext context) {
+    var constraints = BoxConstraints(maxWidth: maxWidth ?? 360);
+    if (maxHeight != null) {
+      constraints = constraints.copyWith(maxHeight: maxHeight);
+    }
+
+    final contentSection = Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.backgroundSecondary,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.borderLight,
+            width: 1,
+          ),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: maxHeight != null
+            ? SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 8),
+                child: content,
+              )
+            : content,
+      ),
+    );
+
     return Dialog(
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: BoxConstraints(maxWidth: maxWidth ?? 360),
+        constraints: constraints,
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -69,7 +98,7 @@ class StyledDialog extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: maxHeight != null ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Section
@@ -124,21 +153,10 @@ class StyledDialog extends StatelessWidget {
               ),
             ],
             // Content Section with styled background
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.borderLight,
-                    width: 1,
-                  ),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: content,
-              ),
-            ),
+            if (maxHeight != null)
+              Expanded(child: contentSection)
+            else
+              contentSection,
             // Divider
             Container(
               height: 1,

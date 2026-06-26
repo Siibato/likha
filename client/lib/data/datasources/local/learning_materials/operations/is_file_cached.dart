@@ -53,6 +53,17 @@ Future<bool> isFileCached(
       );
     }
 
+    // If file doesn't exist but DB has a local_path, clear it so UI reflects reality
+    if (!exists && storedPath != null && storedPath.isNotEmpty) {
+      CacheLogger.instance.log('File missing on disk, clearing stale local_path');
+      await db.update(
+        'material_files',
+        {'local_path': '', 'cached_at': null},
+        where: 'id = ?',
+        whereArgs: [fileId],
+      );
+    }
+
     return exists;
   } catch (e) {
     CacheLogger.instance.error('Error checking if file cached', e);

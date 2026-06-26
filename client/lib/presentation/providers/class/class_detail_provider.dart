@@ -57,7 +57,7 @@ class ClassDetailNotifier extends StateNotifier<ClassDetailState> {
   ) : super(ClassDetailState());
 
   Future<void> loadClassDetail(String classId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, clearError: true, clearDetail: true, clearParticipants: true);
 
     final result = await _getClassDetail(classId);
 

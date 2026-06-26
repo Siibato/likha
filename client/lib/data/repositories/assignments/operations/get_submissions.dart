@@ -47,10 +47,7 @@ ResultFuture<List<SubmissionListItem>> getSubmissions(
         assignmentId, fresh.cast<SubmissionListItemModel>());
 
       final sorted = [...fresh]..sort((a, b) {
-        if (a.submittedAt == null && b.submittedAt == null) return 0;
-        if (a.submittedAt == null) return 1;
-        if (b.submittedAt == null) return -1;
-        return a.submittedAt!.compareTo(b.submittedAt!);
+        return a.studentName.toLowerCase().compareTo(b.studentName.toLowerCase());
       });
 
       return Right(sorted);
