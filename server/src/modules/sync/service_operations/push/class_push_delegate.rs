@@ -49,6 +49,7 @@ impl PushDelegate for ClassPushDelegate {
                 let client_id = parse_uuid_field(&op.payload, "id").ok();
                 let is_advisory = op.payload.get("is_advisory").and_then(|v| v.as_bool());
                 let request = CreateClassRequest {
+                    id: client_id,
                     title,
                     description,
                     teacher_id,

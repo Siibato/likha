@@ -179,6 +179,7 @@ class ClassSyncHandler {
   Future<SyncResult> _handleClassCreate(SyncQueueEntry entry) async {
     final payload = entry.payload;
     final model = await _remote.createClass(
+      id: payload['id'] as String?,
       title: payload['title'] as String,
       description: payload['description'] as String?,
       teacherId: payload['teacher_id'] as String?,

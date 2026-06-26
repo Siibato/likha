@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateAccountRequest {
+    pub id: Option<Uuid>,
     pub username: String,
     pub first_name: String,
     pub last_name: String,

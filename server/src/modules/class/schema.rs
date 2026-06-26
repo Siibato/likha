@@ -7,6 +7,7 @@ use crate::modules::auth::schema::UserResponse;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateClassRequest {
+    pub id: Option<Uuid>,
     pub title: String,
     pub description: Option<String>,
     pub teacher_id: Option<Uuid>,

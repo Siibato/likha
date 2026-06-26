@@ -31,6 +31,7 @@ abstract class AuthRemoteDataSource {
 
   // Admin methods
   Future<UserModel> createAccount({
+    String? id,
     required String username,
     required String firstName,
     required String lastName,
@@ -138,6 +139,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<UserModel> createAccount({
+    String? id,
     required String username,
     required String firstName,
     required String lastName,
@@ -148,6 +150,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) =>
       ops.createAccount(
         _dioClient,
+        id: id,
         username: username,
         firstName: firstName,
         lastName: lastName,

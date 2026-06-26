@@ -6,6 +6,7 @@ import 'package:likha/data/models/auth/user_model.dart';
 
 Future<UserModel> createAccount(
   DioClient dioClient, {
+  String? id,
   required String username,
   required String firstName,
   required String lastName,
@@ -16,6 +17,7 @@ Future<UserModel> createAccount(
 }) async {
   try {
     final data = <String, dynamic>{
+      if (id != null) 'id': id,
       'username': username,
       'first_name': firstName,
       'last_name': lastName,

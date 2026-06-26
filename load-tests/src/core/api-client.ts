@@ -10,20 +10,32 @@ export type RequestOptions = {
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly authHeader: Record<string, string>;
+  private readonly defaultTags: Record<string, string>;
+  private readonly namePrefix: string;
 
-  constructor(token: string) {
+  constructor(token: string, defaultTags?: Record<string, string>, namePrefix?: string) {
     this.baseUrl = `${env.baseUrl}${env.apiPrefix}`;
     this.authHeader = {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
+    this.defaultTags = defaultTags ?? {};
+    this.namePrefix = namePrefix ?? '';
+  }
+
+  private mergeTags(opts: RequestOptions): Record<string, string> {
+    const merged = { ...this.defaultTags, ...opts.tags };
+    if (this.namePrefix && merged.name) {
+      merged.name = `${this.namePrefix}:${merged.name}`;
+    }
+    return merged;
   }
 
   get(path: string, opts: RequestOptions = {}): RefinedResponse<ResponseType> {
     const params: any = {
       headers: this.authHeader,
       timeout: opts.timeout ?? env.defaultTimeout,
-      tags: opts.tags,
+      tags: this.mergeTags(opts),
     };
     if (opts.expectedStatuses) {
       params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
@@ -35,7 +47,7 @@ export class ApiClient {
     const params: any = {
       headers: this.authHeader,
       timeout: opts.timeout ?? env.defaultTimeout,
-      tags: opts.tags,
+      tags: this.mergeTags(opts),
     };
     if (opts.expectedStatuses) {
       params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
@@ -51,7 +63,7 @@ export class ApiClient {
     const params: any = {
       headers: this.authHeader,
       timeout: opts.timeout ?? env.defaultTimeout,
-      tags: opts.tags,
+      tags: this.mergeTags(opts),
     };
     if (opts.expectedStatuses) {
       params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);
@@ -67,7 +79,7 @@ export class ApiClient {
     const params: any = {
       headers: this.authHeader,
       timeout: opts.timeout ?? env.defaultTimeout,
-      tags: opts.tags,
+      tags: this.mergeTags(opts),
     };
     if (opts.expectedStatuses) {
       params.responseCallback = http.expectedStatuses(...opts.expectedStatuses);

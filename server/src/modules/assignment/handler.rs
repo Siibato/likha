@@ -35,8 +35,9 @@ pub async fn create_assignment(
         request.title
     );
 
+    let client_id = request.id;
     match service
-        .create_assignment(class_id, request, auth_user.user_id, None)
+        .create_assignment(class_id, request, auth_user.user_id, client_id)
         .await
     {
         Ok(response) => {
